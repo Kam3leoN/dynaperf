@@ -1,0 +1,230 @@
+import { useState } from "react";
+import { Audit, TYPES_EVENEMENT, AUDITEURS, MOIS_ORDRE } from "@/data/audits";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Plus, Pencil, Trash2, ArrowUpDown } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+interface AuditTableProps {
+  audits: Audit[];
+  onAdd: (audit: Omit<Audit, "id">) => void;
+  onUpdate: (id: string, data: Partial<Audit>) => void;
+  onDelete: (id: string) => void;
+}
+
+const emptyForm = (): Omit<Audit, "id"> => ({
+  date: new Date().toISOString().slice(0, 10),
+  partenaire: "",
+  lieu: "",
+  auditeur: "Cédric",
+  typeEvenement: "Club Affaires",
+  note: null,
+  moisVersement: "Janvier",
+  statut: "NON",
+});
+
+type SortKey = "date" | "note" | "partenaire" | "auditeur" | "typeEvenement";
+
+export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProps) {
+  const [open, setOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [form, setForm] = useState<Omit<Audit, "id">>(emptyForm());
+  const [sortKey, setSortKey] = useState<SortKey>("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+  const [search, setSearch] = useState("");
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) setSortDir(sortDir === "asc" ? "desc" : "asc");
+    else { setSortKey(key); setSortDir("asc"); }
+  };
+
+  const sorted = [...audits]
+    .filter((a) => {
+      if (!search) return true;
+      const s = search.toLowerCase();
+      return a.partenaire.toLowerCase().includes(s) || a.lieu.toLowerCase().includes(s) || a.auditeur.toLowerCase().includes(s);
+    })
+    .sort((a, b) => {
+      let cmp = 0;
+      if (sortKey === "date") cmp = a.date.localeCompare(b.date);
+      else if (sortKey === "note") cmp = (a.note ?? -1) - (b.note ?? -1);
+      else if (sortKey === "partenaire") cmp = a.partenaire.localeCompare(b.partenaire);
+      else if (sortKey === "auditeur") cmp = a.auditeur.localeCompare(b.auditeur);
+      else if (sortKey === "typeEvenement") cmp = a.typeEvenement.localeCompare(b.typeEvenement);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+  const openNew = () => { setEditId(null); setForm(emptyForm()); setOpen(true); };
+  const openEdit = (a: Audit) => { setEditId(a.id); setForm({ ...a }); setOpen(true); };
+
+  const save = () => {
+    if (!form.partenaire.trim()) return;
+    if (editId) onUpdate(editId, form);
+    else onAdd(form);
+    setOpen(false);
+  };
+
+  const SortHeader = ({ label, k }: { label: string; k: SortKey }) => (
+    <TableHead className="cursor-pointer select-none" onClick={() => handleSort(k)}>
+      <span className="flex items-center gap-1 font-sora text-xs uppercase tracking-wider">
+        {label}
+        <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+      </span>
+    </TableHead>
+  );
+
+  return (
+    <div className="bg-card rounded-lg shadow-soft p-5">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+        <h3 className="font-sora text-sm font-semibold text-foreground">Registre des audits</h3>
+        <div className="flex items-center gap-3">
+          <Input
+            placeholder="Rechercher..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-[200px] h-9 text-sm rounded-md"
+          />
+          <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={openNew} size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5">
+                <Plus className="h-4 w-4" /> Ajouter
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="font-sora">{editId ? "Modifier l'audit" : "Nouvel audit"}</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-3 py-3">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Date</label>
+                    <Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className="h-9 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Note (/10)</label>
+                    <Input type="number" step="0.01" min="0" max="10" value={form.note ?? ""} onChange={(e) => setForm({ ...form, note: e.target.value ? +e.target.value : null })} className="h-9 text-sm" />
+                  </div>
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Partenaire audité</label>
+                  <Input value={form.partenaire} onChange={(e) => setForm({ ...form, partenaire: e.target.value })} className="h-9 text-sm" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Lieu</label>
+                  <Input value={form.lieu} onChange={(e) => setForm({ ...form, lieu: e.target.value })} className="h-9 text-sm" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Auditeur</label>
+                    <Select value={form.auditeur} onValueChange={(v) => setForm({ ...form, auditeur: v })}>
+                      <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {AUDITEURS.map((a) => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Type</label>
+                    <Select value={form.typeEvenement} onValueChange={(v) => setForm({ ...form, typeEvenement: v })}>
+                      <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {TYPES_EVENEMENT.map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Mois versement</label>
+                    <Select value={form.moisVersement} onValueChange={(v) => setForm({ ...form, moisVersement: v })}>
+                      <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {MOIS_ORDRE.map((m) => <SelectItem key={m} value={m}>{m}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Statut</label>
+                    <Select value={form.statut} onValueChange={(v) => setForm({ ...form, statut: v as "OK" | "NON" })}>
+                      <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="OK">Noté</SelectItem>
+                        <SelectItem value="NON">En attente</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" size="sm" onClick={() => setOpen(false)} className="rounded-md">Annuler</Button>
+                <Button size="sm" onClick={save} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md">
+                  {editId ? "Sauvegarder" : "Créer"}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <SortHeader label="Date" k="date" />
+              <SortHeader label="Partenaire" k="partenaire" />
+              <TableHead className="font-sora text-xs uppercase tracking-wider">Lieu</TableHead>
+              <SortHeader label="Auditeur" k="auditeur" />
+              <SortHeader label="Type" k="typeEvenement" />
+              <SortHeader label="Note" k="note" />
+              <TableHead className="font-sora text-xs uppercase tracking-wider">Statut</TableHead>
+              <TableHead className="font-sora text-xs uppercase tracking-wider w-20">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <AnimatePresence>
+              {sorted.map((a) => (
+                <motion.tr
+                  key={a.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="border-b border-border hover:bg-secondary/50 transition-colors"
+                >
+                  <TableCell className="text-sm tabular-nums">{new Date(a.date).toLocaleDateString("fr-FR")}</TableCell>
+                  <TableCell className="text-sm font-medium">{a.partenaire}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">{a.lieu || "—"}</TableCell>
+                  <TableCell className="text-sm">{a.auditeur}</TableCell>
+                  <TableCell>
+                    <span className="text-xs px-2 py-0.5 rounded-sm bg-secondary font-medium">{a.typeEvenement}</span>
+                  </TableCell>
+                  <TableCell className={`text-sm font-bold tabular-nums ${a.note !== null ? (a.note >= 7 ? "text-foreground" : "text-primary") : "text-muted-foreground"}`}>
+                    {a.note !== null ? a.note.toFixed(2) : "—"}
+                  </TableCell>
+                  <TableCell>
+                    <span className={`text-xs px-2 py-0.5 rounded-sm font-medium ${a.statut === "OK" ? "bg-foreground/5 text-foreground" : "bg-primary/10 text-primary"}`}>
+                      {a.statut === "OK" ? "Noté" : "En attente"}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-1">
+                      <button onClick={() => openEdit(a)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors">
+                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                      </button>
+                      <button onClick={() => onDelete(a.id)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors">
+                        <Trash2 className="h-3.5 w-3.5 text-primary" />
+                      </button>
+                    </div>
+                  </TableCell>
+                </motion.tr>
+              ))}
+            </AnimatePresence>
+          </TableBody>
+        </Table>
+      </div>
+      <p className="text-xs text-muted-foreground mt-3 tabular-nums">{sorted.length} audit{sorted.length > 1 ? "s" : ""} affiché{sorted.length > 1 ? "s" : ""}</p>
+    </div>
+  );
+}
