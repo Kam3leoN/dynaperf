@@ -8,6 +8,7 @@ import { ScoreDistributionChart } from "@/components/ScoreDistributionChart";
 import { PartenaireLeaderboard } from "@/components/PartenaireLeaderboard";
 import { ScoresByTypeChart } from "@/components/ScoresByTypeChart";
 import { AuditTable } from "@/components/AuditTable";
+import { ExcelExport } from "@/components/ExcelExport";
 import { Activity } from "lucide-react";
 
 const Index = () => {
@@ -15,12 +16,11 @@ const Index = () => {
     audits, filters, setFilters,
     scoresByType, collaborateurStats, monthlyData,
     partenaireStats, scoreDistribution, globalStats,
-    addAudit, updateAudit, deleteAudit,
+    addAudit, updateAudit, deleteAudit, loading,
   } = useAuditData();
 
   return (
     <div className="min-h-screen bg-secondary/30">
-      {/* Header */}
       <header className="bg-card shadow-soft border-b border-border px-6 py-4">
         <div className="max-w-[1440px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -32,46 +32,46 @@ const Index = () => {
               <p className="text-xs text-muted-foreground">Monitoring des audits partenaires</p>
             </div>
           </div>
-          <FiltersBar filters={filters} setFilters={setFilters} />
+          <div className="flex items-center gap-3">
+            <ExcelExport audits={audits} />
+            <FiltersBar filters={filters} setFilters={setFilters} />
+          </div>
         </div>
       </header>
 
-      {/* Content */}
       <main className="max-w-[1440px] mx-auto px-6 py-6 space-y-6">
-        {/* L1: Global Stats */}
-        <GlobalStats {...globalStats} />
-
-        {/* L2: Score cards by type */}
-        <section>
-          <h2 className="font-sora text-sm font-semibold text-foreground mb-3">Performance par type d'événement</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {scoresByType.map((s, i) => (
-              <ScoreCard key={s.type} {...s} index={i} />
-            ))}
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <p className="text-muted-foreground font-sora">Chargement des audits…</p>
           </div>
-        </section>
-
-        {/* L3: Charts row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <MonthlyChart data={monthlyData} />
-          <ScoresByTypeChart data={scoresByType} />
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <ScoreDistributionChart data={scoreDistribution} />
-          <CollaborateurTracker data={collaborateurStats} />
-        </div>
-
-        {/* Leaderboard */}
-        <PartenaireLeaderboard data={partenaireStats} />
-
-        {/* CRUD Table */}
-        <AuditTable
-          audits={audits}
-          onAdd={addAudit}
-          onUpdate={updateAudit}
-          onDelete={deleteAudit}
-        />
+        ) : (
+          <>
+            <GlobalStats {...globalStats} />
+            <section>
+              <h2 className="font-sora text-sm font-semibold text-foreground mb-3">Performance par type d'événement</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {scoresByType.map((s, i) => (
+                  <ScoreCard key={s.type} {...s} index={i} />
+                ))}
+              </div>
+            </section>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <MonthlyChart data={monthlyData} />
+              <ScoresByTypeChart data={scoresByType} />
+            </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <ScoreDistributionChart data={scoreDistribution} />
+              <CollaborateurTracker data={collaborateurStats} />
+            </div>
+            <PartenaireLeaderboard data={partenaireStats} />
+            <AuditTable
+              audits={audits}
+              onAdd={addAudit}
+              onUpdate={updateAudit}
+              onDelete={deleteAudit}
+            />
+          </>
+        )}
       </main>
     </div>
   );
