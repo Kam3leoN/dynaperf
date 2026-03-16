@@ -214,7 +214,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
                         <Pencil className="h-3.5 w-3.5 text-muted-foreground" fill="currentColor" />
                       </button>
                       <button onClick={() => onDelete(a.id)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors">
-                        <Trash2 className="h-3.5 w-3.5 text-primary" />
+                        <Trash2 className="h-3.5 w-3.5 text-primary" fill="currentColor" />
                       </button>
                     </div>
                   </TableCell>
