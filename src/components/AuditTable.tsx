@@ -90,7 +90,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button onClick={openNew} size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5">
-                <Plus className="h-4 w-4" /> Ajouter
+                <Plus className="h-4 w-4" fill="currentColor" /> Ajouter
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
