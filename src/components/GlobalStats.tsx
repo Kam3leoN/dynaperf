@@ -35,7 +35,7 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
           </div>
           {s.warn && (
             <p className="text-xs text-primary mt-2 flex items-center gap-1">
-              <TrendingDown className="h-3 w-3" /> À noter
+              <TrendingDown className="h-3 w-3" fill="currentColor" /> À noter
             </p>
           )}
           {s.highlight && s.value >= 6.5 && (
