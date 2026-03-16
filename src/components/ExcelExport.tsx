@@ -45,7 +45,7 @@ export function ExcelExport({ audits }: ExcelExportProps) {
 
   return (
     <Button onClick={handleExport} variant="outline" size="sm" className="gap-1.5 rounded-md">
-      <Download className="h-4 w-4" /> Exporter Excel
+      <Download className="h-4 w-4" fill="currentColor" /> Exporter Excel
     </Button>
   );
 }

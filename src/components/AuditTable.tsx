@@ -71,7 +71,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
     <TableHead className="cursor-pointer select-none" onClick={() => handleSort(k)}>
       <span className="flex items-center gap-1 font-sora text-xs uppercase tracking-wider">
         {label}
-        <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+        <ArrowUpDown className="h-3 w-3 text-muted-foreground" fill="currentColor" />
       </span>
     </TableHead>
   );
@@ -90,7 +90,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button onClick={openNew} size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5">
-                <Plus className="h-4 w-4" /> Ajouter
+                <Plus className="h-4 w-4" fill="currentColor" /> Ajouter
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
@@ -211,10 +211,10 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
                   <TableCell>
                     <div className="flex gap-1">
                       <button onClick={() => openEdit(a)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors">
-                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" />
+                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" fill="currentColor" />
                       </button>
                       <button onClick={() => onDelete(a.id)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors">
-                        <Trash2 className="h-3.5 w-3.5 text-primary" />
+                        <Trash2 className="h-3.5 w-3.5 text-primary" fill="currentColor" />
                       </button>
                     </div>
                   </TableCell>
