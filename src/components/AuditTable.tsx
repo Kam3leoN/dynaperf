@@ -71,7 +71,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
     <TableHead className="cursor-pointer select-none" onClick={() => handleSort(k)}>
       <span className="flex items-center gap-1 font-sora text-xs uppercase tracking-wider">
         {label}
-        <ArrowUpDown className="h-3 w-3 text-muted-foreground" />
+        <ArrowUpDown className="h-3 w-3 text-muted-foreground" fill="currentColor" />
       </span>
     </TableHead>
   );

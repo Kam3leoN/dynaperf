@@ -54,7 +54,7 @@ export function PartenaireLeaderboard({ data }: PartenaireLeaderboardProps) {
             >
               {isPodium ? (
                 <div className="w-7 h-7 flex items-center justify-center">
-                  <Trophy className={`h-5 w-5 ${medal.icon}`} />
+                  <Trophy className={`h-5 w-5 ${medal.icon}`} fill="currentColor" />
                 </div>
               ) : (
                 <span className="w-7 h-7 flex items-center justify-center font-sora text-xs font-bold text-muted-foreground tabular-nums">

@@ -16,7 +16,7 @@ export function FiltersBar({ filters, setFilters }: FiltersBarProps) {
   return (
     <div className="flex items-center gap-3 flex-wrap">
       <div className="flex items-center gap-2 text-muted-foreground">
-        <Filter className="h-4 w-4" />
+        <Filter className="h-4 w-4" fill="currentColor" />
         <span className="font-sora text-sm font-semibold tracking-tight">Filtres</span>
       </div>
       <Select value={filters.auditeur} onValueChange={(v) => update("auditeur", v)}>

@@ -25,7 +25,7 @@ const Index = () => {
         <div className="max-w-[1440px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
-              <Activity className="h-4 w-4 text-primary-foreground" />
+              <Activity className="h-4 w-4 text-primary-foreground" fill="currentColor" />
             </div>
             <div>
               <h1 className="font-sora text-lg font-bold text-foreground tracking-tight">AuditPulse</h1>

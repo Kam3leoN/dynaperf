@@ -40,7 +40,7 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
           )}
           {s.highlight && s.value >= 6.5 && (
             <p className="text-xs text-foreground/60 mt-2 flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" /> Bonne performance
+              <TrendingUp className="h-3 w-3" fill="currentColor" /> Bonne performance
             </p>
           )}
         </motion.div>
