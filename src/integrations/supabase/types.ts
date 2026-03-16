@@ -14,7 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      audits: {
+        Row: {
+          auditeur: string
+          created_at: string
+          date: string
+          id: string
+          lieu: string | null
+          mois_versement: string
+          note: number | null
+          partenaire: string
+          statut: string
+          type_evenement: string
+          updated_at: string
+        }
+        Insert: {
+          auditeur: string
+          created_at?: string
+          date: string
+          id?: string
+          lieu?: string | null
+          mois_versement: string
+          note?: number | null
+          partenaire: string
+          statut?: string
+          type_evenement: string
+          updated_at?: string
+        }
+        Update: {
+          auditeur?: string
+          created_at?: string
+          date?: string
+          id?: string
+          lieu?: string | null
+          mois_versement?: string
+          note?: number | null
+          partenaire?: string
+          statut?: string
+          type_evenement?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
