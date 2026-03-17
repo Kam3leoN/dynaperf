@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trophy } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTrophy } from "@fortawesome/free-solid-svg-icons";
 
 interface PartenaireLeaderboardProps {
   data: { nom: string; type: string; count: number; avg: number | null }[];
@@ -54,7 +55,7 @@ export function PartenaireLeaderboard({ data }: PartenaireLeaderboardProps) {
             >
               {isPodium ? (
                 <div className="w-7 h-7 flex items-center justify-center">
-                  <Trophy className={`h-5 w-5 ${medal.icon}`} fill="currentColor" />
+                  <FontAwesomeIcon icon={faTrophy} className={`h-5 w-5 ${medal.icon}`} />
                 </div>
               ) : (
                 <span className="w-7 h-7 flex items-center justify-center font-sora text-xs font-bold text-muted-foreground tabular-nums">
