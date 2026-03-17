@@ -11,20 +11,20 @@ export function ScoreDistributionChart({ data }: ScoreDistributionChartProps) {
       <div className="h-[240px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(33,33,33,0.06)" vertical={false} />
-            <XAxis dataKey="range" tick={{ fontSize: 11, fill: "rgba(33,33,33,0.6)" }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: "rgba(33,33,33,0.6)" }} axisLine={false} tickLine={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" vertical={false} />
+            <XAxis dataKey="range" tick={{ fontSize: 11, fill: "hsl(var(--chart-tick))" }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: "hsl(var(--chart-tick))" }} axisLine={false} tickLine={false} />
             <Tooltip
               contentStyle={{
-                backgroundColor: "#212121",
+                backgroundColor: "hsl(var(--foreground))",
                 border: "none",
                 borderRadius: 6,
-                color: "#fff",
+                color: "hsl(var(--background))",
                 fontSize: 12,
                 fontFamily: "Sora",
               }}
             />
-            <Bar dataKey="count" fill="#ee4542" radius={[4, 4, 0, 0]} animationDuration={600} />
+            <Bar dataKey="count" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} animationDuration={600} />
           </BarChart>
         </ResponsiveContainer>
       </div>

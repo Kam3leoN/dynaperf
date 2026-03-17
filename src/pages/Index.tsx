@@ -9,8 +9,11 @@ import { PartenaireLeaderboard } from "@/components/PartenaireLeaderboard";
 import { ScoresByTypeChart } from "@/components/ScoresByTypeChart";
 import { AuditTable } from "@/components/AuditTable";
 import { ExcelExport } from "@/components/ExcelExport";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faWaveSquare } from "@fortawesome/free-solid-svg-icons";
+import { faWaveSquare, faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
   const {
@@ -19,6 +22,8 @@ const Index = () => {
     partenaireStats, scoreDistribution, globalStats,
     addAudit, updateAudit, deleteAudit, loading,
   } = useAuditData();
+
+  const { signOut } = useAuth();
 
   return (
     <div className="min-h-screen bg-secondary/30">
@@ -36,6 +41,10 @@ const Index = () => {
           <div className="flex items-center gap-3">
             <ExcelExport audits={audits} />
             <FiltersBar filters={filters} setFilters={setFilters} />
+            <ThemeToggle />
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={signOut} title="Déconnexion">
+              <FontAwesomeIcon icon={faRightFromBracket} className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </header>

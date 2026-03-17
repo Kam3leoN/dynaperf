@@ -13,28 +13,28 @@ export function MonthlyChart({ data }: MonthlyChartProps) {
           <AreaChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
             <defs>
               <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#212121" stopOpacity={0.08} />
-                <stop offset="100%" stopColor="#212121" stopOpacity={0} />
+                <stop offset="0%" stopColor="hsl(var(--chart-area))" stopOpacity={0.08} />
+                <stop offset="100%" stopColor="hsl(var(--chart-area))" stopOpacity={0} />
               </linearGradient>
             </defs>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(33,33,33,0.06)" vertical={false} />
-            <XAxis dataKey="mois" tick={{ fontSize: 11, fill: "rgba(33,33,33,0.6)" }} axisLine={false} tickLine={false} />
-            <YAxis tick={{ fontSize: 11, fill: "rgba(33,33,33,0.6)" }} axisLine={false} tickLine={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" vertical={false} />
+            <XAxis dataKey="mois" tick={{ fontSize: 11, fill: "hsl(var(--chart-tick))" }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: "hsl(var(--chart-tick))" }} axisLine={false} tickLine={false} />
             <Tooltip
               contentStyle={{
-                backgroundColor: "#212121",
+                backgroundColor: "hsl(var(--foreground))",
                 border: "none",
                 borderRadius: 6,
-                color: "#fff",
+                color: "hsl(var(--background))",
                 fontSize: 12,
                 fontFamily: "Sora",
               }}
-              labelStyle={{ color: "#fff" }}
+              labelStyle={{ color: "hsl(var(--background))" }}
             />
             <Area
               type="monotone"
               dataKey="total"
-              stroke="#212121"
+              stroke="hsl(var(--foreground))"
               strokeWidth={2}
               fill="url(#areaGrad)"
               animationDuration={800}
