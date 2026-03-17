@@ -38,10 +38,10 @@ export function ScoresByTypeChart({ data, index }: ScoresByTypeChartProps) {
       <div className="h-[160px]">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={chartData} margin={{ top: 5, right: 5, left: -25, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(33,33,33,0.06)" vertical={false} />
-            <XAxis dataKey="label" tick={{ fontSize: 10, fill: "rgba(33,33,33,0.6)" }} axisLine={false} tickLine={false} />
-            <YAxis domain={[0, 10]} tick={{ fontSize: 10, fill: "rgba(33,33,33,0.6)" }} axisLine={false} tickLine={false} />
-            <Tooltip content={<CustomTooltip />} cursor={{ fill: "rgba(33,33,33,0.04)" }} />
+            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--chart-grid))" vertical={false} />
+            <XAxis dataKey="label" tick={{ fontSize: 10, fill: "hsl(var(--chart-tick))" }} axisLine={false} tickLine={false} />
+            <YAxis domain={[0, 10]} tick={{ fontSize: 10, fill: "hsl(var(--chart-tick))" }} axisLine={false} tickLine={false} />
+            <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--chart-grid))" }} />
             <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={28} animationDuration={600}>
               {chartData.map((entry, i) => (
                 <Cell key={i} fill={entry.color} />
