@@ -5,7 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, ArrowUpDown } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faPlus, faPenToSquare, faTrashCan, faSort } from "@fortawesome/free-solid-svg-icons";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface AuditTableProps {
@@ -71,7 +72,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
     <TableHead className="cursor-pointer select-none" onClick={() => handleSort(k)}>
       <span className="flex items-center gap-1 font-sora text-xs uppercase tracking-wider">
         {label}
-        <ArrowUpDown className="h-3 w-3 text-muted-foreground" fill="currentColor" />
+        <FontAwesomeIcon icon={faSort} className="h-3 w-3 text-muted-foreground" />
       </span>
     </TableHead>
   );
@@ -90,7 +91,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
               <Button onClick={openNew} size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5">
-                <Plus className="h-4 w-4" fill="currentColor" /> Ajouter
+                <FontAwesomeIcon icon={faPlus} className="h-4 w-4" /> Ajouter
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
@@ -211,10 +212,10 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
                   <TableCell>
                     <div className="flex gap-1">
                       <button onClick={() => openEdit(a)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors">
-                        <Pencil className="h-3.5 w-3.5 text-muted-foreground" fill="currentColor" />
+                        <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
                       </button>
                       <button onClick={() => onDelete(a.id)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors">
-                        <Trash2 className="h-3.5 w-3.5 text-primary" fill="currentColor" />
+                        <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
                       </button>
                     </div>
                   </TableCell>

@@ -1,7 +1,8 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AUDITEURS, TYPES_EVENEMENT, MOIS_ORDRE } from "@/data/audits";
 import { Filters } from "@/hooks/useAuditData";
-import { Filter } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faFilter } from "@fortawesome/free-solid-svg-icons";
 
 interface FiltersBarProps {
   filters: Filters;
@@ -16,7 +17,7 @@ export function FiltersBar({ filters, setFilters }: FiltersBarProps) {
   return (
     <div className="flex items-center gap-3 flex-wrap">
       <div className="flex items-center gap-2 text-muted-foreground">
-        <Filter className="h-4 w-4" fill="currentColor" />
+        <FontAwesomeIcon icon={faFilter} className="h-4 w-4" />
         <span className="font-sora text-sm font-semibold tracking-tight">Filtres</span>
       </div>
       <Select value={filters.auditeur} onValueChange={(v) => update("auditeur", v)}>

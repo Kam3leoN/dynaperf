@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowTrendUp, faArrowTrendDown } from "@fortawesome/free-solid-svg-icons";
 
 interface GlobalStatsProps {
   totalAudits: number;
@@ -10,8 +11,8 @@ interface GlobalStatsProps {
 
 export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttente }: GlobalStatsProps) {
   const stats = [
-    { label: "Total audits", value: totalAudits, suffix: "" },
-    { label: "Audits notés", value: auditsNotes, suffix: "" },
+    { label: "Audits Programmés", value: totalAudits, suffix: "" },
+    { label: "Audits Réalisés", value: auditsNotes, suffix: "" },
     { label: "Moyenne globale", value: moyenneGlobale, suffix: "/10", highlight: true },
     { label: "En attente", value: enAttente, suffix: "", warn: enAttente > 0 },
   ];
@@ -35,12 +36,12 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
           </div>
           {s.warn && (
             <p className="text-xs text-primary mt-2 flex items-center gap-1">
-              <TrendingDown className="h-3 w-3" fill="currentColor" /> À noter
+              <FontAwesomeIcon icon={faArrowTrendDown} className="h-3 w-3" /> À noter
             </p>
           )}
           {s.highlight && s.value >= 6.5 && (
             <p className="text-xs text-foreground/60 mt-2 flex items-center gap-1">
-              <TrendingUp className="h-3 w-3" fill="currentColor" /> Bonne performance
+              <FontAwesomeIcon icon={faArrowTrendUp} className="h-3 w-3" /> Bonne performance
             </p>
           )}
         </motion.div>

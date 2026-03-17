@@ -1,6 +1,7 @@
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
-import { Download } from "lucide-react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faDownload } from "@fortawesome/free-solid-svg-icons";
 
 interface Audit {
   date: string;
@@ -34,7 +35,6 @@ export function ExcelExport({ audits }: ExcelExportProps) {
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Audits");
 
-    // Auto-size columns
     const colWidths = Object.keys(rows[0] || {}).map((key) => ({
       wch: Math.max(key.length, ...rows.map((r) => String((r as any)[key]).length)) + 2,
     }));
@@ -45,7 +45,7 @@ export function ExcelExport({ audits }: ExcelExportProps) {
 
   return (
     <Button onClick={handleExport} variant="outline" size="sm" className="gap-1.5 rounded-md">
-      <Download className="h-4 w-4" fill="currentColor" /> Exporter Excel
+      <FontAwesomeIcon icon={faDownload} className="h-4 w-4" /> Exporter Excel
     </Button>
   );
 }
