@@ -6,97 +6,97 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 13%;
+    --background: 0 0% 98%;
+    --foreground: 200 52% 11%;
 
     --card: 0 0% 100%;
-    --card-foreground: 0 0% 13%;
+    --card-foreground: 200 52% 11%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 13%;
+    --popover-foreground: 200 52% 11%;
 
-    --primary: 1 84% 60%;
+    --primary: 353 100% 44%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 0 0% 13%;
+    --secondary: 200 20% 95%;
+    --secondary-foreground: 200 52% 11%;
 
-    --muted: 0 0% 96%;
-    --muted-foreground: 0 0% 13% / 0.6;
+    --muted: 200 10% 94%;
+    --muted-foreground: 200 20% 40%;
 
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 13%;
+    --accent: 42 100% 57%;
+    --accent-foreground: 200 52% 11%;
 
-    --destructive: 1 84% 60%;
+    --destructive: 0 84% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 13% / 0.08;
-    --input: 0 0% 13% / 0.08;
-    --ring: 1 84% 60%;
+    --border: 200 20% 88%;
+    --input: 200 20% 88%;
+    --ring: 353 100% 44%;
 
     --radius: 0.75rem;
 
-    --shadow-soft: 0 1px 2px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.03);
-    --shadow-hover: 0 2px 8px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.06);
+    --shadow-soft: 0 1px 3px rgba(14,34,44,0.06), 0 4px 12px rgba(14,34,44,0.04);
+    --shadow-hover: 0 2px 8px rgba(14,34,44,0.1), 0 8px 24px rgba(14,34,44,0.08);
 
-    --chart-grid: 0 0% 13% / 0.06;
-    --chart-tick: 0 0% 13% / 0.6;
-    --chart-area: 0 0% 13%;
+    --chart-grid: 200 20% 40% / 0.1;
+    --chart-tick: 200 20% 40% / 0.7;
+    --chart-area: 200 52% 11%;
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 0 0% 13%;
-    --sidebar-primary: 1 84% 60%;
+    --sidebar-background: 200 52% 11%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 353 100% 44%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 96%;
-    --sidebar-accent-foreground: 0 0% 13%;
-    --sidebar-border: 0 0% 13% / 0.08;
-    --sidebar-ring: 1 84% 60%;
+    --sidebar-accent: 200 40% 18%;
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 200 30% 20%;
+    --sidebar-ring: 353 100% 44%;
   }
 
   .dark {
-    --background: 0 0% 7%;
-    --foreground: 0 0% 95%;
+    --background: 200 52% 8%;
+    --foreground: 200 10% 92%;
 
-    --card: 0 0% 10%;
-    --card-foreground: 0 0% 95%;
+    --card: 200 45% 12%;
+    --card-foreground: 200 10% 92%;
 
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 95%;
+    --popover: 200 45% 12%;
+    --popover-foreground: 200 10% 92%;
 
-    --primary: 1 84% 60%;
+    --primary: 353 100% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 95%;
+    --secondary: 200 35% 16%;
+    --secondary-foreground: 200 10% 92%;
 
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 95% / 0.6;
+    --muted: 200 30% 18%;
+    --muted-foreground: 200 15% 60%;
 
-    --accent: 0 0% 15%;
-    --accent-foreground: 0 0% 95%;
+    --accent: 42 100% 57%;
+    --accent-foreground: 200 52% 11%;
 
-    --destructive: 1 84% 55%;
+    --destructive: 0 84% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 0 0% 95% / 0.1;
-    --input: 0 0% 95% / 0.1;
-    --ring: 1 84% 60%;
+    --border: 200 30% 20%;
+    --input: 200 30% 20%;
+    --ring: 353 100% 50%;
 
-    --shadow-soft: 0 1px 2px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2);
+    --shadow-soft: 0 1px 3px rgba(0,0,0,0.3), 0 4px 12px rgba(0,0,0,0.2);
     --shadow-hover: 0 2px 8px rgba(0,0,0,0.4), 0 8px 24px rgba(0,0,0,0.3);
 
-    --chart-grid: 0 0% 95% / 0.08;
-    --chart-tick: 0 0% 95% / 0.6;
-    --chart-area: 0 0% 95%;
+    --chart-grid: 200 15% 60% / 0.12;
+    --chart-tick: 200 15% 60% / 0.7;
+    --chart-area: 200 10% 92%;
 
-    --sidebar-background: 0 0% 9%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 1 84% 60%;
+    --sidebar-background: 200 52% 8%;
+    --sidebar-foreground: 200 10% 92%;
+    --sidebar-primary: 353 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 0 0% 15%;
-    --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 0 0% 95% / 0.1;
-    --sidebar-ring: 1 84% 60%;
+    --sidebar-accent: 200 35% 16%;
+    --sidebar-accent-foreground: 200 10% 92%;
+    --sidebar-border: 200 30% 20%;
+    --sidebar-ring: 353 100% 50%;
   }
 }
 
