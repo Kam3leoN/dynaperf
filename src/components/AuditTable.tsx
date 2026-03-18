@@ -69,7 +69,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
   };
 
   const SortHeader = ({ label, k }: { label: string; k: SortKey }) => (
-    <TableHead className="cursor-pointer select-none" onClick={() => handleSort(k)}>
+    <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => handleSort(k)}>
       <span className="flex items-center gap-1 font-sora text-xs uppercase tracking-wider">
         {label}
         <FontAwesomeIcon icon={faSort} className="h-3 w-3 text-muted-foreground" />
@@ -77,24 +77,64 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
     </TableHead>
   );
 
+  /* Mobile card view for each audit */
+  const MobileCard = ({ a }: { a: Audit }) => (
+    <motion.div
+      key={a.id}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="bg-card border border-border rounded-lg p-3 space-y-2"
+    >
+      <div className="flex items-start justify-between">
+        <div>
+          <p className="text-sm font-semibold text-foreground">{a.partenaire}</p>
+          <p className="text-xs text-muted-foreground">{a.lieu || "—"}</p>
+        </div>
+        <div className="flex gap-1 shrink-0">
+          <button onClick={() => openEdit(a)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors">
+            <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
+          </button>
+          <button onClick={() => onDelete(a.id)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors">
+            <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
+          </button>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="tabular-nums text-muted-foreground">{new Date(a.date).toLocaleDateString("fr-FR")}</span>
+        <span className="px-1.5 py-0.5 rounded-sm bg-secondary font-medium">{a.typeEvenement}</span>
+        <span className="text-muted-foreground">{a.auditeur}</span>
+      </div>
+      <div className="flex items-center justify-between">
+        <span className={`text-sm font-bold tabular-nums ${a.note !== null ? (a.note >= 7 ? "text-foreground" : "text-primary") : "text-muted-foreground"}`}>
+          {a.note !== null ? a.note.toFixed(2) : "—"}
+        </span>
+        <span className={`text-xs px-2 py-0.5 rounded-sm font-medium ${a.statut === "OK" ? "bg-foreground/5 text-foreground" : "bg-primary/10 text-primary"}`}>
+          {a.statut === "OK" ? "Noté" : "En attente"}
+        </span>
+      </div>
+    </motion.div>
+  );
+
   return (
-    <div className="bg-card rounded-lg shadow-soft p-5">
+    <div className="bg-card rounded-lg shadow-soft p-4 sm:p-5">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h3 className="font-sora text-sm font-semibold text-foreground">Registre des audits</h3>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 flex-1 sm:flex-none justify-end">
           <Input
             placeholder="Rechercher..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-[200px] h-9 text-sm rounded-md"
+            className="w-full sm:w-[200px] h-9 text-sm rounded-md"
           />
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button onClick={openNew} size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5">
-                <FontAwesomeIcon icon={faPlus} className="h-4 w-4" /> Ajouter
+              <Button onClick={openNew} size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5 shrink-0">
+                <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
+                <span className="hidden sm:inline">Ajouter</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-lg">
+            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="font-sora">{editId ? "Modifier l'audit" : "Nouvel audit"}</DialogTitle>
               </DialogHeader>
@@ -170,7 +210,8 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
         </div>
       </div>
 
-      <div className="overflow-x-auto">
+      {/* Desktop table */}
+      <div className="hidden sm:block overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
@@ -225,6 +266,16 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
           </TableBody>
         </Table>
       </div>
+
+      {/* Mobile card list */}
+      <div className="sm:hidden space-y-2">
+        <AnimatePresence>
+          {sorted.map((a) => (
+            <MobileCard key={a.id} a={a} />
+          ))}
+        </AnimatePresence>
+      </div>
+
       <p className="text-xs text-muted-foreground mt-3 tabular-nums">{sorted.length} audit{sorted.length > 1 ? "s" : ""} affiché{sorted.length > 1 ? "s" : ""}</p>
     </div>
   );
