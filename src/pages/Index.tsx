@@ -26,7 +26,7 @@ const Index = () => {
           <GlobalStats {...globalStats} />
           <section>
             <h2 className="font-sora text-sm font-semibold text-foreground mb-3">Comparaison par type d'événement</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {scoresByType.map((s, i) => (
                 <ScoresByTypeChart key={s.type} data={s} index={i} />
               ))}
@@ -34,17 +34,17 @@ const Index = () => {
           </section>
           <section>
             <h2 className="font-sora text-sm font-semibold text-foreground mb-3">Performance par type d'événement</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {scoresByType.map((s, i) => (
                 <ScoreCard key={s.type} {...s} index={i} />
               ))}
             </div>
           </section>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
             <MonthlyChart data={monthlyData} />
             <ScoreDistributionChart data={scoreDistribution} />
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
             <CollaborateurTracker data={collaborateurStats} />
             <PartenaireLeaderboard data={partenaireStats} />
           </div>

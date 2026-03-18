@@ -18,29 +18,29 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       {stats.map((s, i) => (
         <motion.div
           key={s.label}
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: i * 0.05, duration: 0.3 }}
-          className="bg-card rounded-lg p-5 shadow-soft"
+          className="bg-card rounded-lg p-3 sm:p-5 shadow-soft"
         >
-          <p className="font-sora text-xs font-semibold text-muted-foreground uppercase tracking-wider">{s.label}</p>
-          <div className="flex items-baseline gap-1.5 mt-2">
-            <span className={`font-sora text-3xl font-bold tabular-nums ${s.highlight ? "text-primary" : "text-foreground"}`}>
+          <p className="font-sora text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider leading-tight">{s.label}</p>
+          <div className="flex items-baseline gap-1 sm:gap-1.5 mt-1.5 sm:mt-2">
+            <span className={`font-sora text-2xl sm:text-3xl font-bold tabular-nums ${s.highlight ? "text-primary" : "text-foreground"}`}>
               {s.value}
             </span>
-            {s.suffix && <span className="text-sm text-muted-foreground">{s.suffix}</span>}
+            {s.suffix && <span className="text-xs sm:text-sm text-muted-foreground">{s.suffix}</span>}
           </div>
           {s.warn && (
-            <p className="text-xs text-primary mt-2 flex items-center gap-1">
+            <p className="text-[10px] sm:text-xs text-primary mt-1.5 sm:mt-2 flex items-center gap-1">
               <FontAwesomeIcon icon={faArrowTrendDown} className="h-3 w-3" /> À noter
             </p>
           )}
           {s.highlight && s.value >= 6.5 && (
-            <p className="text-xs text-foreground/60 mt-2 flex items-center gap-1">
+            <p className="text-[10px] sm:text-xs text-foreground/60 mt-1.5 sm:mt-2 flex items-center gap-1">
               <FontAwesomeIcon icon={faArrowTrendUp} className="h-3 w-3" /> Bonne performance
             </p>
           )}
