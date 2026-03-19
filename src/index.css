@@ -43,6 +43,12 @@
     --chart-tick: 200 20% 40% / 0.7;
     --chart-area: 200 52% 11%;
 
+    /* Event type colors */
+    --color-rd-presentiel: 2 80% 58%;
+    --color-club-affaires: 42 100% 57%;
+    --color-rd-distanciel: 196 65% 23%;
+    --color-rdv-commercial: 177 40% 55%;
+
     --sidebar-background: 200 52% 11%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 353 100% 44%;
