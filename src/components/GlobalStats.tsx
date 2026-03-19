@@ -7,12 +7,14 @@ interface GlobalStatsProps {
   auditsNotes: number;
   moyenneGlobale: number;
   enAttente: number;
+  objectifTotal?: number;
+  objectifNotes?: number;
 }
 
-export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttente }: GlobalStatsProps) {
+export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttente, objectifTotal, objectifNotes }: GlobalStatsProps) {
   const stats = [
-    { label: "Audits Programmés", value: totalAudits, suffix: "" },
-    { label: "Audits Réalisés", value: auditsNotes, suffix: "" },
+    { label: "Audits Programmés", value: totalAudits, objectif: objectifTotal, suffix: "" },
+    { label: "Audits Réalisés", value: auditsNotes, objectif: objectifNotes, suffix: "" },
     { label: "Moyenne globale", value: moyenneGlobale, suffix: "/10", highlight: true },
     { label: "En attente", value: enAttente, suffix: "", warn: enAttente > 0 },
   ];
@@ -32,8 +34,25 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
             <span className={`font-sora text-2xl sm:text-3xl font-bold tabular-nums ${s.highlight ? "text-primary" : "text-foreground"}`}>
               {s.value}
             </span>
-            {s.suffix && <span className="text-xs sm:text-sm text-muted-foreground">{s.suffix}</span>}
+            {s.objectif && s.objectif > 0 ? (
+              <span className="text-sm sm:text-base text-muted-foreground font-sora tabular-nums">/{s.objectif}</span>
+            ) : s.suffix ? (
+              <span className="text-xs sm:text-sm text-muted-foreground">{s.suffix}</span>
+            ) : null}
           </div>
+          {s.objectif && s.objectif > 0 && (
+            <div className="mt-2">
+              <div className="w-full h-1.5 bg-secondary rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(100, (s.value / s.objectif) * 100)}%` }}
+                />
+              </div>
+              <p className="text-[10px] text-muted-foreground mt-1 tabular-nums">
+                {((s.value / s.objectif) * 100).toFixed(0)}%
+              </p>
+            </div>
+          )}
           {s.warn && (
             <p className="text-[10px] sm:text-xs text-primary mt-1.5 sm:mt-2 flex items-center gap-1">
               <FontAwesomeIcon icon={faArrowTrendDown} className="h-3 w-3" /> À noter
