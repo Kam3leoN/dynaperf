@@ -6,6 +6,7 @@ import { MonthlyChart } from "@/components/MonthlyChart";
 import { ScoreDistributionChart } from "@/components/ScoreDistributionChart";
 import { PartenaireLeaderboard } from "@/components/PartenaireLeaderboard";
 import { ScoresByTypeChart } from "@/components/ScoresByTypeChart";
+import { PodiumCards } from "@/components/PodiumCards";
 import { AppLayout } from "@/components/AppLayout";
 
 const Index = () => {
@@ -15,6 +16,11 @@ const Index = () => {
     partenaireStats, scoreDistribution, globalStats, loading,
   } = useAuditData();
 
+  // Compute objectifs based on filter
+  const objectifTotal = filters.auditeur !== "Tous"
+    ? collaborateurStats.find((c) => c.nom === filters.auditeur)?.objectif ?? 0
+    : collaborateurStats.reduce((sum, c) => sum + c.objectif, 0);
+
   return (
     <AppLayout audits={audits} filters={filters} setFilters={setFilters}>
       {loading ? (
@@ -23,7 +29,15 @@ const Index = () => {
         </div>
       ) : (
         <>
-          <GlobalStats {...globalStats} />
+          <GlobalStats
+            {...globalStats}
+            objectifTotal={objectifTotal}
+            objectifNotes={objectifTotal}
+          />
+          <section>
+            <h2 className="font-sora text-sm font-semibold text-foreground mb-3">🏆 Podium par type d'événement</h2>
+            <PodiumCards data={partenaireStats} />
+          </section>
           <section>
             <h2 className="font-sora text-sm font-semibold text-foreground mb-3">Comparaison par type d'événement</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
