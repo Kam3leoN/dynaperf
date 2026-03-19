@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { getTypeColorHSL } from "@/lib/eventTypeColors";
 
 interface ScoreCardProps {
   type: string;
@@ -10,6 +11,8 @@ interface ScoreCardProps {
 }
 
 export function ScoreCard({ type, avg, min, max, count, index }: ScoreCardProps) {
+  const typeColor = getTypeColorHSL(type);
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
@@ -22,7 +25,7 @@ export function ScoreCard({ type, avg, min, max, count, index }: ScoreCardProps)
         {type}
       </h3>
       <div className="flex items-baseline gap-2 mt-2">
-        <span className="font-sora text-4xl font-bold text-primary tabular-nums">{avg.toFixed(1)}</span>
+        <span className="font-sora text-4xl font-bold tabular-nums" style={{ color: typeColor }}>{avg.toFixed(1)}</span>
         <span className="text-sm text-muted-foreground">/10</span>
       </div>
       <p className="text-xs text-muted-foreground mt-1">{count} audit{count > 1 ? "s" : ""} noté{count > 1 ? "s" : ""}</p>
@@ -32,15 +35,15 @@ export function ScoreCard({ type, avg, min, max, count, index }: ScoreCardProps)
         <div className="h-1 w-full bg-secondary rounded-full relative">
           {min > 0 && (
             <div
-              className="absolute h-2.5 w-2.5 rounded-full bg-foreground/30 -top-[3px]"
-              style={{ left: `${(min / 10) * 100}%` }}
+              className="absolute h-2.5 w-2.5 rounded-full -top-[3px]"
+              style={{ left: `${(min / 10) * 100}%`, backgroundColor: `${typeColor}60` }}
               title={`Min: ${min}`}
             />
           )}
           {max > 0 && (
             <div
-              className="absolute h-2.5 w-2.5 rounded-full bg-primary -top-[3px]"
-              style={{ left: `${(max / 10) * 100}%` }}
+              className="absolute h-2.5 w-2.5 rounded-full -top-[3px]"
+              style={{ left: `${(max / 10) * 100}%`, backgroundColor: typeColor }}
               title={`Max: ${max}`}
             />
           )}
