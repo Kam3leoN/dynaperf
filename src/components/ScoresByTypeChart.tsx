@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
+import { getTypeColorHSL } from "@/lib/eventTypeColors";
 
 interface ScoresByTypeChartProps {
   data: { type: string; avg: number; min: number; max: number; count: number };
@@ -18,10 +19,12 @@ const CustomTooltip = ({ active, payload }: any) => {
 };
 
 export function ScoresByTypeChart({ data, index }: ScoresByTypeChartProps) {
+  const typeColor = getTypeColorHSL(data.type);
+
   const chartData = [
-    { label: "Min", value: data.min, color: "hsl(var(--muted-foreground) / 0.3)" },
-    { label: "Moyenne", value: data.avg, color: "hsl(var(--foreground))" },
-    { label: "Max", value: data.max, color: "hsl(var(--primary))" },
+    { label: "Min", value: data.min, color: `${typeColor}50` },
+    { label: "Moyenne", value: data.avg, color: typeColor },
+    { label: "Max", value: data.max, color: typeColor },
   ];
 
   return (
@@ -44,7 +47,7 @@ export function ScoresByTypeChart({ data, index }: ScoresByTypeChartProps) {
             <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--chart-grid))" }} />
             <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={28} animationDuration={600}>
               {chartData.map((entry, i) => (
-                <Cell key={i} fill={entry.color} />
+                <Cell key={i} fill={i === 0 ? `hsl(var(--muted-foreground) / 0.3)` : typeColor} />
               ))}
             </Bar>
           </BarChart>
@@ -52,8 +55,8 @@ export function ScoresByTypeChart({ data, index }: ScoresByTypeChartProps) {
       </div>
       <div className="flex gap-3 mt-2 text-[10px] text-muted-foreground">
         <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-muted-foreground/30" /> Min</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-foreground" /> Moy</span>
-        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-primary" /> Max</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm" style={{ backgroundColor: typeColor }} /> Moy</span>
+        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-sm" style={{ backgroundColor: typeColor }} /> Max</span>
       </div>
     </motion.div>
   );

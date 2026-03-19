@@ -43,6 +43,12 @@
     --chart-tick: 200 20% 40% / 0.7;
     --chart-area: 200 52% 11%;
 
+    /* Event type colors */
+    --color-rd-presentiel: 2 80% 58%;
+    --color-club-affaires: 42 100% 57%;
+    --color-rd-distanciel: 196 65% 23%;
+    --color-rdv-commercial: 177 40% 55%;
+
     --sidebar-background: 200 52% 11%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 353 100% 44%;
@@ -88,6 +94,12 @@
     --chart-grid: 200 15% 60% / 0.12;
     --chart-tick: 200 15% 60% / 0.7;
     --chart-area: 200 10% 92%;
+
+    /* Event type colors */
+    --color-rd-presentiel: 2 80% 58%;
+    --color-club-affaires: 42 100% 57%;
+    --color-rd-distanciel: 177 40% 55%;
+    --color-rdv-commercial: 196 65% 45%;
 
     --sidebar-background: 200 52% 8%;
     --sidebar-foreground: 200 10% 92%;

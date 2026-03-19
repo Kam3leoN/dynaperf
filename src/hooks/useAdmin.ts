@@ -15,12 +15,22 @@ export function useAdmin() {
     }
 
     const check = async () => {
-      const { data } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", user.id)
-        .eq("role", "admin");
-      setIsAdmin(!!data?.length);
+      try {
+        // Use the security definer function to avoid RLS issues
+        const { data, error } = await supabase.rpc("has_role", {
+          _user_id: user.id,
+          _role: "admin",
+        });
+        if (error) {
+          console.error("Admin check error:", error);
+          setIsAdmin(false);
+        } else {
+          setIsAdmin(!!data);
+        }
+      } catch (e) {
+        console.error("Admin check failed:", e);
+        setIsAdmin(false);
+      }
       setLoading(false);
     };
     check();
