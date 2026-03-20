@@ -61,13 +61,13 @@ export default function NewAudit() {
                   style={{ color: type.color }}
                 />
               </div>
-              {type.mobileLabel ? (
+              {type.desktopLabel ? (
                 <>
-                  <span className="text-sm font-medium text-foreground text-center leading-snug sm:hidden">
-                    {type.mobileLabel}
-                  </span>
-                  <span className="text-sm font-medium text-foreground text-center leading-snug hidden sm:block">
+                  <span className="text-sm font-medium text-foreground text-center leading-snug lg:hidden">
                     {type.label}
+                  </span>
+                  <span className="text-sm font-medium text-foreground text-center leading-snug hidden lg:block">
+                    {type.desktopLabel}
                   </span>
                 </>
               ) : (
