@@ -287,6 +287,30 @@ export type Database = {
         }
         Relationships: []
       }
+      french_cities: {
+        Row: {
+          department: string | null
+          id: string
+          name: string
+          postal_code: string
+          region: string | null
+        }
+        Insert: {
+          department?: string | null
+          id?: string
+          name: string
+          postal_code: string
+          region?: string | null
+        }
+        Update: {
+          department?: string | null
+          id?: string
+          name?: string
+          postal_code?: string
+          region?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
