@@ -19,8 +19,8 @@ interface AppLayoutProps {
 }
 
 export function AppLayout({ children, audits, filters, setFilters }: AppLayoutProps) {
-  const { signOut } = useAuth();
-  const { isAdmin } = useAdmin();
+  const { user, signOut } = useAuth();
+  const { isAdmin } = useAdmin(user);
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 

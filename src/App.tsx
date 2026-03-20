@@ -24,9 +24,18 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  const { isAdmin, loading: adminLoading } = useAdmin();
-  if (loading || adminLoading) return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground">Chargement…</p></div>;
+  const { isAdmin, loading: adminLoading } = useAdmin(user);
+
+  if (loading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground">Chargement…</p></div>;
+  }
+
   if (!user) return <Navigate to="/auth" replace />;
+
+  if (adminLoading) {
+    return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground">Chargement…</p></div>;
+  }
+
   if (!isAdmin) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
