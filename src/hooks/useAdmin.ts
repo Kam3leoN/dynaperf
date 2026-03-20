@@ -5,17 +5,28 @@ import { useAuth } from "./useAuth";
 
 export function useAdmin(providedUser?: User | null) {
   const auth = useAuth();
-  const user = providedUser ?? auth.user;
+  const usesProvidedUser = providedUser !== undefined;
+  const user = usesProvidedUser ? providedUser : auth.user;
+  const authLoading = usesProvidedUser ? false : auth.loading;
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
 
+    if (authLoading) {
+      setLoading(true);
+      return () => {
+        cancelled = true;
+      };
+    }
+
     if (!user) {
       setIsAdmin(false);
       setLoading(false);
-      return;
+      return () => {
+        cancelled = true;
+      };
     }
 
     setLoading(true);
@@ -52,7 +63,7 @@ export function useAdmin(providedUser?: User | null) {
     return () => {
       cancelled = true;
     };
-  }, [user?.id]);
+  }, [authLoading, user?.id]);
 
   return { isAdmin, loading };
 }
