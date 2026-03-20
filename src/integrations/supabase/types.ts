@@ -148,6 +148,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_my_config: {
+        Args: never
+        Returns: {
+          created_at: string
+          id: string
+          objectif: number
+          palier_1: number
+          palier_2: number
+          palier_3: number
+          prime_audit_1: number
+          prime_audit_2: number
+          prime_audit_3_plus: number
+          updated_at: string
+          user_id: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
