@@ -124,19 +124,14 @@ export function AuditItemDialog({
               {categoryName}
             </Badge>
             <Badge
-              className="text-xs"
-              style={{
-                backgroundColor:
-                  currentScore === item.maxPoints
-                    ? "hsl(var(--chart-2))"
-                    : currentScore > 0
-                    ? "hsl(var(--chart-4))"
-                    : "hsl(var(--muted))",
-                color:
-                  currentScore === 0
-                    ? "hsl(var(--muted-foreground))"
-                    : "white",
-              }}
+              className={cn(
+                "text-xs",
+                currentScore === item.maxPoints
+                  ? "bg-emerald-600 text-white"
+                  : currentScore > 0
+                  ? "bg-amber-500 text-white"
+                  : "bg-muted text-muted-foreground"
+              )}
             >
               {currentScore}/{item.maxPoints} pts
             </Badge>
