@@ -40,6 +40,7 @@ const Index = () => {
             objectifTotal={objectifTotal}
             objectifNotes={objectifTotal}
           />
+          <MyObjectives />
           <section>
             <h2 className="mb-3"><StrokeTitle text="Podium par type d'événement" /></h2>
             <PodiumCards data={partenaireStats} />
