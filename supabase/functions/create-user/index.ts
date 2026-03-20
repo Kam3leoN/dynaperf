@@ -50,6 +50,12 @@ Deno.serve(async (req) => {
     if (action === "delete") {
       const { userId } = body;
       if (!userId) return jsonError("userId requis", 400);
+
+      // Check if target is super_admin — only super_admin can delete super_admin
+      const { data: targetRoles } = await adminClient.from("user_roles").select("role").eq("user_id", userId);
+      const targetIsSuperAdmin = targetRoles?.some((r: any) => r.role === "super_admin");
+      if (targetIsSuperAdmin && !callerIsSuperAdmin) return jsonError("Seul un super admin peut supprimer un super admin", 403);
+
       await adminClient.from("collaborateur_config").delete().eq("user_id", userId);
       await adminClient.from("user_roles").delete().eq("user_id", userId);
       await adminClient.from("profiles").delete().eq("user_id", userId);
