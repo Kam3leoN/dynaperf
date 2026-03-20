@@ -21,7 +21,7 @@ const auditTypes: { label: string; color: string; icon: typeof faUsers; key: str
     color: "#ffbd23",
     icon: faBriefcase,
     key: "Club Affaires",
-    mobileLabel: <>Club<br />d'Affaires</>,
+    desktopLabel: <>Club<br />d'Affaires</>,
   },
   {
     label: "Rendez-Vous Commercial",
