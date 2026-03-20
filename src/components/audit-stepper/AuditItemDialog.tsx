@@ -72,9 +72,9 @@ export function AuditItemDialog({
   const isAutoFilled = autoValue !== undefined;
   const isNoShowAuto = item.autoField === "nbNoShow";
 
-  const [boolVal, setBoolVal] = useState<boolean>(() => {
+  const [boolVal, setBoolVal] = useState<boolean | null>(() => {
     if (isNoShowAuto) return (autoValue ?? 0) === 0;
-    return initialAnswer ? initialAnswer.score > 0 : false;
+    return initialAnswer ? initialAnswer.score > 0 : null;
   });
   const [numVal, setNumVal] = useState<string>(() => {
     if (isAutoFilled && !isNoShowAuto) return String(autoValue ?? 0);
@@ -89,7 +89,7 @@ export function AuditItemDialog({
     if (isNoShowAuto) {
       return (autoValue ?? 0) === 0 ? item.maxPoints : 0;
     }
-    if (item.inputType === "boolean") return boolVal ? item.maxPoints : 0;
+    if (item.inputType === "boolean") return boolVal === true ? item.maxPoints : 0;
     if (item.inputType === "number") {
       const n = parseInt(numVal) || 0;
       if (item.scoringRules && item.scoringRules.includes("participants")) {
@@ -221,11 +221,13 @@ export function AuditItemDialog({
             <div className="flex items-center gap-4">
               <Button
                 type="button"
-                variant={boolVal ? "default" : "outline"}
+                variant="outline"
                 onClick={() => setBoolVal(true)}
                 className={cn(
-                  "flex-1",
-                  boolVal && "bg-emerald-600 hover:bg-emerald-700 text-white"
+                  "flex-1 transition-colors",
+                  boolVal === true
+                    ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700"
+                    : "hover:bg-accent hover:text-accent-foreground"
                 )}
               >
                 <FontAwesomeIcon icon={faCheck} className="mr-1 h-3 w-3" />
@@ -233,9 +235,14 @@ export function AuditItemDialog({
               </Button>
               <Button
                 type="button"
-                variant={!boolVal ? "destructive" : "outline"}
+                variant="outline"
                 onClick={() => setBoolVal(false)}
-                className="flex-1"
+                className={cn(
+                  "flex-1 transition-colors",
+                  boolVal === false
+                    ? "bg-destructive text-destructive-foreground border-destructive hover:bg-destructive/90"
+                    : "hover:bg-accent hover:text-accent-foreground"
+                )}
               >
                 Non validé
               </Button>

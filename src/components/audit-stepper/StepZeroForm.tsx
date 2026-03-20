@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
+import { CityAutocomplete } from "@/components/ui/city-autocomplete";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -145,12 +146,11 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit }: Props) {
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Lieu de l'événement *</Label>
-          <AutocompleteInput
+          <Label>Ville / lieu de l'événement *</Label>
+          <CityAutocomplete
             value={data.lieu}
             onChange={(v) => set("lieu", v)}
-            suggestions={suggestions.lieux}
-            placeholder="ex: Troyes"
+            placeholder="ex: Troyes ou 10000"
           />
         </div>
         <div className="space-y-1.5">
