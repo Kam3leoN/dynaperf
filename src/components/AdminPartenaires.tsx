@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -27,7 +29,19 @@ interface Partenaire {
   email: string;
   telephone: string;
   date_anniversaire: string | null;
+  statut: string;
   created_at: string;
+}
+
+const STATUT_OPTIONS = [
+  { value: "actif", label: "Actif", color: "bg-emerald-500/15 text-emerald-700" },
+  { value: "desactive", label: "Désactivé", color: "bg-muted text-muted-foreground" },
+  { value: "en_formation", label: "En formation", color: "bg-amber-500/15 text-amber-700" },
+];
+
+function StatutBadge({ statut }: { statut: string }) {
+  const opt = STATUT_OPTIONS.find(o => o.value === statut) || STATUT_OPTIONS[0];
+  return <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${opt.color}`}>{opt.label}</span>;
 }
 
 function PartenaireAvatar({ url, name, size = 32 }: { url: string | null; name: string; size?: number }) {
@@ -61,8 +75,9 @@ const emptyForm = {
   prenom: "",
   nom: "",
   societe: "",
-  commission: "0",
+  commission: "50",
   partenaire_referent: "Dynabuy",
+  statut: "actif",
   is_directeur_agence: false,
   is_president_club: false,
   is_cadre_externalise: false,
@@ -118,6 +133,7 @@ export default function AdminPartenaires() {
     societe: form.societe.trim(),
     commission: parseFloat(form.commission) || 0,
     partenaire_referent: form.partenaire_referent.trim() || "Dynabuy",
+    statut: form.statut,
     is_directeur_agence: form.is_directeur_agence,
     is_president_club: form.is_president_club,
     is_cadre_externalise: form.is_cadre_externalise,
@@ -154,6 +170,7 @@ export default function AdminPartenaires() {
       societe: p.societe,
       commission: p.commission.toString(),
       partenaire_referent: p.partenaire_referent,
+      statut: p.statut || "actif",
       is_directeur_agence: p.is_directeur_agence,
       is_president_club: p.is_president_club,
       is_cadre_externalise: p.is_cadre_externalise,
@@ -227,6 +244,17 @@ export default function AdminPartenaires() {
         </div>
       </div>
 
+      {/* Statut */}
+      <div>
+        <label className="text-xs text-muted-foreground mb-1 block">Statut</label>
+        <Select value={form.statut} onValueChange={(v) => setForm(f => ({ ...f, statut: v }))}>
+          <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {STATUT_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Société */}
       <div>
         <label className="text-xs text-muted-foreground mb-1 block">Société</label>
@@ -242,7 +270,19 @@ export default function AdminPartenaires() {
       {/* Partenaire référent */}
       <div>
         <label className="text-xs text-muted-foreground mb-1 block">Partenaire référent</label>
-        <Input value={form.partenaire_referent} onChange={(e) => setForm(f => ({ ...f, partenaire_referent: e.target.value }))} className="h-9 text-sm" placeholder="Dynabuy" />
+        <Select value={form.partenaire_referent} onValueChange={(v) => setForm(f => ({ ...f, partenaire_referent: v }))}>
+          <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Dynabuy">Dynabuy</SelectItem>
+            <Separator className="my-1" />
+            {partenaires
+              .filter(p => !editP || p.id !== editP.id)
+              .sort((a, b) => `${a.prenom} ${a.nom}`.localeCompare(`${b.prenom} ${b.nom}`))
+              .map(p => (
+                <SelectItem key={p.id} value={`${p.prenom} ${p.nom}`}>{p.prenom} {p.nom}</SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Casquettes */}
@@ -344,10 +384,10 @@ export default function AdminPartenaires() {
                 <TableRow>
                   <TableHead className="text-xs uppercase tracking-wider w-10"></TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">Nom</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider">Statut</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">Société</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">Comm.</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">Référent</TableHead>
-                  <TableHead className="text-xs uppercase tracking-wider">Fonctions</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">Secteurs</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider w-24">Actions</TableHead>
                 </TableRow>
@@ -358,10 +398,10 @@ export default function AdminPartenaires() {
                     <motion.tr key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="border-b border-border hover:bg-secondary/50 transition-colors">
                       <TableCell><PartenaireAvatar url={p.photo_url} name={`${p.prenom} ${p.nom}`} /></TableCell>
                       <TableCell className="text-sm font-medium">{p.prenom} {p.nom}</TableCell>
+                      <TableCell><StatutBadge statut={p.statut} /></TableCell>
                       <TableCell className="text-sm text-muted-foreground">{p.societe || "—"}</TableCell>
                       <TableCell className="text-sm tabular-nums text-muted-foreground">{p.commission}%</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{p.partenaire_referent}</TableCell>
-                      <TableCell><RoleChips p={p} /></TableCell>
                       <TableCell className="text-sm tabular-nums text-muted-foreground">{(p.secteurs || []).join(" / ") || "—"}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
@@ -436,6 +476,7 @@ export default function AdminPartenaires() {
               <div className="text-center">
                 <p className="text-sm font-semibold text-foreground">{viewP.prenom} {viewP.nom}</p>
                 <p className="text-xs text-muted-foreground">{viewP.societe}</p>
+                <div className="mt-1"><StatutBadge statut={viewP.statut} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div><span className="text-xs text-muted-foreground block">Commission</span><span className="font-medium text-foreground">{viewP.commission}%</span></div>
