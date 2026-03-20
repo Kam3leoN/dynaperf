@@ -33,18 +33,46 @@ export function AppLayout({ children, audits, filters, setFilters }: AppLayoutPr
         : "text-foreground/70 hover:text-foreground hover:bg-secondary"
     }`;
 
-  const navLinks = (
+  const navigate = useNavigate();
+  const isAuditsActive = location.pathname === "/audits" || location.pathname === "/audits/new";
+
+  const auditsDropdown = (onItemClick?: () => void) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
+            isAuditsActive
+              ? "bg-primary text-primary-foreground"
+              : "text-foreground/70 hover:text-foreground hover:bg-secondary"
+          }`}
+        >
+          <FontAwesomeIcon icon={faClipboardList} className="h-3.5 w-3.5" />
+          <span>Audits</span>
+          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-0.5 opacity-60"><path d="m6 9 6 6 6-6"/></svg>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-52">
+        <DropdownMenuItem onClick={() => { navigate("/audits"); onItemClick?.(); }} className="gap-2 cursor-pointer">
+          <FontAwesomeIcon icon={faList} className="h-3.5 w-3.5 text-muted-foreground" />
+          Vue d'ensemble
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => { navigate("/audits/new"); onItemClick?.(); }} className="gap-2 cursor-pointer">
+          <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5 text-muted-foreground" />
+          Ajouter un nouvel audit
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  const navLinks = (closeMobile?: boolean) => (
     <>
-      <NavLink to="/" end className={() => linkClass("/")} onClick={() => setMobileOpen(false)}>
+      <NavLink to="/" end className={() => linkClass("/")} onClick={() => closeMobile && setMobileOpen(false)}>
         <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
         <span>Dashboard</span>
       </NavLink>
-      <NavLink to="/audits" className={() => linkClass("/audits")} onClick={() => setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faClipboardList} className="h-3.5 w-3.5" />
-        <span>Audits</span>
-      </NavLink>
+      {auditsDropdown(closeMobile ? () => setMobileOpen(false) : undefined)}
       {isAdmin && (
-        <NavLink to="/admin" className={() => linkClass("/admin")} onClick={() => setMobileOpen(false)}>
+        <NavLink to="/admin" className={() => linkClass("/admin")} onClick={() => closeMobile && setMobileOpen(false)}>
           <FontAwesomeIcon icon={faUserShield} className="h-3.5 w-3.5" />
           <span>Admin</span>
         </NavLink>
