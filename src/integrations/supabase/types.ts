@@ -331,6 +331,7 @@ export type Database = {
           prenom: string
           secteurs: string[]
           societe: string
+          statut: string
           telephone: string
           updated_at: string
         }
@@ -350,6 +351,7 @@ export type Database = {
           prenom?: string
           secteurs?: string[]
           societe?: string
+          statut?: string
           telephone?: string
           updated_at?: string
         }
@@ -369,6 +371,7 @@ export type Database = {
           prenom?: string
           secteurs?: string[]
           societe?: string
+          statut?: string
           telephone?: string
           updated_at?: string
         }
