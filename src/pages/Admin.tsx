@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faSort, faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faChevronDown, faChevronUp, faCamera } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -25,6 +25,7 @@ interface ManagedUser {
   id: string;
   email: string;
   displayName: string;
+  avatarUrl: string | null;
   roles: string[];
   config: UserConfig | null;
   createdAt: string;
@@ -55,10 +56,46 @@ function RoleBadge({ role }: { role: string }) {
   );
 }
 
+function UserAvatar({ url, name, size = "sm" }: { url: string | null; name: string; size?: "sm" | "md" }) {
+  const s = size === "md" ? "w-12 h-12 text-lg" : "w-8 h-8 text-xs";
+  if (url) {
+    return <img src={url} alt={name} className={`${s} rounded-full object-cover border border-border`} />;
+  }
+  const initials = name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
+  return (
+    <div className={`${s} rounded-full bg-primary/10 text-primary font-semibold flex items-center justify-center border border-border`}>
+      {initials}
+    </div>
+  );
+}
+
+// Split displayName into parts and match each search term
+function matchesSearch(displayName: string, email: string, searchPrenom: string, searchNom: string) {
+  const parts = displayName.toLowerCase().split(/\s+/);
+  const prenom = searchPrenom.toLowerCase().trim();
+  const nom = searchNom.toLowerCase().trim();
+
+  if (!prenom && !nom) return true;
+
+  // If only one field filled, match against any part or email
+  if (prenom && !nom) {
+    return parts.some(p => p.includes(prenom)) || email.toLowerCase().includes(prenom);
+  }
+  if (!prenom && nom) {
+    return parts.some(p => p.includes(nom)) || email.toLowerCase().includes(nom);
+  }
+
+  // Both filled: prenom matches first part, nom matches last part (or vice versa)
+  const matchPrenom = parts.some(p => p.includes(prenom));
+  const matchNom = parts.some(p => p.includes(nom));
+  return matchPrenom && matchNom;
+}
+
 export default function Admin() {
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  const [searchPrenom, setSearchPrenom] = useState("");
+  const [searchNom, setSearchNom] = useState("");
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
 
   // Create dialog
@@ -66,6 +103,15 @@ export default function Admin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [newRole, setNewRole] = useState("lecteur");
+  const [newPalier1, setNewPalier1] = useState("");
+  const [newPalier2, setNewPalier2] = useState("");
+  const [newPalier3, setNewPalier3] = useState("");
+  const [newPrime1, setNewPrime1] = useState("0");
+  const [newPrime2, setNewPrime2] = useState("0");
+  const [newPrime3, setNewPrime3] = useState("0");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
   const loadUsers = useCallback(async () => {
@@ -79,18 +125,63 @@ export default function Admin() {
 
   useEffect(() => { loadUsers(); }, [loadUsers]);
 
+  const resetCreateForm = () => {
+    setEmail(""); setPassword(""); setDisplayName("");
+    setNewRole("lecteur");
+    setNewPalier1(""); setNewPalier2(""); setNewPalier3("");
+    setNewPrime1("0"); setNewPrime2("0"); setNewPrime3("0");
+    setAvatarFile(null); setAvatarPreview(null);
+  };
+
+  const handleAvatarSelect = (file: File) => {
+    setAvatarFile(file);
+    const reader = new FileReader();
+    reader.onload = (e) => setAvatarPreview(e.target?.result as string);
+    reader.readAsDataURL(file);
+  };
+
+  const uploadAvatar = async (userId: string, file: File): Promise<string | null> => {
+    const ext = file.name.split(".").pop();
+    const path = `${userId}/avatar.${ext}`;
+    const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
+    if (error) { console.error("Avatar upload error:", error); return null; }
+    const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+    return data.publicUrl;
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
     setCreating(true);
+
+    const config = {
+      objectif: 0,
+      palier_1: newPalier1 ? parseInt(newPalier1) : null,
+      palier_2: newPalier2 ? parseInt(newPalier2) : null,
+      palier_3: newPalier3 ? parseInt(newPalier3) : null,
+      prime_audit_1: parseFloat(newPrime1) || 0,
+      prime_audit_2: parseFloat(newPrime2) || 0,
+      prime_audit_3_plus: parseFloat(newPrime3) || 0,
+    };
+
     const res = await supabase.functions.invoke("create-user", {
-      body: { email, password, displayName },
+      body: { email, password, displayName, role: newRole, config },
     });
+
     if (res.error) toast.error(res.error.message || "Erreur lors de la création");
     else if (res.data?.error) toast.error(res.data.error);
     else {
+      // Upload avatar if provided
+      if (avatarFile && res.data?.user?.id) {
+        const avatarUrl = await uploadAvatar(res.data.user.id, avatarFile);
+        if (avatarUrl) {
+          await supabase.functions.invoke("create-user", {
+            body: { action: "save-avatar", userId: res.data.user.id, avatar_url: avatarUrl },
+          });
+        }
+      }
       toast.success(`Utilisateur ${email} créé avec succès`);
-      setEmail(""); setPassword(""); setDisplayName("");
+      resetCreateForm();
       setCreateOpen(false);
       loadUsers();
     }
@@ -114,11 +205,20 @@ export default function Admin() {
     else { toast.success("Rôle mis à jour"); loadUsers(); }
   };
 
-  const filtered = users.filter((u) => {
-    if (!search) return true;
-    const s = search.toLowerCase();
-    return u.displayName.toLowerCase().includes(s) || u.email.toLowerCase().includes(s);
-  });
+  const handleAvatarChange = async (userId: string, file: File) => {
+    const avatarUrl = await uploadAvatar(userId, file);
+    if (avatarUrl) {
+      await supabase.functions.invoke("create-user", {
+        body: { action: "save-avatar", userId, avatar_url: avatarUrl },
+      });
+      toast.success("Avatar mis à jour");
+      loadUsers();
+    } else {
+      toast.error("Erreur lors de l'upload de l'avatar");
+    }
+  };
+
+  const filtered = users.filter((u) => matchesSearch(u.displayName, u.email, searchPrenom, searchNom));
 
   const MobileCard = ({ u }: { u: ManagedUser }) => {
     const role = getUserRole(u);
@@ -133,9 +233,12 @@ export default function Admin() {
         className="bg-card border border-border rounded-lg p-3 space-y-2"
       >
         <div className="flex items-start justify-between">
-          <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground truncate">{u.displayName}</p>
-            <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+          <div className="flex items-center gap-2 min-w-0">
+            <AvatarWithUpload user={u} onUpload={handleAvatarChange} />
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-foreground truncate">{u.displayName}</p>
+              <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+            </div>
           </div>
           <div className="flex gap-1 shrink-0">
             {!isAdmin && (
@@ -175,13 +278,21 @@ export default function Admin() {
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           <h3 className="text-sm font-semibold text-foreground">Gestion des collaborateurs</h3>
           <div className="flex items-center gap-2 sm:gap-3 flex-1 sm:flex-none justify-end">
-            <Input
-              placeholder="Rechercher..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full sm:w-[200px] h-9 text-sm rounded-md"
-            />
-            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+            <div className="flex gap-1.5">
+              <Input
+                placeholder="Prénom"
+                value={searchPrenom}
+                onChange={(e) => setSearchPrenom(e.target.value)}
+                className="w-24 sm:w-[120px] h-9 text-sm rounded-md"
+              />
+              <Input
+                placeholder="Nom"
+                value={searchNom}
+                onChange={(e) => setSearchNom(e.target.value)}
+                className="w-24 sm:w-[120px] h-9 text-sm rounded-md"
+              />
+            </div>
+            <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) resetCreateForm(); }}>
               <DialogTrigger asChild>
                 <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5 shrink-0">
                   <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
@@ -196,6 +307,21 @@ export default function Admin() {
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleCreate} className="grid gap-3 py-3">
+                  {/* Avatar upload */}
+                  <div className="flex justify-center">
+                    <label className="relative cursor-pointer group">
+                      {avatarPreview ? (
+                        <img src={avatarPreview} alt="Avatar" className="w-16 h-16 rounded-full object-cover border-2 border-border group-hover:opacity-75 transition-opacity" />
+                      ) : (
+                        <div className="w-16 h-16 rounded-full bg-secondary flex items-center justify-center border-2 border-dashed border-border group-hover:border-primary transition-colors">
+                          <FontAwesomeIcon icon={faCamera} className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                        </div>
+                      )}
+                      <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleAvatarSelect(e.target.files[0])} />
+                      <span className="text-[10px] text-muted-foreground absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap">Avatar</span>
+                    </label>
+                  </div>
+
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">Nom d'affichage</label>
                     <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Prénom Nom" className="h-9 text-sm" />
@@ -208,8 +334,59 @@ export default function Admin() {
                     <label className="text-xs text-muted-foreground mb-1 block">Mot de passe</label>
                     <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="h-9 text-sm" required minLength={6} />
                   </div>
+
+                  {/* Rôle */}
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Rôle</label>
+                    <Select value={newRole} onValueChange={setNewRole}>
+                      <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="lecteur">Lecteur</SelectItem>
+                        <SelectItem value="redacteur">Rédacteur</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Objectifs paliers */}
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Objectifs par palier</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <span className="text-[10px] text-muted-foreground">Obj. palier 1</span>
+                        <Input type="number" min={0} value={newPalier1} onChange={(e) => setNewPalier1(e.target.value)} className="h-9 text-sm" placeholder="—" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground">Obj. palier 2</span>
+                        <Input type="number" min={0} value={newPalier2} onChange={(e) => setNewPalier2(e.target.value)} className="h-9 text-sm" placeholder="—" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground">Obj. palier 3</span>
+                        <Input type="number" min={0} value={newPalier3} onChange={(e) => setNewPalier3(e.target.value)} className="h-9 text-sm" placeholder="—" />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Primes */}
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Primes par palier (€)</label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <span className="text-[10px] text-muted-foreground">Prime palier 1</span>
+                        <Input type="number" min={0} step={0.01} value={newPrime1} onChange={(e) => setNewPrime1(e.target.value)} className="h-9 text-sm" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground">Prime palier 2</span>
+                        <Input type="number" min={0} step={0.01} value={newPrime2} onChange={(e) => setNewPrime2(e.target.value)} className="h-9 text-sm" />
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-muted-foreground">Prime palier 3</span>
+                        <Input type="number" min={0} step={0.01} value={newPrime3} onChange={(e) => setNewPrime3(e.target.value)} className="h-9 text-sm" />
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="flex justify-end gap-2 pt-2">
-                    <Button type="button" variant="outline" size="sm" onClick={() => setCreateOpen(false)} className="rounded-md">Annuler</Button>
+                    <Button type="button" variant="outline" size="sm" onClick={() => { setCreateOpen(false); resetCreateForm(); }} className="rounded-md">Annuler</Button>
                     <Button type="submit" size="sm" disabled={creating} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md">
                       {creating ? "Création…" : "Créer"}
                     </Button>
@@ -232,11 +409,12 @@ export default function Admin() {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="text-xs uppercase tracking-wider w-10"></TableHead>
                     <TableHead className="text-xs uppercase tracking-wider">Nom</TableHead>
                     <TableHead className="text-xs uppercase tracking-wider">Email</TableHead>
                     <TableHead className="text-xs uppercase tracking-wider">Rôle</TableHead>
-                    <TableHead className="text-xs uppercase tracking-wider">Objectif</TableHead>
-                    <TableHead className="text-xs uppercase tracking-wider">Primes (1/2/3+)</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">Paliers</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">Primes (1/2/3)</TableHead>
                     <TableHead className="text-xs uppercase tracking-wider w-24">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -254,6 +432,9 @@ export default function Admin() {
                           exit={{ opacity: 0 }}
                           className="border-b border-border hover:bg-secondary/50 transition-colors"
                         >
+                          <TableCell>
+                            <AvatarWithUpload user={u} onUpload={handleAvatarChange} />
+                          </TableCell>
                           <TableCell className="text-sm font-medium">{u.displayName}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
                           <TableCell>
@@ -269,8 +450,8 @@ export default function Admin() {
                               </Select>
                             )}
                           </TableCell>
-                          <TableCell className="text-sm tabular-nums">
-                            {u.config?.objectif ?? "—"}
+                          <TableCell className="text-sm tabular-nums text-muted-foreground">
+                            {u.config ? `${u.config.palier_1 ?? "—"} / ${u.config.palier_2 ?? "—"} / ${u.config.palier_3 ?? "—"}` : "—"}
                           </TableCell>
                           <TableCell className="text-sm tabular-nums text-muted-foreground">
                             {u.config ? `${u.config.prime_audit_1}€ / ${u.config.prime_audit_2}€ / ${u.config.prime_audit_3_plus}€` : "—"}
@@ -301,7 +482,6 @@ export default function Admin() {
                 </TableBody>
               </Table>
 
-              {/* Expanded config panel below the table for the selected user */}
               {expandedUser && (() => {
                 const u = users.find((x) => x.id === expandedUser);
                 if (!u || getUserRole(u) === "admin") return null;
@@ -335,6 +515,21 @@ export default function Admin() {
         )}
       </div>
     </AppLayout>
+  );
+}
+
+/* ─── Avatar with upload on click ─── */
+
+function AvatarWithUpload({ user, onUpload }: { user: ManagedUser; onUpload: (userId: string, file: File) => void }) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  return (
+    <div className="relative group cursor-pointer" onClick={() => fileRef.current?.click()}>
+      <UserAvatar url={user.avatarUrl} name={user.displayName} />
+      <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+        <FontAwesomeIcon icon={faCamera} className="h-3 w-3 text-white" />
+      </div>
+      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) onUpload(user.id, e.target.files[0]); }} />
+    </div>
   );
 }
 
