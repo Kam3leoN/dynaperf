@@ -20,6 +20,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, audits, filters, setFilters }: AppLayoutProps) {
   const { user, signOut } = useAuth();
+  const { isAdmin } = useAdmin(user);
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -41,6 +42,12 @@ export function AppLayout({ children, audits, filters, setFilters }: AppLayoutPr
         <FontAwesomeIcon icon={faClipboardList} className="h-3.5 w-3.5" />
         <span>Registre</span>
       </NavLink>
+      {isAdmin && (
+        <NavLink to="/admin" className={() => linkClass("/admin")} onClick={() => setMobileOpen(false)}>
+          <FontAwesomeIcon icon={faUserShield} className="h-3.5 w-3.5" />
+          <span>Admin</span>
+        </NavLink>
+      )}
     </>
   );
 
