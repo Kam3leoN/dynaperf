@@ -102,7 +102,8 @@ export default function Admin() {
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [viewUser, setViewUser] = useState<ManagedUser | null>(null);
   const [editUser, setEditUser] = useState<ManagedUser | null>(null);
-  const [editName, setEditName] = useState("");
+  const [editFirstName, setEditFirstName] = useState("");
+  const [editLastName, setEditLastName] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editRole, setEditRole] = useState("lecteur");
   const [editPalier1, setEditPalier1] = useState("");
@@ -235,7 +236,11 @@ export default function Admin() {
 
   const openEditDialog = (u: ManagedUser) => {
     setEditUser(u);
-    setEditName(u.displayName);
+    const parts = u.displayName.split(" ");
+    const lastName = parts.filter(p => p === p.toUpperCase() && p.length > 1).join(" ") || parts.slice(-1).join("");
+    const firstName = parts.filter(p => !(p === p.toUpperCase() && p.length > 1)).join(" ") || "";
+    setEditFirstName(firstName);
+    setEditLastName(lastName);
     setEditEmail(u.email);
     setEditRole(getUserRole(u));
     setEditPalier1(u.config?.palier_1?.toString() ?? "");
@@ -253,7 +258,7 @@ export default function Admin() {
 
     // Update name & email
     const res = await supabase.functions.invoke("create-user", {
-      body: { action: "update-user", userId: editUser.id, email: editEmail.trim(), displayName: editName.trim() },
+      body: { action: "update-user", userId: editUser.id, email: editEmail.trim(), displayName: `${editFirstName.trim()} ${editLastName.trim().toUpperCase()}`.trim() },
     });
     if (res.data?.error) { toast.error(res.data.error); setEditSaving(false); return; }
 
@@ -698,9 +703,15 @@ export default function Admin() {
           </DialogHeader>
           {editUser && (
             <div className="space-y-4 py-2">
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Nom d'affichage</label>
-                <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-9 text-sm" placeholder="Prénom Nom" />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Prénom</label>
+                  <Input value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} className="h-9 text-sm" placeholder="Prénom" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Nom</label>
+                  <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} className="h-9 text-sm" placeholder="NOM" />
+                </div>
               </div>
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Email</label>
