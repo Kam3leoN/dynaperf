@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChartLine, faClipboardList, faUserShield, faRightFromBracket, faBars, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faChartLine, faClipboardList, faRightFromBracket, faBars } from "@fortawesome/free-solid-svg-icons";
 import { ThemeToggle } from "./ThemeToggle";
 import { ExcelExport } from "./ExcelExport";
 import { FiltersBar } from "./FiltersBar";
