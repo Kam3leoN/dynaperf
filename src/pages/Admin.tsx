@@ -856,6 +856,11 @@ export default function Admin() {
           )}
         </DialogContent>
       </Dialog>
+        </TabsContent>
+        <TabsContent value="partenaires">
+          <AdminPartenaires />
+        </TabsContent>
+      </Tabs>
     </AppLayout>
   );
 }
