@@ -12,7 +12,11 @@ export interface AuditItemDef {
   checklistItems?: string[];
 }
 
-export const AUDIT_ITEMS: AuditItemDef[] = [
+/**
+ * Items d'audit pour les Rencontres Dirigeants (Présentiel & Distanciel) uniquement.
+ * Les autres types d'événements (Club d'Affaires, RDV Commercial) auront leur propre grille.
+ */
+export const AUDIT_ITEMS_RD: AuditItemDef[] = [
   {
     id: 1,
     title: "Le Lieu",
@@ -212,4 +216,13 @@ export function calcRdvScore(nb: number): number {
   return Math.min(nb, 10);
 }
 
-export const MAX_TOTAL_POINTS = AUDIT_ITEMS.reduce((s, i) => s + i.maxPoints, 0); // 62
+export const MAX_TOTAL_POINTS_RD = AUDIT_ITEMS_RD.reduce((s, i) => s + i.maxPoints, 0); // 62
+
+/** Retourne les items et le max de points selon le type d'événement */
+export function getAuditItemsForType(type: string): { items: AuditItemDef[]; maxPoints: number } {
+  if (type.includes("RD")) {
+    return { items: AUDIT_ITEMS_RD, maxPoints: MAX_TOTAL_POINTS_RD };
+  }
+  // TODO: ajouter les grilles Club d'Affaires et RDV Commercial
+  return { items: AUDIT_ITEMS_RD, maxPoints: MAX_TOTAL_POINTS_RD };
+}

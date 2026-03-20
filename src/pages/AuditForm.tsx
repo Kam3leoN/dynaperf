@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { StepZeroForm, StepZeroData } from "@/components/audit-stepper/StepZeroForm";
 import { AuditItemDialog, ItemAnswer } from "@/components/audit-stepper/AuditItemDialog";
-import { AUDIT_ITEMS, MAX_TOTAL_POINTS } from "@/data/auditItems";
+import { getAuditItemsForType } from "@/data/auditItems";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
@@ -16,12 +16,14 @@ export default function AuditForm() {
   const [searchParams] = useSearchParams();
   const typeEvenement = searchParams.get("type") || "RD Présentiel";
 
+  const { items: auditItems, maxPoints: maxTotalPoints } = getAuditItemsForType(typeEvenement);
+
   const [phase, setPhase] = useState<"info" | "items" | "saving">("info");
   const [stepZeroData, setStepZeroData] = useState<StepZeroData | undefined>();
   const [currentItemIdx, setCurrentItemIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<number, ItemAnswer>>({});
 
-  const totalItems = AUDIT_ITEMS.length;
+  const totalItems = auditItems.length;
   const progress = phase === "info" ? 0 : ((currentItemIdx + 1) / totalItems) * 100;
 
   const handleStepZeroSubmit = useCallback((data: StepZeroData) => {
@@ -32,7 +34,7 @@ export default function AuditForm() {
 
   const handleItemSubmit = useCallback(
     async (answer: ItemAnswer) => {
-      const newAnswers = { ...answers, [AUDIT_ITEMS[currentItemIdx].id]: answer };
+      const newAnswers = { ...answers, [auditItems[currentItemIdx].id]: answer };
       setAnswers(newAnswers);
 
       if (currentItemIdx < totalItems - 1) {
@@ -58,7 +60,7 @@ export default function AuditForm() {
     if (!stepZeroData) return;
 
     const totalPoints = Object.values(finalAnswers).reduce((s, a) => s + a.score, 0);
-    const noteSur10 = +(totalPoints / MAX_TOTAL_POINTS * 10).toFixed(2);
+    const noteSur10 = +(totalPoints / maxTotalPoints * 10).toFixed(2);
 
     const dateStr = stepZeroData.dateEvenement
       ? format(stepZeroData.dateEvenement, "yyyy-MM-dd")
@@ -132,7 +134,7 @@ export default function AuditForm() {
     navigate("/audits");
   };
 
-  const currentItem = AUDIT_ITEMS[currentItemIdx];
+  const currentItem = auditItems[currentItemIdx];
 
   return (
     <AppLayout>
