@@ -89,7 +89,7 @@ export function AuditItemDialog({
     if (isNoShowAuto) {
       return (autoValue ?? 0) === 0 ? item.maxPoints : 0;
     }
-    if (item.inputType === "boolean") return boolVal ? item.maxPoints : 0;
+    if (item.inputType === "boolean") return boolVal === true ? item.maxPoints : 0;
     if (item.inputType === "number") {
       const n = parseInt(numVal) || 0;
       if (item.scoringRules && item.scoringRules.includes("participants")) {
