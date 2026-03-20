@@ -496,7 +496,7 @@ export default function Admin() {
 
               {expandedUser && (() => {
                 const u = users.find((x) => x.id === expandedUser);
-                if (!u || getUserRole(u) === "admin") return null;
+                if (!u) return null;
                 return (
                   <div className="mt-2 rounded-lg border border-border overflow-hidden">
                     <div className="bg-secondary/30 px-4 py-2 flex items-center gap-2">
