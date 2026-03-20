@@ -12,6 +12,7 @@ import Registre from "./pages/Registre";
 import NewAudit from "./pages/NewAudit";
 import AuditForm from "./pages/AuditForm";
 import Admin from "./pages/Admin";
+import AdminAuditGrid from "./pages/AdminAuditGrid";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
