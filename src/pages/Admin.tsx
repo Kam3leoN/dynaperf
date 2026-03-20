@@ -386,6 +386,12 @@ export default function Admin() {
 
   return (
     <AppLayout>
+      <Tabs defaultValue="collaborateurs" className="space-y-4">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="collaborateurs">Collaborateurs</TabsTrigger>
+          <TabsTrigger value="partenaires">Partenaires</TabsTrigger>
+        </TabsList>
+        <TabsContent value="collaborateurs">
       <div className="bg-card rounded-lg shadow-soft p-4 sm:p-5">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           <h3 className="text-sm font-semibold text-foreground">Gestion des collaborateurs</h3>
