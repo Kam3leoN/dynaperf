@@ -595,7 +595,9 @@ export default function Admin() {
                             {u.config ? `${u.config.palier_1 ?? "—"} / ${u.config.palier_2 ?? "—"} / ${u.config.palier_3 ?? "—"}` : "—"}
                           </TableCell>
                           <TableCell className="text-sm tabular-nums text-muted-foreground">
-                            {u.config ? `${u.config.prime_audit_1}€ / ${u.config.prime_audit_2}€ / ${u.config.prime_audit_3_plus}€` : "—"}
+                            {showPrimes
+                              ? (u.config ? `${u.config.prime_audit_1}€ / ${u.config.prime_audit_2}€ / ${u.config.prime_audit_3_plus}€` : "—")
+                              : "••• / ••• / •••"}
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-1">
