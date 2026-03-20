@@ -117,11 +117,11 @@ export function PodiumCards({ data }: PodiumCardsProps) {
                       </div>
                       {/* Formatted name: Prénom + NOM */}
                       <p
-                        className="text-[10px] font-bold mt-1.5 text-center leading-tight w-full text-foreground"
+                        className="text-[11px] mt-1.5 text-center leading-tight w-full text-foreground"
                         title={entry.nom}
                       >
-                        <span className="block">{prenom}</span>
-                        <span className="block uppercase">{nom}</span>
+                        <span className="block font-medium">{prenom}</span>
+                        <span className="block uppercase font-bold">{nom}</span>
                       </p>
                     </div>
                   );
