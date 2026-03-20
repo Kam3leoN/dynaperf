@@ -133,6 +133,7 @@ export default function AdminPartenaires() {
     societe: form.societe.trim(),
     commission: parseFloat(form.commission) || 0,
     partenaire_referent: form.partenaire_referent.trim() || "Dynabuy",
+    statut: form.statut,
     is_directeur_agence: form.is_directeur_agence,
     is_president_club: form.is_president_club,
     is_cadre_externalise: form.is_cadre_externalise,
