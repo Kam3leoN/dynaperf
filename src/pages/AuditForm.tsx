@@ -134,7 +134,7 @@ export default function AuditForm() {
     navigate("/audits");
   };
 
-  const currentItem = AUDIT_ITEMS[currentItemIdx];
+  const currentItem = auditItems[currentItemIdx];
 
   return (
     <AppLayout>
