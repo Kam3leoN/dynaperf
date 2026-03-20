@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -124,19 +125,14 @@ export function AuditItemDialog({
               {categoryName}
             </Badge>
             <Badge
-              className="text-xs"
-              style={{
-                backgroundColor:
-                  currentScore === item.maxPoints
-                    ? "hsl(var(--chart-2))"
-                    : currentScore > 0
-                    ? "hsl(var(--chart-4))"
-                    : "hsl(var(--muted))",
-                color:
-                  currentScore === 0
-                    ? "hsl(var(--muted-foreground))"
-                    : "white",
-              }}
+              className={cn(
+                "text-xs",
+                currentScore === item.maxPoints
+                  ? "bg-emerald-600 text-white"
+                  : currentScore > 0
+                  ? "bg-amber-500 text-white"
+                  : "bg-muted text-muted-foreground"
+              )}
             >
               {currentScore}/{item.maxPoints} pts
             </Badge>
@@ -195,8 +191,10 @@ export function AuditItemDialog({
                   type="button"
                   variant={boolVal ? "default" : "outline"}
                   disabled
-                  className="flex-1 cursor-not-allowed"
-                  style={boolVal ? { backgroundColor: "hsl(var(--chart-2))" } : {}}
+                  className={cn(
+                    "flex-1 cursor-not-allowed",
+                    boolVal && "bg-emerald-600 text-white"
+                  )}
                 >
                   <FontAwesomeIcon icon={faCheck} className="mr-1 h-3 w-3" />
                   Validé
@@ -225,8 +223,10 @@ export function AuditItemDialog({
                 type="button"
                 variant={boolVal ? "default" : "outline"}
                 onClick={() => setBoolVal(true)}
-                className="flex-1"
-                style={boolVal ? { backgroundColor: "hsl(var(--chart-2))" } : {}}
+                className={cn(
+                  "flex-1",
+                  boolVal && "bg-emerald-600 hover:bg-emerald-700 text-white"
+                )}
               >
                 <FontAwesomeIcon icon={faCheck} className="mr-1 h-3 w-3" />
                 Validé
