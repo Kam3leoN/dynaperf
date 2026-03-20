@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import { getTypeColorHSL } from "@/lib/eventTypeColors";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTrophy } from "@fortawesome/free-solid-svg-icons";
 
 interface PodiumCardsProps {
   data: { nom: string; type: string; count: number; avg: number | null }[];
