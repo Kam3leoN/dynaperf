@@ -592,21 +592,30 @@ export default function Admin() {
 
       {/* View user dialog */}
       <Dialog open={!!viewUser} onOpenChange={(o) => { if (!o) setViewUser(null); }}>
-        <DialogContent className="sm:max-w-md pt-16 overflow-visible">
+        <DialogContent className="sm:max-w-md pt-20 overflow-visible [&>button]:hidden">
           {viewUser && (
-            <div className="absolute -top-12 left-1/2 -translate-x-1/2">
-              {viewUser.avatarUrl ? (
-                <img src={viewUser.avatarUrl} alt={viewUser.displayName} className="w-24 h-24 rounded-full object-cover border-4 border-background shadow-md" />
-              ) : (
-                <div className="w-24 h-24 rounded-full bg-primary/10 text-primary font-bold text-2xl flex items-center justify-center border-4 border-background shadow-md">
-                  {viewUser.displayName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)}
-                </div>
-              )}
-            </div>
+            <>
+              <div className="absolute -top-16 left-1/2 -translate-x-1/2">
+                {viewUser.avatarUrl ? (
+                  <img src={viewUser.avatarUrl} alt={viewUser.displayName} className="w-32 h-32 rounded-full object-cover border-4 border-background" />
+                ) : (
+                  <div className="w-32 h-32 rounded-full bg-primary/10 text-primary font-bold text-3xl flex items-center justify-center border-4 border-background">
+                    {viewUser.displayName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)}
+                  </div>
+                )}
+              </div>
+              <button
+                onClick={() => setViewUser(null)}
+                className="absolute -right-3 -top-3 w-8 h-8 rounded-full flex items-center justify-center z-50 hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: "#ee4540" }}
+              >
+                <X className="h-4 w-4 text-white" />
+              </button>
+            </>
           )}
           <DialogHeader className="text-center">
-            <DialogTitle>Détails du collaborateur</DialogTitle>
-            <DialogDescription>Informations et configuration de {viewUser?.displayName}</DialogDescription>
+            <DialogTitle className="sr-only">Détails</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">Informations et configuration de {viewUser?.displayName}</DialogDescription>
           </DialogHeader>
           {viewUser && (
             <div className="space-y-4 py-2">
@@ -627,18 +636,18 @@ export default function Admin() {
               </div>
               <div>
                 <span className="text-xs text-muted-foreground block mb-1">Paliers</span>
-                <div className="flex gap-3 text-sm">
-                  <span className="bg-secondary px-2 py-0.5 rounded text-foreground">P1: {viewUser.config?.palier_1 ?? "—"}</span>
-                  <span className="bg-secondary px-2 py-0.5 rounded text-foreground">P2: {viewUser.config?.palier_2 ?? "—"}</span>
-                  <span className="bg-secondary px-2 py-0.5 rounded text-foreground">P3: {viewUser.config?.palier_3 ?? "—"}</span>
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <span className="bg-secondary px-2 py-1 rounded text-foreground text-center">P1: {viewUser.config?.palier_1 ?? "—"}</span>
+                  <span className="bg-secondary px-2 py-1 rounded text-foreground text-center">P2: {viewUser.config?.palier_2 ?? "—"}</span>
+                  <span className="bg-secondary px-2 py-1 rounded text-foreground text-center">P3: {viewUser.config?.palier_3 ?? "—"}</span>
                 </div>
               </div>
               <div>
                 <span className="text-xs text-muted-foreground block mb-1">Primes</span>
-                <div className="flex gap-3 text-sm">
-                  <span className="bg-secondary px-2 py-0.5 rounded text-foreground">{viewUser.config?.prime_audit_1 ?? 0}€</span>
-                  <span className="bg-secondary px-2 py-0.5 rounded text-foreground">{viewUser.config?.prime_audit_2 ?? 0}€</span>
-                  <span className="bg-secondary px-2 py-0.5 rounded text-foreground">{viewUser.config?.prime_audit_3_plus ?? 0}€</span>
+                <div className="grid grid-cols-3 gap-2 text-sm">
+                  <span className="bg-secondary px-2 py-1 rounded text-foreground text-center">{viewUser.config?.prime_audit_1 ?? 0}€</span>
+                  <span className="bg-secondary px-2 py-1 rounded text-foreground text-center">{viewUser.config?.prime_audit_2 ?? 0}€</span>
+                  <span className="bg-secondary px-2 py-1 rounded text-foreground text-center">{viewUser.config?.prime_audit_3_plus ?? 0}€</span>
                 </div>
               </div>
             </div>
