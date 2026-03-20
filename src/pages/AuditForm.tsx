@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { StepZeroForm, StepZeroData } from "@/components/audit-stepper/StepZeroForm";
 import { AuditItemDialog, ItemAnswer } from "@/components/audit-stepper/AuditItemDialog";
-import { AUDIT_ITEMS, MAX_TOTAL_POINTS } from "@/data/auditItems";
+import { getAuditItemsForType } from "@/data/auditItems";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
