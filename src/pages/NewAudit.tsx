@@ -21,6 +21,7 @@ const auditTypes = [
     color: "#ffbd23",
     icon: faBriefcase,
     key: "Club Affaires",
+    mobileLabel: <>Club<br />d'Affaires</>,
   },
   {
     label: "Rendez-Vous Commercial",
