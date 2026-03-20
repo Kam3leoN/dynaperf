@@ -89,20 +89,27 @@ export function PodiumCards({ data }: PodiumCardsProps) {
                       key={entry.nom}
                       className="flex flex-col items-center flex-1 max-w-[90px]"
                     >
-                      {/* Rank number on top */}
-                      <span
-                        className="text-lg font-bold tabular-nums mb-1"
-                        style={{ color: typeColor }}
-                      >
-                        {cfg.rank}
-                      </span>
+                      {/* Trophy with rank */}
+                      <div className="relative flex items-center justify-center mb-0">
+                        <FontAwesomeIcon
+                          icon={faTrophy}
+                          className="text-3xl"
+                          style={{ color: cfg.medal.trophy }}
+                        />
+                        <span
+                          className="absolute text-[11px] font-black text-white"
+                          style={{ top: "4px" }}
+                        >
+                          {cfg.rank}
+                        </span>
+                      </div>
                       {/* Bar with note inside */}
                       <div
                         className={`w-full ${cfg.height} rounded-t-md relative flex items-center justify-center`}
-                        style={{ backgroundColor: cfg.color }}
+                        style={{ backgroundColor: cfg.medal.bg }}
                       >
                         <span
-                          className="text-white font-bold"
+                          className="text-foreground font-bold"
                           style={{ fontSize: "24px" }}
                         >
                           {entry.avg!.toFixed(1)}
