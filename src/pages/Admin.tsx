@@ -73,6 +73,7 @@ function getUserRole(u: ManagedUser) {
 
 function RoleBadge({ role }: { role: string }) {
   const styles: Record<string, string> = {
+    super_admin: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
     admin: "bg-primary/10 text-primary",
     redacteur: "bg-accent/20 text-accent-foreground",
     lecteur: "bg-secondary text-muted-foreground",
