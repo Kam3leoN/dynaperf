@@ -1,5 +1,7 @@
 import { motion } from "framer-motion";
 import { getTypeColorHSL } from "@/lib/eventTypeColors";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faTrophy } from "@fortawesome/free-solid-svg-icons";
 
 interface PodiumCardsProps {
   data: { nom: string; type: string; count: number; avg: number | null }[];
@@ -8,15 +10,15 @@ interface PodiumCardsProps {
 const TYPES = ["Club Affaires", "RD Présentiel", "RD Distanciel", "RDV Commercial"];
 
 const MEDAL_COLORS = {
-  gold: "#FFD700",
-  silver: "#C0C0C0",
-  bronze: "#CD7F32",
+  gold: { bg: "#FFD700", trophy: "#DAA520" },
+  silver: { bg: "#C0C0C0", trophy: "#A0A0A0" },
+  bronze: { bg: "#CD7F32", trophy: "#A0612B" },
 };
 
 const podiumConfig = [
-  { rank: 2, color: MEDAL_COLORS.silver, height: "h-20" },
-  { rank: 1, color: MEDAL_COLORS.gold, height: "h-28" },
-  { rank: 3, color: MEDAL_COLORS.bronze, height: "h-14" },
+  { rank: 2, medal: MEDAL_COLORS.silver, height: "h-20" },
+  { rank: 1, medal: MEDAL_COLORS.gold, height: "h-28" },
+  { rank: 3, medal: MEDAL_COLORS.bronze, height: "h-14" },
 ];
 
 /** Format name as "Prénom NOM" — compound first names handled (Jean-Christophe) */
@@ -87,20 +89,27 @@ export function PodiumCards({ data }: PodiumCardsProps) {
                       key={entry.nom}
                       className="flex flex-col items-center flex-1 max-w-[90px]"
                     >
-                      {/* Rank number on top */}
-                      <span
-                        className="text-lg font-bold tabular-nums mb-1"
-                        style={{ color: typeColor }}
-                      >
-                        {cfg.rank}
-                      </span>
+                      {/* Trophy with rank */}
+                      <div className="relative flex items-center justify-center mb-0">
+                        <FontAwesomeIcon
+                          icon={faTrophy}
+                          className="text-3xl"
+                          style={{ color: cfg.medal.trophy }}
+                        />
+                        <span
+                          className="absolute text-[11px] font-black text-white"
+                          style={{ top: "4px" }}
+                        >
+                          {cfg.rank}
+                        </span>
+                      </div>
                       {/* Bar with note inside */}
                       <div
                         className={`w-full ${cfg.height} rounded-t-md relative flex items-center justify-center`}
-                        style={{ backgroundColor: cfg.color }}
+                        style={{ backgroundColor: cfg.medal.bg }}
                       >
                         <span
-                          className="text-white font-bold"
+                          className="text-foreground font-bold"
                           style={{ fontSize: "24px" }}
                         >
                           {entry.avg!.toFixed(1)}
