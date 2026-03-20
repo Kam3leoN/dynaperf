@@ -65,6 +65,7 @@ export type Database = {
           note_sur_10: number | null
           partenaire_referent: string | null
           photos: string[] | null
+          qualite_lieu: number | null
           total_points: number | null
           type_lieu: string | null
           updated_at: string
@@ -84,6 +85,7 @@ export type Database = {
           note_sur_10?: number | null
           partenaire_referent?: string | null
           photos?: string[] | null
+          qualite_lieu?: number | null
           total_points?: number | null
           type_lieu?: string | null
           updated_at?: string
@@ -103,6 +105,7 @@ export type Database = {
           note_sur_10?: number | null
           partenaire_referent?: string | null
           photos?: string[] | null
+          qualite_lieu?: number | null
           total_points?: number | null
           type_lieu?: string | null
           updated_at?: string
