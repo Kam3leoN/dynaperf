@@ -592,20 +592,28 @@ export default function Admin() {
 
       {/* View user dialog */}
       <Dialog open={!!viewUser} onOpenChange={(o) => { if (!o) setViewUser(null); }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-md pt-16 overflow-visible">
+          {viewUser && (
+            <div className="absolute -top-12 left-1/2 -translate-x-1/2">
+              {viewUser.avatarUrl ? (
+                <img src={viewUser.avatarUrl} alt={viewUser.displayName} className="w-24 h-24 rounded-full object-cover border-4 border-background shadow-md" />
+              ) : (
+                <div className="w-24 h-24 rounded-full bg-primary/10 text-primary font-bold text-2xl flex items-center justify-center border-4 border-background shadow-md">
+                  {viewUser.displayName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)}
+                </div>
+              )}
+            </div>
+          )}
+          <DialogHeader className="text-center">
             <DialogTitle>Détails du collaborateur</DialogTitle>
             <DialogDescription>Informations et configuration de {viewUser?.displayName}</DialogDescription>
           </DialogHeader>
           {viewUser && (
             <div className="space-y-4 py-2">
-              <div className="flex items-center gap-3">
-                <UserAvatar url={viewUser.avatarUrl} name={viewUser.displayName} size="md" />
-                <div>
-                  <p className="text-sm font-semibold text-foreground">{viewUser.displayName}</p>
-                  <p className="text-xs text-muted-foreground">{viewUser.email}</p>
-                </div>
-                <RoleBadge role={getUserRole(viewUser)} />
+              <div className="text-center">
+                <p className="text-sm font-semibold text-foreground">{viewUser.displayName}</p>
+                <p className="text-xs text-muted-foreground">{viewUser.email}</p>
+                <div className="mt-1"><RoleBadge role={getUserRole(viewUser)} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
