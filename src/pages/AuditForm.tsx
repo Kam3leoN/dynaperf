@@ -256,7 +256,7 @@ export default function AuditForm() {
             onSubmit={handleItemSubmit}
             onBack={handleBack}
             onClose={() => navigate("/audits/new")}
-            isLast={currentItemIdx === totalItems - 1}
+            isLast={false}
             stepZeroData={stepZeroData}
           />
         )}
