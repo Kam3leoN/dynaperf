@@ -146,12 +146,11 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit }: Props) {
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Lieu de l'événement *</Label>
-          <AutocompleteInput
+          <Label>Ville / lieu de l'événement *</Label>
+          <CityAutocomplete
             value={data.lieu}
             onChange={(v) => set("lieu", v)}
-            suggestions={suggestions.lieux}
-            placeholder="ex: Troyes"
+            placeholder="ex: Troyes ou 10000"
           />
         </div>
         <div className="space-y-1.5">
