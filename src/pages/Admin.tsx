@@ -136,6 +136,7 @@ export default function Admin() {
   const [editPrime1, setEditPrime1] = useState("0");
   const [editPrime2, setEditPrime2] = useState("0");
   const [editPrime3, setEditPrime3] = useState("0");
+  const [editTitle, setEditTitle] = useState("");
   const [editSaving, setEditSaving] = useState(false);
 
   // Create dialog
