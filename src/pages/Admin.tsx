@@ -289,7 +289,7 @@ export default function Admin() {
     if (res.data?.error) { toast.error(res.data.error); setEditSaving(false); return; }
 
     // Update role if changed and not admin
-    if (role !== "admin" && editRole !== role) {
+    if (editRole !== role) {
       await supabase.functions.invoke("create-user", {
         body: { action: "set-role", userId: editUser.id, role: editRole },
       });
