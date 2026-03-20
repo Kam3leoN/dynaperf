@@ -640,10 +640,10 @@ export default function Admin() {
 
       {/* Edit user dialog */}
       <Dialog open={!!editUser} onOpenChange={(o) => { if (!o) setEditUser(null); }}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Modifier le collaborateur</DialogTitle>
-            <DialogDescription>Modifiez le nom d'affichage ou l'email de {editUser?.displayName}</DialogDescription>
+            <DialogDescription>Modifiez les informations, le rôle, les objectifs et les primes.</DialogDescription>
           </DialogHeader>
           {editUser && (
             <div className="space-y-4 py-2">
@@ -658,6 +658,59 @@ export default function Admin() {
                 <label className="text-xs text-muted-foreground mb-1 block">Email</label>
                 <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="h-9 text-sm" />
               </div>
+
+              {/* Rôle */}
+              {getUserRole(editUser) !== "admin" && (
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Rôle</label>
+                  <Select value={editRole} onValueChange={setEditRole}>
+                    <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="lecteur">Lecteur</SelectItem>
+                      <SelectItem value="redacteur">Rédacteur</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* Objectifs paliers */}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Objectifs par palier</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground">Palier 1</span>
+                    <Input type="number" min={0} value={editPalier1} onChange={(e) => setEditPalier1(e.target.value)} className="h-9 text-sm" placeholder="—" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground">Palier 2</span>
+                    <Input type="number" min={0} value={editPalier2} onChange={(e) => setEditPalier2(e.target.value)} className="h-9 text-sm" placeholder="—" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground">Palier 3</span>
+                    <Input type="number" min={0} value={editPalier3} onChange={(e) => setEditPalier3(e.target.value)} className="h-9 text-sm" placeholder="—" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Primes */}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Primes par palier (€)</label>
+                <div className="grid grid-cols-3 gap-2">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground">Prime P1</span>
+                    <Input type="number" min={0} step={0.01} value={editPrime1} onChange={(e) => setEditPrime1(e.target.value)} className="h-9 text-sm" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground">Prime P2</span>
+                    <Input type="number" min={0} step={0.01} value={editPrime2} onChange={(e) => setEditPrime2(e.target.value)} className="h-9 text-sm" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-muted-foreground">Prime P3</span>
+                    <Input type="number" min={0} step={0.01} value={editPrime3} onChange={(e) => setEditPrime3(e.target.value)} className="h-9 text-sm" />
+                  </div>
+                </div>
+              </div>
+
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" size="sm" onClick={() => setEditUser(null)} className="rounded-md">Annuler</Button>
                 <Button size="sm" disabled={editSaving} onClick={handleEditSave} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5">
