@@ -13,6 +13,30 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
+function ArcText({ text, radius = 90, fontSize = 14 }: { text: string; radius?: number; fontSize?: number }) {
+  const id = "arcPath";
+  const svgSize = radius * 2 + 40;
+  const cx = svgSize / 2;
+  const cy = svgSize / 2;
+  return (
+    <svg width={svgSize} height={radius + fontSize + 10} viewBox={`0 0 ${svgSize} ${radius + fontSize + 10}`} className="overflow-visible">
+      <defs>
+        <path id={id} d={`M ${cx - radius},${radius + fontSize} A ${radius},${radius} 0 0,1 ${cx + radius},${radius + fontSize}`} fill="none" />
+      </defs>
+      <text
+        fill="hsl(var(--primary))"
+        fontSize={fontSize}
+        fontWeight="700"
+        letterSpacing="0.15em"
+        textAnchor="middle"
+        fontFamily="Lexend, sans-serif"
+      >
+        <textPath href={`#${id}`} startOffset="50%">{text}</textPath>
+      </text>
+    </svg>
+  );
+}
+
 interface UserConfig {
   objectif: number;
   palier_1: number | null;
@@ -598,18 +622,20 @@ export default function Admin() {
 
       {/* View user dialog */}
       <Dialog open={!!viewUser} onOpenChange={(o) => { if (!o) setViewUser(null); }}>
-        <DialogContent className="sm:max-w-md pt-24 overflow-visible [&>button]:hidden">
+        <DialogContent className="sm:max-w-md pt-28 overflow-visible [&>button]:hidden">
           {viewUser && (
             <>
-              <div className="absolute -top-20 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-primary">{ROLE_LABELS[getUserRole(viewUser)] ?? getUserRole(viewUser)}</span>
-                {viewUser.avatarUrl ? (
-                  <img src={viewUser.avatarUrl} alt={viewUser.displayName} className="w-32 h-32 rounded-full object-cover border-4 border-background" />
-                ) : (
-                  <div className="w-32 h-32 rounded-full bg-primary/10 text-primary font-bold text-3xl flex items-center justify-center border-4 border-background">
-                    {viewUser.displayName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)}
-                  </div>
-                )}
+              <div className="absolute -top-24 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                <ArcText text={(ROLE_LABELS[getUserRole(viewUser)] ?? getUserRole(viewUser)).toUpperCase()} radius={85} fontSize={14} />
+                <div className="-mt-4">
+                  {viewUser.avatarUrl ? (
+                    <img src={viewUser.avatarUrl} alt={viewUser.displayName} className="w-32 h-32 rounded-full object-cover border-4 border-background" />
+                  ) : (
+                    <div className="w-32 h-32 rounded-full bg-primary/10 text-primary font-bold text-3xl flex items-center justify-center border-4 border-background">
+                      {viewUser.displayName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)}
+                    </div>
+                  )}
+                </div>
               </div>
               <button
                 onClick={() => setViewUser(null)}
@@ -664,12 +690,12 @@ export default function Admin() {
 
       {/* Edit user dialog */}
       <Dialog open={!!editUser} onOpenChange={(o) => { if (!o) setEditUser(null); }}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto pt-24 overflow-visible [&>button]:hidden">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto pt-28 overflow-visible [&>button]:hidden">
           {editUser && (
             <>
-              <div className="absolute -top-20 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-primary">{ROLE_LABELS[getUserRole(editUser)] ?? getUserRole(editUser)}</span>
-                <div className="relative group cursor-pointer" onClick={() => document.getElementById('edit-avatar-input')?.click()}>
+              <div className="absolute -top-24 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                <ArcText text={(ROLE_LABELS[getUserRole(editUser)] ?? getUserRole(editUser)).toUpperCase()} radius={85} fontSize={14} />
+                <div className="-mt-4 relative group cursor-pointer" onClick={() => document.getElementById('edit-avatar-input')?.click()}>
                   {editUser.avatarUrl ? (
                     <img src={editUser.avatarUrl} alt={editUser.displayName} className="w-32 h-32 rounded-full object-cover border-4 border-background" />
                   ) : (
