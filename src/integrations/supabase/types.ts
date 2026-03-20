@@ -314,6 +314,66 @@ export type Database = {
         }
         Relationships: []
       }
+      partenaires: {
+        Row: {
+          commission: number
+          created_at: string
+          date_anniversaire: string | null
+          email: string
+          id: string
+          is_cadre_externalise: boolean
+          is_directeur_agence: boolean
+          is_president_club: boolean
+          nom: string
+          partenaire_referent: string
+          photo_url: string | null
+          pole_expertise: string | null
+          prenom: string
+          secteurs: string[]
+          societe: string
+          telephone: string
+          updated_at: string
+        }
+        Insert: {
+          commission?: number
+          created_at?: string
+          date_anniversaire?: string | null
+          email?: string
+          id?: string
+          is_cadre_externalise?: boolean
+          is_directeur_agence?: boolean
+          is_president_club?: boolean
+          nom?: string
+          partenaire_referent?: string
+          photo_url?: string | null
+          pole_expertise?: string | null
+          prenom?: string
+          secteurs?: string[]
+          societe?: string
+          telephone?: string
+          updated_at?: string
+        }
+        Update: {
+          commission?: number
+          created_at?: string
+          date_anniversaire?: string | null
+          email?: string
+          id?: string
+          is_cadre_externalise?: boolean
+          is_directeur_agence?: boolean
+          is_president_club?: boolean
+          nom?: string
+          partenaire_referent?: string
+          photo_url?: string | null
+          pole_expertise?: string | null
+          prenom?: string
+          secteurs?: string[]
+          societe?: string
+          telephone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
