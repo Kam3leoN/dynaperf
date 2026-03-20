@@ -64,6 +64,7 @@ export type Database = {
           nom_club: string | null
           note_sur_10: number | null
           partenaire_referent: string | null
+          photos: string[] | null
           total_points: number | null
           type_lieu: string | null
           updated_at: string
@@ -82,6 +83,7 @@ export type Database = {
           nom_club?: string | null
           note_sur_10?: number | null
           partenaire_referent?: string | null
+          photos?: string[] | null
           total_points?: number | null
           type_lieu?: string | null
           updated_at?: string
@@ -100,6 +102,7 @@ export type Database = {
           nom_club?: string | null
           note_sur_10?: number | null
           partenaire_referent?: string | null
+          photos?: string[] | null
           total_points?: number | null
           type_lieu?: string | null
           updated_at?: string

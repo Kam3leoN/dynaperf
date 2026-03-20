@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { StepZeroForm, StepZeroData } from "@/components/audit-stepper/StepZeroForm";
 import { AuditItemDialog, ItemAnswer } from "@/components/audit-stepper/AuditItemDialog";
+import { AuditPhotoUpload } from "@/components/audit-stepper/AuditPhotoUpload";
 import { fetchAuditConfig, AuditTypeConfig, AuditItemDef } from "@/data/auditItems";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -19,12 +20,12 @@ export default function AuditForm() {
   const [config, setConfig] = useState<AuditTypeConfig | null>(null);
   const [configLoading, setConfigLoading] = useState(true);
 
-  const [phase, setPhase] = useState<"info" | "items" | "saving">("info");
+  const [phase, setPhase] = useState<"info" | "items" | "photos" | "saving">("info");
   const [stepZeroData, setStepZeroData] = useState<StepZeroData | undefined>();
   const [currentItemIdx, setCurrentItemIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<string, ItemAnswer>>({});
+  const [photos, setPhotos] = useState<File[]>([]);
 
-  // Load config from DB
   useEffect(() => {
     fetchAuditConfig(typeEvenement).then((c) => {
       setConfig(c);
@@ -32,14 +33,13 @@ export default function AuditForm() {
     });
   }, [typeEvenement]);
 
-  // Flatten items across categories
   const allItems: (AuditItemDef & { categoryName: string })[] =
     config?.categories.flatMap((cat) =>
       cat.items.map((item) => ({ ...item, categoryName: cat.name }))
     ) ?? [];
 
   const totalItems = allItems.length;
-  const progress = phase === "info" ? 0 : ((currentItemIdx + 1) / totalItems) * 100;
+  const progress = phase === "info" ? 0 : phase === "items" ? ((currentItemIdx + 1) / totalItems) * 100 : 100;
 
   const handleStepZeroSubmit = useCallback((data: StepZeroData) => {
     setStepZeroData(data);
@@ -48,15 +48,15 @@ export default function AuditForm() {
   }, []);
 
   const handleItemSubmit = useCallback(
-    async (answer: ItemAnswer) => {
+    (answer: ItemAnswer) => {
       const newAnswers = { ...answers, [allItems[currentItemIdx].id]: answer };
       setAnswers(newAnswers);
 
       if (currentItemIdx < totalItems - 1) {
         setCurrentItemIdx(currentItemIdx + 1);
       } else {
-        setPhase("saving");
-        await saveAudit(newAnswers);
+        // Go to photos phase instead of saving directly
+        setPhase("photos");
       }
     },
     [answers, currentItemIdx, totalItems, allItems]
@@ -69,6 +69,32 @@ export default function AuditForm() {
       setCurrentItemIdx(currentItemIdx - 1);
     }
   }, [currentItemIdx]);
+
+  const handlePhotosBack = useCallback(() => {
+    setPhase("items");
+    setCurrentItemIdx(totalItems - 1);
+  }, [totalItems]);
+
+  const handleFinish = useCallback(async () => {
+    setPhase("saving");
+    await saveAudit(answers);
+  }, [answers]);
+
+  const uploadPhotos = async (auditId: string): Promise<string[]> => {
+    const urls: string[] = [];
+    for (const file of photos) {
+      const ext = file.name.split(".").pop() || "jpg";
+      const path = `${auditId}/${crypto.randomUUID()}.${ext}`;
+      const { error } = await supabase.storage
+        .from("audit-photos")
+        .upload(path, file, { contentType: file.type });
+      if (!error) {
+        const { data } = supabase.storage.from("audit-photos").getPublicUrl(path);
+        urls.push(data.publicUrl);
+      }
+    }
+    return urls;
+  };
 
   const saveAudit = async (finalAnswers: Record<string, ItemAnswer>) => {
     if (!stepZeroData || !config) return;
@@ -104,8 +130,14 @@ export default function AuditForm() {
     if (auditErr) {
       toast.error("Erreur lors de la création de l'audit");
       console.error(auditErr);
-      setPhase("items");
+      setPhase("photos");
       return;
+    }
+
+    // Upload photos
+    let photoUrls: string[] = [];
+    if (photos.length > 0) {
+      photoUrls = await uploadPhotos(auditRow.id);
     }
 
     const itemsJson: Record<string, any> = {};
@@ -132,12 +164,13 @@ export default function AuditForm() {
       items: itemsJson,
       total_points: totalPoints,
       note_sur_10: noteSur10,
+      photos: photoUrls,
     });
 
     if (detailErr) {
       toast.error("Erreur lors de l'enregistrement des détails");
       console.error(detailErr);
-      setPhase("items");
+      setPhase("photos");
       return;
     }
 
@@ -192,11 +225,13 @@ export default function AuditForm() {
           <h1 className="text-xl font-semibold text-foreground">
             {phase === "info"
               ? "Informations générales"
+              : phase === "photos"
+              ? "Photos de l'audit"
               : phase === "saving"
               ? "Enregistrement..."
               : currentItem?.title ?? ""}
           </h1>
-          {phase === "items" && (
+          {(phase === "items" || phase === "photos") && (
             <Progress value={progress} className="mt-3 h-2" />
           )}
         </div>
@@ -221,8 +256,18 @@ export default function AuditForm() {
             onSubmit={handleItemSubmit}
             onBack={handleBack}
             onClose={() => navigate("/audits/new")}
-            isLast={currentItemIdx === totalItems - 1}
+            isLast={false}
             stepZeroData={stepZeroData}
+          />
+        )}
+
+        {phase === "photos" && (
+          <AuditPhotoUpload
+            photos={photos}
+            onChange={setPhotos}
+            onSubmit={handleFinish}
+            onBack={handlePhotosBack}
+            uploading={false}
           />
         )}
 

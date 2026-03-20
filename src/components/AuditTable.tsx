@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Audit, TYPES_EVENEMENT, AUDITEURS, MOIS_ORDRE } from "@/data/audits";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ const emptyForm = (): Omit<Audit, "id"> => ({
 type SortKey = "date" | "note" | "partenaire" | "auditeur" | "typeEvenement";
 
 export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProps) {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Omit<Audit, "id">>(emptyForm());
@@ -134,13 +136,11 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
             onChange={(e) => setSearch(e.target.value)}
             className="w-full sm:w-[200px] h-9 text-sm rounded-md"
           />
+          <Button onClick={() => navigate("/audits/new")} size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5 shrink-0">
+            <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
+            <span className="hidden sm:inline">Ajouter</span>
+          </Button>
           <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-              <Button onClick={openNew} size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5 shrink-0">
-                <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
-                <span className="hidden sm:inline">Ajouter</span>
-              </Button>
-            </DialogTrigger>
             <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="">{editId ? "Modifier l'audit" : "Nouvel audit"}</DialogTitle>
