@@ -1,9 +1,9 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { StepZeroForm, StepZeroData } from "@/components/audit-stepper/StepZeroForm";
 import { AuditItemDialog, ItemAnswer } from "@/components/audit-stepper/AuditItemDialog";
-import { getAuditItemsForType } from "@/data/auditItems";
+import { fetchAuditConfig, AuditTypeConfig, AuditItemDef } from "@/data/auditItems";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
@@ -16,14 +16,29 @@ export default function AuditForm() {
   const [searchParams] = useSearchParams();
   const typeEvenement = searchParams.get("type") || "RD Présentiel";
 
-  const { items: auditItems, maxPoints: maxTotalPoints } = getAuditItemsForType(typeEvenement);
+  const [config, setConfig] = useState<AuditTypeConfig | null>(null);
+  const [configLoading, setConfigLoading] = useState(true);
 
   const [phase, setPhase] = useState<"info" | "items" | "saving">("info");
   const [stepZeroData, setStepZeroData] = useState<StepZeroData | undefined>();
   const [currentItemIdx, setCurrentItemIdx] = useState(0);
-  const [answers, setAnswers] = useState<Record<number, ItemAnswer>>({});
+  const [answers, setAnswers] = useState<Record<string, ItemAnswer>>({});
 
-  const totalItems = auditItems.length;
+  // Load config from DB
+  useEffect(() => {
+    fetchAuditConfig(typeEvenement).then((c) => {
+      setConfig(c);
+      setConfigLoading(false);
+    });
+  }, [typeEvenement]);
+
+  // Flatten items across categories
+  const allItems: (AuditItemDef & { categoryName: string })[] =
+    config?.categories.flatMap((cat) =>
+      cat.items.map((item) => ({ ...item, categoryName: cat.name }))
+    ) ?? [];
+
+  const totalItems = allItems.length;
   const progress = phase === "info" ? 0 : ((currentItemIdx + 1) / totalItems) * 100;
 
   const handleStepZeroSubmit = useCallback((data: StepZeroData) => {
@@ -34,18 +49,17 @@ export default function AuditForm() {
 
   const handleItemSubmit = useCallback(
     async (answer: ItemAnswer) => {
-      const newAnswers = { ...answers, [auditItems[currentItemIdx].id]: answer };
+      const newAnswers = { ...answers, [allItems[currentItemIdx].id]: answer };
       setAnswers(newAnswers);
 
       if (currentItemIdx < totalItems - 1) {
         setCurrentItemIdx(currentItemIdx + 1);
       } else {
-        // All done — save
         setPhase("saving");
         await saveAudit(newAnswers);
       }
     },
-    [answers, currentItemIdx, totalItems]
+    [answers, currentItemIdx, totalItems, allItems]
   );
 
   const handleBack = useCallback(() => {
@@ -56,11 +70,11 @@ export default function AuditForm() {
     }
   }, [currentItemIdx]);
 
-  const saveAudit = async (finalAnswers: Record<number, ItemAnswer>) => {
-    if (!stepZeroData) return;
+  const saveAudit = async (finalAnswers: Record<string, ItemAnswer>) => {
+    if (!stepZeroData || !config) return;
 
     const totalPoints = Object.values(finalAnswers).reduce((s, a) => s + a.score, 0);
-    const noteSur10 = +(totalPoints / maxTotalPoints * 10).toFixed(2);
+    const noteSur10 = +(totalPoints / config.maxPoints * 10).toFixed(2);
 
     const dateStr = stepZeroData.dateEvenement
       ? format(stepZeroData.dateEvenement, "yyyy-MM-dd")
@@ -69,11 +83,9 @@ export default function AuditForm() {
     const month = stepZeroData.dateEvenement
       ? stepZeroData.dateEvenement.getMonth()
       : new Date().getMonth();
-    // mois_versement = month + 1 (next month)
     const moisVersementIdx = Math.min(month + 1, 11);
     const moisVersement = MOIS_ORDRE[moisVersementIdx];
 
-    // 1. Create the audit entry
     const { data: auditRow, error: auditErr } = await supabase
       .from("audits")
       .insert({
@@ -96,7 +108,6 @@ export default function AuditForm() {
       return;
     }
 
-    // 2. Create audit_details
     const itemsJson: Record<string, any> = {};
     Object.entries(finalAnswers).forEach(([id, ans]) => {
       itemsJson[id] = {
@@ -134,21 +145,48 @@ export default function AuditForm() {
     navigate("/audits");
   };
 
-  const currentItem = auditItems[currentItemIdx];
+  if (configLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center py-20">
+          <p className="text-muted-foreground animate-pulse">Chargement de la grille d'audit…</p>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!config) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <p className="text-muted-foreground">Aucune grille d'audit configurée pour « {typeEvenement} ».</p>
+          <button onClick={() => navigate("/audits/new")} className="text-primary underline text-sm">
+            Retour
+          </button>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  const currentItem = allItems[currentItemIdx];
 
   return (
     <AppLayout>
       <div className="py-8 sm:py-12 max-w-2xl mx-auto px-4">
-        {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-3">
             <Badge variant="outline" className="text-xs">
               {typeEvenement}
             </Badge>
-            {phase === "items" && (
-              <span className="text-xs text-muted-foreground">
-                Item {currentItemIdx + 1} / {totalItems}
-              </span>
+            {phase === "items" && currentItem && (
+              <>
+                <Badge variant="secondary" className="text-xs">
+                  {currentItem.categoryName}
+                </Badge>
+                <span className="text-xs text-muted-foreground">
+                  Item {currentItemIdx + 1} / {totalItems}
+                </span>
+              </>
             )}
           </div>
           <h1 className="text-xl font-semibold text-foreground">
@@ -156,14 +194,13 @@ export default function AuditForm() {
               ? "Informations générales"
               : phase === "saving"
               ? "Enregistrement..."
-              : currentItem.title}
+              : currentItem?.title ?? ""}
           </h1>
           {phase === "items" && (
             <Progress value={progress} className="mt-3 h-2" />
           )}
         </div>
 
-        {/* Step 0: Info form */}
         {phase === "info" && (
           <StepZeroForm
             typeEvenement={typeEvenement}
@@ -172,13 +209,13 @@ export default function AuditForm() {
           />
         )}
 
-        {/* Item dialogs */}
         {phase === "items" && currentItem && (
           <AuditItemDialog
             key={currentItem.id}
             item={currentItem}
             stepIndex={currentItemIdx + 1}
             totalSteps={totalItems}
+            categoryName={currentItem.categoryName}
             open={true}
             initialAnswer={answers[currentItem.id]}
             onSubmit={handleItemSubmit}

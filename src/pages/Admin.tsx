@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -120,6 +121,7 @@ function matchesSearch(user: ManagedUser, search: string) {
 }
 
 export default function Admin() {
+  const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
@@ -386,6 +388,10 @@ export default function Admin() {
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
           <h3 className="text-sm font-semibold text-foreground">Gestion des collaborateurs</h3>
           <div className="flex items-center gap-2 sm:gap-3 flex-1 sm:flex-none justify-end">
+            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => navigate("/admin/audit-grid")}>
+              <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3" />
+              <span className="hidden sm:inline">Grilles d'audit</span>
+            </Button>
             <div className="flex gap-1.5">
               <Input
                 placeholder="Rechercher…"

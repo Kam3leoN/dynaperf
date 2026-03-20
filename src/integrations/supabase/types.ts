@@ -14,6 +14,41 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_categories: {
+        Row: {
+          audit_type_id: string
+          created_at: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          audit_type_id: string
+          created_at?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          audit_type_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_categories_audit_type_id_fkey"
+            columns: ["audit_type_id"]
+            isOneToOne: false
+            referencedRelation: "audit_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_details: {
         Row: {
           audit_id: string
@@ -78,6 +113,89 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      audit_items_config: {
+        Row: {
+          category_id: string
+          checklist_items: Json | null
+          condition: string
+          created_at: string
+          description: string
+          id: string
+          input_type: string
+          max_points: number
+          scoring_rules: string | null
+          sort_order: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category_id: string
+          checklist_items?: Json | null
+          condition?: string
+          created_at?: string
+          description?: string
+          id?: string
+          input_type?: string
+          max_points?: number
+          scoring_rules?: string | null
+          sort_order?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category_id?: string
+          checklist_items?: Json | null
+          condition?: string
+          created_at?: string
+          description?: string
+          id?: string
+          input_type?: string
+          max_points?: number
+          scoring_rules?: string | null
+          sort_order?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_items_config_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "audit_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      audit_types: {
+        Row: {
+          color: string | null
+          created_at: string
+          icon: string | null
+          id: string
+          key: string
+          label: string
+          updated_at: string
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          key: string
+          label: string
+          updated_at?: string
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          icon?: string | null
+          id?: string
+          key?: string
+          label?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       audits: {
         Row: {
