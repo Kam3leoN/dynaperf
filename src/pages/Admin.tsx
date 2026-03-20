@@ -637,7 +637,7 @@ export default function Admin() {
                     </div>
                   )}
                   <div className="absolute -top-5 left-1/2 -translate-x-1/2 pointer-events-none">
-                    <ArcText text={(ROLE_LABELS[getUserRole(viewUser)] ?? getUserRole(viewUser)).toUpperCase()} />
+                    <ArcText text={(viewUser.title || ROLE_LABELS[getUserRole(viewUser)] || getUserRole(viewUser)).toUpperCase()} />
                   </div>
                 </div>
               </div>
