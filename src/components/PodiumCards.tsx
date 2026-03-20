@@ -93,12 +93,12 @@ export function PodiumCards({ data }: PodiumCardsProps) {
                       <div className="relative flex items-center justify-center mb-0">
                         <FontAwesomeIcon
                           icon={faTrophy}
-                          className="text-3xl"
+                          className="text-4xl"
                           style={{ color: cfg.medal.trophy }}
                         />
                         <span
-                          className="absolute text-[11px] font-black text-white"
-                          style={{ top: "4px" }}
+                          className="absolute text-[12px] font-black text-white"
+                          style={{ top: "3px" }}
                         >
                           {cfg.rank}
                         </span>
