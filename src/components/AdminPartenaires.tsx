@@ -244,6 +244,17 @@ export default function AdminPartenaires() {
         </div>
       </div>
 
+      {/* Statut */}
+      <div>
+        <label className="text-xs text-muted-foreground mb-1 block">Statut</label>
+        <Select value={form.statut} onValueChange={(v) => setForm(f => ({ ...f, statut: v }))}>
+          <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {STATUT_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+
       {/* Société */}
       <div>
         <label className="text-xs text-muted-foreground mb-1 block">Société</label>
@@ -259,7 +270,19 @@ export default function AdminPartenaires() {
       {/* Partenaire référent */}
       <div>
         <label className="text-xs text-muted-foreground mb-1 block">Partenaire référent</label>
-        <Input value={form.partenaire_referent} onChange={(e) => setForm(f => ({ ...f, partenaire_referent: e.target.value }))} className="h-9 text-sm" placeholder="Dynabuy" />
+        <Select value={form.partenaire_referent} onValueChange={(v) => setForm(f => ({ ...f, partenaire_referent: v }))}>
+          <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Dynabuy">Dynabuy</SelectItem>
+            <Separator className="my-1" />
+            {partenaires
+              .filter(p => !editP || p.id !== editP.id)
+              .sort((a, b) => `${a.prenom} ${a.nom}`.localeCompare(`${b.prenom} ${b.nom}`))
+              .map(p => (
+                <SelectItem key={p.id} value={`${p.prenom} ${p.nom}`}>{p.prenom} {p.nom}</SelectItem>
+              ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Casquettes */}
