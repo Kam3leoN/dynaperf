@@ -1,7 +1,7 @@
 import { useAuditData } from "@/hooks/useAuditData";
 import { GlobalStats } from "@/components/GlobalStats";
 import { ScoreCard } from "@/components/ScoreCard";
-import { CollaborateurTracker } from "@/components/CollaborateurTracker";
+
 import { MonthlyChart } from "@/components/MonthlyChart";
 import { ScoreDistributionChart } from "@/components/ScoreDistributionChart";
 import { PartenaireLeaderboard } from "@/components/PartenaireLeaderboard";

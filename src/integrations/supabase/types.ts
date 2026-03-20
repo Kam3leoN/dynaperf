@@ -56,6 +56,48 @@ export type Database = {
         }
         Relationships: []
       }
+      collaborateur_config: {
+        Row: {
+          created_at: string
+          id: string
+          objectif: number
+          palier_1: number | null
+          palier_2: number | null
+          palier_3: number | null
+          prime_audit_1: number
+          prime_audit_2: number
+          prime_audit_3_plus: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          objectif?: number
+          palier_1?: number | null
+          palier_2?: number | null
+          palier_3?: number | null
+          prime_audit_1?: number
+          prime_audit_2?: number
+          prime_audit_3_plus?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          objectif?: number
+          palier_1?: number | null
+          palier_2?: number | null
+          palier_3?: number | null
+          prime_audit_1?: number
+          prime_audit_2?: number
+          prime_audit_3_plus?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
