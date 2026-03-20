@@ -58,12 +58,14 @@ interface ManagedUser {
 }
 
 const ROLE_LABELS: Record<string, string> = {
+  super_admin: "Super Admin",
   admin: "Admin",
   redacteur: "Rédacteur",
   lecteur: "Lecteur",
 };
 
 function getUserRole(u: ManagedUser) {
+  if (u.roles.includes("super_admin")) return "super_admin";
   if (u.roles.includes("admin")) return "admin";
   if (u.roles.includes("redacteur")) return "redacteur";
   return "lecteur";
@@ -71,6 +73,7 @@ function getUserRole(u: ManagedUser) {
 
 function RoleBadge({ role }: { role: string }) {
   const styles: Record<string, string> = {
+    super_admin: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
     admin: "bg-primary/10 text-primary",
     redacteur: "bg-accent/20 text-accent-foreground",
     lecteur: "bg-secondary text-muted-foreground",
@@ -316,11 +319,14 @@ export default function Admin() {
     setEditSaving(false);
   };
 
+  const currentUserRole = users.find(u => u.id === currentUser?.id);
+  const isSuperAdmin = currentUserRole ? getUserRole(currentUserRole) === "super_admin" : false;
   const filtered = users.filter((u) => matchesSearch(u.displayName, u.email, searchPrenom, searchNom));
 
   const MobileCard = ({ u }: { u: ManagedUser }) => {
     const role = getUserRole(u);
-    const isAdmin = role === "admin";
+    const isAdminOrAbove = role === "admin" || role === "super_admin";
+    const isSuperAdminUser = role === "super_admin";
     const isExpanded = expandedUser === u.id;
     return (
       <motion.div
@@ -345,7 +351,7 @@ export default function Admin() {
             <button onClick={() => openEditDialog(u)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
               <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
-            {u.id !== currentUser?.id && (
+            {u.id !== currentUser?.id && !(isSuperAdminUser && !isSuperAdmin) && (
               <button onClick={() => handleDelete(u.id, u.email)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors" title="Supprimer">
                 <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
               </button>
@@ -354,12 +360,14 @@ export default function Admin() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <RoleBadge role={role} />
-          {!isAdmin && (
+          {!isAdminOrAbove && (
             <Select value={role} onValueChange={(v) => handleSetRole(u.id, v)}>
               <SelectTrigger className="w-[120px] h-7 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="lecteur">Lecteur</SelectItem>
                 <SelectItem value="redacteur">Rédacteur</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+                {isSuperAdmin && <SelectItem value="super_admin">Super Admin</SelectItem>}
               </SelectContent>
             </Select>
           )}
@@ -521,7 +529,8 @@ export default function Admin() {
                   <AnimatePresence>
                     {filtered.map((u) => {
                       const role = getUserRole(u);
-                      const isAdmin = role === "admin";
+                      const isAdminOrAbove = role === "admin" || role === "super_admin";
+                      const isSuperAdminUser = role === "super_admin";
                       const isExpanded = expandedUser === u.id;
                       return (
                         <motion.tr
@@ -537,7 +546,9 @@ export default function Admin() {
                           <TableCell className="text-sm font-medium">{u.displayName}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
                           <TableCell>
-                            {isAdmin ? (
+                            {isAdminOrAbove && !isSuperAdmin ? (
+                              <RoleBadge role={role} />
+                            ) : isSuperAdminUser ? (
                               <RoleBadge role={role} />
                             ) : (
                               <Select value={role} onValueChange={(v) => handleSetRole(u.id, v)}>
@@ -545,6 +556,8 @@ export default function Admin() {
                                 <SelectContent>
                                   <SelectItem value="lecteur">Lecteur</SelectItem>
                                   <SelectItem value="redacteur">Rédacteur</SelectItem>
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                  {isSuperAdmin && <SelectItem value="super_admin">Super Admin</SelectItem>}
                                 </SelectContent>
                               </Select>
                             )}
@@ -571,7 +584,7 @@ export default function Admin() {
                               >
                                 <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
                               </button>
-                              {u.id !== currentUser?.id && (
+                              {u.id !== currentUser?.id && !(isSuperAdminUser && !isSuperAdmin) && (
                                 <button
                                   onClick={() => handleDelete(u.id, u.email)}
                                   className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors"
@@ -624,7 +637,7 @@ export default function Admin() {
 
       {/* View user dialog */}
       <Dialog open={!!viewUser} onOpenChange={(o) => { if (!o) setViewUser(null); }}>
-        <DialogContent className="sm:max-w-md pt-20 overflow-visible [&>button]:hidden">
+        <DialogContent className="sm:max-w-md pt-20 [&>button]:hidden" style={{ overflow: 'visible' }}>
           {viewUser && (
             <>
               <div className="absolute -top-16 left-1/2 -translate-x-1/2">
@@ -694,7 +707,7 @@ export default function Admin() {
 
       {/* Edit user dialog */}
       <Dialog open={!!editUser} onOpenChange={(o) => { if (!o) setEditUser(null); }}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto pt-20 overflow-visible [&>button]:hidden">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] pt-20 [&>button]:hidden" style={{ overflow: 'visible' }}>
           {editUser && (
             <>
               <div className="absolute -top-16 left-1/2 -translate-x-1/2">
@@ -765,6 +778,7 @@ export default function Admin() {
                     <SelectItem value="lecteur">Lecteur</SelectItem>
                     <SelectItem value="redacteur">Rédacteur</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
+                    {isSuperAdmin && <SelectItem value="super_admin">Super Admin</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>

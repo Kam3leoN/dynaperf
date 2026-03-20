@@ -33,9 +33,10 @@ export function useAdmin(providedUser?: User | null) {
 
     const check = async () => {
       try {
+        // Check for admin role (has_role now handles super_admin → admin mapping)
         const { data, error } = await supabase.rpc("has_role", {
           _user_id: user.id,
-          _role: "admin",
+          _role: "admin" as any,
         });
 
         if (cancelled) return;

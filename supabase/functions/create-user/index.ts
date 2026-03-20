@@ -37,9 +37,11 @@ Deno.serve(async (req) => {
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
     const { data: roles } = await adminClient
       .from("user_roles").select("role")
-      .eq("user_id", user.id).eq("role", "admin");
+      .eq("user_id", user.id);
 
-    if (!roles?.length) return jsonError("Non autorisé", 403);
+    const callerIsSuperAdmin = roles?.some((r: any) => r.role === "super_admin");
+    const callerIsAdmin = roles?.some((r: any) => r.role === "admin" || r.role === "super_admin");
+    if (!callerIsAdmin) return jsonError("Non autorisé", 403);
 
     const body = await req.json();
     const { action } = body;
@@ -48,6 +50,12 @@ Deno.serve(async (req) => {
     if (action === "delete") {
       const { userId } = body;
       if (!userId) return jsonError("userId requis", 400);
+
+      // Check if target is super_admin — only super_admin can delete super_admin
+      const { data: targetRoles } = await adminClient.from("user_roles").select("role").eq("user_id", userId);
+      const targetIsSuperAdmin = targetRoles?.some((r: any) => r.role === "super_admin");
+      if (targetIsSuperAdmin && !callerIsSuperAdmin) return jsonError("Seul un super admin peut supprimer un super admin", 403);
+
       await adminClient.from("collaborateur_config").delete().eq("user_id", userId);
       await adminClient.from("user_roles").delete().eq("user_id", userId);
       await adminClient.from("profiles").delete().eq("user_id", userId);
@@ -60,7 +68,14 @@ Deno.serve(async (req) => {
     if (action === "set-role") {
       const { userId, role } = body;
       if (!userId || !role) return jsonError("userId et role requis", 400);
-      await adminClient.from("user_roles").delete().eq("user_id", userId).neq("role", "admin");
+
+      // Only super_admin can assign/remove super_admin role
+      if (role === "super_admin" && !callerIsSuperAdmin) return jsonError("Seul un super admin peut attribuer ce rôle", 403);
+      const { data: targetRoles } = await adminClient.from("user_roles").select("role").eq("user_id", userId);
+      const targetIsSuperAdmin = targetRoles?.some((r: any) => r.role === "super_admin");
+      if (targetIsSuperAdmin && !callerIsSuperAdmin) return jsonError("Seul un super admin peut modifier le rôle d'un super admin", 403);
+
+      await adminClient.from("user_roles").delete().eq("user_id", userId);
       if (role !== "none") {
         const { error } = await adminClient.from("user_roles").upsert(
           { user_id: userId, role }, { onConflict: "user_id,role" }
