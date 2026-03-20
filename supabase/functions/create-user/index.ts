@@ -99,15 +99,19 @@ Deno.serve(async (req) => {
       const { data: allProfiles } = await adminClient.from("profiles").select("*");
       const { data: allConfigs } = await adminClient.from("collaborateur_config").select("*");
 
-      const result = users.map((u: any) => ({
-        id: u.id,
-        email: u.email,
-        displayName: allProfiles?.find((p: any) => p.user_id === u.id)?.display_name || u.email,
-        avatarUrl: allProfiles?.find((p: any) => p.user_id === u.id)?.avatar_url || null,
-        roles: allRoles?.filter((r: any) => r.user_id === u.id).map((r: any) => r.role) || [],
-        config: allConfigs?.find((c: any) => c.user_id === u.id) || null,
-        createdAt: u.created_at,
-      }));
+      const result = users.map((u: any) => {
+        const profile = allProfiles?.find((p: any) => p.user_id === u.id);
+        return {
+          id: u.id,
+          email: u.email,
+          displayName: profile?.display_name || u.email,
+          avatarUrl: profile?.avatar_url || null,
+          title: profile?.title || null,
+          roles: allRoles?.filter((r: any) => r.user_id === u.id).map((r: any) => r.role) || [],
+          config: allConfigs?.find((c: any) => c.user_id === u.id) || null,
+          createdAt: u.created_at,
+        };
+      });
 
       return jsonOk({ users: result });
     }
@@ -121,9 +125,9 @@ Deno.serve(async (req) => {
       return jsonOk({ success: true });
     }
 
-    // UPDATE USER (email, displayName)
+    // UPDATE USER (email, displayName, title)
     if (action === "update-user") {
-      const { userId, email: newEmail, displayName: newName } = body;
+      const { userId, email: newEmail, displayName: newName, title: newTitle } = body;
       if (!userId) return jsonError("userId requis", 400);
 
       // Update auth email if changed
@@ -132,10 +136,14 @@ Deno.serve(async (req) => {
         if (error) return jsonError(error.message, 400);
       }
 
-      // Update profile display_name
-      if (newName !== undefined) {
-        const { error } = await adminClient.from("profiles").update({ display_name: newName }).eq("user_id", userId);
+      // Update profile fields
+      const profileUpdate: Record<string, any> = {};
+      if (newName !== undefined) profileUpdate.display_name = newName;
+      if (newTitle !== undefined) profileUpdate.title = newTitle || null;
+      if (Object.keys(profileUpdate).length > 0) {
+        const { error } = await adminClient.from("profiles").update(profileUpdate).eq("user_id", userId);
         if (error) return jsonError(error.message, 400);
+      }
       }
 
       return jsonOk({ success: true });

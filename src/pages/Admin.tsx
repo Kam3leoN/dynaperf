@@ -17,9 +17,8 @@ function ArcText({ text, radius = 78, fontSize = 13 }: { text: string; radius?: 
   const id = "arcPath";
   const svgSize = radius * 2 + 40;
   const cx = svgSize / 2;
-  const cy = svgSize / 2;
   return (
-    <svg width={svgSize} height={radius + fontSize + 10} viewBox={`0 0 ${svgSize} ${radius + fontSize + 10}`} className="overflow-visible">
+    <svg width={svgSize} height={radius + fontSize + 10} viewBox={`0 0 ${svgSize} ${radius + fontSize + 10}`} className="overflow-visible" style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.3))" }}>
       <defs>
         <path id={id} d={`M ${cx - radius},${radius + fontSize} A ${radius},${radius} 0 0,1 ${cx + radius},${radius + fontSize}`} fill="none" />
       </defs>
@@ -30,10 +29,6 @@ function ArcText({ text, radius = 78, fontSize = 13 }: { text: string; radius?: 
         letterSpacing="0.18em"
         textAnchor="middle"
         fontFamily="Lexend, sans-serif"
-        paintOrder="stroke"
-        stroke="hsl(var(--background))"
-        strokeWidth="3"
-        strokeLinejoin="round"
       >
         <textPath href={`#${id}`} startOffset="50%">{text}</textPath>
       </text>
@@ -56,6 +51,7 @@ interface ManagedUser {
   email: string;
   displayName: string;
   avatarUrl: string | null;
+  title: string | null;
   roles: string[];
   config: UserConfig | null;
   createdAt: string;
@@ -140,6 +136,7 @@ export default function Admin() {
   const [editPrime1, setEditPrime1] = useState("0");
   const [editPrime2, setEditPrime2] = useState("0");
   const [editPrime3, setEditPrime3] = useState("0");
+  const [editTitle, setEditTitle] = useState("");
   const [editSaving, setEditSaving] = useState(false);
 
   // Create dialog
@@ -277,6 +274,7 @@ export default function Admin() {
     setEditPrime1((u.config?.prime_audit_1 ?? 0).toString());
     setEditPrime2((u.config?.prime_audit_2 ?? 0).toString());
     setEditPrime3((u.config?.prime_audit_3_plus ?? 0).toString());
+    setEditTitle(u.title || "");
   };
 
   const handleEditSave = async () => {
@@ -286,12 +284,12 @@ export default function Admin() {
 
     // Update name & email
     const res = await supabase.functions.invoke("create-user", {
-      body: { action: "update-user", userId: editUser.id, email: editEmail.trim(), displayName: `${editFirstName.trim()} ${editLastName.trim().toUpperCase()}`.trim() },
+      body: { action: "update-user", userId: editUser.id, email: editEmail.trim(), displayName: `${editFirstName.trim()} ${editLastName.trim().toUpperCase()}`.trim(), title: editTitle.trim() },
     });
     if (res.data?.error) { toast.error(res.data.error); setEditSaving(false); return; }
 
     // Update role if changed and not admin
-    if (role !== "admin" && editRole !== role) {
+    if (editRole !== role) {
       await supabase.functions.invoke("create-user", {
         body: { action: "set-role", userId: editUser.id, role: editRole },
       });
@@ -639,7 +637,7 @@ export default function Admin() {
                     </div>
                   )}
                   <div className="absolute -top-5 left-1/2 -translate-x-1/2 pointer-events-none">
-                    <ArcText text={(ROLE_LABELS[getUserRole(viewUser)] ?? getUserRole(viewUser)).toUpperCase()} />
+                    <ArcText text={(viewUser.title || ROLE_LABELS[getUserRole(viewUser)] || getUserRole(viewUser)).toUpperCase()} />
                   </div>
                 </div>
               </div>
@@ -718,7 +716,7 @@ export default function Admin() {
                     }
                   }} />
                   <div className="absolute -top-5 left-1/2 -translate-x-1/2 pointer-events-none">
-                    <ArcText text={(ROLE_LABELS[getUserRole(editUser)] ?? getUserRole(editUser)).toUpperCase()} />
+                    <ArcText text={(editTitle || ROLE_LABELS[getUserRole(editUser)] || getUserRole(editUser)).toUpperCase()} />
                   </div>
                 </div>
               </div>
@@ -752,19 +750,24 @@ export default function Admin() {
                 <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="h-9 text-sm" />
               </div>
 
+              {/* Titre arc */}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Titre (au-dessus de l'avatar)</label>
+                <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="h-9 text-sm" placeholder={ROLE_LABELS[getUserRole(editUser)] ?? getUserRole(editUser)} />
+              </div>
+
               {/* Rôle */}
-              {getUserRole(editUser) !== "admin" && (
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Rôle</label>
-                  <Select value={editRole} onValueChange={setEditRole}>
-                    <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="lecteur">Lecteur</SelectItem>
-                      <SelectItem value="redacteur">Rédacteur</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Rôle</label>
+                <Select value={editRole} onValueChange={setEditRole}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="lecteur">Lecteur</SelectItem>
+                    <SelectItem value="redacteur">Rédacteur</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
               {/* Objectifs paliers */}
               <div>
