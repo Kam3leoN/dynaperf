@@ -10,9 +10,9 @@ interface PodiumCardsProps {
 const TYPES = ["Club Affaires", "RD Présentiel", "RD Distanciel", "RDV Commercial"];
 
 const MEDAL_COLORS = {
-  gold: "#FFD700",
-  silver: "#C0C0C0",
-  bronze: "#CD7F32",
+  gold: { bg: "#FFD700", trophy: "#DAA520" },
+  silver: { bg: "#C0C0C0", trophy: "#A0A0A0" },
+  bronze: { bg: "#CD7F32", trophy: "#A0612B" },
 };
 
 const podiumConfig = [
