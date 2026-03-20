@@ -1,7 +1,7 @@
 import { useAuditData } from "@/hooks/useAuditData";
 import { GlobalStats } from "@/components/GlobalStats";
 import { ScoreCard } from "@/components/ScoreCard";
-import { CollaborateurTracker } from "@/components/CollaborateurTracker";
+
 import { MonthlyChart } from "@/components/MonthlyChart";
 import { ScoreDistributionChart } from "@/components/ScoreDistributionChart";
 import { PartenaireLeaderboard } from "@/components/PartenaireLeaderboard";
@@ -63,10 +63,7 @@ const Index = () => {
             <MonthlyChart data={monthlyData} />
             <ScoreDistributionChart data={scoreDistribution} />
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4">
-            <CollaborateurTracker data={collaborateurStats} />
-            <PartenaireLeaderboard data={partenaireStats} />
-          </div>
+          <PartenaireLeaderboard data={partenaireStats} />
         </>
       )}
     </AppLayout>
