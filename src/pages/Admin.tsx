@@ -775,6 +775,7 @@ export default function Admin() {
                     <SelectItem value="lecteur">Lecteur</SelectItem>
                     <SelectItem value="redacteur">Rédacteur</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
+                    {isSuperAdmin && <SelectItem value="super_admin">Super Admin</SelectItem>}
                   </SelectContent>
                 </Select>
               </div>
