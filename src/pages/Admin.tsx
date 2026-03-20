@@ -325,7 +325,8 @@ export default function Admin() {
 
   const MobileCard = ({ u }: { u: ManagedUser }) => {
     const role = getUserRole(u);
-    const isAdmin = role === "admin";
+    const isAdminOrAbove = role === "admin" || role === "super_admin";
+    const isSuperAdminUser = role === "super_admin";
     const isExpanded = expandedUser === u.id;
     return (
       <motion.div
@@ -350,7 +351,7 @@ export default function Admin() {
             <button onClick={() => openEditDialog(u)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
               <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
-            {u.id !== currentUser?.id && (
+            {u.id !== currentUser?.id && !(isSuperAdminUser && !isSuperAdmin) && (
               <button onClick={() => handleDelete(u.id, u.email)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors" title="Supprimer">
                 <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
               </button>
@@ -359,12 +360,14 @@ export default function Admin() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <RoleBadge role={role} />
-          {!isAdmin && (
+          {!isAdminOrAbove && (
             <Select value={role} onValueChange={(v) => handleSetRole(u.id, v)}>
               <SelectTrigger className="w-[120px] h-7 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="lecteur">Lecteur</SelectItem>
                 <SelectItem value="redacteur">Rédacteur</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+                {isSuperAdmin && <SelectItem value="super_admin">Super Admin</SelectItem>}
               </SelectContent>
             </Select>
           )}
