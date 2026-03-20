@@ -112,7 +112,7 @@ Deno.serve(async (req) => {
     }
 
     // CREATE USER (default)
-    const { email, password, displayName } = body;
+    const { email, password, displayName, role, config } = body;
     if (!email || !password) return jsonError("Email et mot de passe requis", 400);
 
     const { data, error } = await adminClient.auth.admin.createUser({
@@ -121,7 +121,30 @@ Deno.serve(async (req) => {
     });
     if (error) return jsonError(error.message, 400);
 
-    return jsonOk({ user: { id: data.user.id, email: data.user.email } });
+    const newUserId = data.user.id;
+
+    // Set role if provided
+    if (role && role !== "none") {
+      await adminClient.from("user_roles").upsert(
+        { user_id: newUserId, role },
+        { onConflict: "user_id,role" }
+      );
+    }
+
+    // Save config if provided
+    if (config) {
+      await adminClient.from("collaborateur_config").upsert(
+        { user_id: newUserId, ...config },
+        { onConflict: "user_id" }
+      );
+    }
+
+    // Save avatar_url if provided
+    if (body.avatar_url) {
+      await adminClient.from("profiles").update({ avatar_url: body.avatar_url }).eq("user_id", newUserId);
+    }
+
+    return jsonOk({ user: { id: newUserId, email: data.user.email } });
   } catch (err) {
     return jsonError(err.message, 500);
   }
