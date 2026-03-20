@@ -20,7 +20,6 @@ interface AppLayoutProps {
 export function AppLayout({ children, audits, filters, setFilters }: AppLayoutProps) {
   const { user, signOut } = useAuth();
   const location = useLocation();
-  const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const linkClass = (path: string) =>
