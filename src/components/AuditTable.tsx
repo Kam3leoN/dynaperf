@@ -254,6 +254,11 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
+                      {a.statut === "OK" && (
+                        <button onClick={() => setDetailAudit({ id: a.id, type: a.typeEvenement })} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Voir le détail">
+                          <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
+                        </button>
+                      )}
                       <button onClick={() => openEdit(a)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors">
                         <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
                       </button>
