@@ -750,19 +750,24 @@ export default function Admin() {
                 <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="h-9 text-sm" />
               </div>
 
+              {/* Titre arc */}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Titre (au-dessus de l'avatar)</label>
+                <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="h-9 text-sm" placeholder={ROLE_LABELS[getUserRole(editUser)] ?? getUserRole(editUser)} />
+              </div>
+
               {/* Rôle */}
-              {getUserRole(editUser) !== "admin" && (
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Rôle</label>
-                  <Select value={editRole} onValueChange={setEditRole}>
-                    <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="lecteur">Lecteur</SelectItem>
-                      <SelectItem value="redacteur">Rédacteur</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Rôle</label>
+                <Select value={editRole} onValueChange={setEditRole}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="lecteur">Lecteur</SelectItem>
+                    <SelectItem value="redacteur">Rédacteur</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
               {/* Objectifs paliers */}
               <div>
