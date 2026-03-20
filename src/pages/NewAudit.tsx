@@ -61,9 +61,20 @@ export default function NewAudit() {
                   style={{ color: type.color }}
                 />
               </div>
-              <span className="text-sm font-medium text-foreground text-center leading-snug">
-                {type.label}
-              </span>
+              {type.mobileLabel ? (
+                <>
+                  <span className="text-sm font-medium text-foreground text-center leading-snug sm:hidden">
+                    {type.mobileLabel}
+                  </span>
+                  <span className="text-sm font-medium text-foreground text-center leading-snug hidden sm:block">
+                    {type.label}
+                  </span>
+                </>
+              ) : (
+                <span className="text-sm font-medium text-foreground text-center leading-snug">
+                  {type.label}
+                </span>
+              )}
             </button>
           ))}
         </div>
