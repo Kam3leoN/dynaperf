@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -18,8 +18,9 @@ import {
   calcParticipantsScore,
   calcLinearScore,
 } from "@/data/auditItems";
+import { StepZeroData } from "./StepZeroForm";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCircleInfo, faChevronLeft, faChevronRight, faCheck } from "@fortawesome/free-solid-svg-icons";
+import { faCircleInfo, faChevronLeft, faChevronRight, faCheck, faLock } from "@fortawesome/free-solid-svg-icons";
 
 export interface ItemAnswer {
   score: number;
@@ -39,6 +40,18 @@ interface Props {
   onBack: () => void;
   onClose: () => void;
   isLast: boolean;
+  stepZeroData?: StepZeroData;
+}
+
+function getAutoValue(item: AuditItemDef, stepZeroData?: StepZeroData): number | undefined {
+  if (!stepZeroData || !item.autoField) return undefined;
+  const fieldMap: Record<string, number | undefined> = {
+    nbParticipants: stepZeroData.nbParticipants,
+    nbInvites: stepZeroData.nbInvites,
+    nbNoShow: stepZeroData.nbNoShow,
+    nbRdvPris: stepZeroData.nbRdvPris,
+  };
+  return fieldMap[item.autoField];
 }
 
 export function AuditItemDialog({
@@ -52,23 +65,32 @@ export function AuditItemDialog({
   onBack,
   onClose,
   isLast,
+  stepZeroData,
 }: Props) {
-  const [boolVal, setBoolVal] = useState<boolean>(
-    initialAnswer ? initialAnswer.score > 0 : false
-  );
-  const [numVal, setNumVal] = useState<string>(
-    initialAnswer?.rawValue !== undefined ? String(initialAnswer.rawValue) : ""
-  );
+  const autoValue = getAutoValue(item, stepZeroData);
+  const isAutoFilled = autoValue !== undefined;
+  const isNoShowAuto = item.autoField === "nbNoShow";
+
+  const [boolVal, setBoolVal] = useState<boolean>(() => {
+    if (isNoShowAuto) return (autoValue ?? 0) === 0;
+    return initialAnswer ? initialAnswer.score > 0 : false;
+  });
+  const [numVal, setNumVal] = useState<string>(() => {
+    if (isAutoFilled && !isNoShowAuto) return String(autoValue ?? 0);
+    return initialAnswer?.rawValue !== undefined ? String(initialAnswer.rawValue) : "";
+  });
   const [checklist, setChecklist] = useState<boolean[]>(
     initialAnswer?.checklist ?? new Array(item.checklistItems?.length ?? 0).fill(false)
   );
   const [comment, setComment] = useState(initialAnswer?.comment ?? "");
 
   function getScore(): number {
+    if (isNoShowAuto) {
+      return (autoValue ?? 0) === 0 ? item.maxPoints : 0;
+    }
     if (item.inputType === "boolean") return boolVal ? item.maxPoints : 0;
     if (item.inputType === "number") {
       const n = parseInt(numVal) || 0;
-      // Use participants scoring for items with specific scoring rules containing "participants"
       if (item.scoringRules && item.scoringRules.includes("participants")) {
         return calcParticipantsScore(n);
       }
@@ -118,6 +140,12 @@ export function AuditItemDialog({
             >
               {currentScore}/{item.maxPoints} pts
             </Badge>
+            {isAutoFilled && (
+              <Badge variant="outline" className="text-xs gap-1 text-muted-foreground">
+                <FontAwesomeIcon icon={faLock} className="h-2.5 w-2.5" />
+                Auto
+              </Badge>
+            )}
           </div>
           <DialogTitle className="text-lg">{item.title}</DialogTitle>
           <DialogDescription className="whitespace-pre-line text-sm leading-relaxed">
@@ -143,7 +171,55 @@ export function AuditItemDialog({
 
         {/* Input area */}
         <div className="space-y-4 pt-2">
-          {item.inputType === "boolean" && (
+          {/* Auto-filled number items (participants, invités, rdv) */}
+          {isAutoFilled && !isNoShowAuto && item.inputType === "number" && (
+            <div className="space-y-2">
+              <Label>Nombre (pré-rempli)</Label>
+              <Input
+                type="number"
+                value={numVal}
+                disabled
+                className="bg-muted cursor-not-allowed"
+              />
+              <p className="text-xs text-muted-foreground">
+                Valeur renseignée à l'étape précédente. Non modifiable.
+              </p>
+            </div>
+          )}
+
+          {/* Auto no-show: display status */}
+          {isNoShowAuto && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-4">
+                <Button
+                  type="button"
+                  variant={boolVal ? "default" : "outline"}
+                  disabled
+                  className="flex-1 cursor-not-allowed"
+                  style={boolVal ? { backgroundColor: "hsl(var(--chart-2))" } : {}}
+                >
+                  <FontAwesomeIcon icon={faCheck} className="mr-1 h-3 w-3" />
+                  Validé
+                </Button>
+                <Button
+                  type="button"
+                  variant={!boolVal ? "destructive" : "outline"}
+                  disabled
+                  className="flex-1 cursor-not-allowed"
+                >
+                  Non validé
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {(autoValue ?? 0) > 0
+                  ? `${autoValue} no-show détecté(s) — item non validé automatiquement.`
+                  : "Aucun no-show — item validé automatiquement."}
+              </p>
+            </div>
+          )}
+
+          {/* Regular boolean (non-auto) */}
+          {item.inputType === "boolean" && !isAutoFilled && (
             <div className="flex items-center gap-4">
               <Button
                 type="button"
@@ -166,7 +242,8 @@ export function AuditItemDialog({
             </div>
           )}
 
-          {item.inputType === "number" && (
+          {/* Regular number (non-auto) */}
+          {item.inputType === "number" && !isAutoFilled && (
             <div className="space-y-2">
               <Label>Nombre</Label>
               <Input
