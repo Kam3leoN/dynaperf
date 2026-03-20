@@ -5,6 +5,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+function jsonOk(data: any) {
+  return new Response(JSON.stringify(data), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
+function jsonError(msg: string, status: number) {
+  return new Response(JSON.stringify({ error: msg }), {
+    status, headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -20,22 +32,14 @@ Deno.serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
     const { data: { user }, error: authError } = await userClient.auth.getUser();
-    if (authError || !user) {
-      return new Response(JSON.stringify({ error: "Non authentifié" }), {
-        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (authError || !user) return jsonError("Non authentifié", 401);
 
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
     const { data: roles } = await adminClient
       .from("user_roles").select("role")
       .eq("user_id", user.id).eq("role", "admin");
 
-    if (!roles?.length) {
-      return new Response(JSON.stringify({ error: "Non autorisé" }), {
-        status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
+    if (!roles?.length) return jsonError("Non autorisé", 403);
 
     const body = await req.json();
     const { action } = body;
@@ -59,8 +63,7 @@ Deno.serve(async (req) => {
       await adminClient.from("user_roles").delete().eq("user_id", userId).neq("role", "admin");
       if (role !== "none") {
         const { error } = await adminClient.from("user_roles").upsert(
-          { user_id: userId, role },
-          { onConflict: "user_id,role" }
+          { user_id: userId, role }, { onConflict: "user_id,role" }
         );
         if (error) return jsonError(error.message, 400);
       }
@@ -123,16 +126,3 @@ Deno.serve(async (req) => {
     return jsonError(err.message, 500);
   }
 });
-
-function jsonOk(data: any) {
-  return new Response(JSON.stringify(data), {
-    headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
-function jsonError(msg: string, status: number) {
-  return new Response(JSON.stringify({ error: msg }), {
-    status, headers: { ...corsHeaders, "Content-Type": "application/json" },
-  });
-}
-
-const corsHeaders = undefined as any; // redeclared above, this line removed
