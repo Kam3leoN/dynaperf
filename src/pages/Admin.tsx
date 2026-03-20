@@ -146,7 +146,8 @@ export default function Admin() {
   const [createOpen, setCreateOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
+  const [newFirstName, setNewFirstName] = useState("");
+  const [newLastName, setNewLastName] = useState("");
   const [newRole, setNewRole] = useState("lecteur");
   const [newPalier1, setNewPalier1] = useState("");
   const [newPalier2, setNewPalier2] = useState("");
@@ -170,7 +171,7 @@ export default function Admin() {
   useEffect(() => { loadUsers(); }, [loadUsers]);
 
   const resetCreateForm = () => {
-    setEmail(""); setPassword(""); setDisplayName("");
+    setEmail(""); setPassword(""); setNewFirstName(""); setNewLastName("");
     setNewRole("lecteur");
     setNewPalier1(""); setNewPalier2(""); setNewPalier3("");
     setNewPrime1("0"); setNewPrime2("0"); setNewPrime3("0");
@@ -208,6 +209,7 @@ export default function Admin() {
       prime_audit_3_plus: parseFloat(newPrime3) || 0,
     };
 
+    const displayName = `${newFirstName.trim()} ${newLastName.trim().toUpperCase()}`.trim();
     const res = await supabase.functions.invoke("create-user", {
       body: { email, password, displayName, role: newRole, config },
     });
@@ -429,9 +431,15 @@ export default function Admin() {
                     </label>
                   </div>
 
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Nom d'affichage</label>
-                    <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Prénom Nom" className="h-9 text-sm" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Prénom</label>
+                      <Input value={newFirstName} onChange={(e) => setNewFirstName(e.target.value)} placeholder="Prénom" className="h-9 text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Nom</label>
+                      <Input value={newLastName} onChange={(e) => setNewLastName(e.target.value)} placeholder="Nom" className="h-9 text-sm" />
+                    </div>
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">Email</label>
