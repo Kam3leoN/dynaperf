@@ -16,12 +16,14 @@ export default function AuditForm() {
   const [searchParams] = useSearchParams();
   const typeEvenement = searchParams.get("type") || "RD Présentiel";
 
+  const { items: auditItems, maxPoints: maxTotalPoints } = getAuditItemsForType(typeEvenement);
+
   const [phase, setPhase] = useState<"info" | "items" | "saving">("info");
   const [stepZeroData, setStepZeroData] = useState<StepZeroData | undefined>();
   const [currentItemIdx, setCurrentItemIdx] = useState(0);
   const [answers, setAnswers] = useState<Record<number, ItemAnswer>>({});
 
-  const totalItems = AUDIT_ITEMS.length;
+  const totalItems = auditItems.length;
   const progress = phase === "info" ? 0 : ((currentItemIdx + 1) / totalItems) * 100;
 
   const handleStepZeroSubmit = useCallback((data: StepZeroData) => {
