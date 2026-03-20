@@ -68,7 +68,14 @@ Deno.serve(async (req) => {
     if (action === "set-role") {
       const { userId, role } = body;
       if (!userId || !role) return jsonError("userId et role requis", 400);
-      await adminClient.from("user_roles").delete().eq("user_id", userId).neq("role", "admin");
+
+      // Only super_admin can assign/remove super_admin role
+      if (role === "super_admin" && !callerIsSuperAdmin) return jsonError("Seul un super admin peut attribuer ce rôle", 403);
+      const { data: targetRoles } = await adminClient.from("user_roles").select("role").eq("user_id", userId);
+      const targetIsSuperAdmin = targetRoles?.some((r: any) => r.role === "super_admin");
+      if (targetIsSuperAdmin && !callerIsSuperAdmin) return jsonError("Seul un super admin peut modifier le rôle d'un super admin", 403);
+
+      await adminClient.from("user_roles").delete().eq("user_id", userId);
       if (role !== "none") {
         const { error } = await adminClient.from("user_roles").upsert(
           { user_id: userId, role }, { onConflict: "user_id,role" }
