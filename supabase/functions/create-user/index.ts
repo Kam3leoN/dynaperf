@@ -121,6 +121,26 @@ Deno.serve(async (req) => {
       return jsonOk({ success: true });
     }
 
+    // UPDATE USER (email, displayName)
+    if (action === "update-user") {
+      const { userId, email: newEmail, displayName: newName } = body;
+      if (!userId) return jsonError("userId requis", 400);
+
+      // Update auth email if changed
+      if (newEmail) {
+        const { error } = await adminClient.auth.admin.updateUserById(userId, { email: newEmail, email_confirm: true });
+        if (error) return jsonError(error.message, 400);
+      }
+
+      // Update profile display_name
+      if (newName !== undefined) {
+        const { error } = await adminClient.from("profiles").update({ display_name: newName }).eq("user_id", userId);
+        if (error) return jsonError(error.message, 400);
+      }
+
+      return jsonOk({ success: true });
+    }
+
     // CREATE USER (default)
     const { email, password, displayName, role, config } = body;
     if (!email || !password) return jsonError("Email et mot de passe requis", 400);

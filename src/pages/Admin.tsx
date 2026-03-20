@@ -100,6 +100,10 @@ export default function Admin() {
   const [searchNom, setSearchNom] = useState("");
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [viewUser, setViewUser] = useState<ManagedUser | null>(null);
+  const [editUser, setEditUser] = useState<ManagedUser | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
 
   // Create dialog
   const [createOpen, setCreateOpen] = useState(false);
@@ -221,6 +225,23 @@ export default function Admin() {
     }
   };
 
+  const openEditDialog = (u: ManagedUser) => {
+    setEditUser(u);
+    setEditName(u.displayName);
+    setEditEmail(u.email);
+  };
+
+  const handleEditSave = async () => {
+    if (!editUser) return;
+    setEditSaving(true);
+    const res = await supabase.functions.invoke("create-user", {
+      body: { action: "update-user", userId: editUser.id, email: editEmail.trim(), displayName: editName.trim() },
+    });
+    if (res.data?.error) toast.error(res.data.error);
+    else { toast.success("Utilisateur mis à jour"); setEditUser(null); loadUsers(); }
+    setEditSaving(false);
+  };
+
   const filtered = users.filter((u) => matchesSearch(u.displayName, u.email, searchPrenom, searchNom));
 
   const MobileCard = ({ u }: { u: ManagedUser }) => {
@@ -247,8 +268,8 @@ export default function Admin() {
             <button onClick={() => setViewUser(u)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Voir">
               <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
-            <button onClick={() => setExpandedUser(isExpanded ? null : u.id)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
-              <FontAwesomeIcon icon={isExpanded ? faChevronUp : faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
+            <button onClick={() => openEditDialog(u)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
+              <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
             {u.id !== currentUser?.id && (
               <button onClick={() => handleDelete(u.id, u.email)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors" title="Supprimer">
@@ -470,7 +491,7 @@ export default function Admin() {
                                 <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
                               </button>
                               <button
-                                onClick={() => setExpandedUser(isExpanded ? null : u.id)}
+                                onClick={() => openEditDialog(u)}
                                 className="p-1.5 rounded-sm hover:bg-secondary transition-colors"
                                 title="Modifier"
                               >
@@ -569,6 +590,38 @@ export default function Admin() {
                   <span className="bg-secondary px-2 py-0.5 rounded text-foreground">{viewUser.config?.prime_audit_2 ?? 0}€</span>
                   <span className="bg-secondary px-2 py-0.5 rounded text-foreground">{viewUser.config?.prime_audit_3_plus ?? 0}€</span>
                 </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit user dialog */}
+      <Dialog open={!!editUser} onOpenChange={(o) => { if (!o) setEditUser(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifier le collaborateur</DialogTitle>
+            <DialogDescription>Modifiez le nom d'affichage ou l'email de {editUser?.displayName}</DialogDescription>
+          </DialogHeader>
+          {editUser && (
+            <div className="space-y-4 py-2">
+              <div className="flex justify-center">
+                <AvatarWithUpload user={editUser} onUpload={async (uid, file) => { await handleAvatarChange(uid, file); const updated = users.find(u => u.id === uid); if (updated) setEditUser({ ...editUser, avatarUrl: updated.avatarUrl }); }} />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Nom d'affichage</label>
+                <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-9 text-sm" placeholder="Prénom Nom" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Email</label>
+                <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="h-9 text-sm" />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" size="sm" onClick={() => setEditUser(null)} className="rounded-md">Annuler</Button>
+                <Button size="sm" disabled={editSaving} onClick={handleEditSave} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5">
+                  <FontAwesomeIcon icon={faFloppyDisk} className="h-3.5 w-3.5" />
+                  {editSaving ? "Enregistrement…" : "Enregistrer"}
+                </Button>
               </div>
             </div>
           )}
