@@ -76,6 +76,7 @@ export async function fetchAuditConfig(typeKey: string): Promise<AuditTypeConfig
           : undefined,
         sortOrder: i.sort_order,
         categoryId: c.id,
+        autoField: (i as any).auto_field ?? undefined,
       })),
   }));
 
