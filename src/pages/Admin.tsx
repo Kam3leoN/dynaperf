@@ -225,6 +225,23 @@ export default function Admin() {
     }
   };
 
+  const openEditDialog = (u: ManagedUser) => {
+    setEditUser(u);
+    setEditName(u.displayName);
+    setEditEmail(u.email);
+  };
+
+  const handleEditSave = async () => {
+    if (!editUser) return;
+    setEditSaving(true);
+    const res = await supabase.functions.invoke("create-user", {
+      body: { action: "update-user", userId: editUser.id, email: editEmail.trim(), displayName: editName.trim() },
+    });
+    if (res.data?.error) toast.error(res.data.error);
+    else { toast.success("Utilisateur mis à jour"); setEditUser(null); loadUsers(); }
+    setEditSaving(false);
+  };
+
   const filtered = users.filter((u) => matchesSearch(u.displayName, u.email, searchPrenom, searchNom));
 
   const MobileCard = ({ u }: { u: ManagedUser }) => {
