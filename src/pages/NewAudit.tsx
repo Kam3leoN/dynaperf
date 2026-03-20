@@ -45,9 +45,7 @@ export default function NewAudit() {
           {auditTypes.map((type) => (
             <button
               key={type.key}
-              onClick={() => {
-                // TODO: navigate to form with type pre-filled
-              }}
+              onClick={() => navigate(`/audits/new/form?type=${encodeURIComponent(type.key)}`)}
               className="group flex flex-col items-center gap-4 rounded-xl border border-border bg-card p-8 shadow-sm transition-all hover:shadow-md hover:border-transparent hover:-translate-y-1 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               style={{ "--card-accent": type.color } as React.CSSProperties}
             >
