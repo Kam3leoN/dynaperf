@@ -222,6 +222,7 @@ export default function AuditForm() {
             onBack={handleBack}
             onClose={() => navigate("/audits/new")}
             isLast={currentItemIdx === totalItems - 1}
+            stepZeroData={stepZeroData}
           />
         )}
 

@@ -116,6 +116,7 @@ export type Database = {
       }
       audit_items_config: {
         Row: {
+          auto_field: string | null
           category_id: string
           checklist_items: Json | null
           condition: string
@@ -130,6 +131,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          auto_field?: string | null
           category_id: string
           checklist_items?: Json | null
           condition?: string
@@ -144,6 +146,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          auto_field?: string | null
           category_id?: string
           checklist_items?: Json | null
           condition?: string

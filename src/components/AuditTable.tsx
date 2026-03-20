@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faPenToSquare, faTrashCan, faSort } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faPenToSquare, faTrashCan, faSort, faEye } from "@fortawesome/free-solid-svg-icons";
 import { motion, AnimatePresence } from "framer-motion";
+import { AuditDetailView } from "./AuditDetailView";
 
 interface AuditTableProps {
   audits: Audit[];
@@ -36,6 +37,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [search, setSearch] = useState("");
+  const [detailAudit, setDetailAudit] = useState<{ id: string; type: string } | null>(null);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir(sortDir === "asc" ? "desc" : "asc");
@@ -92,6 +94,11 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
           <p className="text-xs text-muted-foreground">{a.lieu || "—"}</p>
         </div>
         <div className="flex gap-1 shrink-0">
+          {a.statut === "OK" && (
+            <button onClick={() => setDetailAudit({ id: a.id, type: a.typeEvenement })} className="p-1.5 rounded-sm hover:bg-secondary transition-colors">
+              <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+          )}
           <button onClick={() => openEdit(a)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors">
             <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
           </button>
@@ -252,6 +259,11 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1">
+                      {a.statut === "OK" && (
+                        <button onClick={() => setDetailAudit({ id: a.id, type: a.typeEvenement })} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Voir le détail">
+                          <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
+                        </button>
+                      )}
                       <button onClick={() => openEdit(a)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors">
                         <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
                       </button>
@@ -277,6 +289,15 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
       </div>
 
       <p className="text-xs text-muted-foreground mt-3 tabular-nums">{sorted.length} audit{sorted.length > 1 ? "s" : ""} affiché{sorted.length > 1 ? "s" : ""}</p>
+
+      {detailAudit && (
+        <AuditDetailView
+          auditId={detailAudit.id}
+          typeEvenement={detailAudit.type}
+          open={true}
+          onClose={() => setDetailAudit(null)}
+        />
+      )}
     </div>
   );
 }
