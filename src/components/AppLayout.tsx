@@ -93,7 +93,7 @@ export function AppLayout({ children, audits, filters, setFilters }: AppLayoutPr
             </div>
             {/* Desktop nav */}
             <nav className="hidden md:flex items-center gap-1">
-              {navLinks}
+              {navLinks()}
             </nav>
           </div>
 
