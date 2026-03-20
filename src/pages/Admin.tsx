@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
-function ArcText({ text, radius = 90, fontSize = 14 }: { text: string; radius?: number; fontSize?: number }) {
+function ArcText({ text, radius = 78, fontSize = 13 }: { text: string; radius?: number; fontSize?: number }) {
   const id = "arcPath";
   const svgSize = radius * 2 + 40;
   const cx = svgSize / 2;
@@ -26,10 +26,14 @@ function ArcText({ text, radius = 90, fontSize = 14 }: { text: string; radius?: 
       <text
         fill="hsl(var(--primary))"
         fontSize={fontSize}
-        fontWeight="700"
-        letterSpacing="0.15em"
+        fontWeight="800"
+        letterSpacing="0.18em"
         textAnchor="middle"
         fontFamily="Lexend, sans-serif"
+        paintOrder="stroke"
+        stroke="hsl(var(--background))"
+        strokeWidth="3"
+        strokeLinejoin="round"
       >
         <textPath href={`#${id}`} startOffset="50%">{text}</textPath>
       </text>
