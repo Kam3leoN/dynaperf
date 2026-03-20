@@ -144,7 +144,6 @@ Deno.serve(async (req) => {
         const { error } = await adminClient.from("profiles").update(profileUpdate).eq("user_id", userId);
         if (error) return jsonError(error.message, 400);
       }
-      }
 
       return jsonOk({ success: true });
     }
