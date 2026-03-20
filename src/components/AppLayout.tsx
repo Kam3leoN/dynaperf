@@ -125,7 +125,7 @@ export function AppLayout({ children, audits, filters, setFilters }: AppLayoutPr
                     <span className="text-sm font-bold text-foreground">Menu</span>
                   </div>
                   <nav className="flex flex-col gap-1 p-4">
-                    {navLinks}
+                    {navLinks(true)}
                   </nav>
                   <div className="p-4 space-y-3 border-t border-border">
                     {audits && <ExcelExport audits={audits} />}
