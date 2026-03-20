@@ -37,9 +37,11 @@ Deno.serve(async (req) => {
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
     const { data: roles } = await adminClient
       .from("user_roles").select("role")
-      .eq("user_id", user.id).eq("role", "admin");
+      .eq("user_id", user.id);
 
-    if (!roles?.length) return jsonError("Non autorisé", 403);
+    const callerIsSuperAdmin = roles?.some((r: any) => r.role === "super_admin");
+    const callerIsAdmin = roles?.some((r: any) => r.role === "admin" || r.role === "super_admin");
+    if (!callerIsAdmin) return jsonError("Non autorisé", 403);
 
     const body = await req.json();
     const { action } = body;
