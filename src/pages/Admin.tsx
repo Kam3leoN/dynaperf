@@ -6,8 +6,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faChevronDown, faChevronUp, faCamera } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faChevronDown, faChevronUp, faCamera, faEye } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -92,11 +93,13 @@ function matchesSearch(displayName: string, email: string, searchPrenom: string,
 }
 
 export default function Admin() {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [searchPrenom, setSearchPrenom] = useState("");
   const [searchNom, setSearchNom] = useState("");
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [viewUser, setViewUser] = useState<ManagedUser | null>(null);
 
   // Create dialog
   const [createOpen, setCreateOpen] = useState(false);
@@ -241,15 +244,16 @@ export default function Admin() {
             </div>
           </div>
           <div className="flex gap-1 shrink-0">
-            {!isAdmin && (
-              <>
-                <button onClick={() => setExpandedUser(isExpanded ? null : u.id)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors">
-                  <FontAwesomeIcon icon={isExpanded ? faChevronUp : faChevronDown} className="h-3.5 w-3.5 text-muted-foreground" />
-                </button>
-                <button onClick={() => handleDelete(u.id, u.email)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors">
-                  <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
-                </button>
-              </>
+            <button onClick={() => setViewUser(u)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Voir">
+              <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+            <button onClick={() => setExpandedUser(isExpanded ? null : u.id)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
+              <FontAwesomeIcon icon={isExpanded ? faChevronUp : faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
+            {u.id !== currentUser?.id && (
+              <button onClick={() => handleDelete(u.id, u.email)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors" title="Supprimer">
+                <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
+              </button>
             )}
           </div>
         </div>
@@ -457,23 +461,31 @@ export default function Admin() {
                             {u.config ? `${u.config.prime_audit_1}€ / ${u.config.prime_audit_2}€ / ${u.config.prime_audit_3_plus}€` : "—"}
                           </TableCell>
                           <TableCell>
-                            {!isAdmin && (
-                              <div className="flex gap-1">
-                                <button
-                                  onClick={() => setExpandedUser(isExpanded ? null : u.id)}
-                                  className="p-1.5 rounded-sm hover:bg-secondary transition-colors"
-                                  title="Objectifs & Primes"
-                                >
-                                  <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
-                                </button>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => setViewUser(u)}
+                                className="p-1.5 rounded-sm hover:bg-secondary transition-colors"
+                                title="Voir"
+                              >
+                                <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
+                              <button
+                                onClick={() => setExpandedUser(isExpanded ? null : u.id)}
+                                className="p-1.5 rounded-sm hover:bg-secondary transition-colors"
+                                title="Modifier"
+                              >
+                                <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
+                              {u.id !== currentUser?.id && (
                                 <button
                                   onClick={() => handleDelete(u.id, u.email)}
                                   className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors"
+                                  title="Supprimer"
                                 >
                                   <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
                                 </button>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </TableCell>
                         </motion.tr>
                       );
@@ -514,6 +526,54 @@ export default function Admin() {
           </>
         )}
       </div>
+
+      {/* View user dialog */}
+      <Dialog open={!!viewUser} onOpenChange={(o) => { if (!o) setViewUser(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Détails du collaborateur</DialogTitle>
+            <DialogDescription>Informations et configuration de {viewUser?.displayName}</DialogDescription>
+          </DialogHeader>
+          {viewUser && (
+            <div className="space-y-4 py-2">
+              <div className="flex items-center gap-3">
+                <UserAvatar url={viewUser.avatarUrl} name={viewUser.displayName} size="md" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{viewUser.displayName}</p>
+                  <p className="text-xs text-muted-foreground">{viewUser.email}</p>
+                </div>
+                <RoleBadge role={getUserRole(viewUser)} />
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-xs text-muted-foreground block">Objectif</span>
+                  <span className="font-medium text-foreground">{viewUser.config?.objectif ?? "—"}</span>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground block">Créé le</span>
+                  <span className="font-medium text-foreground">{new Date(viewUser.createdAt).toLocaleDateString("fr-FR")}</span>
+                </div>
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground block mb-1">Paliers</span>
+                <div className="flex gap-3 text-sm">
+                  <span className="bg-secondary px-2 py-0.5 rounded text-foreground">P1: {viewUser.config?.palier_1 ?? "—"}</span>
+                  <span className="bg-secondary px-2 py-0.5 rounded text-foreground">P2: {viewUser.config?.palier_2 ?? "—"}</span>
+                  <span className="bg-secondary px-2 py-0.5 rounded text-foreground">P3: {viewUser.config?.palier_3 ?? "—"}</span>
+                </div>
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground block mb-1">Primes</span>
+                <div className="flex gap-3 text-sm">
+                  <span className="bg-secondary px-2 py-0.5 rounded text-foreground">{viewUser.config?.prime_audit_1 ?? 0}€</span>
+                  <span className="bg-secondary px-2 py-0.5 rounded text-foreground">{viewUser.config?.prime_audit_2 ?? 0}€</span>
+                  <span className="bg-secondary px-2 py-0.5 rounded text-foreground">{viewUser.config?.prime_audit_3_plus ?? 0}€</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
