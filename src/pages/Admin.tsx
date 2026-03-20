@@ -209,6 +209,7 @@ export default function Admin() {
       prime_audit_3_plus: parseFloat(newPrime3) || 0,
     };
 
+    const displayName = `${newFirstName.trim()} ${newLastName.trim().toUpperCase()}`.trim();
     const res = await supabase.functions.invoke("create-user", {
       body: { email, password, displayName, role: newRole, config },
     });
