@@ -103,6 +103,13 @@ export default function Admin() {
   const [editUser, setEditUser] = useState<ManagedUser | null>(null);
   const [editName, setEditName] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [editRole, setEditRole] = useState("lecteur");
+  const [editPalier1, setEditPalier1] = useState("");
+  const [editPalier2, setEditPalier2] = useState("");
+  const [editPalier3, setEditPalier3] = useState("");
+  const [editPrime1, setEditPrime1] = useState("0");
+  const [editPrime2, setEditPrime2] = useState("0");
+  const [editPrime3, setEditPrime3] = useState("0");
   const [editSaving, setEditSaving] = useState(false);
 
   // Create dialog
