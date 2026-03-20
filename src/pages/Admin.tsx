@@ -526,7 +526,8 @@ export default function Admin() {
                   <AnimatePresence>
                     {filtered.map((u) => {
                       const role = getUserRole(u);
-                      const isAdmin = role === "admin";
+                      const isAdminOrAbove = role === "admin" || role === "super_admin";
+                      const isSuperAdminUser = role === "super_admin";
                       const isExpanded = expandedUser === u.id;
                       return (
                         <motion.tr
