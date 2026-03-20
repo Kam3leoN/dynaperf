@@ -289,6 +289,15 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
       </div>
 
       <p className="text-xs text-muted-foreground mt-3 tabular-nums">{sorted.length} audit{sorted.length > 1 ? "s" : ""} affiché{sorted.length > 1 ? "s" : ""}</p>
+
+      {detailAudit && (
+        <AuditDetailView
+          auditId={detailAudit.id}
+          typeEvenement={detailAudit.type}
+          open={true}
+          onClose={() => setDetailAudit(null)}
+        />
+      )}
     </div>
   );
 }
