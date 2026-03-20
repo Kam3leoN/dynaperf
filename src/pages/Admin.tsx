@@ -269,7 +269,7 @@ export default function Admin() {
             </Select>
           )}
         </div>
-        {isExpanded && !isAdmin && (
+        {isExpanded && (
           <UserConfigPanel userId={u.id} config={u.config} onSaved={loadUsers} />
         )}
       </motion.div>
