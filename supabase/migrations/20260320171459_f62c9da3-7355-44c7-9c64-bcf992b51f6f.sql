@@ -1,0 +1,1 @@
+ALTER TABLE public.audit_details ADD COLUMN qualite_lieu integer DEFAULT NULL;

@@ -20,7 +20,9 @@ export function CityAutocomplete({ value, onChange, placeholder, className }: Pr
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<CityResult[]>([]);
   const [loading, setLoading] = useState(false);
+  const [highlightIdx, setHighlightIdx] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
 
   const search = useCallback(async (query: string) => {
@@ -29,8 +31,6 @@ export function CityAutocomplete({ value, onChange, placeholder, className }: Pr
       return;
     }
     setLoading(true);
-
-    // Search by name or postal code
     const isPostalSearch = /^\d+$/.test(query);
     const { data } = isPostalSearch
       ? await supabase
@@ -47,6 +47,7 @@ export function CityAutocomplete({ value, onChange, placeholder, className }: Pr
           .limit(12);
 
     setResults((data as CityResult[]) || []);
+    setHighlightIdx(-1);
     setLoading(false);
   }, []);
 
@@ -66,6 +67,37 @@ export function CityAutocomplete({ value, onChange, placeholder, className }: Pr
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
+  // Scroll highlighted item into view
+  useEffect(() => {
+    if (highlightIdx >= 0 && listRef.current) {
+      const items = listRef.current.querySelectorAll("button");
+      items[highlightIdx]?.scrollIntoView({ block: "nearest" });
+    }
+  }, [highlightIdx]);
+
+  const selectCity = (city: CityResult) => {
+    onChange(`${city.name} (${city.postal_code})`);
+    setOpen(false);
+    setHighlightIdx(-1);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!open || results.length === 0) return;
+
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      setHighlightIdx((prev) => (prev < results.length - 1 ? prev + 1 : 0));
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      setHighlightIdx((prev) => (prev > 0 ? prev - 1 : results.length - 1));
+    } else if (e.key === "Enter" && highlightIdx >= 0) {
+      e.preventDefault();
+      selectCity(results[highlightIdx]);
+    } else if (e.key === "Escape") {
+      setOpen(false);
+    }
+  };
+
   return (
     <div ref={containerRef} className="relative">
       <Input
@@ -75,24 +107,25 @@ export function CityAutocomplete({ value, onChange, placeholder, className }: Pr
           setOpen(true);
         }}
         onFocus={() => value.length >= 2 && setOpen(true)}
+        onKeyDown={handleKeyDown}
         placeholder={placeholder}
         className={className}
         autoComplete="off"
       />
       {open && results.length > 0 && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 rounded-md border border-border bg-popover shadow-md max-h-56 overflow-y-auto">
+        <div ref={listRef} className="absolute z-50 top-full left-0 right-0 mt-1 rounded-md border border-border bg-popover shadow-md max-h-56 overflow-y-auto">
           {results.map((city, i) => (
             <button
               key={`${city.postal_code}-${i}`}
               type="button"
               className={cn(
                 "w-full text-left px-3 py-2 text-sm hover:bg-accent/50 transition-colors",
-                "focus:bg-accent/50 focus:outline-none flex items-center justify-between"
+                "focus:bg-accent/50 focus:outline-none flex items-center justify-between",
+                highlightIdx === i && "bg-accent/50"
               )}
               onMouseDown={(e) => {
                 e.preventDefault();
-                onChange(`${city.name} (${city.postal_code})`);
-                setOpen(false);
+                selectCity(city);
               }}
             >
               <span>{city.name}</span>

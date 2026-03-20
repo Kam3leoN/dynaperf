@@ -154,6 +154,7 @@ export default function AuditForm() {
       audit_id: auditRow.id,
       partenaire_referent: stepZeroData.partenaireReferent || null,
       type_lieu: stepZeroData.typeLieu || null,
+      qualite_lieu: stepZeroData.qualiteLieu ?? null,
       heure_evenement: stepZeroData.heureEvenement || null,
       nom_club: stepZeroData.nomClub || null,
       nb_adherents: stepZeroData.nbAdherents ?? null,

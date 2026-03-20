@@ -4,8 +4,10 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { CityAutocomplete } from "@/components/ui/city-autocomplete";
+import { StarRating } from "@/components/ui/star-rating";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -22,6 +24,7 @@ export interface StepZeroData {
   dateEvenement: Date | undefined;
   heureEvenement: string;
   nomClub?: string;
+  qualiteLieu?: number;
   nbAdherents?: number;
   nbInvites?: number;
   nbNoShow?: number;
@@ -57,6 +60,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit }: Props) {
       typeLieu: "",
       dateEvenement: undefined,
       heureEvenement: "",
+      qualiteLieu: 0,
     }
   );
 
@@ -113,6 +117,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit }: Props) {
     data.partenaireAudite.trim() &&
     data.auditeur.trim() &&
     data.lieu.trim() &&
+    data.typeLieu.trim() &&
     data.dateEvenement;
 
   return (
@@ -138,15 +143,27 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit }: Props) {
         </div>
         <div className="space-y-1.5">
           <Label>Auditeur (Prénom NOM) *</Label>
-          <AutocompleteInput
-            value={data.auditeur}
-            onChange={(v) => set("auditeur", v)}
-            suggestions={suggestions.auditeurs}
-            placeholder="ex: Cédric MALZAT"
-          />
+          {suggestions.auditeurs.length > 0 ? (
+            <Select value={data.auditeur} onValueChange={(v) => set("auditeur", v)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionner un auditeur" />
+              </SelectTrigger>
+              <SelectContent>
+                {suggestions.auditeurs.map((a) => (
+                  <SelectItem key={a} value={a}>{a}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <Input
+              value={data.auditeur}
+              onChange={(e) => set("auditeur", e.target.value)}
+              placeholder="ex: Cédric MALZAT"
+            />
+          )}
         </div>
         <div className="space-y-1.5">
-          <Label>Ville / lieu de l'événement *</Label>
+          <Label>Ville de l'événement *</Label>
           <CityAutocomplete
             value={data.lieu}
             onChange={(v) => set("lieu", v)}
@@ -154,12 +171,19 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit }: Props) {
           />
         </div>
         <div className="space-y-1.5">
-          <Label>Type de lieu</Label>
+          <Label>Lieu de l'événement *</Label>
           <AutocompleteInput
             value={data.typeLieu}
             onChange={(v) => set("typeLieu", v)}
             suggestions={suggestions.typesLieu}
             placeholder="ex: Hôtel, Restaurant..."
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label>Qualité du lieu d'accueil</Label>
+          <StarRating
+            value={data.qualiteLieu ?? 0}
+            onChange={(v) => set("qualiteLieu", v)}
           />
         </div>
         <div className="space-y-1.5">
