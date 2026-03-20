@@ -491,7 +491,7 @@ export default function Admin() {
                                 <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
                               </button>
                               <button
-                                onClick={() => setExpandedUser(isExpanded ? null : u.id)}
+                                onClick={() => openEditDialog(u)}
                                 className="p-1.5 rounded-sm hover:bg-secondary transition-colors"
                                 title="Modifier"
                               >
