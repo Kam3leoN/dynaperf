@@ -132,13 +132,15 @@
 }
 .stroke-title .span-text {
   background: linear-gradient(90deg, hsl(var(--accent)) 100%, transparent 0) 0;
-  background-size: 100% 110%;
+  background-size: calc(100% + 10px) 110%;
   background-repeat: no-repeat;
-  background-position: 0 55%;
+  background-position: -5px 55%;
   display: inline;
-  padding: 2px 0;
+  padding: 2px 5px;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
+  transform: rotate(-0.5deg);
+  display: inline-block;
 }
 
 @layer utilities {
