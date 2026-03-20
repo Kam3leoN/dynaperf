@@ -123,8 +123,7 @@ export default function Admin() {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
-  const [searchPrenom, setSearchPrenom] = useState("");
-  const [searchNom, setSearchNom] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [showPrimes, setShowPrimes] = useState(false);
   const [viewUser, setViewUser] = useState<ManagedUser | null>(null);
