@@ -3,11 +3,13 @@ import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUserPlus, faTrash, faUsers, faFloppyDisk, faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faSort, faChevronDown, faChevronUp } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface UserConfig {
   objectif: number;
@@ -28,14 +30,43 @@ interface ManagedUser {
   createdAt: string;
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Admin",
+  redacteur: "Rédacteur",
+  lecteur: "Lecteur",
+};
+
+function getUserRole(u: ManagedUser) {
+  if (u.roles.includes("admin")) return "admin";
+  if (u.roles.includes("redacteur")) return "redacteur";
+  return "lecteur";
+}
+
+function RoleBadge({ role }: { role: string }) {
+  const styles: Record<string, string> = {
+    admin: "bg-primary/10 text-primary",
+    redacteur: "bg-accent/20 text-accent-foreground",
+    lecteur: "bg-secondary text-muted-foreground",
+  };
+  return (
+    <span className={`text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full ${styles[role] || styles.lecteur}`}>
+      {ROLE_LABELS[role] || role}
+    </span>
+  );
+}
+
 export default function Admin() {
+  const [users, setUsers] = useState<ManagedUser[]>([]);
+  const [usersLoading, setUsersLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [expandedUser, setExpandedUser] = useState<string | null>(null);
+
+  // Create dialog
+  const [createOpen, setCreateOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [users, setUsers] = useState<ManagedUser[]>([]);
-  const [usersLoading, setUsersLoading] = useState(true);
-  const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [creating, setCreating] = useState(false);
 
   const loadUsers = useCallback(async () => {
     setUsersLoading(true);
@@ -51,7 +82,7 @@ export default function Admin() {
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!email || !password) return;
-    setLoading(true);
+    setCreating(true);
     const res = await supabase.functions.invoke("create-user", {
       body: { email, password, displayName },
     });
@@ -60,9 +91,10 @@ export default function Admin() {
     else {
       toast.success(`Utilisateur ${email} créé avec succès`);
       setEmail(""); setPassword(""); setDisplayName("");
+      setCreateOpen(false);
       loadUsers();
     }
-    setLoading(false);
+    setCreating(false);
   };
 
   const handleDelete = async (userId: string, userEmail: string) => {
@@ -82,133 +114,222 @@ export default function Admin() {
     else { toast.success("Rôle mis à jour"); loadUsers(); }
   };
 
-  const getUserRole = (u: ManagedUser) => {
-    if (u.roles.includes("admin")) return "admin";
-    if (u.roles.includes("redacteur")) return "redacteur";
-    if (u.roles.includes("lecteur")) return "lecteur";
-    return "lecteur";
-  };
+  const filtered = users.filter((u) => {
+    if (!search) return true;
+    const s = search.toLowerCase();
+    return u.displayName.toLowerCase().includes(s) || u.email.toLowerCase().includes(s);
+  });
 
-  const roleBadge = (role: string) => {
-    const map: Record<string, string> = {
-      admin: "bg-primary/10 text-primary",
-      redacteur: "bg-accent/20 text-accent-foreground",
-      lecteur: "bg-secondary text-muted-foreground",
-    };
-    const labels: Record<string, string> = {
-      admin: "Admin", redacteur: "Rédacteur", lecteur: "Lecteur",
-    };
+  const MobileCard = ({ u }: { u: ManagedUser }) => {
+    const role = getUserRole(u);
+    const isAdmin = role === "admin";
+    const isExpanded = expandedUser === u.id;
     return (
-      <span className={`text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full ${map[role] || map.lecteur}`}>
-        {labels[role] || role}
-      </span>
+      <motion.div
+        key={u.id}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="bg-card border border-border rounded-lg p-3 space-y-2"
+      >
+        <div className="flex items-start justify-between">
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground truncate">{u.displayName}</p>
+            <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+          </div>
+          <div className="flex gap-1 shrink-0">
+            {!isAdmin && (
+              <>
+                <button onClick={() => setExpandedUser(isExpanded ? null : u.id)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors">
+                  <FontAwesomeIcon icon={isExpanded ? faChevronUp : faChevronDown} className="h-3.5 w-3.5 text-muted-foreground" />
+                </button>
+                <button onClick={() => handleDelete(u.id, u.email)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors">
+                  <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <RoleBadge role={role} />
+          {!isAdmin && (
+            <Select value={role} onValueChange={(v) => handleSetRole(u.id, v)}>
+              <SelectTrigger className="w-[120px] h-7 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="lecteur">Lecteur</SelectItem>
+                <SelectItem value="redacteur">Rédacteur</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
+        </div>
+        {isExpanded && !isAdmin && (
+          <UserConfigPanel userId={u.id} config={u.config} onSaved={loadUsers} />
+        )}
+      </motion.div>
     );
   };
 
   return (
     <AppLayout>
-      <div className="max-w-4xl">
-        <h2 className="text-lg font-bold text-foreground mb-6">Gestion des utilisateurs</h2>
-
-        <Tabs defaultValue="list" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="list" className="gap-2 text-xs sm:text-sm">
-              <FontAwesomeIcon icon={faUsers} className="h-3.5 w-3.5" />
-              Utilisateurs
-            </TabsTrigger>
-            <TabsTrigger value="create" className="gap-2 text-xs sm:text-sm">
-              <FontAwesomeIcon icon={faUserPlus} className="h-3.5 w-3.5" />
-              Nouveau compte
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="list">
-            <div className="bg-card rounded-lg shadow-soft p-4 sm:p-6">
-              <h3 className="text-sm font-semibold text-foreground mb-4">Comptes existants</h3>
-              {usersLoading ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">Chargement…</p>
-              ) : (
-                <div className="space-y-2">
-                  {users.map((u) => {
-                    const role = getUserRole(u);
-                    const isAdmin = role === "admin";
-                    const isExpanded = expandedUser === u.id;
-                    return (
-                      <div key={u.id} className="rounded-lg bg-secondary/30 overflow-hidden">
-                        <div className="flex items-center gap-3 p-3 flex-wrap sm:flex-nowrap">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-foreground truncate">{u.displayName}</p>
-                            <p className="text-xs text-muted-foreground truncate">{u.email}</p>
-                          </div>
-                          {roleBadge(role)}
-                          {!isAdmin && (
-                            <Select value={role} onValueChange={(v) => handleSetRole(u.id, v)}>
-                              <SelectTrigger className="w-[130px] h-8 text-xs">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="lecteur">Lecteur</SelectItem>
-                                <SelectItem value="redacteur">Rédacteur</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          )}
-                          {!isAdmin && (
-                            <Button
-                              variant="ghost" size="icon"
-                              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                              onClick={() => setExpandedUser(isExpanded ? null : u.id)}
-                              title="Objectifs & Primes"
-                            >
-                              <FontAwesomeIcon icon={isExpanded ? faChevronUp : faChevronDown} className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
-                          {!isAdmin && (
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={() => handleDelete(u.id, u.email)}>
-                              <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
-                            </Button>
-                          )}
-                        </div>
-                        {isExpanded && !isAdmin && (
-                          <UserConfigPanel userId={u.id} config={u.config} onSaved={loadUsers} />
-                        )}
-                      </div>
-                    );
-                  })}
-                  {users.length === 0 && (
-                    <p className="text-sm text-muted-foreground text-center py-4">Aucun utilisateur</p>
-                  )}
-                </div>
-              )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="create">
-            <div className="bg-card rounded-lg shadow-soft p-4 sm:p-6">
-              <h3 className="text-sm font-semibold text-foreground mb-4">Créer un nouvel utilisateur</h3>
-              <form onSubmit={handleCreate} className="space-y-4">
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Nom d'affichage</label>
-                  <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Prénom Nom" className="h-10 text-sm" />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Email</label>
-                  <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemple.com" className="h-10 text-sm" required />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Mot de passe</label>
-                  <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="h-10 text-sm" required minLength={6} />
-                </div>
-                <Button type="submit" className="w-full gap-2" disabled={loading}>
-                  <FontAwesomeIcon icon={faUserPlus} className="h-4 w-4" />
-                  {loading ? "Création…" : "Créer l'utilisateur"}
+      <div className="bg-card rounded-lg shadow-soft p-4 sm:p-5">
+        <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+          <h3 className="text-sm font-semibold text-foreground">Gestion des collaborateurs</h3>
+          <div className="flex items-center gap-2 sm:gap-3 flex-1 sm:flex-none justify-end">
+            <Input
+              placeholder="Rechercher..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full sm:w-[200px] h-9 text-sm rounded-md"
+            />
+            <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5 shrink-0">
+                  <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
+                  <span className="hidden sm:inline">Ajouter</span>
                 </Button>
-              </form>
-              <p className="text-xs text-muted-foreground mt-4">
-                L'utilisateur pourra se connecter immédiatement. Rôle par défaut : Lecteur.
-              </p>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>Nouvel utilisateur</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleCreate} className="grid gap-3 py-3">
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Nom d'affichage</label>
+                    <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Prénom Nom" className="h-9 text-sm" />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Email</label>
+                    <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemple.com" className="h-9 text-sm" required />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground mb-1 block">Mot de passe</label>
+                    <Input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="h-9 text-sm" required minLength={6} />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <Button type="button" variant="outline" size="sm" onClick={() => setCreateOpen(false)} className="rounded-md">Annuler</Button>
+                    <Button type="submit" size="sm" disabled={creating} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md">
+                      {creating ? "Création…" : "Créer"}
+                    </Button>
+                  </div>
+                </form>
+                <p className="text-xs text-muted-foreground">
+                  L'utilisateur pourra se connecter immédiatement. Rôle par défaut : Lecteur.
+                </p>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+
+        {usersLoading ? (
+          <p className="text-sm text-muted-foreground py-8 text-center">Chargement…</p>
+        ) : (
+          <>
+            {/* Desktop table */}
+            <div className="hidden sm:block overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="text-xs uppercase tracking-wider">Nom</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">Email</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">Rôle</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">Objectif</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">Primes (1/2/3+)</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider w-24">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  <AnimatePresence>
+                    {filtered.map((u) => {
+                      const role = getUserRole(u);
+                      const isAdmin = role === "admin";
+                      const isExpanded = expandedUser === u.id;
+                      return (
+                        <motion.tr
+                          key={u.id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="border-b border-border hover:bg-secondary/50 transition-colors"
+                        >
+                          <TableCell className="text-sm font-medium">{u.displayName}</TableCell>
+                          <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
+                          <TableCell>
+                            {isAdmin ? (
+                              <RoleBadge role={role} />
+                            ) : (
+                              <Select value={role} onValueChange={(v) => handleSetRole(u.id, v)}>
+                                <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="lecteur">Lecteur</SelectItem>
+                                  <SelectItem value="redacteur">Rédacteur</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-sm tabular-nums">
+                            {u.config?.objectif ?? "—"}
+                          </TableCell>
+                          <TableCell className="text-sm tabular-nums text-muted-foreground">
+                            {u.config ? `${u.config.prime_audit_1}€ / ${u.config.prime_audit_2}€ / ${u.config.prime_audit_3_plus}€` : "—"}
+                          </TableCell>
+                          <TableCell>
+                            {!isAdmin && (
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() => setExpandedUser(isExpanded ? null : u.id)}
+                                  className="p-1.5 rounded-sm hover:bg-secondary transition-colors"
+                                  title="Objectifs & Primes"
+                                >
+                                  <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(u.id, u.email)}
+                                  className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors"
+                                >
+                                  <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
+                                </button>
+                              </div>
+                            )}
+                          </TableCell>
+                        </motion.tr>
+                      );
+                    })}
+                  </AnimatePresence>
+                </TableBody>
+              </Table>
+
+              {/* Expanded config panel below the table for the selected user */}
+              {expandedUser && (() => {
+                const u = users.find((x) => x.id === expandedUser);
+                if (!u || getUserRole(u) === "admin") return null;
+                return (
+                  <div className="mt-2 rounded-lg border border-border overflow-hidden">
+                    <div className="bg-secondary/30 px-4 py-2 flex items-center gap-2">
+                      <span className="text-xs font-semibold text-foreground">Configuration de {u.displayName}</span>
+                      <button onClick={() => setExpandedUser(null)} className="ml-auto text-xs text-muted-foreground hover:text-foreground">
+                        Fermer
+                      </button>
+                    </div>
+                    <UserConfigPanel userId={u.id} config={u.config} onSaved={loadUsers} />
+                  </div>
+                );
+              })()}
             </div>
-          </TabsContent>
-        </Tabs>
+
+            {/* Mobile card list */}
+            <div className="sm:hidden space-y-2">
+              <AnimatePresence>
+                {filtered.map((u) => (
+                  <MobileCard key={u.id} u={u} />
+                ))}
+              </AnimatePresence>
+            </div>
+
+            <p className="text-xs text-muted-foreground mt-3 tabular-nums">
+              {filtered.length} collaborateur{filtered.length > 1 ? "s" : ""} affiché{filtered.length > 1 ? "s" : ""}
+            </p>
+          </>
+        )}
       </div>
     </AppLayout>
   );
@@ -256,7 +377,6 @@ function UserConfigPanel({
 
   return (
     <div className="border-t border-border p-4 space-y-4 bg-card/50">
-      {/* Objectif */}
       <div>
         <label className="text-xs font-semibold text-foreground block mb-2">Objectif global</label>
         <Input
@@ -266,8 +386,6 @@ function UserConfigPanel({
           placeholder="0"
         />
       </div>
-
-      {/* Paliers */}
       <div>
         <label className="text-xs font-semibold text-foreground block mb-2">Paliers (optionnels)</label>
         <div className="grid grid-cols-3 gap-2">
@@ -285,8 +403,6 @@ function UserConfigPanel({
           </div>
         </div>
       </div>
-
-      {/* Primes */}
       <div>
         <label className="text-xs font-semibold text-foreground block mb-2">Primes par audit (€)</label>
         <div className="grid grid-cols-3 gap-2">
@@ -304,7 +420,6 @@ function UserConfigPanel({
           </div>
         </div>
       </div>
-
       <Button onClick={handleSave} disabled={saving} className="gap-2 h-9 text-sm">
         <FontAwesomeIcon icon={faFloppyDisk} className="h-3.5 w-3.5" />
         {saving ? "Enregistrement…" : "Enregistrer"}
