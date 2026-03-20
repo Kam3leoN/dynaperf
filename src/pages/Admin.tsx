@@ -100,6 +100,10 @@ export default function Admin() {
   const [searchNom, setSearchNom] = useState("");
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [viewUser, setViewUser] = useState<ManagedUser | null>(null);
+  const [editUser, setEditUser] = useState<ManagedUser | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editEmail, setEditEmail] = useState("");
+  const [editSaving, setEditSaving] = useState(false);
 
   // Create dialog
   const [createOpen, setCreateOpen] = useState(false);
