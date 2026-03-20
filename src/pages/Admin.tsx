@@ -284,7 +284,7 @@ export default function Admin() {
 
     // Update name & email
     const res = await supabase.functions.invoke("create-user", {
-      body: { action: "update-user", userId: editUser.id, email: editEmail.trim(), displayName: `${editFirstName.trim()} ${editLastName.trim().toUpperCase()}`.trim() },
+      body: { action: "update-user", userId: editUser.id, email: editEmail.trim(), displayName: `${editFirstName.trim()} ${editLastName.trim().toUpperCase()}`.trim(), title: editTitle.trim() },
     });
     if (res.data?.error) { toast.error(res.data.error); setEditSaving(false); return; }
 
