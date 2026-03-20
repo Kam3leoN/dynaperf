@@ -18,14 +18,13 @@ export function ScoreCard({ type, avg, min, max, count, index }: ScoreCardProps)
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.06, duration: 0.3 }}
-      whileHover={{ y: -2 }}
-      className="bg-card p-5 rounded-lg shadow-soft transition-shadow duration-200 hover:shadow-hover"
+      className="bg-card p-5 rounded-lg shadow-soft"
     >
-      <h3 className="font-sora text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+      <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
         {type}
       </h3>
       <div className="flex items-baseline gap-2 mt-2">
-        <span className="font-sora text-4xl font-bold tabular-nums" style={{ color: typeColor }}>{avg.toFixed(1)}</span>
+        <span className="text-4xl font-bold tabular-nums" style={{ color: typeColor }}>{avg.toFixed(1)}</span>
         <span className="text-sm text-muted-foreground">/10</span>
       </div>
       <p className="text-xs text-muted-foreground mt-1">{count} audit{count > 1 ? "s" : ""} noté{count > 1 ? "s" : ""}</p>
@@ -48,7 +47,7 @@ export function ScoreCard({ type, avg, min, max, count, index }: ScoreCardProps)
             />
           )}
         </div>
-        <div className="flex justify-between mt-2 text-[10px] text-muted-foreground tabular-nums">
+        <div className="flex justify-between mt-2 text-[11px] text-muted-foreground tabular-nums">
           <span>Min {min.toFixed(1)}</span>
           <span>Max {max.toFixed(1)}</span>
         </div>

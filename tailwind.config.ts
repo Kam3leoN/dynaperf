@@ -14,8 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sora: ["Sora", "sans-serif"],
-        roboto: ["Roboto", "sans-serif"],
+        sans: ["Lexend", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
