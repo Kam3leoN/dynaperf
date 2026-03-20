@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChartLine, faClipboardList, faUserShield, faRightFromBracket, faBars, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faChartLine, faClipboardList, faRightFromBracket, faBars } from "@fortawesome/free-solid-svg-icons";
 import { ThemeToggle } from "./ThemeToggle";
 import { ExcelExport } from "./ExcelExport";
 import { FiltersBar } from "./FiltersBar";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
-import { useAdmin } from "@/hooks/useAdmin";
 import type { Filters } from "@/hooks/useAuditData";
 
 interface AppLayoutProps {
@@ -20,7 +19,6 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, audits, filters, setFilters }: AppLayoutProps) {
   const { user, signOut } = useAuth();
-  const { isAdmin } = useAdmin(user);
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -41,12 +39,6 @@ export function AppLayout({ children, audits, filters, setFilters }: AppLayoutPr
         <FontAwesomeIcon icon={faClipboardList} className="h-3.5 w-3.5" />
         <span>Registre</span>
       </NavLink>
-      {isAdmin && (
-        <NavLink to="/admin" className={() => linkClass("/admin")} onClick={() => setMobileOpen(false)}>
-          <FontAwesomeIcon icon={faUserShield} className="h-3.5 w-3.5" />
-          <span>Admin</span>
-        </NavLink>
-      )}
     </>
   );
 
