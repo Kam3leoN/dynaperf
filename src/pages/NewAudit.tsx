@@ -3,7 +3,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUsers, faLaptop, faBriefcase, faHandshake } from "@fortawesome/free-solid-svg-icons";
 
-const auditTypes = [
+const auditTypes: { label: string; color: string; icon: typeof faUsers; key: string; mobileLabel?: React.ReactNode }[] = [
   {
     label: "Rencontre Dirigeants Présentiel",
     color: "#ee4540",
@@ -21,6 +21,7 @@ const auditTypes = [
     color: "#ffbd23",
     icon: faBriefcase,
     key: "Club Affaires",
+    mobileLabel: <>Club<br />d'Affaires</>,
   },
   {
     label: "Rendez-Vous Commercial",
@@ -60,9 +61,20 @@ export default function NewAudit() {
                   style={{ color: type.color }}
                 />
               </div>
-              <span className="text-sm font-medium text-foreground text-center leading-snug">
-                {type.label}
-              </span>
+              {type.mobileLabel ? (
+                <>
+                  <span className="text-sm font-medium text-foreground text-center leading-snug sm:hidden">
+                    {type.mobileLabel}
+                  </span>
+                  <span className="text-sm font-medium text-foreground text-center leading-snug hidden sm:block">
+                    {type.label}
+                  </span>
+                </>
+              ) : (
+                <span className="text-sm font-medium text-foreground text-center leading-snug">
+                  {type.label}
+                </span>
+              )}
             </button>
           ))}
         </div>
