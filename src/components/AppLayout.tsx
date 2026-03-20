@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChartLine, faClipboardList, faRightFromBracket, faBars } from "@fortawesome/free-solid-svg-icons";
+import { faChartLine, faClipboardList, faRightFromBracket, faBars, faSliders } from "@fortawesome/free-solid-svg-icons";
 import { ThemeToggle } from "./ThemeToggle";
 import { ExcelExport } from "./ExcelExport";
 import { FiltersBar } from "./FiltersBar";
 import { Button } from "./ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
+import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "./ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
 import type { Filters } from "@/hooks/useAuditData";
 
@@ -21,6 +21,7 @@ export function AppLayout({ children, audits, filters, setFilters }: AppLayoutPr
   const { user, signOut } = useAuth();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const linkClass = (path: string) =>
     `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -61,11 +62,19 @@ export function AppLayout({ children, audits, filters, setFilters }: AppLayoutPr
 
           <div className="flex items-center gap-1.5 sm:gap-2">
             {audits && <div className="hidden sm:block"><ExcelExport audits={audits} /></div>}
-            {filters && setFilters && <div className="hidden lg:block"><FiltersBar filters={filters} setFilters={setFilters} /></div>}
+
+            {/* Filters drawer trigger */}
+            {filters && setFilters && (
+              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setFiltersOpen(true)} title="Filtres">
+                <FontAwesomeIcon icon={faSliders} className="h-4 w-4" />
+              </Button>
+            )}
+
             <ThemeToggle />
             <Button variant="ghost" size="icon" className="h-9 w-9" onClick={signOut} title="Déconnexion">
               <FontAwesomeIcon icon={faRightFromBracket} className="h-4 w-4" />
             </Button>
+
             {/* Mobile hamburger */}
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
@@ -83,12 +92,6 @@ export function AppLayout({ children, audits, filters, setFilters }: AppLayoutPr
                   </nav>
                   <div className="p-4 space-y-3 border-t border-border">
                     {audits && <ExcelExport audits={audits} />}
-                    {filters && setFilters && (
-                      <div className="space-y-2">
-                        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Filtres</p>
-                        <FiltersBar filters={filters} setFilters={setFilters} vertical />
-                      </div>
-                    )}
                   </div>
                 </div>
               </SheetContent>
@@ -96,12 +99,24 @@ export function AppLayout({ children, audits, filters, setFilters }: AppLayoutPr
           </div>
         </div>
       </header>
-      {/* Mobile filters bar below header on lg-hidden screens */}
+
+      {/* Filters drawer from right */}
       {filters && setFilters && (
-        <div className="lg:hidden bg-card border-b border-border px-4 py-2 overflow-x-auto">
-          <FiltersBar filters={filters} setFilters={setFilters} />
-        </div>
+        <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+          <SheetContent side="right" className="w-80 sm:w-96">
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-2 text-base">
+                <FontAwesomeIcon icon={faSliders} className="h-4 w-4 text-primary" />
+                Filtres
+              </SheetTitle>
+            </SheetHeader>
+            <div className="mt-6">
+              <FiltersBar filters={filters} setFilters={setFilters} vertical />
+            </div>
+          </SheetContent>
+        </Sheet>
       )}
+
       <main className="max-w-[1440px] mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
         {children}
       </main>
