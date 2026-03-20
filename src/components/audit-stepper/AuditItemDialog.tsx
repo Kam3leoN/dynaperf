@@ -221,11 +221,13 @@ export function AuditItemDialog({
             <div className="flex items-center gap-4">
               <Button
                 type="button"
-                variant={boolVal ? "default" : "outline"}
+                variant="outline"
                 onClick={() => setBoolVal(true)}
                 className={cn(
-                  "flex-1",
-                  boolVal && "bg-emerald-600 hover:bg-emerald-700 text-white"
+                  "flex-1 transition-colors",
+                  boolVal === true
+                    ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700"
+                    : "hover:bg-accent hover:text-accent-foreground"
                 )}
               >
                 <FontAwesomeIcon icon={faCheck} className="mr-1 h-3 w-3" />
@@ -233,9 +235,14 @@ export function AuditItemDialog({
               </Button>
               <Button
                 type="button"
-                variant={!boolVal ? "destructive" : "outline"}
+                variant="outline"
                 onClick={() => setBoolVal(false)}
-                className="flex-1"
+                className={cn(
+                  "flex-1 transition-colors",
+                  boolVal === false
+                    ? "bg-destructive text-destructive-foreground border-destructive hover:bg-destructive/90"
+                    : "hover:bg-accent hover:text-accent-foreground"
+                )}
               >
                 Non validé
               </Button>
