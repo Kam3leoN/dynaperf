@@ -60,7 +60,7 @@ export default function AuditForm() {
     if (!stepZeroData) return;
 
     const totalPoints = Object.values(finalAnswers).reduce((s, a) => s + a.score, 0);
-    const noteSur10 = +(totalPoints / MAX_TOTAL_POINTS * 10).toFixed(2);
+    const noteSur10 = +(totalPoints / maxTotalPoints * 10).toFixed(2);
 
     const dateStr = stepZeroData.dateEvenement
       ? format(stepZeroData.dateEvenement, "yyyy-MM-dd")
