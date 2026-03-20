@@ -34,7 +34,7 @@ export default function AuditForm() {
 
   const handleItemSubmit = useCallback(
     async (answer: ItemAnswer) => {
-      const newAnswers = { ...answers, [AUDIT_ITEMS[currentItemIdx].id]: answer };
+      const newAnswers = { ...answers, [auditItems[currentItemIdx].id]: answer };
       setAnswers(newAnswers);
 
       if (currentItemIdx < totalItems - 1) {
