@@ -38,9 +38,9 @@ export function AppLayout({ children, audits, filters, setFilters }: AppLayoutPr
         <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
         <span>Dashboard</span>
       </NavLink>
-      <NavLink to="/registre" className={() => linkClass("/registre")} onClick={() => setMobileOpen(false)}>
+      <NavLink to="/audits" className={() => linkClass("/audits")} onClick={() => setMobileOpen(false)}>
         <FontAwesomeIcon icon={faClipboardList} className="h-3.5 w-3.5" />
-        <span>Registre</span>
+        <span>Audits</span>
       </NavLink>
       {isAdmin && (
         <NavLink to="/admin" className={() => linkClass("/admin")} onClick={() => setMobileOpen(false)}>
