@@ -93,11 +93,13 @@ function matchesSearch(displayName: string, email: string, searchPrenom: string,
 }
 
 export default function Admin() {
+  const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [searchPrenom, setSearchPrenom] = useState("");
   const [searchNom, setSearchNom] = useState("");
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [viewUser, setViewUser] = useState<ManagedUser | null>(null);
 
   // Create dialog
   const [createOpen, setCreateOpen] = useState(false);
