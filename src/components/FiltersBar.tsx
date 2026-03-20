@@ -22,7 +22,7 @@ export function FiltersBar({ filters, setFilters, vertical }: FiltersBarProps) {
       {!vertical && (
         <div className="flex items-center gap-2 text-muted-foreground shrink-0">
           <FontAwesomeIcon icon={faFilter} className="h-3.5 w-3.5" />
-          <span className="font-sora text-xs sm:text-sm font-semibold tracking-tight hidden sm:inline">Filtres</span>
+          <span className="text-xs sm:text-sm font-semibold tracking-tight hidden sm:inline">Filtres</span>
         </div>
       )}
       <Select value={filters.auditeur} onValueChange={(v) => update("auditeur", v)}>

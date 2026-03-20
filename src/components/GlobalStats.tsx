@@ -29,13 +29,13 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
           transition={{ delay: i * 0.05, duration: 0.3 }}
           className="bg-card rounded-lg p-3 sm:p-5 shadow-soft"
         >
-          <p className="font-sora text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider leading-tight">{s.label}</p>
+          <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider leading-tight">{s.label}</p>
           <div className="flex items-baseline gap-1 sm:gap-1.5 mt-1.5 sm:mt-2">
-            <span className={`font-sora text-2xl sm:text-3xl font-bold tabular-nums ${s.highlight ? "text-primary" : "text-foreground"}`}>
+            <span className={`text-2xl sm:text-3xl font-bold tabular-nums ${s.highlight ? "text-primary" : "text-foreground"}`}>
               {s.value}
             </span>
             {s.objectif && s.objectif > 0 ? (
-              <span className="text-sm sm:text-base text-muted-foreground font-sora tabular-nums">/{s.objectif}</span>
+              <span className="text-sm sm:text-base text-muted-foreground tabular-nums">/{s.objectif}</span>
             ) : s.suffix ? (
               <span className="text-xs sm:text-sm text-muted-foreground">{s.suffix}</span>
             ) : null}

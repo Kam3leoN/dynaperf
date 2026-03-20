@@ -39,7 +39,7 @@ export default function ResetPassword() {
           <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
             <FontAwesomeIcon icon={faWaveSquare} className="h-4 w-4 text-primary-foreground" />
           </div>
-          <h1 className="font-sora text-lg font-bold text-foreground">Nouveau mot de passe</h1>
+          <h1 className="text-lg font-bold text-foreground">Nouveau mot de passe</h1>
         </div>
         <form onSubmit={handleReset} className="space-y-4">
           <div>

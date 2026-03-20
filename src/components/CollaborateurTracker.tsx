@@ -15,7 +15,7 @@ interface CollaborateurTrackerProps {
 export function CollaborateurTracker({ data }: CollaborateurTrackerProps) {
   return (
     <div className="bg-card rounded-lg shadow-soft p-4 sm:p-5">
-      <h3 className="font-sora text-sm font-semibold text-foreground mb-3 sm:mb-4">Progression collaborateurs</h3>
+      <h3 className="text-sm font-semibold text-foreground mb-3 sm:mb-4">Progression collaborateurs</h3>
       <div className="space-y-3 sm:space-y-4">
         {data.map((c, i) => {
           const pct = Math.min(c.progression, 100);
@@ -30,7 +30,7 @@ export function CollaborateurTracker({ data }: CollaborateurTrackerProps) {
               className="group"
             >
               <div className="flex items-center gap-2 sm:gap-4">
-                <span className="font-sora text-xs sm:text-sm font-medium w-16 sm:w-24 text-foreground truncate">{c.nom}</span>
+                <span className="text-xs sm:text-sm font-medium w-16 sm:w-24 text-foreground truncate">{c.nom}</span>
                 <div className="flex-1 relative min-w-0">
                   <div className={`h-2 rounded-full w-full ${behind ? "bg-primary/10" : "bg-secondary"}`}>
                     <motion.div
@@ -42,7 +42,7 @@ export function CollaborateurTracker({ data }: CollaborateurTrackerProps) {
                   </div>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className={`font-sora text-xs sm:text-sm font-bold tabular-nums ${behind ? "text-primary" : "text-foreground"}`}>
+                  <span className={`text-xs sm:text-sm font-bold tabular-nums ${behind ? "text-primary" : "text-foreground"}`}>
                     {c.realise}
                   </span>
                   <span className="text-[10px] sm:text-xs text-muted-foreground">/{c.objectif}</span>
