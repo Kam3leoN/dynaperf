@@ -225,8 +225,10 @@ export function AuditItemDialog({
                 type="button"
                 variant={boolVal ? "default" : "outline"}
                 onClick={() => setBoolVal(true)}
-                className="flex-1"
-                style={boolVal ? { backgroundColor: "hsl(var(--chart-2))" } : {}}
+                className={cn(
+                  "flex-1",
+                  boolVal && "bg-emerald-600 hover:bg-emerald-700 text-white"
+                )}
               >
                 <FontAwesomeIcon icon={faCheck} className="mr-1 h-3 w-3" />
                 Validé
