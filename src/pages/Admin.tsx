@@ -543,7 +543,14 @@ export default function Admin() {
                     <TableHead className="text-xs uppercase tracking-wider">Email</TableHead>
                     <TableHead className="text-xs uppercase tracking-wider">Rôle</TableHead>
                     <TableHead className="text-xs uppercase tracking-wider">Paliers</TableHead>
-                    <TableHead className="text-xs uppercase tracking-wider">Primes (1/2/3)</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">
+                      <span className="inline-flex items-center gap-1.5">
+                        Primes (1/2/3)
+                        <button onClick={() => setShowPrimes(v => !v)} className="p-0.5 rounded hover:bg-secondary transition-colors" title={showPrimes ? "Masquer les primes" : "Afficher les primes"}>
+                          <FontAwesomeIcon icon={showPrimes ? faEye : faEyeSlash} className="h-3 w-3 text-muted-foreground" />
+                        </button>
+                      </span>
+                    </TableHead>
                     <TableHead className="text-xs uppercase tracking-wider w-24">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
