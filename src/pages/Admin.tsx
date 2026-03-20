@@ -638,8 +638,8 @@ export default function Admin() {
                       {viewUser.displayName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)}
                     </div>
                   )}
-                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none">
-                    <ArcText text={(ROLE_LABELS[getUserRole(viewUser)] ?? getUserRole(viewUser)).toUpperCase()} radius={85} fontSize={14} />
+                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 pointer-events-none">
+                    <ArcText text={(ROLE_LABELS[getUserRole(viewUser)] ?? getUserRole(viewUser)).toUpperCase()} />
                   </div>
                 </div>
               </div>
