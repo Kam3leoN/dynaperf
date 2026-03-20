@@ -1,40 +1,58 @@
 import { useState, useEffect } from "react";
+import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "./useAuth";
 
-export function useAdmin() {
-  const { user } = useAuth();
+export function useAdmin(providedUser?: User | null) {
+  const auth = useAuth();
+  const user = providedUser ?? auth.user;
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let cancelled = false;
+
     if (!user) {
       setIsAdmin(false);
       setLoading(false);
       return;
     }
 
+    setLoading(true);
+
     const check = async () => {
       try {
-        // Use the security definer function to avoid RLS issues
         const { data, error } = await supabase.rpc("has_role", {
           _user_id: user.id,
           _role: "admin",
         });
+
+        if (cancelled) return;
+
         if (error) {
           console.error("Admin check error:", error);
           setIsAdmin(false);
         } else {
-          setIsAdmin(!!data);
+          setIsAdmin(Boolean(data));
         }
       } catch (e) {
-        console.error("Admin check failed:", e);
-        setIsAdmin(false);
+        if (!cancelled) {
+          console.error("Admin check failed:", e);
+          setIsAdmin(false);
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
-      setLoading(false);
     };
+
     check();
-  }, [user]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id]);
 
   return { isAdmin, loading };
 }
