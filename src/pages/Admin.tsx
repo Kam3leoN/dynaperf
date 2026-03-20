@@ -460,23 +460,31 @@ export default function Admin() {
                             {u.config ? `${u.config.prime_audit_1}€ / ${u.config.prime_audit_2}€ / ${u.config.prime_audit_3_plus}€` : "—"}
                           </TableCell>
                           <TableCell>
-                            {!isAdmin && (
-                              <div className="flex gap-1">
-                                <button
-                                  onClick={() => setExpandedUser(isExpanded ? null : u.id)}
-                                  className="p-1.5 rounded-sm hover:bg-secondary transition-colors"
-                                  title="Objectifs & Primes"
-                                >
-                                  <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
-                                </button>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => setViewUser(u)}
+                                className="p-1.5 rounded-sm hover:bg-secondary transition-colors"
+                                title="Voir"
+                              >
+                                <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
+                              <button
+                                onClick={() => setExpandedUser(isExpanded ? null : u.id)}
+                                className="p-1.5 rounded-sm hover:bg-secondary transition-colors"
+                                title="Modifier"
+                              >
+                                <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
+                              {u.id !== currentUser?.id && (
                                 <button
                                   onClick={() => handleDelete(u.id, u.email)}
                                   className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors"
+                                  title="Supprimer"
                                 >
                                   <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
                                 </button>
-                              </div>
-                            )}
+                              )}
+                            </div>
                           </TableCell>
                         </motion.tr>
                       );
