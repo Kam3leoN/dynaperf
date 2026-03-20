@@ -112,33 +112,18 @@ function UserAvatar({ url, name, size = "sm" }: { url: string | null; name: stri
 }
 
 // Split displayName into parts and match each search term
-function matchesSearch(displayName: string, email: string, searchPrenom: string, searchNom: string) {
-  const parts = displayName.toLowerCase().split(/\s+/);
-  const prenom = searchPrenom.toLowerCase().trim();
-  const nom = searchNom.toLowerCase().trim();
-
-  if (!prenom && !nom) return true;
-
-  // If only one field filled, match against any part or email
-  if (prenom && !nom) {
-    return parts.some(p => p.includes(prenom)) || email.toLowerCase().includes(prenom);
-  }
-  if (!prenom && nom) {
-    return parts.some(p => p.includes(nom)) || email.toLowerCase().includes(nom);
-  }
-
-  // Both filled: prenom matches first part, nom matches last part (or vice versa)
-  const matchPrenom = parts.some(p => p.includes(prenom));
-  const matchNom = parts.some(p => p.includes(nom));
-  return matchPrenom && matchNom;
+function matchesSearch(user: ManagedUser, search: string) {
+  const term = search.toLowerCase().trim();
+  if (!term) return true;
+  const haystack = `${user.displayName} ${user.email} ${ROLE_LABELS[getUserRole(user)] || ""} ${user.title || ""}`.toLowerCase();
+  return term.split(/\s+/).every(word => haystack.includes(word));
 }
 
 export default function Admin() {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
-  const [searchPrenom, setSearchPrenom] = useState("");
-  const [searchNom, setSearchNom] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
   const [showPrimes, setShowPrimes] = useState(false);
   const [viewUser, setViewUser] = useState<ManagedUser | null>(null);
@@ -337,7 +322,7 @@ export default function Admin() {
 
   const currentUserRole = users.find(u => u.id === currentUser?.id);
   const isSuperAdmin = currentUserRole ? getUserRole(currentUserRole) === "super_admin" : false;
-  const filtered = users.filter((u) => matchesSearch(u.displayName, u.email, searchPrenom, searchNom));
+  const filtered = users.filter((u) => matchesSearch(u, searchQuery));
 
   const MobileCard = ({ u }: { u: ManagedUser }) => {
     const role = getUserRole(u);
@@ -403,16 +388,10 @@ export default function Admin() {
           <div className="flex items-center gap-2 sm:gap-3 flex-1 sm:flex-none justify-end">
             <div className="flex gap-1.5">
               <Input
-                placeholder="Prénom"
-                value={searchPrenom}
-                onChange={(e) => setSearchPrenom(e.target.value)}
-                className="w-24 sm:w-[120px] h-9 text-sm rounded-md"
-              />
-              <Input
-                placeholder="Nom"
-                value={searchNom}
-                onChange={(e) => setSearchNom(e.target.value)}
-                className="w-24 sm:w-[120px] h-9 text-sm rounded-md"
+                placeholder="Rechercher…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-48 sm:w-[260px] h-9 text-sm rounded-md"
               />
             </div>
             <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) resetCreateForm(); }}>
