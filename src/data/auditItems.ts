@@ -11,6 +11,7 @@ export interface AuditItemDef {
   checklistItems?: string[];
   sortOrder: number;
   categoryId: string;
+  autoField?: string;
 }
 
 export interface AuditCategoryDef {
