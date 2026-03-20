@@ -274,6 +274,7 @@ export default function Admin() {
     setEditPrime1((u.config?.prime_audit_1 ?? 0).toString());
     setEditPrime2((u.config?.prime_audit_2 ?? 0).toString());
     setEditPrime3((u.config?.prime_audit_3_plus ?? 0).toString());
+    setEditTitle(u.title || "");
   };
 
   const handleEditSave = async () => {
