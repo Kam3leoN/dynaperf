@@ -476,6 +476,7 @@ export default function AdminPartenaires() {
               <div className="text-center">
                 <p className="text-sm font-semibold text-foreground">{viewP.prenom} {viewP.nom}</p>
                 <p className="text-xs text-muted-foreground">{viewP.societe}</p>
+                <div className="mt-1"><StatutBadge statut={viewP.statut} /></div>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div><span className="text-xs text-muted-foreground block">Commission</span><span className="font-medium text-foreground">{viewP.commission}%</span></div>
