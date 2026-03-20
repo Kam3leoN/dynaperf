@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChartLine, faClipboardList, faRightFromBracket, faBars, faSliders } from "@fortawesome/free-solid-svg-icons";
+import { faChartLine, faClipboardList, faRightFromBracket, faBars, faSliders, faUserShield } from "@fortawesome/free-solid-svg-icons";
+import { useAdmin } from "@/hooks/useAdmin";
 import { ThemeToggle } from "./ThemeToggle";
 import { ExcelExport } from "./ExcelExport";
 import { FiltersBar } from "./FiltersBar";
@@ -19,6 +20,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, audits, filters, setFilters }: AppLayoutProps) {
   const { user, signOut } = useAuth();
+  const { isAdmin } = useAdmin(user);
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -40,6 +42,12 @@ export function AppLayout({ children, audits, filters, setFilters }: AppLayoutPr
         <FontAwesomeIcon icon={faClipboardList} className="h-3.5 w-3.5" />
         <span>Registre</span>
       </NavLink>
+      {isAdmin && (
+        <NavLink to="/admin" className={() => linkClass("/admin")} onClick={() => setMobileOpen(false)}>
+          <FontAwesomeIcon icon={faUserShield} className="h-3.5 w-3.5" />
+          <span>Admin</span>
+        </NavLink>
+      )}
     </>
   );
 
