@@ -58,12 +58,14 @@ interface ManagedUser {
 }
 
 const ROLE_LABELS: Record<string, string> = {
+  super_admin: "Super Admin",
   admin: "Admin",
   redacteur: "Rédacteur",
   lecteur: "Lecteur",
 };
 
 function getUserRole(u: ManagedUser) {
+  if (u.roles.includes("super_admin")) return "super_admin";
   if (u.roles.includes("admin")) return "admin";
   if (u.roles.includes("redacteur")) return "redacteur";
   return "lecteur";
