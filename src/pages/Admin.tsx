@@ -581,7 +581,7 @@ export default function Admin() {
                               >
                                 <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
                               </button>
-                              {u.id !== currentUser?.id && (
+                              {u.id !== currentUser?.id && !(isSuperAdminUser && !isSuperAdmin) && (
                                 <button
                                   onClick={() => handleDelete(u.id, u.email)}
                                   className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors"
