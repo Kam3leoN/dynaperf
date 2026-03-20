@@ -388,16 +388,10 @@ export default function Admin() {
           <div className="flex items-center gap-2 sm:gap-3 flex-1 sm:flex-none justify-end">
             <div className="flex gap-1.5">
               <Input
-                placeholder="Prénom"
-                value={searchPrenom}
-                onChange={(e) => setSearchPrenom(e.target.value)}
-                className="w-24 sm:w-[120px] h-9 text-sm rounded-md"
-              />
-              <Input
-                placeholder="Nom"
-                value={searchNom}
-                onChange={(e) => setSearchNom(e.target.value)}
-                className="w-24 sm:w-[120px] h-9 text-sm rounded-md"
+                placeholder="Rechercher…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-48 sm:w-[260px] h-9 text-sm rounded-md"
               />
             </div>
             <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) resetCreateForm(); }}>
