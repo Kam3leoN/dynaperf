@@ -593,10 +593,11 @@ export default function Admin() {
 
       {/* View user dialog */}
       <Dialog open={!!viewUser} onOpenChange={(o) => { if (!o) setViewUser(null); }}>
-        <DialogContent className="sm:max-w-md pt-20 overflow-visible [&>button]:hidden">
+        <DialogContent className="sm:max-w-md pt-24 overflow-visible [&>button]:hidden">
           {viewUser && (
             <>
-              <div className="absolute -top-16 left-1/2 -translate-x-1/2">
+              <div className="absolute -top-20 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-primary">{ROLE_LABELS[getUserRole(viewUser)] ?? getUserRole(viewUser)}</span>
                 {viewUser.avatarUrl ? (
                   <img src={viewUser.avatarUrl} alt={viewUser.displayName} className="w-32 h-32 rounded-full object-cover border-4 border-background" />
                 ) : (
@@ -616,7 +617,7 @@ export default function Admin() {
           )}
           <DialogHeader className="text-center">
             <DialogTitle className="sr-only">Détails</DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">Informations et configuration de {viewUser?.displayName}</DialogDescription>
+            <DialogDescription className="text-sm text-muted-foreground text-center w-full">Informations et configuration de {viewUser?.displayName}</DialogDescription>
           </DialogHeader>
           {viewUser && (
             <div className="space-y-4 py-2">
