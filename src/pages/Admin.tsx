@@ -236,16 +236,51 @@ export default function Admin() {
     setEditUser(u);
     setEditName(u.displayName);
     setEditEmail(u.email);
+    setEditRole(getUserRole(u));
+    setEditPalier1(u.config?.palier_1?.toString() ?? "");
+    setEditPalier2(u.config?.palier_2?.toString() ?? "");
+    setEditPalier3(u.config?.palier_3?.toString() ?? "");
+    setEditPrime1((u.config?.prime_audit_1 ?? 0).toString());
+    setEditPrime2((u.config?.prime_audit_2 ?? 0).toString());
+    setEditPrime3((u.config?.prime_audit_3_plus ?? 0).toString());
   };
 
   const handleEditSave = async () => {
     if (!editUser) return;
     setEditSaving(true);
+    const role = getUserRole(editUser);
+
+    // Update name & email
     const res = await supabase.functions.invoke("create-user", {
       body: { action: "update-user", userId: editUser.id, email: editEmail.trim(), displayName: editName.trim() },
     });
-    if (res.data?.error) toast.error(res.data.error);
-    else { toast.success("Utilisateur mis à jour"); setEditUser(null); loadUsers(); }
+    if (res.data?.error) { toast.error(res.data.error); setEditSaving(false); return; }
+
+    // Update role if changed and not admin
+    if (role !== "admin" && editRole !== role) {
+      await supabase.functions.invoke("create-user", {
+        body: { action: "set-role", userId: editUser.id, role: editRole },
+      });
+    }
+
+    // Update config
+    await supabase.functions.invoke("create-user", {
+      body: {
+        action: "save-config",
+        userId: editUser.id,
+        objectif: editUser.config?.objectif ?? 0,
+        palier_1: editPalier1 ? parseInt(editPalier1) : null,
+        palier_2: editPalier2 ? parseInt(editPalier2) : null,
+        palier_3: editPalier3 ? parseInt(editPalier3) : null,
+        prime_audit_1: parseFloat(editPrime1) || 0,
+        prime_audit_2: parseFloat(editPrime2) || 0,
+        prime_audit_3_plus: parseFloat(editPrime3) || 0,
+      },
+    });
+
+    toast.success("Utilisateur mis à jour");
+    setEditUser(null);
+    loadUsers();
     setEditSaving(false);
   };
 
