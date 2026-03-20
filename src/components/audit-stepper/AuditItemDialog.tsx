@@ -72,9 +72,9 @@ export function AuditItemDialog({
   const isAutoFilled = autoValue !== undefined;
   const isNoShowAuto = item.autoField === "nbNoShow";
 
-  const [boolVal, setBoolVal] = useState<boolean>(() => {
+  const [boolVal, setBoolVal] = useState<boolean | null>(() => {
     if (isNoShowAuto) return (autoValue ?? 0) === 0;
-    return initialAnswer ? initialAnswer.score > 0 : false;
+    return initialAnswer ? initialAnswer.score > 0 : null;
   });
   const [numVal, setNumVal] = useState<string>(() => {
     if (isAutoFilled && !isNoShowAuto) return String(autoValue ?? 0);
