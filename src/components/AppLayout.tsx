@@ -8,7 +8,6 @@ import { FiltersBar } from "./FiltersBar";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "./ui/sheet";
 import { useAuth } from "@/hooks/useAuth";
-import { useAuth } from "@/hooks/useAuth";
 import type { Filters } from "@/hooks/useAuditData";
 
 interface AppLayoutProps {
