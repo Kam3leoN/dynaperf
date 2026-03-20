@@ -9,6 +9,12 @@ import { ScoresByTypeChart } from "@/components/ScoresByTypeChart";
 import { PodiumCards } from "@/components/PodiumCards";
 import { AppLayout } from "@/components/AppLayout";
 
+const StrokeTitle = ({ text }: { text: string }) => (
+  <span className="stroke-title" data-text={text}>
+    <span className="span-text">{text}</span>
+  </span>
+);
+
 const Index = () => {
   const {
     audits, filters, setFilters,
@@ -16,7 +22,6 @@ const Index = () => {
     partenaireStats, scoreDistribution, globalStats, loading,
   } = useAuditData();
 
-  // Compute objectifs based on filter
   const objectifTotal = filters.auditeur !== "Tous"
     ? collaborateurStats.find((c) => c.nom === filters.auditeur)?.objectif ?? 0
     : collaborateurStats.reduce((sum, c) => sum + c.objectif, 0);
@@ -25,7 +30,7 @@ const Index = () => {
     <AppLayout audits={audits} filters={filters} setFilters={setFilters}>
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <p className="text-muted-foreground font-sora">Chargement des audits…</p>
+          <p className="text-muted-foreground">Chargement des audits…</p>
         </div>
       ) : (
         <>
@@ -35,11 +40,11 @@ const Index = () => {
             objectifNotes={objectifTotal}
           />
           <section>
-            <h2 className="font-sora text-sm font-semibold text-foreground mb-3">🏆 Podium par type d'événement</h2>
+            <h2 className="mb-3"><StrokeTitle text="Podium par type d'événement" /></h2>
             <PodiumCards data={partenaireStats} />
           </section>
           <section>
-            <h2 className="font-sora text-sm font-semibold text-foreground mb-3">Comparaison par type d'événement</h2>
+            <h2 className="mb-3"><StrokeTitle text="Comparaison par type d'événement" /></h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {scoresByType.map((s, i) => (
                 <ScoresByTypeChart key={s.type} data={s} index={i} />
@@ -47,7 +52,7 @@ const Index = () => {
             </div>
           </section>
           <section>
-            <h2 className="font-sora text-sm font-semibold text-foreground mb-3">Performance par type d'événement</h2>
+            <h2 className="mb-3"><StrokeTitle text="Performance par type d'événement" /></h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {scoresByType.map((s, i) => (
                 <ScoreCard key={s.type} {...s} index={i} />

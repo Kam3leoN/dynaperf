@@ -59,7 +59,7 @@ export function AppLayout({ children, audits, filters, setFilters }: AppLayoutPr
               <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center shrink-0">
                 <FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-primary-foreground" />
               </div>
-              <h1 className="font-sora text-base sm:text-lg font-bold text-foreground tracking-tight">DynaPerf</h1>
+              <h1 className="text-base sm:text-lg font-bold text-foreground tracking-tight">DynaPerf</h1>
             </div>
             {/* Desktop nav */}
             <nav className="hidden md:flex items-center gap-1">
@@ -84,7 +84,7 @@ export function AppLayout({ children, audits, filters, setFilters }: AppLayoutPr
               <SheetContent side="right" className="w-72 p-0">
                 <div className="flex flex-col h-full">
                   <div className="flex items-center justify-between p-4 border-b border-border">
-                    <span className="font-sora text-sm font-bold text-foreground">Menu</span>
+                    <span className="text-sm font-bold text-foreground">Menu</span>
                   </div>
                   <nav className="flex flex-col gap-1 p-4">
                     {navLinks}

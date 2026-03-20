@@ -7,7 +7,7 @@ interface MonthlyChartProps {
 export function MonthlyChart({ data }: MonthlyChartProps) {
   return (
     <div className="bg-card rounded-lg shadow-soft p-5">
-      <h3 className="font-sora text-sm font-semibold text-foreground mb-4">Volume mensuel d'audits</h3>
+      <h3 className="text-sm font-semibold text-foreground mb-4">Volume mensuel d'audits</h3>
       <div className="h-[240px]">
         <ResponsiveContainer width="100%" height="100%">
           <AreaChart data={data} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
@@ -27,7 +27,7 @@ export function MonthlyChart({ data }: MonthlyChartProps) {
                 borderRadius: 6,
                 color: "hsl(var(--background))",
                 fontSize: 12,
-                fontFamily: "Sora",
+                fontFamily: "Lexend",
               }}
               labelStyle={{ color: "hsl(var(--background))" }}
             />

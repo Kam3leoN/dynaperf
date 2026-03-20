@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -118,12 +118,26 @@
   }
 
   body {
-    @apply bg-background text-foreground font-roboto antialiased;
+    @apply bg-background text-foreground font-sans antialiased;
   }
+}
 
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-sora;
-  }
+/* Stroke highlight title */
+.stroke-title {
+  position: relative;
+  display: inline;
+  font-size: 18px;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+}
+.stroke-title .span-text {
+  background: linear-gradient(90deg, hsl(var(--accent)) 100%, transparent 0) 0;
+  background-size: 100% 32%;
+  background-repeat: no-repeat;
+  background-position: 0 88%;
+  display: inline;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
 }
 
 @layer utilities {

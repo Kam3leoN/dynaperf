@@ -7,8 +7,18 @@ interface PodiumCardsProps {
 
 const TYPES = ["Club Affaires", "RD Présentiel", "RD Distanciel", "RDV Commercial"];
 
-const medalLabels = ["🥈", "🥇", "🥉"]; // silver, gold, bronze (display order: 2nd, 1st, 3rd)
-const barHeights = ["h-20", "h-28", "h-14"];
+const MEDAL_COLORS = {
+  gold: "#FFD700",
+  silver: "#C0C0C0",
+  bronze: "#CD7F32",
+};
+
+// Display order: silver (2nd), gold (1st), bronze (3rd)
+const podiumConfig = [
+  { rank: 2, color: MEDAL_COLORS.silver, height: "h-20" },
+  { rank: 1, color: MEDAL_COLORS.gold, height: "h-28" },
+  { rank: 3, color: MEDAL_COLORS.bronze, height: "h-14" },
+];
 
 export function PodiumCards({ data }: PodiumCardsProps) {
   return (
@@ -33,29 +43,39 @@ export function PodiumCards({ data }: PodiumCardsProps) {
             transition={{ duration: 0.3 }}
             className="bg-card rounded-lg shadow-soft p-4"
           >
-            <h4 className="font-sora text-xs font-semibold text-foreground mb-4 text-center truncate">{type}</h4>
+            <h4 className="text-xs font-semibold text-foreground mb-4 text-center truncate">{type}</h4>
             {podiumOrder.length === 0 ? (
               <p className="text-xs text-muted-foreground text-center py-6">Aucune donnée</p>
             ) : (
-              <div className="flex items-end justify-center gap-2 sm:gap-3 min-h-[140px]">
+              <div className="flex items-end justify-center gap-2 sm:gap-3 min-h-[160px]">
                 {podiumOrder.map((entry, i) => {
-                  const styleIdx = top3.length >= 3 ? i : (top3.length === 2 ? (i === 0 ? 0 : 1) : 1);
-                  const height = barHeights[styleIdx];
-                  // Gold bar gets full color, silver/bronze get lighter opacity
-                  const barOpacity = styleIdx === 1 ? 1 : styleIdx === 0 ? 0.55 : 0.35;
+                  const cfg = top3.length >= 3
+                    ? podiumConfig[i]
+                    : top3.length === 2
+                      ? podiumConfig[i === 0 ? 0 : 1]
+                      : podiumConfig[1]; // single entry gets gold
 
                   return (
                     <div key={entry.nom} className="flex flex-col items-center flex-1 max-w-[90px]">
-                      <span className="text-lg mb-1">{medalLabels[styleIdx]}</span>
-                      <span className="text-xs font-bold tabular-nums mb-1" style={{ color: typeColor }}>
+                      <span
+                        className="text-lg font-bold tabular-nums mb-1"
+                        style={{ color: typeColor }}
+                      >
                         {entry.avg!.toFixed(1)}
                       </span>
                       <div
-                        className={`w-full ${height} rounded-t-md transition-all`}
-                        style={{ backgroundColor: typeColor, opacity: barOpacity }}
-                      />
-                      <p className="text-[10px] text-muted-foreground mt-1.5 text-center leading-tight truncate w-full" title={entry.nom}>
-                        {entry.nom.split(" ")[0]}
+                        className={`w-full ${cfg.height} rounded-t-md relative flex items-center justify-center`}
+                        style={{ backgroundColor: cfg.color }}
+                      >
+                        <span className="text-white font-bold" style={{ fontSize: "24px" }}>
+                          {cfg.rank}
+                        </span>
+                      </div>
+                      <p
+                        className="text-[10px] font-bold mt-1.5 text-center leading-tight truncate w-full uppercase text-foreground"
+                        title={entry.nom}
+                      >
+                        {entry.nom}
                       </p>
                     </div>
                   );

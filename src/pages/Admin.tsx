@@ -112,7 +112,7 @@ export default function Admin() {
   return (
     <AppLayout>
       <div className="max-w-3xl">
-        <h2 className="font-sora text-lg font-bold text-foreground mb-6">Gestion des utilisateurs</h2>
+        <h2 className="text-lg font-bold text-foreground mb-6">Gestion des utilisateurs</h2>
 
         <Tabs defaultValue="list" className="space-y-4">
           <TabsList className="grid w-full grid-cols-2">
@@ -129,7 +129,7 @@ export default function Admin() {
           {/* User list */}
           <TabsContent value="list">
             <div className="bg-card rounded-lg shadow-soft p-4 sm:p-6">
-              <h3 className="font-sora text-sm font-semibold text-foreground mb-4">Comptes existants</h3>
+              <h3 className="text-sm font-semibold text-foreground mb-4">Comptes existants</h3>
               {usersLoading ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">Chargement…</p>
               ) : (
@@ -174,7 +174,7 @@ export default function Admin() {
           {/* Create user */}
           <TabsContent value="create">
             <div className="bg-card rounded-lg shadow-soft p-4 sm:p-6">
-              <h3 className="font-sora text-sm font-semibold text-foreground mb-4">Créer un nouvel utilisateur</h3>
+              <h3 className="text-sm font-semibold text-foreground mb-4">Créer un nouvel utilisateur</h3>
               <form onSubmit={handleCreate} className="space-y-4">
                 <div>
                   <label className="text-xs text-muted-foreground mb-1 block">Nom d'affichage</label>

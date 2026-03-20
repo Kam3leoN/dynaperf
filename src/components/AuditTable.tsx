@@ -70,7 +70,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
 
   const SortHeader = ({ label, k }: { label: string; k: SortKey }) => (
     <TableHead className="cursor-pointer select-none whitespace-nowrap" onClick={() => handleSort(k)}>
-      <span className="flex items-center gap-1 font-sora text-xs uppercase tracking-wider">
+      <span className="flex items-center gap-1 text-xs uppercase tracking-wider">
         {label}
         <FontAwesomeIcon icon={faSort} className="h-3 w-3 text-muted-foreground" />
       </span>
@@ -119,7 +119,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
   return (
     <div className="bg-card rounded-lg shadow-soft p-4 sm:p-5">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-        <h3 className="font-sora text-sm font-semibold text-foreground">Registre des audits</h3>
+        <h3 className="text-sm font-semibold text-foreground">Registre des audits</h3>
         <div className="flex items-center gap-2 sm:gap-3 flex-1 sm:flex-none justify-end">
           <Input
             placeholder="Rechercher..."
@@ -136,7 +136,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle className="font-sora">{editId ? "Modifier l'audit" : "Nouvel audit"}</DialogTitle>
+                <DialogTitle className="">{editId ? "Modifier l'audit" : "Nouvel audit"}</DialogTitle>
               </DialogHeader>
               <div className="grid gap-3 py-3">
                 <div className="grid grid-cols-2 gap-3">
@@ -217,12 +217,12 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
             <TableRow>
               <SortHeader label="Date" k="date" />
               <SortHeader label="Partenaire" k="partenaire" />
-              <TableHead className="font-sora text-xs uppercase tracking-wider">Lieu</TableHead>
+              <TableHead className="text-xs uppercase tracking-wider">Lieu</TableHead>
               <SortHeader label="Auditeur" k="auditeur" />
               <SortHeader label="Type" k="typeEvenement" />
               <SortHeader label="Note" k="note" />
-              <TableHead className="font-sora text-xs uppercase tracking-wider">Statut</TableHead>
-              <TableHead className="font-sora text-xs uppercase tracking-wider w-20">Actions</TableHead>
+              <TableHead className="text-xs uppercase tracking-wider">Statut</TableHead>
+              <TableHead className="text-xs uppercase tracking-wider w-20">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

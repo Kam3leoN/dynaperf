@@ -9,7 +9,7 @@ export default function Registre() {
     <AppLayout audits={audits} filters={filters} setFilters={setFilters}>
       {loading ? (
         <div className="flex items-center justify-center py-20">
-          <p className="text-muted-foreground font-sora">Chargement des audits…</p>
+          <p className="text-muted-foreground">Chargement des audits…</p>
         </div>
       ) : (
         <AuditTable audits={audits} onAdd={addAudit} onUpdate={updateAudit} onDelete={deleteAudit} />

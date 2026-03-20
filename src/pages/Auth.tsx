@@ -47,7 +47,7 @@ export default function Auth() {
             <FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="font-sora text-lg font-bold text-foreground tracking-tight">DynaPerf</h1>
+            <h1 className="text-lg font-bold text-foreground tracking-tight">DynaPerf</h1>
             <p className="text-xs text-muted-foreground">Connexion</p>
           </div>
         </div>

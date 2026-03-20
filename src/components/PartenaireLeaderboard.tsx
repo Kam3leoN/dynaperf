@@ -26,7 +26,7 @@ export function PartenaireLeaderboard({ data }: PartenaireLeaderboardProps) {
   return (
     <div className="bg-card rounded-lg shadow-soft p-5">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-        <h3 className="font-sora text-sm font-semibold text-foreground">🏆 Top 10 partenaires par note moyenne</h3>
+        <h3 className="text-sm font-semibold text-foreground">🏆 Top 10 partenaires par note moyenne</h3>
         <Select value={selectedType} onValueChange={setSelectedType}>
           <SelectTrigger className="w-[180px] h-8 text-xs">
             <SelectValue />
@@ -58,7 +58,7 @@ export function PartenaireLeaderboard({ data }: PartenaireLeaderboardProps) {
                   <FontAwesomeIcon icon={faTrophy} className={`h-5 w-5 ${medal.icon}`} />
                 </div>
               ) : (
-                <span className="w-7 h-7 flex items-center justify-center font-sora text-xs font-bold text-muted-foreground tabular-nums">
+                <span className="w-7 h-7 flex items-center justify-center text-xs font-bold text-muted-foreground tabular-nums">
                   {i + 1}
                 </span>
               )}
@@ -71,7 +71,7 @@ export function PartenaireLeaderboard({ data }: PartenaireLeaderboardProps) {
               <span className="text-xs text-muted-foreground tabular-nums">
                 {p.count} audit{p.count > 1 ? "s" : ""}
               </span>
-              <span className={`font-sora text-base font-bold tabular-nums ${
+              <span className={`text-base font-bold tabular-nums ${
                 isPodium ? medal.text : p.avg! >= 7 ? "text-foreground" : "text-primary"
               }`}>
                 {p.avg!.toFixed(1)}
