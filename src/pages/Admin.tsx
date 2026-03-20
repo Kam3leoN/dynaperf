@@ -146,7 +146,8 @@ export default function Admin() {
   const [createOpen, setCreateOpen] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
+  const [newFirstName, setNewFirstName] = useState("");
+  const [newLastName, setNewLastName] = useState("");
   const [newRole, setNewRole] = useState("lecteur");
   const [newPalier1, setNewPalier1] = useState("");
   const [newPalier2, setNewPalier2] = useState("");
