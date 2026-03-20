@@ -525,6 +525,54 @@ export default function Admin() {
           </>
         )}
       </div>
+
+      {/* View user dialog */}
+      <Dialog open={!!viewUser} onOpenChange={(o) => { if (!o) setViewUser(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Détails du collaborateur</DialogTitle>
+            <DialogDescription>Informations et configuration de {viewUser?.displayName}</DialogDescription>
+          </DialogHeader>
+          {viewUser && (
+            <div className="space-y-4 py-2">
+              <div className="flex items-center gap-3">
+                <UserAvatar url={viewUser.avatarUrl} name={viewUser.displayName} size="md" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">{viewUser.displayName}</p>
+                  <p className="text-xs text-muted-foreground">{viewUser.email}</p>
+                </div>
+                <RoleBadge role={getUserRole(viewUser)} />
+              </div>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div>
+                  <span className="text-xs text-muted-foreground block">Objectif</span>
+                  <span className="font-medium text-foreground">{viewUser.config?.objectif ?? "—"}</span>
+                </div>
+                <div>
+                  <span className="text-xs text-muted-foreground block">Créé le</span>
+                  <span className="font-medium text-foreground">{new Date(viewUser.createdAt).toLocaleDateString("fr-FR")}</span>
+                </div>
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground block mb-1">Paliers</span>
+                <div className="flex gap-3 text-sm">
+                  <span className="bg-secondary px-2 py-0.5 rounded text-foreground">P1: {viewUser.config?.palier_1 ?? "—"}</span>
+                  <span className="bg-secondary px-2 py-0.5 rounded text-foreground">P2: {viewUser.config?.palier_2 ?? "—"}</span>
+                  <span className="bg-secondary px-2 py-0.5 rounded text-foreground">P3: {viewUser.config?.palier_3 ?? "—"}</span>
+                </div>
+              </div>
+              <div>
+                <span className="text-xs text-muted-foreground block mb-1">Primes</span>
+                <div className="flex gap-3 text-sm">
+                  <span className="bg-secondary px-2 py-0.5 rounded text-foreground">{viewUser.config?.prime_audit_1 ?? 0}€</span>
+                  <span className="bg-secondary px-2 py-0.5 rounded text-foreground">{viewUser.config?.prime_audit_2 ?? 0}€</span>
+                  <span className="bg-secondary px-2 py-0.5 rounded text-foreground">{viewUser.config?.prime_audit_3_plus ?? 0}€</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
