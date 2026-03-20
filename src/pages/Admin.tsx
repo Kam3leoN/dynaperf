@@ -322,7 +322,7 @@ export default function Admin() {
 
   const currentUserRole = users.find(u => u.id === currentUser?.id);
   const isSuperAdmin = currentUserRole ? getUserRole(currentUserRole) === "super_admin" : false;
-  const filtered = users.filter((u) => matchesSearch(u.displayName, u.email, searchPrenom, searchNom));
+  const filtered = users.filter((u) => matchesSearch(u, searchQuery));
 
   const MobileCard = ({ u }: { u: ManagedUser }) => {
     const role = getUserRole(u);
