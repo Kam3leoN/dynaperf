@@ -268,8 +268,8 @@ export default function Admin() {
             <button onClick={() => setViewUser(u)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Voir">
               <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
-            <button onClick={() => setExpandedUser(isExpanded ? null : u.id)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
-              <FontAwesomeIcon icon={isExpanded ? faChevronUp : faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
+            <button onClick={() => openEditDialog(u)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
+              <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
             {u.id !== currentUser?.id && (
               <button onClick={() => handleDelete(u.id, u.email)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors" title="Supprimer">
