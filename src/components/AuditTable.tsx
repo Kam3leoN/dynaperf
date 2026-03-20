@@ -6,8 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faPenToSquare, faTrashCan, faSort } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faPenToSquare, faTrashCan, faSort, faEye } from "@fortawesome/free-solid-svg-icons";
 import { motion, AnimatePresence } from "framer-motion";
+import { AuditDetailView } from "./AuditDetailView";
 
 interface AuditTableProps {
   audits: Audit[];
