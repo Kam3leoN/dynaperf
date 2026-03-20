@@ -125,9 +125,9 @@ Deno.serve(async (req) => {
       return jsonOk({ success: true });
     }
 
-    // UPDATE USER (email, displayName)
+    // UPDATE USER (email, displayName, title)
     if (action === "update-user") {
-      const { userId, email: newEmail, displayName: newName } = body;
+      const { userId, email: newEmail, displayName: newName, title: newTitle } = body;
       if (!userId) return jsonError("userId requis", 400);
 
       // Update auth email if changed
@@ -136,10 +136,14 @@ Deno.serve(async (req) => {
         if (error) return jsonError(error.message, 400);
       }
 
-      // Update profile display_name
-      if (newName !== undefined) {
-        const { error } = await adminClient.from("profiles").update({ display_name: newName }).eq("user_id", userId);
+      // Update profile fields
+      const profileUpdate: Record<string, any> = {};
+      if (newName !== undefined) profileUpdate.display_name = newName;
+      if (newTitle !== undefined) profileUpdate.title = newTitle || null;
+      if (Object.keys(profileUpdate).length > 0) {
+        const { error } = await adminClient.from("profiles").update(profileUpdate).eq("user_id", userId);
         if (error) return jsonError(error.message, 400);
+      }
       }
 
       return jsonOk({ success: true });
