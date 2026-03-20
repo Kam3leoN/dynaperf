@@ -64,7 +64,15 @@ export default function AdminAuditGrid() {
     const cats = catRes.data || [];
     setCategories(cats);
     const catIds = cats.map((c) => c.id);
-    setItems((itemRes.data || []).filter((i) => catIds.includes(i.category_id)));
+    setItems(
+      (itemRes.data || [])
+        .filter((i) => catIds.includes(i.category_id))
+        .map((i) => ({
+          ...i,
+          checklist_items: Array.isArray(i.checklist_items) ? (i.checklist_items as string[]) : null,
+          scoring_rules: i.scoring_rules ?? null,
+        }))
+    );
   }, [selectedTypeId]);
 
   useEffect(() => { loadData(); }, [loadData]);
