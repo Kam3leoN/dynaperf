@@ -88,11 +88,11 @@ function RoleBadge({ role }: { role: string }) {
 function UserAvatar({ url, name, size = "sm" }: { url: string | null; name: string; size?: "sm" | "md" }) {
   const s = size === "md" ? "w-12 h-12 text-lg" : "w-8 h-8 text-xs";
   if (url) {
-    return <img src={url} alt={name} className={`${s} rounded-full object-cover border border-border`} />;
+    return <img src={url} alt={name} className={`${s} rounded-full object-cover border border-border shrink-0`} />;
   }
   const initials = name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2);
   return (
-    <div className={`${s} rounded-full bg-primary/10 text-primary font-semibold flex items-center justify-center border border-border`}>
+    <div className={`${s} rounded-full bg-primary/10 text-primary font-semibold flex items-center justify-center border border-border shrink-0`}>
       {initials}
     </div>
   );
