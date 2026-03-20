@@ -17,9 +17,8 @@ function ArcText({ text, radius = 78, fontSize = 13 }: { text: string; radius?: 
   const id = "arcPath";
   const svgSize = radius * 2 + 40;
   const cx = svgSize / 2;
-  const cy = svgSize / 2;
   return (
-    <svg width={svgSize} height={radius + fontSize + 10} viewBox={`0 0 ${svgSize} ${radius + fontSize + 10}`} className="overflow-visible">
+    <svg width={svgSize} height={radius + fontSize + 10} viewBox={`0 0 ${svgSize} ${radius + fontSize + 10}`} className="overflow-visible" style={{ filter: "drop-shadow(0 1px 2px rgba(0,0,0,0.3))" }}>
       <defs>
         <path id={id} d={`M ${cx - radius},${radius + fontSize} A ${radius},${radius} 0 0,1 ${cx + radius},${radius + fontSize}`} fill="none" />
       </defs>
@@ -30,10 +29,6 @@ function ArcText({ text, radius = 78, fontSize = 13 }: { text: string; radius?: 
         letterSpacing="0.18em"
         textAnchor="middle"
         fontFamily="Lexend, sans-serif"
-        paintOrder="stroke"
-        stroke="hsl(var(--background))"
-        strokeWidth="3"
-        strokeLinejoin="round"
       >
         <textPath href={`#${id}`} startOffset="50%">{text}</textPath>
       </text>
