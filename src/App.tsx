@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Registre from "./pages/Registre";
 import NewAudit from "./pages/NewAudit";
+import AuditForm from "./pages/AuditForm";
 import Admin from "./pages/Admin";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
