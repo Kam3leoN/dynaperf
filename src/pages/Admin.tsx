@@ -704,7 +704,7 @@ export default function Admin() {
 
       {/* Edit user dialog */}
       <Dialog open={!!editUser} onOpenChange={(o) => { if (!o) setEditUser(null); }}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto pt-20 overflow-visible [&>button]:hidden">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] [&>button]:hidden" style={{ overflow: 'visible' }}>
           {editUser && (
             <>
               <div className="absolute -top-16 left-1/2 -translate-x-1/2">
