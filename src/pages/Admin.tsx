@@ -121,6 +121,7 @@ function matchesSearch(user: ManagedUser, search: string) {
 }
 
 export default function Admin() {
+  const navigate = useNavigate();
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
