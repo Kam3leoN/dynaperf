@@ -543,7 +543,9 @@ export default function Admin() {
                           <TableCell className="text-sm font-medium">{u.displayName}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
                           <TableCell>
-                            {isAdmin ? (
+                            {isAdminOrAbove && !isSuperAdmin ? (
+                              <RoleBadge role={role} />
+                            ) : isSuperAdminUser ? (
                               <RoleBadge role={role} />
                             ) : (
                               <Select value={role} onValueChange={(v) => handleSetRole(u.id, v)}>
@@ -551,6 +553,8 @@ export default function Admin() {
                                 <SelectContent>
                                   <SelectItem value="lecteur">Lecteur</SelectItem>
                                   <SelectItem value="redacteur">Rédacteur</SelectItem>
+                                  <SelectItem value="admin">Admin</SelectItem>
+                                  {isSuperAdmin && <SelectItem value="super_admin">Super Admin</SelectItem>}
                                 </SelectContent>
                               </Select>
                             )}
