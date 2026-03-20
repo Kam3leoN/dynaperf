@@ -37,6 +37,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [search, setSearch] = useState("");
+  const [detailAudit, setDetailAudit] = useState<{ id: string; type: string } | null>(null);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir(sortDir === "asc" ? "desc" : "asc");
