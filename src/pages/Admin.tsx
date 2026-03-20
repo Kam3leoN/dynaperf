@@ -112,25 +112,11 @@ function UserAvatar({ url, name, size = "sm" }: { url: string | null; name: stri
 }
 
 // Split displayName into parts and match each search term
-function matchesSearch(displayName: string, email: string, searchPrenom: string, searchNom: string) {
-  const parts = displayName.toLowerCase().split(/\s+/);
-  const prenom = searchPrenom.toLowerCase().trim();
-  const nom = searchNom.toLowerCase().trim();
-
-  if (!prenom && !nom) return true;
-
-  // If only one field filled, match against any part or email
-  if (prenom && !nom) {
-    return parts.some(p => p.includes(prenom)) || email.toLowerCase().includes(prenom);
-  }
-  if (!prenom && nom) {
-    return parts.some(p => p.includes(nom)) || email.toLowerCase().includes(nom);
-  }
-
-  // Both filled: prenom matches first part, nom matches last part (or vice versa)
-  const matchPrenom = parts.some(p => p.includes(prenom));
-  const matchNom = parts.some(p => p.includes(nom));
-  return matchPrenom && matchNom;
+function matchesSearch(user: ManagedUser, search: string) {
+  const term = search.toLowerCase().trim();
+  if (!term) return true;
+  const haystack = `${user.displayName} ${user.email} ${ROLE_LABELS[getUserRole(user)] || ""} ${user.title || ""}`.toLowerCase();
+  return term.split(/\s+/).every(word => haystack.includes(word));
 }
 
 export default function Admin() {
