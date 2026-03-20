@@ -3,7 +3,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUsers, faLaptop, faBriefcase, faHandshake } from "@fortawesome/free-solid-svg-icons";
 
-const auditTypes = [
+const auditTypes: { label: string; color: string; icon: typeof faUsers; key: string; mobileLabel?: React.ReactNode }[] = [
   {
     label: "Rencontre Dirigeants Présentiel",
     color: "#ee4540",
