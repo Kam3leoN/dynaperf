@@ -14,6 +14,71 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_details: {
+        Row: {
+          audit_id: string
+          created_at: string
+          heure_evenement: string | null
+          id: string
+          items: Json
+          nb_adherents: number | null
+          nb_invites: number | null
+          nb_no_show: number | null
+          nb_participants: number | null
+          nb_rdv_pris: number | null
+          nom_club: string | null
+          note_sur_10: number | null
+          partenaire_referent: string | null
+          total_points: number | null
+          type_lieu: string | null
+          updated_at: string
+        }
+        Insert: {
+          audit_id: string
+          created_at?: string
+          heure_evenement?: string | null
+          id?: string
+          items?: Json
+          nb_adherents?: number | null
+          nb_invites?: number | null
+          nb_no_show?: number | null
+          nb_participants?: number | null
+          nb_rdv_pris?: number | null
+          nom_club?: string | null
+          note_sur_10?: number | null
+          partenaire_referent?: string | null
+          total_points?: number | null
+          type_lieu?: string | null
+          updated_at?: string
+        }
+        Update: {
+          audit_id?: string
+          created_at?: string
+          heure_evenement?: string | null
+          id?: string
+          items?: Json
+          nb_adherents?: number | null
+          nb_invites?: number | null
+          nb_no_show?: number | null
+          nb_participants?: number | null
+          nb_rdv_pris?: number | null
+          nom_club?: string | null
+          note_sur_10?: number | null
+          partenaire_referent?: string | null
+          total_points?: number | null
+          type_lieu?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "audit_details_audit_id_fkey"
+            columns: ["audit_id"]
+            isOneToOne: true
+            referencedRelation: "audits"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audits: {
         Row: {
           auditeur: string
