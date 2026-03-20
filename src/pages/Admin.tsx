@@ -236,7 +236,11 @@ export default function Admin() {
 
   const openEditDialog = (u: ManagedUser) => {
     setEditUser(u);
-    setEditName(u.displayName);
+    const parts = u.displayName.split(" ");
+    const lastName = parts.filter(p => p === p.toUpperCase() && p.length > 1).join(" ") || parts.slice(-1).join("");
+    const firstName = parts.filter(p => !(p === p.toUpperCase() && p.length > 1)).join(" ") || "";
+    setEditFirstName(firstName);
+    setEditLastName(lastName);
     setEditEmail(u.email);
     setEditRole(getUserRole(u));
     setEditPalier1(u.config?.palier_1?.toString() ?? "");
