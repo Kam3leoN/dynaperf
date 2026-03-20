@@ -625,9 +625,8 @@ export default function Admin() {
         <DialogContent className="sm:max-w-md pt-28 overflow-visible [&>button]:hidden">
           {viewUser && (
             <>
-              <div className="absolute -top-24 left-1/2 -translate-x-1/2 flex flex-col items-center">
-                <ArcText text={(ROLE_LABELS[getUserRole(viewUser)] ?? getUserRole(viewUser)).toUpperCase()} radius={85} fontSize={14} />
-                <div className="-mt-4">
+              <div className="absolute -top-16 left-1/2 -translate-x-1/2">
+                <div className="relative">
                   {viewUser.avatarUrl ? (
                     <img src={viewUser.avatarUrl} alt={viewUser.displayName} className="w-32 h-32 rounded-full object-cover border-4 border-background" />
                   ) : (
@@ -635,6 +634,9 @@ export default function Admin() {
                       {viewUser.displayName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)}
                     </div>
                   )}
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none">
+                    <ArcText text={(ROLE_LABELS[getUserRole(viewUser)] ?? getUserRole(viewUser)).toUpperCase()} radius={85} fontSize={14} />
+                  </div>
                 </div>
               </div>
               <button
