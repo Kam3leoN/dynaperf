@@ -703,9 +703,15 @@ export default function Admin() {
           </DialogHeader>
           {editUser && (
             <div className="space-y-4 py-2">
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Nom d'affichage</label>
-                <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-9 text-sm" placeholder="Prénom Nom" />
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Prénom</label>
+                  <Input value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} className="h-9 text-sm" placeholder="Prénom" />
+                </div>
+                <div>
+                  <label className="text-xs text-muted-foreground mb-1 block">Nom</label>
+                  <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} className="h-9 text-sm" placeholder="NOM" />
+                </div>
               </div>
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Email</label>
