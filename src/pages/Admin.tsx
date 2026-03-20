@@ -622,7 +622,7 @@ export default function Admin() {
 
       {/* View user dialog */}
       <Dialog open={!!viewUser} onOpenChange={(o) => { if (!o) setViewUser(null); }}>
-        <DialogContent className="sm:max-w-md pt-28 overflow-visible [&>button]:hidden">
+        <DialogContent className="sm:max-w-md pt-20 overflow-visible [&>button]:hidden">
           {viewUser && (
             <>
               <div className="absolute -top-16 left-1/2 -translate-x-1/2">
