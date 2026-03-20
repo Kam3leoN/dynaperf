@@ -384,10 +384,10 @@ export default function AdminPartenaires() {
                 <TableRow>
                   <TableHead className="text-xs uppercase tracking-wider w-10"></TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">Nom</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider">Statut</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">Société</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">Comm.</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">Référent</TableHead>
-                  <TableHead className="text-xs uppercase tracking-wider">Fonctions</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">Secteurs</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider w-24">Actions</TableHead>
                 </TableRow>
@@ -398,10 +398,10 @@ export default function AdminPartenaires() {
                     <motion.tr key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="border-b border-border hover:bg-secondary/50 transition-colors">
                       <TableCell><PartenaireAvatar url={p.photo_url} name={`${p.prenom} ${p.nom}`} /></TableCell>
                       <TableCell className="text-sm font-medium">{p.prenom} {p.nom}</TableCell>
+                      <TableCell><StatutBadge statut={p.statut} /></TableCell>
                       <TableCell className="text-sm text-muted-foreground">{p.societe || "—"}</TableCell>
                       <TableCell className="text-sm tabular-nums text-muted-foreground">{p.commission}%</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{p.partenaire_referent}</TableCell>
-                      <TableCell><RoleChips p={p} /></TableCell>
                       <TableCell className="text-sm tabular-nums text-muted-foreground">{(p.secteurs || []).join(" / ") || "—"}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
