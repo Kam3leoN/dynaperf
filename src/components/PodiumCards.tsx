@@ -16,9 +16,9 @@ const MEDAL_COLORS = {
 };
 
 const podiumConfig = [
-  { rank: 2, color: MEDAL_COLORS.silver, height: "h-20" },
-  { rank: 1, color: MEDAL_COLORS.gold, height: "h-28" },
-  { rank: 3, color: MEDAL_COLORS.bronze, height: "h-14" },
+  { rank: 2, medal: MEDAL_COLORS.silver, height: "h-20" },
+  { rank: 1, medal: MEDAL_COLORS.gold, height: "h-28" },
+  { rank: 3, medal: MEDAL_COLORS.bronze, height: "h-14" },
 ];
 
 /** Format name as "Prénom NOM" — compound first names handled (Jean-Christophe) */
