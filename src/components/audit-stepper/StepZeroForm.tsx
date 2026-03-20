@@ -1,14 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendar, faChevronRight } from "@fortawesome/free-solid-svg-icons";
+import { supabase } from "@/integrations/supabase/client";
 
 export interface StepZeroData {
   partenaireAudite: string;
@@ -36,6 +38,14 @@ const isRdOrClub = (type: string) =>
   type.includes("RD") || type.includes("Club");
 const isClub = (type: string) => type.includes("Club");
 
+interface SuggestionLists {
+  partenaires: string[];
+  auditeurs: string[];
+  lieux: string[];
+  typesLieu: string[];
+  referents: string[];
+}
+
 export function StepZeroForm({ typeEvenement, initialData, onSubmit }: Props) {
   const [data, setData] = useState<StepZeroData>(
     initialData ?? {
@@ -48,6 +58,40 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit }: Props) {
       heureEvenement: "",
     }
   );
+
+  const [suggestions, setSuggestions] = useState<SuggestionLists>({
+    partenaires: [],
+    auditeurs: [],
+    lieux: [],
+    typesLieu: [],
+    referents: [],
+  });
+
+  useEffect(() => {
+    async function loadSuggestions() {
+      const { data: audits } = await supabase
+        .from("audits")
+        .select("partenaire, auditeur, lieu")
+        .limit(500);
+
+      const { data: details } = await supabase
+        .from("audit_details")
+        .select("partenaire_referent, type_lieu")
+        .limit(500);
+
+      const unique = (arr: (string | null | undefined)[]) =>
+        [...new Set(arr.filter((v): v is string => !!v && v.trim() !== ""))].sort();
+
+      setSuggestions({
+        partenaires: unique(audits?.map((a) => a.partenaire)),
+        auditeurs: unique(audits?.map((a) => a.auditeur)),
+        lieux: unique(audits?.map((a) => a.lieu)),
+        typesLieu: unique(details?.map((d) => d.type_lieu)),
+        referents: unique(details?.map((d) => d.partenaire_referent)),
+      });
+    }
+    loadSuggestions();
+  }, []);
 
   const set = <K extends keyof StepZeroData>(k: K, v: StepZeroData[K]) =>
     setData((prev) => ({ ...prev, [k]: v }));
@@ -75,41 +119,46 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit }: Props) {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label>Partenaire audité (Prénom NOM) *</Label>
-          <Input
+          <AutocompleteInput
             value={data.partenaireAudite}
-            onChange={(e) => set("partenaireAudite", e.target.value)}
+            onChange={(v) => set("partenaireAudite", v)}
+            suggestions={suggestions.partenaires}
             placeholder="ex: Émilie BLAISE"
           />
         </div>
         <div className="space-y-1.5">
           <Label>Partenaire référent (Prénom NOM)</Label>
-          <Input
+          <AutocompleteInput
             value={data.partenaireReferent}
-            onChange={(e) => set("partenaireReferent", e.target.value)}
+            onChange={(v) => set("partenaireReferent", v)}
+            suggestions={suggestions.referents}
             placeholder="ex: Marie DUPONT"
           />
         </div>
         <div className="space-y-1.5">
           <Label>Auditeur (Prénom NOM) *</Label>
-          <Input
+          <AutocompleteInput
             value={data.auditeur}
-            onChange={(e) => set("auditeur", e.target.value)}
+            onChange={(v) => set("auditeur", v)}
+            suggestions={suggestions.auditeurs}
             placeholder="ex: Cédric MALZAT"
           />
         </div>
         <div className="space-y-1.5">
           <Label>Lieu de l'événement *</Label>
-          <Input
+          <AutocompleteInput
             value={data.lieu}
-            onChange={(e) => set("lieu", e.target.value)}
+            onChange={(v) => set("lieu", v)}
+            suggestions={suggestions.lieux}
             placeholder="ex: Troyes"
           />
         </div>
         <div className="space-y-1.5">
           <Label>Type de lieu</Label>
-          <Input
+          <AutocompleteInput
             value={data.typeLieu}
-            onChange={(e) => set("typeLieu", e.target.value)}
+            onChange={(v) => set("typeLieu", v)}
+            suggestions={suggestions.typesLieu}
             placeholder="ex: Hôtel, Restaurant..."
           />
         </div>
