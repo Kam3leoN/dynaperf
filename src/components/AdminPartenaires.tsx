@@ -29,7 +29,19 @@ interface Partenaire {
   email: string;
   telephone: string;
   date_anniversaire: string | null;
+  statut: string;
   created_at: string;
+}
+
+const STATUT_OPTIONS = [
+  { value: "actif", label: "Actif", color: "bg-emerald-500/15 text-emerald-700" },
+  { value: "desactive", label: "Désactivé", color: "bg-muted text-muted-foreground" },
+  { value: "en_formation", label: "En formation", color: "bg-amber-500/15 text-amber-700" },
+];
+
+function StatutBadge({ statut }: { statut: string }) {
+  const opt = STATUT_OPTIONS.find(o => o.value === statut) || STATUT_OPTIONS[0];
+  return <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${opt.color}`}>{opt.label}</span>;
 }
 
 function PartenaireAvatar({ url, name, size = 32 }: { url: string | null; name: string; size?: number }) {
