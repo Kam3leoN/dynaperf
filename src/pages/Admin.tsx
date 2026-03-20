@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faChevronDown, faChevronUp, faCamera, faEye } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faChevronDown, faChevronUp, faCamera, faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -140,6 +140,7 @@ export default function Admin() {
   const [searchPrenom, setSearchPrenom] = useState("");
   const [searchNom, setSearchNom] = useState("");
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [showPrimes, setShowPrimes] = useState(false);
   const [viewUser, setViewUser] = useState<ManagedUser | null>(null);
   const [editUser, setEditUser] = useState<ManagedUser | null>(null);
   const [editFirstName, setEditFirstName] = useState("");
@@ -542,7 +543,14 @@ export default function Admin() {
                     <TableHead className="text-xs uppercase tracking-wider">Email</TableHead>
                     <TableHead className="text-xs uppercase tracking-wider">Rôle</TableHead>
                     <TableHead className="text-xs uppercase tracking-wider">Paliers</TableHead>
-                    <TableHead className="text-xs uppercase tracking-wider">Primes (1/2/3)</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider">
+                      <span className="inline-flex items-center gap-1.5">
+                        Primes (1/2/3)
+                        <button onClick={() => setShowPrimes(v => !v)} className="p-0.5 rounded hover:bg-secondary transition-colors" title={showPrimes ? "Masquer les primes" : "Afficher les primes"}>
+                          <FontAwesomeIcon icon={showPrimes ? faEye : faEyeSlash} className="h-3 w-3 text-muted-foreground" />
+                        </button>
+                      </span>
+                    </TableHead>
                     <TableHead className="text-xs uppercase tracking-wider w-24">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -587,7 +595,9 @@ export default function Admin() {
                             {u.config ? `${u.config.palier_1 ?? "—"} / ${u.config.palier_2 ?? "—"} / ${u.config.palier_3 ?? "—"}` : "—"}
                           </TableCell>
                           <TableCell className="text-sm tabular-nums text-muted-foreground">
-                            {u.config ? `${u.config.prime_audit_1}€ / ${u.config.prime_audit_2}€ / ${u.config.prime_audit_3_plus}€` : "—"}
+                            {showPrimes
+                              ? (u.config ? `${u.config.prime_audit_1}€ / ${u.config.prime_audit_2}€ / ${u.config.prime_audit_3_plus}€` : "—")
+                              : "••• / ••• / •••"}
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-1">
