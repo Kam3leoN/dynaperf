@@ -16,8 +16,7 @@ import { Label } from "@/components/ui/label";
 import {
   AuditItemDef,
   calcParticipantsScore,
-  calcInvitesScore,
-  calcRdvScore,
+  calcLinearScore,
 } from "@/data/auditItems";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCircleInfo, faChevronLeft, faChevronRight, faCheck } from "@fortawesome/free-solid-svg-icons";
@@ -33,6 +32,7 @@ interface Props {
   item: AuditItemDef;
   stepIndex: number;
   totalSteps: number;
+  categoryName: string;
   open: boolean;
   initialAnswer?: ItemAnswer;
   onSubmit: (answer: ItemAnswer) => void;
@@ -45,6 +45,7 @@ export function AuditItemDialog({
   item,
   stepIndex,
   totalSteps,
+  categoryName,
   open,
   initialAnswer,
   onSubmit,
@@ -67,10 +68,11 @@ export function AuditItemDialog({
     if (item.inputType === "boolean") return boolVal ? item.maxPoints : 0;
     if (item.inputType === "number") {
       const n = parseInt(numVal) || 0;
-      if (item.id === 3) return calcParticipantsScore(n);
-      if (item.id === 4) return calcInvitesScore(n);
-      if (item.id === 15) return calcRdvScore(n);
-      return Math.min(n, item.maxPoints);
+      // Use participants scoring for items with specific scoring rules containing "participants"
+      if (item.scoringRules && item.scoringRules.includes("participants")) {
+        return calcParticipantsScore(n);
+      }
+      return calcLinearScore(n, item.maxPoints);
     }
     if (item.inputType === "checklist") return checklist.filter(Boolean).length;
     return 0;
@@ -95,6 +97,9 @@ export function AuditItemDialog({
           <div className="flex items-center gap-2 mb-1">
             <Badge variant="outline" className="text-xs font-mono">
               {stepIndex}/{totalSteps}
+            </Badge>
+            <Badge variant="secondary" className="text-xs">
+              {categoryName}
             </Badge>
             <Badge
               className="text-xs"
