@@ -141,8 +141,6 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
             <span className="hidden sm:inline">Ajouter</span>
           </Button>
           <Dialog open={open} onOpenChange={setOpen}>
-              </Button>
-            </DialogTrigger>
             <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle className="">{editId ? "Modifier l'audit" : "Nouvel audit"}</DialogTitle>
