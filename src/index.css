@@ -139,7 +139,7 @@
   padding: 2px 5px;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
-  transform: rotate(-0.5deg);
+  transform: rotate(-1deg);
   display: inline-block;
 }
 
