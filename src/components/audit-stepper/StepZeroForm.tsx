@@ -74,22 +74,18 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit }: Props) {
 
   useEffect(() => {
     async function loadSuggestions() {
-      const { data: audits } = await supabase
-        .from("audits")
-        .select("partenaire, auditeur, lieu")
-        .limit(500);
-
-      const { data: details } = await supabase
-        .from("audit_details")
-        .select("partenaire_referent, type_lieu")
-        .limit(500);
+      const [{ data: audits }, { data: details }, { data: profiles }] = await Promise.all([
+        supabase.from("audits").select("partenaire, auditeur, lieu").limit(500),
+        supabase.from("audit_details").select("partenaire_referent, type_lieu").limit(500),
+        supabase.from("profiles").select("display_name"),
+      ]);
 
       const unique = (arr: (string | null | undefined)[]) =>
         [...new Set(arr.filter((v): v is string => !!v && v.trim() !== ""))].sort();
 
       setSuggestions({
         partenaires: unique(audits?.map((a) => a.partenaire)),
-        auditeurs: unique(audits?.map((a) => a.auditeur)),
+        auditeurs: unique(profiles?.map((p) => p.display_name)),
         lieux: unique(audits?.map((a) => a.lieu)),
         typesLieu: unique(details?.map((d) => d.type_lieu)),
         referents: unique(details?.map((d) => d.partenaire_referent)),
