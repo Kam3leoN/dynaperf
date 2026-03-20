@@ -191,6 +191,9 @@ export default function Admin() {
               <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                   <DialogTitle>Nouvel utilisateur</DialogTitle>
+                  <DialogDescription>
+                    Créez un collaborateur puis attribuez-lui son rôle, ses objectifs et ses primes.
+                  </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleCreate} className="grid gap-3 py-3">
                   <div>
