@@ -170,6 +170,7 @@ export default function AdminPartenaires() {
       societe: p.societe,
       commission: p.commission.toString(),
       partenaire_referent: p.partenaire_referent,
+      statut: p.statut || "actif",
       is_directeur_agence: p.is_directeur_agence,
       is_president_club: p.is_president_club,
       is_cadre_externalise: p.is_cadre_externalise,
