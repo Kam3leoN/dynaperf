@@ -103,12 +103,22 @@ Deno.serve(async (req) => {
         id: u.id,
         email: u.email,
         displayName: allProfiles?.find((p: any) => p.user_id === u.id)?.display_name || u.email,
+        avatarUrl: allProfiles?.find((p: any) => p.user_id === u.id)?.avatar_url || null,
         roles: allRoles?.filter((r: any) => r.user_id === u.id).map((r: any) => r.role) || [],
         config: allConfigs?.find((c: any) => c.user_id === u.id) || null,
         createdAt: u.created_at,
       }));
 
       return jsonOk({ users: result });
+    }
+
+    // SAVE AVATAR URL
+    if (action === "save-avatar") {
+      const { userId, avatar_url } = body;
+      if (!userId) return jsonError("userId requis", 400);
+      const { error } = await adminClient.from("profiles").update({ avatar_url }).eq("user_id", userId);
+      if (error) return jsonError(error.message, 400);
+      return jsonOk({ success: true });
     }
 
     // CREATE USER (default)
