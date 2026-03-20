@@ -171,7 +171,7 @@ export default function Admin() {
   useEffect(() => { loadUsers(); }, [loadUsers]);
 
   const resetCreateForm = () => {
-    setEmail(""); setPassword(""); setDisplayName("");
+    setEmail(""); setPassword(""); setNewFirstName(""); setNewLastName("");
     setNewRole("lecteur");
     setNewPalier1(""); setNewPalier2(""); setNewPalier3("");
     setNewPrime1("0"); setNewPrime2("0"); setNewPrime3("0");
