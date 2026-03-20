@@ -692,12 +692,11 @@ export default function Admin() {
 
       {/* Edit user dialog */}
       <Dialog open={!!editUser} onOpenChange={(o) => { if (!o) setEditUser(null); }}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto pt-28 overflow-visible [&>button]:hidden">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto pt-20 overflow-visible [&>button]:hidden">
           {editUser && (
             <>
-              <div className="absolute -top-24 left-1/2 -translate-x-1/2 flex flex-col items-center">
-                <ArcText text={(ROLE_LABELS[getUserRole(editUser)] ?? getUserRole(editUser)).toUpperCase()} radius={85} fontSize={14} />
-                <div className="-mt-4 relative group cursor-pointer" onClick={() => document.getElementById('edit-avatar-input')?.click()}>
+              <div className="absolute -top-16 left-1/2 -translate-x-1/2">
+                <div className="relative group cursor-pointer" onClick={() => document.getElementById('edit-avatar-input')?.click()}>
                   {editUser.avatarUrl ? (
                     <img src={editUser.avatarUrl} alt={editUser.displayName} className="w-32 h-32 rounded-full object-cover border-4 border-background" />
                   ) : (
@@ -714,6 +713,9 @@ export default function Admin() {
                       loadUsers();
                     }
                   }} />
+                  <div className="absolute -top-8 left-1/2 -translate-x-1/2 pointer-events-none">
+                    <ArcText text={(ROLE_LABELS[getUserRole(editUser)] ?? getUserRole(editUser)).toUpperCase()} radius={85} fontSize={14} />
+                  </div>
                 </div>
               </div>
               <button
