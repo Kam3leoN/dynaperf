@@ -51,6 +51,7 @@ interface ManagedUser {
   email: string;
   displayName: string;
   avatarUrl: string | null;
+  title: string | null;
   roles: string[];
   config: UserConfig | null;
   createdAt: string;
