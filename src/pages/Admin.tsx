@@ -140,6 +140,7 @@ export default function Admin() {
   const [searchPrenom, setSearchPrenom] = useState("");
   const [searchNom, setSearchNom] = useState("");
   const [expandedUser, setExpandedUser] = useState<string | null>(null);
+  const [showPrimes, setShowPrimes] = useState(false);
   const [viewUser, setViewUser] = useState<ManagedUser | null>(null);
   const [editUser, setEditUser] = useState<ManagedUser | null>(null);
   const [editFirstName, setEditFirstName] = useState("");
