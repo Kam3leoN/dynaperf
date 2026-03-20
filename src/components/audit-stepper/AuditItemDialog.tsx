@@ -195,8 +195,10 @@ export function AuditItemDialog({
                   type="button"
                   variant={boolVal ? "default" : "outline"}
                   disabled
-                  className="flex-1 cursor-not-allowed"
-                  style={boolVal ? { backgroundColor: "hsl(var(--chart-2))" } : {}}
+                  className={cn(
+                    "flex-1 cursor-not-allowed",
+                    boolVal && "bg-emerald-600 text-white"
+                  )}
                 >
                   <FontAwesomeIcon icon={faCheck} className="mr-1 h-3 w-3" />
                   Validé
