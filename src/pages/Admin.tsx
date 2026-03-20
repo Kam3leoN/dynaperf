@@ -595,6 +595,38 @@ export default function Admin() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Edit user dialog */}
+      <Dialog open={!!editUser} onOpenChange={(o) => { if (!o) setEditUser(null); }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifier le collaborateur</DialogTitle>
+            <DialogDescription>Modifiez le nom d'affichage ou l'email de {editUser?.displayName}</DialogDescription>
+          </DialogHeader>
+          {editUser && (
+            <div className="space-y-4 py-2">
+              <div className="flex justify-center">
+                <AvatarWithUpload user={editUser} onUpload={async (uid, file) => { await handleAvatarChange(uid, file); const updated = users.find(u => u.id === uid); if (updated) setEditUser({ ...editUser, avatarUrl: updated.avatarUrl }); }} />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Nom d'affichage</label>
+                <Input value={editName} onChange={(e) => setEditName(e.target.value)} className="h-9 text-sm" placeholder="Prénom Nom" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Email</label>
+                <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="h-9 text-sm" />
+              </div>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" size="sm" onClick={() => setEditUser(null)} className="rounded-md">Annuler</Button>
+                <Button size="sm" disabled={editSaving} onClick={handleEditSave} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5">
+                  <FontAwesomeIcon icon={faFloppyDisk} className="h-3.5 w-3.5" />
+                  {editSaving ? "Enregistrement…" : "Enregistrer"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
