@@ -13,6 +13,30 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 
+function ArcText({ text, radius = 90, fontSize = 14 }: { text: string; radius?: number; fontSize?: number }) {
+  const id = "arcPath";
+  const svgSize = radius * 2 + 40;
+  const cx = svgSize / 2;
+  const cy = svgSize / 2;
+  return (
+    <svg width={svgSize} height={radius + fontSize + 10} viewBox={`0 0 ${svgSize} ${radius + fontSize + 10}`} className="overflow-visible">
+      <defs>
+        <path id={id} d={`M ${cx - radius},${radius + fontSize} A ${radius},${radius} 0 0,1 ${cx + radius},${radius + fontSize}`} fill="none" />
+      </defs>
+      <text
+        fill="hsl(var(--primary))"
+        fontSize={fontSize}
+        fontWeight="700"
+        letterSpacing="0.15em"
+        textAnchor="middle"
+        fontFamily="Lexend, sans-serif"
+      >
+        <textPath href={`#${id}`} startOffset="50%">{text}</textPath>
+      </text>
+    </svg>
+  );
+}
+
 interface UserConfig {
   objectif: number;
   palier_1: number | null;
