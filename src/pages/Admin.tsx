@@ -431,9 +431,15 @@ export default function Admin() {
                     </label>
                   </div>
 
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Nom d'affichage</label>
-                    <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Prénom Nom" className="h-9 text-sm" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Prénom</label>
+                      <Input value={newFirstName} onChange={(e) => setNewFirstName(e.target.value)} placeholder="Prénom" className="h-9 text-sm" />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground mb-1 block">Nom</label>
+                      <Input value={newLastName} onChange={(e) => setNewLastName(e.target.value)} placeholder="Nom" className="h-9 text-sm" />
+                    </div>
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground mb-1 block">Email</label>
