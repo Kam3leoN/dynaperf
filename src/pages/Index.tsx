@@ -8,6 +8,7 @@ import { PartenaireLeaderboard } from "@/components/PartenaireLeaderboard";
 import { ScoresByTypeChart } from "@/components/ScoresByTypeChart";
 import { PodiumCards } from "@/components/PodiumCards";
 import { AppLayout } from "@/components/AppLayout";
+import { MyObjectives } from "@/components/MyObjectives";
 
 const StrokeTitle = ({ text }: { text: string }) => (
   <span className="stroke-title" data-text={text}>
