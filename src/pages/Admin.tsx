@@ -622,18 +622,20 @@ export default function Admin() {
 
       {/* View user dialog */}
       <Dialog open={!!viewUser} onOpenChange={(o) => { if (!o) setViewUser(null); }}>
-        <DialogContent className="sm:max-w-md pt-24 overflow-visible [&>button]:hidden">
+        <DialogContent className="sm:max-w-md pt-28 overflow-visible [&>button]:hidden">
           {viewUser && (
             <>
-              <div className="absolute -top-20 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-primary">{ROLE_LABELS[getUserRole(viewUser)] ?? getUserRole(viewUser)}</span>
-                {viewUser.avatarUrl ? (
-                  <img src={viewUser.avatarUrl} alt={viewUser.displayName} className="w-32 h-32 rounded-full object-cover border-4 border-background" />
-                ) : (
-                  <div className="w-32 h-32 rounded-full bg-primary/10 text-primary font-bold text-3xl flex items-center justify-center border-4 border-background">
-                    {viewUser.displayName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)}
-                  </div>
-                )}
+              <div className="absolute -top-24 left-1/2 -translate-x-1/2 flex flex-col items-center">
+                <ArcText text={(ROLE_LABELS[getUserRole(viewUser)] ?? getUserRole(viewUser)).toUpperCase()} radius={85} fontSize={14} />
+                <div className="-mt-4">
+                  {viewUser.avatarUrl ? (
+                    <img src={viewUser.avatarUrl} alt={viewUser.displayName} className="w-32 h-32 rounded-full object-cover border-4 border-background" />
+                  ) : (
+                    <div className="w-32 h-32 rounded-full bg-primary/10 text-primary font-bold text-3xl flex items-center justify-center border-4 border-background">
+                      {viewUser.displayName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)}
+                    </div>
+                  )}
+                </div>
               </div>
               <button
                 onClick={() => setViewUser(null)}
