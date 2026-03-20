@@ -593,10 +593,11 @@ export default function Admin() {
 
       {/* View user dialog */}
       <Dialog open={!!viewUser} onOpenChange={(o) => { if (!o) setViewUser(null); }}>
-        <DialogContent className="sm:max-w-md pt-20 overflow-visible [&>button]:hidden">
+        <DialogContent className="sm:max-w-md pt-24 overflow-visible [&>button]:hidden">
           {viewUser && (
             <>
-              <div className="absolute -top-16 left-1/2 -translate-x-1/2">
+              <div className="absolute -top-20 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-primary">{ROLE_LABELS[getUserRole(viewUser)] ?? getUserRole(viewUser)}</span>
                 {viewUser.avatarUrl ? (
                   <img src={viewUser.avatarUrl} alt={viewUser.displayName} className="w-32 h-32 rounded-full object-cover border-4 border-background" />
                 ) : (
@@ -616,7 +617,7 @@ export default function Admin() {
           )}
           <DialogHeader className="text-center">
             <DialogTitle className="sr-only">Détails</DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground">Informations et configuration de {viewUser?.displayName}</DialogDescription>
+            <DialogDescription className="text-sm text-muted-foreground text-center w-full">Informations et configuration de {viewUser?.displayName}</DialogDescription>
           </DialogHeader>
           {viewUser && (
             <div className="space-y-4 py-2">
@@ -658,32 +659,42 @@ export default function Admin() {
 
       {/* Edit user dialog */}
       <Dialog open={!!editUser} onOpenChange={(o) => { if (!o) setEditUser(null); }}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto pt-16 overflow-visible">
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto pt-24 overflow-visible [&>button]:hidden">
           {editUser && (
-            <div className="absolute -top-12 left-1/2 -translate-x-1/2">
-              <div className="relative group cursor-pointer" onClick={() => document.getElementById('edit-avatar-input')?.click()}>
-                {editUser.avatarUrl ? (
-                  <img src={editUser.avatarUrl} alt={editUser.displayName} className="w-24 h-24 rounded-full object-cover border-4 border-background shadow-md" />
-                ) : (
-                  <div className="w-24 h-24 rounded-full bg-primary/10 text-primary font-bold text-2xl flex items-center justify-center border-4 border-background shadow-md">
-                    {editUser.displayName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)}
+            <>
+              <div className="absolute -top-20 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-primary">{ROLE_LABELS[getUserRole(editUser)] ?? getUserRole(editUser)}</span>
+                <div className="relative group cursor-pointer" onClick={() => document.getElementById('edit-avatar-input')?.click()}>
+                  {editUser.avatarUrl ? (
+                    <img src={editUser.avatarUrl} alt={editUser.displayName} className="w-32 h-32 rounded-full object-cover border-4 border-background" />
+                  ) : (
+                    <div className="w-32 h-32 rounded-full bg-primary/10 text-primary font-bold text-3xl flex items-center justify-center border-4 border-background">
+                      {editUser.displayName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)}
+                    </div>
+                  )}
+                  <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <FontAwesomeIcon icon={faCamera} className="h-5 w-5 text-white" />
                   </div>
-                )}
-                <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <FontAwesomeIcon icon={faCamera} className="h-5 w-5 text-white" />
+                  <input id="edit-avatar-input" type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                    if (e.target.files?.[0]) {
+                      await handleAvatarChange(editUser.id, e.target.files[0]);
+                      loadUsers();
+                    }
+                  }} />
                 </div>
-                <input id="edit-avatar-input" type="file" accept="image/*" className="hidden" onChange={async (e) => {
-                  if (e.target.files?.[0]) {
-                    await handleAvatarChange(editUser.id, e.target.files[0]);
-                    loadUsers();
-                  }
-                }} />
               </div>
-            </div>
+              <button
+                onClick={() => setEditUser(null)}
+                className="absolute -right-3 -top-3 w-8 h-8 rounded-full flex items-center justify-center z-50 hover:opacity-90 transition-opacity"
+                style={{ backgroundColor: "#ee4540" }}
+              >
+                <X className="h-4 w-4 text-white" />
+              </button>
+            </>
           )}
           <DialogHeader className="text-center">
-            <DialogTitle>Modifier le collaborateur</DialogTitle>
-            <DialogDescription>Modifiez les informations, le rôle, les objectifs et les primes.</DialogDescription>
+            <DialogTitle className="sr-only">Modifier</DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground text-center w-full">Informations et configuration de {editUser?.displayName}</DialogDescription>
           </DialogHeader>
           {editUser && (
             <div className="space-y-4 py-2">
