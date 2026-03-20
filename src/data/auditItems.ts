@@ -12,7 +12,11 @@ export interface AuditItemDef {
   checklistItems?: string[];
 }
 
-export const AUDIT_ITEMS: AuditItemDef[] = [
+/**
+ * Items d'audit pour les Rencontres Dirigeants (Présentiel & Distanciel) uniquement.
+ * Les autres types d'événements (Club d'Affaires, RDV Commercial) auront leur propre grille.
+ */
+export const AUDIT_ITEMS_RD: AuditItemDef[] = [
   {
     id: 1,
     title: "Le Lieu",
