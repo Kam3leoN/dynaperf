@@ -386,6 +386,37 @@ export default function AdminPartenaires() {
         </div>
       </div>
 
+      {/* Filters */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <div className="flex items-center gap-1.5 text-muted-foreground shrink-0">
+          <FontAwesomeIcon icon={faFilter} className="h-3 w-3" />
+          <span className="text-xs font-semibold hidden sm:inline">Filtres</span>
+        </div>
+        <Select value={filterStatut} onValueChange={setFilterStatut}>
+          <SelectTrigger className="w-[130px] h-8 text-xs rounded-md"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Tous">Tous statuts</SelectItem>
+            {STATUT_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterReferent} onValueChange={setFilterReferent}>
+          <SelectTrigger className="w-[150px] h-8 text-xs rounded-md"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Tous">Tous référents</SelectItem>
+            {uniqueReferents.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterRole} onValueChange={setFilterRole}>
+          <SelectTrigger className="w-[150px] h-8 text-xs rounded-md"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Tous">Toutes fonctions</SelectItem>
+            <SelectItem value="directeur">Dir. Agence</SelectItem>
+            <SelectItem value="president">Prés. Club</SelectItem>
+            <SelectItem value="cadre">Cadre ext.</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {loading ? (
         <p className="text-sm text-muted-foreground py-8 text-center">Chargement…</p>
       ) : (
