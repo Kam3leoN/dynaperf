@@ -221,6 +221,9 @@ export default function AdminPartenaires() {
       if (filterRole === "directeur" && !p.is_directeur_agence) return false;
       if (filterRole === "president" && !p.is_president_club) return false;
       if (filterRole === "cadre" && !p.is_cadre_externalise) return false;
+      if (filterRole === "dir+pres" && !(p.is_directeur_agence && p.is_president_club)) return false;
+      if (filterRole === "dir+cadre" && !(p.is_directeur_agence && p.is_cadre_externalise)) return false;
+      if (filterRole === "les3" && !(p.is_directeur_agence && p.is_president_club && p.is_cadre_externalise)) return false;
     }
     const term = searchQuery.toLowerCase().trim();
     if (!term) return true;
