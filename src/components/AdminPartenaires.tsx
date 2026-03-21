@@ -437,6 +437,7 @@ export default function AdminPartenaires() {
                   <TableHead className="text-xs uppercase tracking-wider w-10"></TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">Nom</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">Statut</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider">Fonction</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">Société</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">Comm.</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">Référent</TableHead>
