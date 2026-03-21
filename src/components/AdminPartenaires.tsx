@@ -407,12 +407,17 @@ export default function AdminPartenaires() {
           </SelectContent>
         </Select>
         <Select value={filterRole} onValueChange={setFilterRole}>
-          <SelectTrigger className="w-[150px] h-8 text-xs rounded-md"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-[180px] h-8 text-xs rounded-md"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="Tous">Toutes fonctions</SelectItem>
+            <Separator className="my-1" />
             <SelectItem value="directeur">Dir. Agence</SelectItem>
             <SelectItem value="president">Prés. Club</SelectItem>
             <SelectItem value="cadre">Cadre ext.</SelectItem>
+            <Separator className="my-1" />
+            <SelectItem value="dir+pres">Dir. Ag. + Prés. Club</SelectItem>
+            <SelectItem value="dir+cadre">Dir. Ag. + Cadre Ext.</SelectItem>
+            <SelectItem value="les3">Les 3 fonctions</SelectItem>
           </SelectContent>
         </Select>
       </div>
