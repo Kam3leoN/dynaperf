@@ -7,7 +7,8 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faCamera, faEye } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faCamera, faEye, faFilter } from "@fortawesome/free-solid-svg-icons";
+import { faLinkedin } from "@fortawesome/free-brands-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
@@ -92,6 +93,9 @@ export default function AdminPartenaires() {
   const [partenaires, setPartenaires] = useState<Partenaire[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatut, setFilterStatut] = useState("Tous");
+  const [filterReferent, setFilterReferent] = useState("Tous");
+  const [filterRole, setFilterRole] = useState("Tous");
   const [createOpen, setCreateOpen] = useState(false);
   const [viewP, setViewP] = useState<Partenaire | null>(null);
   const [editP, setEditP] = useState<Partenaire | null>(null);
@@ -208,7 +212,16 @@ export default function AdminPartenaires() {
     else { toast.success("Partenaire supprimé"); loadPartenaires(); }
   };
 
+  const uniqueReferents = [...new Set(partenaires.map(p => p.partenaire_referent))].sort();
+
   const filtered = partenaires.filter(p => {
+    if (filterStatut !== "Tous" && p.statut !== filterStatut) return false;
+    if (filterReferent !== "Tous" && p.partenaire_referent !== filterReferent) return false;
+    if (filterRole !== "Tous") {
+      if (filterRole === "directeur" && !p.is_directeur_agence) return false;
+      if (filterRole === "president" && !p.is_president_club) return false;
+      if (filterRole === "cadre" && !p.is_cadre_externalise) return false;
+    }
     const term = searchQuery.toLowerCase().trim();
     if (!term) return true;
     const hay = `${p.prenom} ${p.nom} ${p.societe} ${p.email} ${p.partenaire_referent} ${(p.secteurs || []).join(" ")}`.toLowerCase();
@@ -373,6 +386,37 @@ export default function AdminPartenaires() {
         </div>
       </div>
 
+      {/* Filters */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <div className="flex items-center gap-1.5 text-muted-foreground shrink-0">
+          <FontAwesomeIcon icon={faFilter} className="h-3 w-3" />
+          <span className="text-xs font-semibold hidden sm:inline">Filtres</span>
+        </div>
+        <Select value={filterStatut} onValueChange={setFilterStatut}>
+          <SelectTrigger className="w-[130px] h-8 text-xs rounded-md"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Tous">Tous statuts</SelectItem>
+            {STATUT_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterReferent} onValueChange={setFilterReferent}>
+          <SelectTrigger className="w-[150px] h-8 text-xs rounded-md"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Tous">Tous référents</SelectItem>
+            {uniqueReferents.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+          </SelectContent>
+        </Select>
+        <Select value={filterRole} onValueChange={setFilterRole}>
+          <SelectTrigger className="w-[150px] h-8 text-xs rounded-md"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Tous">Toutes fonctions</SelectItem>
+            <SelectItem value="directeur">Dir. Agence</SelectItem>
+            <SelectItem value="president">Prés. Club</SelectItem>
+            <SelectItem value="cadre">Cadre ext.</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       {loading ? (
         <p className="text-sm text-muted-foreground py-8 text-center">Chargement…</p>
       ) : (
@@ -476,7 +520,18 @@ export default function AdminPartenaires() {
               <div className="text-center">
                 <p className="text-sm font-semibold text-foreground">{viewP.prenom} {viewP.nom}</p>
                 <p className="text-xs text-muted-foreground">{viewP.societe}</p>
-                <div className="mt-1"><StatutBadge statut={viewP.statut} /></div>
+                <div className="mt-1 flex items-center justify-center gap-2">
+                  <StatutBadge statut={viewP.statut} />
+                  <a
+                    href={`https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(viewP.prenom + " " + viewP.nom)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center w-6 h-6 rounded-full hover:bg-[#0077B5]/10 transition-colors"
+                    title="Voir sur LinkedIn"
+                  >
+                    <FontAwesomeIcon icon={faLinkedin} className="h-4 w-4 text-[#0077B5]" />
+                  </a>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div><span className="text-xs text-muted-foreground block">Commission</span><span className="font-medium text-foreground">{viewP.commission}%</span></div>
