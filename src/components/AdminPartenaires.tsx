@@ -79,7 +79,7 @@ const emptyForm = {
   commission: "50",
   partenaire_referent: "Dynabuy",
   statut: "actif",
-  is_directeur_agence: true,
+  is_directeur_agence: false,
   is_president_club: false,
   is_cadre_externalise: false,
   pole_expertise: "",
