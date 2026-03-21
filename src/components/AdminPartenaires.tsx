@@ -79,7 +79,7 @@ const emptyForm = {
   commission: "50",
   partenaire_referent: "Dynabuy",
   statut: "actif",
-  is_directeur_agence: false,
+  is_directeur_agence: true,
   is_president_club: false,
   is_cadre_externalise: false,
   pole_expertise: "",
@@ -221,6 +221,9 @@ export default function AdminPartenaires() {
       if (filterRole === "directeur" && !p.is_directeur_agence) return false;
       if (filterRole === "president" && !p.is_president_club) return false;
       if (filterRole === "cadre" && !p.is_cadre_externalise) return false;
+      if (filterRole === "dir+pres" && !(p.is_directeur_agence && p.is_president_club)) return false;
+      if (filterRole === "dir+cadre" && !(p.is_directeur_agence && p.is_cadre_externalise)) return false;
+      if (filterRole === "les3" && !(p.is_directeur_agence && p.is_president_club && p.is_cadre_externalise)) return false;
     }
     const term = searchQuery.toLowerCase().trim();
     if (!term) return true;
@@ -407,12 +410,17 @@ export default function AdminPartenaires() {
           </SelectContent>
         </Select>
         <Select value={filterRole} onValueChange={setFilterRole}>
-          <SelectTrigger className="w-[150px] h-8 text-xs rounded-md"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-[180px] h-8 text-xs rounded-md"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="Tous">Toutes fonctions</SelectItem>
+            <Separator className="my-1" />
             <SelectItem value="directeur">Dir. Agence</SelectItem>
             <SelectItem value="president">Prés. Club</SelectItem>
             <SelectItem value="cadre">Cadre ext.</SelectItem>
+            <Separator className="my-1" />
+            <SelectItem value="dir+pres">Dir. Ag. + Prés. Club</SelectItem>
+            <SelectItem value="dir+cadre">Dir. Ag. + Cadre Ext.</SelectItem>
+            <SelectItem value="les3">Les 3 fonctions</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -429,6 +437,7 @@ export default function AdminPartenaires() {
                   <TableHead className="text-xs uppercase tracking-wider w-10"></TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">Nom</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">Statut</TableHead>
+                  <TableHead className="text-xs uppercase tracking-wider">Fonction</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">Société</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">Comm.</TableHead>
                   <TableHead className="text-xs uppercase tracking-wider">Référent</TableHead>
@@ -443,6 +452,7 @@ export default function AdminPartenaires() {
                       <TableCell><PartenaireAvatar url={p.photo_url} name={`${p.prenom} ${p.nom}`} /></TableCell>
                       <TableCell className="text-sm font-medium">{p.prenom} {p.nom}</TableCell>
                       <TableCell><StatutBadge statut={p.statut} /></TableCell>
+                      <TableCell><RoleChips p={p} /></TableCell>
                       <TableCell className="text-sm text-muted-foreground">{p.societe || "—"}</TableCell>
                       <TableCell className="text-sm tabular-nums text-muted-foreground">{p.commission}%</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{p.partenaire_referent}</TableCell>
