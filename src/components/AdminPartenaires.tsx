@@ -452,6 +452,7 @@ export default function AdminPartenaires() {
                       <TableCell><PartenaireAvatar url={p.photo_url} name={`${p.prenom} ${p.nom}`} /></TableCell>
                       <TableCell className="text-sm font-medium">{p.prenom} {p.nom}</TableCell>
                       <TableCell><StatutBadge statut={p.statut} /></TableCell>
+                      <TableCell><RoleChips p={p} /></TableCell>
                       <TableCell className="text-sm text-muted-foreground">{p.societe || "—"}</TableCell>
                       <TableCell className="text-sm tabular-nums text-muted-foreground">{p.commission}%</TableCell>
                       <TableCell className="text-sm text-muted-foreground">{p.partenaire_referent}</TableCell>
