@@ -212,7 +212,16 @@ export default function AdminPartenaires() {
     else { toast.success("Partenaire supprimé"); loadPartenaires(); }
   };
 
+  const uniqueReferents = [...new Set(partenaires.map(p => p.partenaire_referent))].sort();
+
   const filtered = partenaires.filter(p => {
+    if (filterStatut !== "Tous" && p.statut !== filterStatut) return false;
+    if (filterReferent !== "Tous" && p.partenaire_referent !== filterReferent) return false;
+    if (filterRole !== "Tous") {
+      if (filterRole === "directeur" && !p.is_directeur_agence) return false;
+      if (filterRole === "president" && !p.is_president_club) return false;
+      if (filterRole === "cadre" && !p.is_cadre_externalise) return false;
+    }
     const term = searchQuery.toLowerCase().trim();
     if (!term) return true;
     const hay = `${p.prenom} ${p.nom} ${p.societe} ${p.email} ${p.partenaire_referent} ${(p.secteurs || []).join(" ")}`.toLowerCase();
