@@ -520,7 +520,18 @@ export default function AdminPartenaires() {
               <div className="text-center">
                 <p className="text-sm font-semibold text-foreground">{viewP.prenom} {viewP.nom}</p>
                 <p className="text-xs text-muted-foreground">{viewP.societe}</p>
-                <div className="mt-1"><StatutBadge statut={viewP.statut} /></div>
+                <div className="mt-1 flex items-center justify-center gap-2">
+                  <StatutBadge statut={viewP.statut} />
+                  <a
+                    href={`https://www.linkedin.com/search/results/all/?keywords=${encodeURIComponent(viewP.prenom + " " + viewP.nom)}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center justify-center w-6 h-6 rounded-full hover:bg-[#0077B5]/10 transition-colors"
+                    title="Voir sur LinkedIn"
+                  >
+                    <FontAwesomeIcon icon={faLinkedin} className="h-4 w-4 text-[#0077B5]" />
+                  </a>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div><span className="text-xs text-muted-foreground block">Commission</span><span className="font-medium text-foreground">{viewP.commission}%</span></div>
