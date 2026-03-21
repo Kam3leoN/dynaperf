@@ -93,6 +93,9 @@ export default function AdminPartenaires() {
   const [partenaires, setPartenaires] = useState<Partenaire[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
+  const [filterStatut, setFilterStatut] = useState("Tous");
+  const [filterReferent, setFilterReferent] = useState("Tous");
+  const [filterRole, setFilterRole] = useState("Tous");
   const [createOpen, setCreateOpen] = useState(false);
   const [viewP, setViewP] = useState<Partenaire | null>(null);
   const [editP, setEditP] = useState<Partenaire | null>(null);
