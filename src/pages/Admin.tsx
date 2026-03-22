@@ -862,6 +862,9 @@ export default function Admin() {
         <TabsContent value="partenaires">
           <AdminPartenaires />
         </TabsContent>
+        <TabsContent value="clubs">
+          <AdminClubs />
+        </TabsContent>
       </Tabs>
     </AppLayout>
   );
