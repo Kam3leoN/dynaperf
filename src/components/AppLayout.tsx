@@ -70,10 +70,6 @@ export function AppLayout({ children, audits, filters, setFilters }: AppLayoutPr
 
   const navLinks = (closeMobile?: boolean) => (
     <>
-      <NavLink to="/" end className={() => linkClass("/")} onClick={() => closeMobile && setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
-        <span>Dashboard</span>
-      </NavLink>
       {auditsDropdown(closeMobile ? () => setMobileOpen(false) : undefined)}
       {isAdmin && (
         <NavLink to="/admin" className={() => linkClass("/admin")} onClick={() => closeMobile && setMobileOpen(false)}>
