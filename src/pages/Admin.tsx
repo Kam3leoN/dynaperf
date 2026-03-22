@@ -388,9 +388,10 @@ export default function Admin() {
   return (
     <AppLayout>
       <Tabs defaultValue="collaborateurs" className="space-y-4">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-lg grid-cols-3">
           <TabsTrigger value="collaborateurs">Collaborateurs</TabsTrigger>
           <TabsTrigger value="partenaires">Partenaires</TabsTrigger>
+          <TabsTrigger value="clubs">Clubs d'affaires</TabsTrigger>
         </TabsList>
         <TabsContent value="collaborateurs">
       <div className="bg-card rounded-lg shadow-soft p-4 sm:p-5">
