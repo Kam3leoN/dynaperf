@@ -59,7 +59,7 @@ export default function NewAudit() {
           <h2 className="text-xl font-semibold text-foreground">Nouvel audit</h2>
           <p className="text-muted-foreground text-sm mt-1">Sélectionnez le type d'événement</p>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5 max-w-5xl mx-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-5 max-w-3xl mx-auto">
           {auditTypes.map((type) => (
             <button
               key={type.key}
