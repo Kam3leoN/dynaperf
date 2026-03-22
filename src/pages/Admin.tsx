@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import AdminPartenaires from "@/components/AdminPartenaires";
+import AdminClubs from "@/components/AdminClubs";
 
 function ArcText({ text, radius = 78, fontSize = 13 }: { text: string; radius?: number; fontSize?: number }) {
   const id = "arcPath";
