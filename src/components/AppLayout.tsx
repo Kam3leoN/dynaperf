@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate, Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChartLine, faClipboardList, faRightFromBracket, faBars, faSliders, faUserShield, faPlus, faList } from "@fortawesome/free-solid-svg-icons";
+import { faClipboardList, faRightFromBracket, faBars, faSliders, faUserShield, faPlus, faList } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { ThemeToggle } from "./ThemeToggle";
+import { useTheme } from "next-themes";
+import logoDark from "@/assets/DynaPerf_dark.svg";
+import logoLight from "@/assets/DynaPerf_light.svg";
 import { ExcelExport } from "./ExcelExport";
 import { FiltersBar } from "./FiltersBar";
 import { Button } from "./ui/button";
