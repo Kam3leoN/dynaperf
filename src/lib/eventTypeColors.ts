@@ -4,6 +4,8 @@ const TYPE_COLOR_MAP: Record<string, string> = {
   "Club Affaires": "--color-club-affaires",
   "RD Distanciel": "--color-rd-distanciel",
   "RDV Commercial": "--color-rdv-commercial",
+  "Mise en Place": "--color-mise-en-place",
+  "RD Événementiel": "--color-rd-evenementiel",
 };
 
 /** Direct hex colors for programmatic manipulation */
@@ -12,6 +14,8 @@ const TYPE_HEX_MAP: Record<string, string> = {
   "Club Affaires": "#ffbd23",
   "RD Distanciel": "#234653",
   "RDV Commercial": "#5dbcb9",
+  "Mise en Place": "#8b5cf6",
+  "RD Événementiel": "#e67e22",
 };
 
 export function getTypeColorVar(type: string): string {
