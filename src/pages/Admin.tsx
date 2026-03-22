@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import AdminPartenaires from "@/components/AdminPartenaires";
+import AdminClubs from "@/components/AdminClubs";
 
 function ArcText({ text, radius = 78, fontSize = 13 }: { text: string; radius?: number; fontSize?: number }) {
   const id = "arcPath";
@@ -387,9 +388,10 @@ export default function Admin() {
   return (
     <AppLayout>
       <Tabs defaultValue="collaborateurs" className="space-y-4">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-lg grid-cols-3">
           <TabsTrigger value="collaborateurs">Collaborateurs</TabsTrigger>
           <TabsTrigger value="partenaires">Partenaires</TabsTrigger>
+          <TabsTrigger value="clubs">Clubs d'affaires</TabsTrigger>
         </TabsList>
         <TabsContent value="collaborateurs">
       <div className="bg-card rounded-lg shadow-soft p-4 sm:p-5">
@@ -859,6 +861,9 @@ export default function Admin() {
         </TabsContent>
         <TabsContent value="partenaires">
           <AdminPartenaires />
+        </TabsContent>
+        <TabsContent value="clubs">
+          <AdminClubs />
         </TabsContent>
       </Tabs>
     </AppLayout>

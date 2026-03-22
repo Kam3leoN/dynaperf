@@ -248,6 +248,75 @@ export type Database = {
         }
         Relationships: []
       }
+      clubs: {
+        Row: {
+          adresse: string | null
+          agence_mere: string | null
+          agence_rattachement: string | null
+          created_at: string
+          date_creation: string | null
+          date_desactivation: string | null
+          departement: string | null
+          email_president: string | null
+          format: string
+          id: string
+          montant_ca: number
+          nb_leads_transformes: number
+          nb_membres_actifs: number
+          nom: string
+          president_nom: string
+          statut: string
+          telephone_president: string | null
+          telephone_vice_president: string | null
+          updated_at: string
+          vice_president_nom: string | null
+        }
+        Insert: {
+          adresse?: string | null
+          agence_mere?: string | null
+          agence_rattachement?: string | null
+          created_at?: string
+          date_creation?: string | null
+          date_desactivation?: string | null
+          departement?: string | null
+          email_president?: string | null
+          format?: string
+          id?: string
+          montant_ca?: number
+          nb_leads_transformes?: number
+          nb_membres_actifs?: number
+          nom: string
+          president_nom?: string
+          statut?: string
+          telephone_president?: string | null
+          telephone_vice_president?: string | null
+          updated_at?: string
+          vice_president_nom?: string | null
+        }
+        Update: {
+          adresse?: string | null
+          agence_mere?: string | null
+          agence_rattachement?: string | null
+          created_at?: string
+          date_creation?: string | null
+          date_desactivation?: string | null
+          departement?: string | null
+          email_president?: string | null
+          format?: string
+          id?: string
+          montant_ca?: number
+          nb_leads_transformes?: number
+          nb_membres_actifs?: number
+          nom?: string
+          president_nom?: string
+          statut?: string
+          telephone_president?: string | null
+          telephone_vice_president?: string | null
+          updated_at?: string
+          vice_president_nom?: string | null
+        }
+        Relationships: []
+      }
       collaborateur_config: {
         Row: {
           created_at: string
