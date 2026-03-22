@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { NavLink, useLocation, useNavigate, Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChartLine, faClipboardList, faRightFromBracket, faBars, faSliders, faUserShield, faPlus, faList } from "@fortawesome/free-solid-svg-icons";
+import { faClipboardList, faRightFromBracket, faBars, faSliders, faUserShield, faPlus, faList } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { ThemeToggle } from "./ThemeToggle";
+import { useTheme } from "next-themes";
+import logoDark from "@/assets/DynaPerf_dark.svg";
+import logoLight from "@/assets/DynaPerf_light.svg";
 import { ExcelExport } from "./ExcelExport";
 import { FiltersBar } from "./FiltersBar";
 import { Button } from "./ui/button";
@@ -22,6 +25,7 @@ interface AppLayoutProps {
 export function AppLayout({ children, audits, filters, setFilters }: AppLayoutProps) {
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin(user);
+  const { resolvedTheme } = useTheme();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -66,10 +70,6 @@ export function AppLayout({ children, audits, filters, setFilters }: AppLayoutPr
 
   const navLinks = (closeMobile?: boolean) => (
     <>
-      <NavLink to="/" end className={() => linkClass("/")} onClick={() => closeMobile && setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
-        <span>Dashboard</span>
-      </NavLink>
       {auditsDropdown(closeMobile ? () => setMobileOpen(false) : undefined)}
       {isAdmin && (
         <NavLink to="/admin" className={() => linkClass("/admin")} onClick={() => closeMobile && setMobileOpen(false)}>
@@ -85,12 +85,13 @@ export function AppLayout({ children, audits, filters, setFilters }: AppLayoutPr
       <header className="bg-card shadow-soft border-b border-border px-4 sm:px-6 py-3">
         <div className="max-w-[1440px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4 sm:gap-6">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center shrink-0">
-                <FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <h1 className="text-base sm:text-lg font-bold text-foreground tracking-tight">DynaPerf</h1>
-            </div>
+            <Link to="/" className="shrink-0">
+              <img
+                src={resolvedTheme === "dark" ? logoDark : logoLight}
+                alt="DynaPerf"
+                className="h-7 sm:h-8"
+              />
+            </Link>
             {/* Desktop nav */}
             <nav className="hidden md:flex items-center gap-1">
               {navLinks()}

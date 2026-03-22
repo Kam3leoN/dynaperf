@@ -1,33 +1,51 @@
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUsers, faLaptop, faBriefcase, faHandshake } from "@fortawesome/free-solid-svg-icons";
 
-const auditTypes: { label: string; color: string; icon: typeof faUsers; key: string; desktopLabel?: React.ReactNode }[] = [
+import iconRDPresentiel from "@/assets/rencontre-presentiel.svg";
+import iconRDDistanciel from "@/assets/rencontre-distanciel.svg";
+import iconClubAffaires from "@/assets/club-affaires.svg";
+import iconRDVCommercial from "@/assets/rdv-business.svg";
+import iconMiseEnPlace from "@/assets/mise-en-place.svg";
+import iconEvenementiel from "@/assets/evenementiel.svg";
+
+const auditTypes: { label: string; color: string; icon: string; key: string; desktopLabel?: React.ReactNode }[] = [
   {
     label: "Rencontre Dirigeants Présentiel",
     color: "#ee4540",
-    icon: faUsers,
+    icon: iconRDPresentiel,
     key: "RD Présentiel",
   },
   {
     label: "Rencontre Dirigeants Distanciel",
     color: "#234653",
-    icon: faLaptop,
+    icon: iconRDDistanciel,
     key: "RD Distanciel",
   },
   {
     label: "Club d'Affaires",
     color: "#ffbd23",
-    icon: faBriefcase,
+    icon: iconClubAffaires,
     key: "Club Affaires",
     desktopLabel: <>Club<br />d'Affaires</>,
   },
   {
     label: "Rendez-Vous Commercial",
     color: "#5dbcb9",
-    icon: faHandshake,
+    icon: iconRDVCommercial,
     key: "RDV Commercial",
+  },
+  {
+    label: "Mise en Place",
+    color: "#8b5cf6",
+    icon: iconMiseEnPlace,
+    key: "Mise en Place",
+  },
+  {
+    label: "RD Événementiel",
+    color: "#e67e22",
+    icon: iconEvenementiel,
+    key: "RD Événementiel",
+    desktopLabel: <>RD<br />Événementiel</>,
   },
 ];
 
@@ -41,22 +59,25 @@ export default function NewAudit() {
           <h2 className="text-xl font-semibold text-foreground">Nouvel audit</h2>
           <p className="text-muted-foreground text-sm mt-1">Sélectionnez le type d'événement</p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 max-w-4xl mx-auto">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-5 max-w-5xl mx-auto">
           {auditTypes.map((type) => (
             <button
               key={type.key}
               onClick={() => navigate(`/audits/new/form?type=${encodeURIComponent(type.key)}`)}
-              className="group flex flex-col items-center gap-4 rounded-xl border border-border bg-card p-8 shadow-sm transition-all hover:shadow-md hover:border-transparent hover:-translate-y-1 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="group flex flex-col items-center gap-4 rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-transparent hover:-translate-y-1 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               style={{ "--card-accent": type.color } as React.CSSProperties}
             >
               <div
                 className="flex items-center justify-center w-14 h-14 rounded-full transition-transform group-hover:scale-110"
                 style={{ backgroundColor: `${type.color}18` }}
               >
-                <FontAwesomeIcon
-                  icon={type.icon}
-                  className="h-6 w-6"
-                  style={{ color: type.color }}
+                <div
+                  className="h-7 w-7"
+                  style={{
+                    backgroundColor: type.color,
+                    mask: `url(${type.icon}) no-repeat center / contain`,
+                    WebkitMask: `url(${type.icon}) no-repeat center / contain`,
+                  }}
                 />
               </div>
               {type.desktopLabel ? (
