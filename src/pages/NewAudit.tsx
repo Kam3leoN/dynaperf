@@ -71,11 +71,13 @@ export default function NewAudit() {
                 className="flex items-center justify-center w-14 h-14 rounded-full transition-transform group-hover:scale-110"
                 style={{ backgroundColor: `${type.color}18` }}
               >
-                <img
-                  src={type.icon}
-                  alt={type.label}
+                <div
                   className="h-7 w-7"
-                  style={{ filter: `brightness(0) saturate(100%)` }}
+                  style={{
+                    backgroundColor: type.color,
+                    mask: `url(${type.icon}) no-repeat center / contain`,
+                    WebkitMask: `url(${type.icon}) no-repeat center / contain`,
+                  }}
                 />
               </div>
               {type.desktopLabel ? (
