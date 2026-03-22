@@ -85,12 +85,13 @@ export function AppLayout({ children, audits, filters, setFilters }: AppLayoutPr
       <header className="bg-card shadow-soft border-b border-border px-4 sm:px-6 py-3">
         <div className="max-w-[1440px] mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4 sm:gap-6">
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center shrink-0">
-                <FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-primary-foreground" />
-              </div>
-              <h1 className="text-base sm:text-lg font-bold text-foreground tracking-tight">DynaPerf</h1>
-            </div>
+            <Link to="/" className="shrink-0">
+              <img
+                src={resolvedTheme === "dark" ? logoDark : logoLight}
+                alt="DynaPerf"
+                className="h-7 sm:h-8"
+              />
+            </Link>
             {/* Desktop nav */}
             <nav className="hidden md:flex items-center gap-1">
               {navLinks()}
