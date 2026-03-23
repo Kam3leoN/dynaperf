@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, useLocation, useNavigate, Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faClipboardList, faRightFromBracket, faBars, faSliders, faUserShield, faPlus, faList } from "@fortawesome/free-solid-svg-icons";
+import { faClipboardList, faRightFromBracket, faBars, faSliders, faUserShield, faPlus, faList, faChartLine } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { ThemeToggle } from "./ThemeToggle";
 import { useTheme } from "next-themes";
