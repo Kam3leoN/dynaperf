@@ -5,6 +5,9 @@ import { componentTagger } from "lovable-tagger";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // Définition du chemin de base pour GitHub Pages (/nom-du-repo/)
+  base: "/dynaperf/",
+  
   server: {
     host: "::",
     port: 8080,
