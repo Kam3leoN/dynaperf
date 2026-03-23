@@ -66,6 +66,7 @@ const App = () => (
               <Route path="/audits/new/form" element={<ProtectedRoute><AuditForm /></ProtectedRoute>} />
               <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
               <Route path="/admin/audit-grid" element={<AdminRoute><AdminAuditGrid /></AdminRoute>} />
+              <Route path="/business-plan" element={<ProtectedRoute><BusinessPlan /></ProtectedRoute>} />
               <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<NotFound />} />
