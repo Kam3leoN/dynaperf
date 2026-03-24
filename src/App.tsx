@@ -76,6 +76,7 @@ const App = () => (
               <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
               <Route path="/admin/audit-grid" element={<AdminRoute><AdminAuditGrid /></AdminRoute>} />
               <Route path="/business-plan" element={<ProtectedRoute><BusinessPlan /></ProtectedRoute>} />
+              <Route path="/activite/dashboard" element={<ProtectedRoute><div className="p-8 text-center text-muted-foreground text-lg">Tableau de bord suivis — en cours de développement</div></ProtectedRoute>} />
               <Route path="/activite" element={<ProtectedRoute><SuiviActiviteList /></ProtectedRoute>} />
               <Route path="/activite/new" element={<ProtectedRoute><SuiviActiviteForm /></ProtectedRoute>} />
               <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />

@@ -53,7 +53,7 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
     }`;
 
   const isAuditSection = ["/dashboard", "/audits", "/audits/new", "/audits/new/form"].includes(location.pathname);
-  const isActiviteSection = ["/activite", "/activite/new"].includes(location.pathname);
+  const isActiviteSection = ["/activite", "/activite/new", "/activite/dashboard"].includes(location.pathname);
 
   const dropdownClass = (active: boolean) =>
     `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
@@ -77,7 +77,7 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
           <DropdownMenuItem asChild>
             <Link to="/dashboard" className="flex items-center gap-2 cursor-pointer">
               <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
-              Tableau de bord
+              Tableau de bord audits
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
@@ -104,6 +104,12 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-52">
+          <DropdownMenuItem asChild>
+            <Link to="/activite/dashboard" className="flex items-center gap-2 cursor-pointer">
+              <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
+              Tableau de bord suivis
+            </Link>
+          </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link to="/activite" className="flex items-center gap-2 cursor-pointer">
               <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5" />
@@ -139,7 +145,7 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pt-2 pb-1">Audits</p>
       <NavLink to="/dashboard" end className={() => linkClass("/dashboard")} onClick={() => setMobileOpen(false)}>
         <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
-        <span>Tableau de bord</span>
+        <span>Tableau de bord audits</span>
       </NavLink>
       <NavLink to="/audits" className={() => linkClass("/audits")} onClick={() => setMobileOpen(false)}>
         <FontAwesomeIcon icon={faClipboardList} className="h-3.5 w-3.5" />
@@ -153,6 +159,10 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
       <div className="border-t border-border my-2" />
 
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pt-2 pb-1">Activité</p>
+      <NavLink to="/activite/dashboard" className={() => linkClass("/activite/dashboard")} onClick={() => setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
+        <span>Tableau de bord suivis</span>
+      </NavLink>
       <NavLink to="/activite" className={() => linkClass("/activite")} onClick={() => setMobileOpen(false)}>
         <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5" />
         <span>Voir tous les suivis</span>
