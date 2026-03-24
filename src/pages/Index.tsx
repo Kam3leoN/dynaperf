@@ -28,7 +28,7 @@ const Index = () => {
     : collaborateurStats.reduce((sum, c) => sum + c.objectif, 0);
 
   return (
-    <AppLayout audits={audits} filters={filters} setFilters={setFilters}>
+    <AppLayout filters={filters} setFilters={setFilters}>
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <p className="text-muted-foreground">Chargement des audits…</p>
