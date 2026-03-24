@@ -17,6 +17,8 @@ import AdminAuditGrid from "./pages/AdminAuditGrid";
 import BusinessPlan from "./pages/BusinessPlan";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
+import SuiviActiviteList from "./pages/SuiviActiviteList";
+import SuiviActiviteForm from "./pages/SuiviActiviteForm";
 
 const queryClient = new QueryClient();
 
@@ -74,6 +76,8 @@ const App = () => (
               <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
               <Route path="/admin/audit-grid" element={<AdminRoute><AdminAuditGrid /></AdminRoute>} />
               <Route path="/business-plan" element={<ProtectedRoute><BusinessPlan /></ProtectedRoute>} />
+              <Route path="/activite" element={<ProtectedRoute><SuiviActiviteList /></ProtectedRoute>} />
+              <Route path="/activite/new" element={<ProtectedRoute><SuiviActiviteForm /></ProtectedRoute>} />
               <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<NotFound />} />
