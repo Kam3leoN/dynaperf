@@ -10,6 +10,8 @@ import {
   faChartLine,
   faPlus,
   faChevronDown,
+  faListCheck,
+  faEye,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { ThemeToggle } from "./ThemeToggle";
@@ -51,19 +53,21 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
     }`;
 
   const isAuditSection = ["/dashboard", "/audits", "/audits/new", "/audits/new/form"].includes(location.pathname);
+  const isActiviteSection = ["/activite", "/activite/new"].includes(location.pathname);
 
-  const auditDropdownClass = `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-    isAuditSection
-      ? "bg-primary text-primary-foreground"
-      : "text-foreground/70 hover:text-foreground hover:bg-secondary"
-  }`;
+  const dropdownClass = (active: boolean) =>
+    `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+      active
+        ? "bg-primary text-primary-foreground"
+        : "text-foreground/70 hover:text-foreground hover:bg-secondary"
+    }`;
 
   // Desktop nav with Audits dropdown
   const desktopNav = () => (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className={auditDropdownClass}>
+          <button className={dropdownClass(isAuditSection)}>
             <FontAwesomeIcon icon={faClipboardList} className="h-3.5 w-3.5" />
             <span>Audits</span>
             <FontAwesomeIcon icon={faChevronDown} className="h-2.5 w-2.5 ml-0.5 opacity-60" />
@@ -86,6 +90,30 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
             <Link to="/audits/new" className="flex items-center gap-2 cursor-pointer">
               <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
               Créer un nouvel audit
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className={dropdownClass(isActiviteSection)}>
+            <FontAwesomeIcon icon={faListCheck} className="h-3.5 w-3.5" />
+            <span>Activité</span>
+            <FontAwesomeIcon icon={faChevronDown} className="h-2.5 w-2.5 ml-0.5 opacity-60" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-52">
+          <DropdownMenuItem asChild>
+            <Link to="/activite" className="flex items-center gap-2 cursor-pointer">
+              <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5" />
+              Voir tous les suivis
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/activite/new" className="flex items-center gap-2 cursor-pointer">
+              <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
+              Créer un suivi d'activité
             </Link>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -120,6 +148,18 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
       <NavLink to="/audits/new" className={() => linkClass("/audits/new")} onClick={() => setMobileOpen(false)}>
         <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
         <span>Créer un nouvel audit</span>
+      </NavLink>
+
+      <div className="border-t border-border my-2" />
+
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pt-2 pb-1">Activité</p>
+      <NavLink to="/activite" className={() => linkClass("/activite")} onClick={() => setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5" />
+        <span>Voir tous les suivis</span>
+      </NavLink>
+      <NavLink to="/activite/new" className={() => linkClass("/activite/new")} onClick={() => setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
+        <span>Créer un suivi</span>
       </NavLink>
 
       <div className="border-t border-border my-2" />
