@@ -178,7 +178,7 @@ export default function SuiviActiviteForm() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
               <div className="space-y-1.5">
-                <Label>Partenaire audité (Prénom NOM) *</Label>
+                <Label>Partenaire accompagné (Prénom NOM) *</Label>
                 <AutocompleteInput
                   value={partenaire}
                   onChange={setPartenaire}
@@ -187,7 +187,7 @@ export default function SuiviActiviteForm() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Accompagné par (Prénom NOM)</Label>
+                <Label>Partenaire référent (Prénom NOM)</Label>
                 <AutocompleteInput
                   value={accompagnePar}
                   onChange={setAccompagnePar}
@@ -196,7 +196,7 @@ export default function SuiviActiviteForm() {
                 />
               </div>
               <div className="space-y-1.5">
-                <Label>Accompagné par (Prénom NOM) *</Label>
+                <Label>Suivi réalisé par *</Label>
                 {auditeurs.length > 0 ? (
                   <Select value={suiviPar} onValueChange={setSuiviPar}>
                     <SelectTrigger>
