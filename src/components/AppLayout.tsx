@@ -1,7 +1,16 @@
 import { useState } from "react";
 import { NavLink, useLocation, Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faClipboardList, faRightFromBracket, faBars, faSliders, faUserShield, faChartLine } from "@fortawesome/free-solid-svg-icons";
+import {
+  faClipboardList,
+  faRightFromBracket,
+  faBars,
+  faSliders,
+  faUserShield,
+  faChartLine,
+  faPlus,
+  faChevronDown,
+} from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { ThemeToggle } from "./ThemeToggle";
 import { useTheme } from "next-themes";
@@ -11,6 +20,12 @@ import { FiltersBar } from "./FiltersBar";
 import { OnlineAvatars } from "./OnlineAvatars";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "./ui/sheet";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "./ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import type { Filters } from "@/hooks/useAuditData";
 
@@ -35,22 +50,87 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
         : "text-foreground/70 hover:text-foreground hover:bg-secondary"
     }`;
 
-  const navLinks = (closeMobile?: boolean) => (
+  const isAuditSection = ["/dashboard", "/audits", "/audits/new", "/audits/new/form"].includes(location.pathname);
+
+  const auditDropdownClass = `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
+    isAuditSection
+      ? "bg-primary text-primary-foreground"
+      : "text-foreground/70 hover:text-foreground hover:bg-secondary"
+  }`;
+
+  // Desktop nav with Audits dropdown
+  const desktopNav = () => (
     <>
-      <NavLink to="/" end className={() => linkClass("/")} onClick={() => closeMobile && setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
-        <span>Tableau de bord</span>
-      </NavLink>
-      <NavLink to="/audits" className={() => linkClass("/audits")} onClick={() => closeMobile && setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faClipboardList} className="h-3.5 w-3.5" />
-        <span>Voir tous les audits</span>
-      </NavLink>
-      <NavLink to="/business-plan" className={() => linkClass("/business-plan")} onClick={() => closeMobile && setMobileOpen(false)}>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className={auditDropdownClass}>
+            <FontAwesomeIcon icon={faClipboardList} className="h-3.5 w-3.5" />
+            <span>Audits</span>
+            <FontAwesomeIcon icon={faChevronDown} className="h-2.5 w-2.5 ml-0.5 opacity-60" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-52">
+          <DropdownMenuItem asChild>
+            <Link to="/dashboard" className="flex items-center gap-2 cursor-pointer">
+              <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
+              Tableau de bord
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/audits" className="flex items-center gap-2 cursor-pointer">
+              <FontAwesomeIcon icon={faClipboardList} className="h-3.5 w-3.5" />
+              Voir tous les audits
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/audits/new" className="flex items-center gap-2 cursor-pointer">
+              <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
+              Créer un nouvel audit
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <NavLink to="/business-plan" className={() => linkClass("/business-plan")}>
         <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
         <span>Business Plan</span>
       </NavLink>
+
       {isAdmin && (
-        <NavLink to="/admin" className={() => linkClass("/admin")} onClick={() => closeMobile && setMobileOpen(false)}>
+        <NavLink to="/admin" className={() => linkClass("/admin")}>
+          <FontAwesomeIcon icon={faUserShield} className="h-3.5 w-3.5" />
+          <span>Admin</span>
+        </NavLink>
+      )}
+    </>
+  );
+
+  // Mobile nav (flat links)
+  const mobileNav = () => (
+    <>
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pt-2 pb-1">Audits</p>
+      <NavLink to="/dashboard" end className={() => linkClass("/dashboard")} onClick={() => setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
+        <span>Tableau de bord</span>
+      </NavLink>
+      <NavLink to="/audits" className={() => linkClass("/audits")} onClick={() => setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faClipboardList} className="h-3.5 w-3.5" />
+        <span>Voir tous les audits</span>
+      </NavLink>
+      <NavLink to="/audits/new" className={() => linkClass("/audits/new")} onClick={() => setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
+        <span>Créer un nouvel audit</span>
+      </NavLink>
+
+      <div className="border-t border-border my-2" />
+
+      <NavLink to="/business-plan" className={() => linkClass("/business-plan")} onClick={() => setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
+        <span>Business Plan</span>
+      </NavLink>
+
+      {isAdmin && (
+        <NavLink to="/admin" className={() => linkClass("/admin")} onClick={() => setMobileOpen(false)}>
           <FontAwesomeIcon icon={faUserShield} className="h-3.5 w-3.5" />
           <span>Admin</span>
         </NavLink>
@@ -72,17 +152,15 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
             </Link>
             {/* Desktop nav */}
             <nav className="hidden md:flex items-center gap-1">
-              {navLinks()}
+              {desktopNav()}
             </nav>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Online avatars (Discord-style) */}
             <div className="hidden sm:block">
               <OnlineAvatars />
             </div>
 
-            {/* Filters drawer trigger */}
             {filters && setFilters && (
               <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setFiltersOpen(true)} title="Filtres">
                 <FontAwesomeIcon icon={faSliders} className="h-4 w-4" />
@@ -107,7 +185,7 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
                     <span className="text-sm font-bold text-foreground">Menu</span>
                   </div>
                   <nav className="flex flex-col gap-1 p-4">
-                    {navLinks(true)}
+                    {mobileNav()}
                   </nav>
                 </div>
               </SheetContent>
@@ -116,7 +194,7 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
         </div>
       </header>
 
-      {/* Filters drawer from right */}
+      {/* Filters drawer */}
       {filters && setFilters && (
         <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
           <SheetContent side="right" className="w-80 sm:w-96">

@@ -7,6 +7,7 @@ import { ThemeProvider } from "next-themes";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import Index from "./pages/Index";
+import Welcome from "./pages/Welcome";
 import Auth from "./pages/Auth";
 import Registre from "./pages/Registre";
 import NewAudit from "./pages/NewAudit";
@@ -63,7 +64,8 @@ const App = () => (
           <InstallPrompt />
           <BrowserRouter basename="/dynaperf">
             <Routes>
-              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+              <Route path="/" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/audits" element={<ProtectedRoute><Registre /></ProtectedRoute>} />
               <Route path="/audits/new" element={<ProtectedRoute><NewAudit /></ProtectedRoute>} />
               <Route path="/audits/new/form" element={<ProtectedRoute><AuditForm /></ProtectedRoute>} />
