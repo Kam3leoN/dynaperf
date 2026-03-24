@@ -30,6 +30,7 @@ import {
 } from "./ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import type { Filters } from "@/hooks/useAuditData";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -41,6 +42,7 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin(user);
   const { resolvedTheme } = useTheme();
+  const isMobile = useIsMobile();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -200,10 +202,11 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
                 className="h-7 sm:h-8"
               />
             </Link>
-            {/* Desktop nav — lg breakpoint for high-res phones */}
-            <nav className="hidden lg:flex items-center gap-1">
-              {desktopNav()}
-            </nav>
+            {!isMobile && (
+              <nav className="flex items-center gap-1">
+                {desktopNav()}
+              </nav>
+            )}
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
@@ -222,24 +225,25 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
               <FontAwesomeIcon icon={faRightFromBracket} className="h-4 w-4" />
             </Button>
 
-            {/* Mobile hamburger */}
-            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9 lg:hidden">
-                  <FontAwesomeIcon icon={faBars} className="h-4 w-4" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-72 p-0">
-                <div className="flex flex-col h-full">
-                  <div className="flex items-center justify-between p-4 border-b border-border">
-                    <span className="text-sm font-bold text-foreground">Menu</span>
+            {isMobile && (
+              <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="icon" className="h-9 w-9">
+                    <FontAwesomeIcon icon={faBars} className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-72 p-0">
+                  <div className="flex flex-col h-full">
+                    <div className="flex items-center justify-between p-4 border-b border-border">
+                      <span className="text-sm font-bold text-foreground">Menu</span>
+                    </div>
+                    <nav className="flex flex-col gap-1 p-4">
+                      {mobileNav()}
+                    </nav>
                   </div>
-                  <nav className="flex flex-col gap-1 p-4">
-                    {mobileNav()}
-                  </nav>
-                </div>
-              </SheetContent>
-            </Sheet>
+                </SheetContent>
+              </Sheet>
+            )}
           </div>
         </div>
       </header>
