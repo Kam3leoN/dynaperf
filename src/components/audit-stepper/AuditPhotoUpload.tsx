@@ -42,60 +42,50 @@ export function AuditPhotoUpload({ photos, onChange, onSubmit, onBack, uploading
         </p>
       </div>
 
-      {/* Drop zone (desktop) or button (mobile) */}
-      {!isMobile ? (
-        <div
-          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={handleDrop}
-          onClick={() => fileInputRef.current?.click()}
-          className={`
-            border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
-            ${dragOver
-              ? "border-primary bg-primary/5"
-              : "border-border hover:border-primary/50 hover:bg-muted/50"
+      {/* Drop zone */}
+      <div
+        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={handleDrop}
+        onClick={() => {
+          if (fileInputRef.current) {
+            fileInputRef.current.removeAttribute("capture");
+            fileInputRef.current.click();
+          }
+        }}
+        className={`
+          border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
+          ${dragOver
+            ? "border-primary bg-primary/5"
+            : "border-border hover:border-primary/50 hover:bg-muted/50"
+          }
+        `}
+      >
+        <FontAwesomeIcon icon={faCloudArrowUp} className="h-8 w-8 text-muted-foreground mb-3" />
+        <p className="text-sm font-medium text-foreground">
+          {isMobile ? "Appuyez pour sélectionner des photos" : "Glissez-déposez vos photos ici"}
+        </p>
+        <p className="text-xs text-muted-foreground mt-1">
+          ou cliquez pour sélectionner des fichiers
+        </p>
+      </div>
+
+      {/* Camera button — mobile/tablet only */}
+      {isMobile && (
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full gap-2 h-12"
+          onClick={() => {
+            if (fileInputRef.current) {
+              fileInputRef.current.setAttribute("capture", "environment");
+              fileInputRef.current.click();
             }
-          `}
+          }}
         >
-          <FontAwesomeIcon icon={faCloudArrowUp} className="h-8 w-8 text-muted-foreground mb-3" />
-          <p className="text-sm font-medium text-foreground">
-            Glissez-déposez vos photos ici
-          </p>
-          <p className="text-xs text-muted-foreground mt-1">
-            ou cliquez pour sélectionner des fichiers
-          </p>
-        </div>
-      ) : (
-        <div className="flex gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            className="flex-1 gap-2 h-14"
-            onClick={() => {
-              if (fileInputRef.current) {
-                fileInputRef.current.removeAttribute("capture");
-                fileInputRef.current.click();
-              }
-            }}
-          >
-            <FontAwesomeIcon icon={faCloudArrowUp} className="h-4 w-4" />
-            Galerie
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="flex-1 gap-2 h-14"
-            onClick={() => {
-              if (fileInputRef.current) {
-                fileInputRef.current.setAttribute("capture", "environment");
-                fileInputRef.current.click();
-              }
-            }}
-          >
-            <FontAwesomeIcon icon={faCamera} className="h-4 w-4" />
-            Appareil photo
-          </Button>
-        </div>
+          <FontAwesomeIcon icon={faCamera} className="h-4 w-4" />
+          Ouvrir l'appareil photo
+        </Button>
       )}
 
       <input
