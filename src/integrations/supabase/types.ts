@@ -476,6 +476,93 @@ export type Database = {
         }
         Relationships: []
       }
+      suivi_activite: {
+        Row: {
+          agence: string
+          agence_referente: string | null
+          created_at: string
+          date: string
+          id: string
+          items: Json
+          nb_contrats_depuis_dernier: number | null
+          nb_contrats_total: number | null
+          observations: string | null
+          suivi_par: string
+          total_items: number | null
+          total_items_valides: number | null
+          updated_at: string
+        }
+        Insert: {
+          agence?: string
+          agence_referente?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          items?: Json
+          nb_contrats_depuis_dernier?: number | null
+          nb_contrats_total?: number | null
+          observations?: string | null
+          suivi_par?: string
+          total_items?: number | null
+          total_items_valides?: number | null
+          updated_at?: string
+        }
+        Update: {
+          agence?: string
+          agence_referente?: string | null
+          created_at?: string
+          date?: string
+          id?: string
+          items?: Json
+          nb_contrats_depuis_dernier?: number | null
+          nb_contrats_total?: number | null
+          observations?: string | null
+          suivi_par?: string
+          total_items?: number | null
+          total_items_valides?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      suivi_activite_items_config: {
+        Row: {
+          categorie: string
+          conditions: string
+          conseils: string
+          created_at: string
+          id: string
+          interets: string
+          numero: number
+          sort_order: number
+          titre: string
+          updated_at: string
+        }
+        Insert: {
+          categorie: string
+          conditions?: string
+          conseils?: string
+          created_at?: string
+          id?: string
+          interets?: string
+          numero: number
+          sort_order?: number
+          titre: string
+          updated_at?: string
+        }
+        Update: {
+          categorie?: string
+          conditions?: string
+          conseils?: string
+          created_at?: string
+          id?: string
+          interets?: string
+          numero?: number
+          sort_order?: number
+          titre?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
