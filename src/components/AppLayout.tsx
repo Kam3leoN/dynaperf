@@ -157,7 +157,7 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="hidden sm:block">
+            <div className="max-w-[120px] sm:max-w-none overflow-hidden">
               <OnlineAvatars />
             </div>
 
