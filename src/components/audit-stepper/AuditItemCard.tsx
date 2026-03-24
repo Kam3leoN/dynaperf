@@ -65,7 +65,7 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
   const isNoShowAuto = item.autoField === "nbNoShow";
 
   const [boolVal, setBoolVal] = useState<boolean | null>(() => {
-    if (isNoShowAuto) return (autoValue ?? 0) === 0;
+    if (isNoShowAuto) return (autoValue ?? 0) > 0;
     return answer ? answer.score > 0 : null;
   });
   const [numVal, setNumVal] = useState<string>(() => {
@@ -160,15 +160,16 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
             <div className="space-y-1.5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                 <Button type="button" size="sm" variant={boolVal ? "default" : "outline"} disabled
-                  className={cn("h-10 text-xs sm:text-sm cursor-not-allowed", boolVal && "bg-emerald-600 text-white")}>
+                  className={cn("h-10 text-xs sm:text-sm cursor-not-allowed", boolVal && "bg-emerald-600 text-white border-emerald-600")}>
                   <FontAwesomeIcon icon={faCheck} className="mr-1 h-3 w-3" /> Validé
                 </Button>
-                <Button type="button" size="sm" variant={!boolVal ? "destructive" : "outline"} disabled className="h-10 text-xs sm:text-sm cursor-not-allowed">
+                <Button type="button" size="sm" variant={!boolVal ? "destructive" : "outline"} disabled
+                  className={cn("h-10 text-xs sm:text-sm cursor-not-allowed", !boolVal && "text-white")}>
                   Non validé
                 </Button>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                {(autoValue ?? 0) > 0 ? `${autoValue} no-show — non validé.` : "Aucun no-show — validé."}
+                {(autoValue ?? 0) > 0 ? `${autoValue} no-show — validé.` : "Aucun no-show — non validé."}
               </p>
             </div>
           )}
@@ -177,13 +178,13 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
               <Button type="button" size="sm" variant="outline" onClick={() => setBoolVal(true)}
                 className={cn("h-10 text-xs sm:text-sm transition-colors",
-                  boolVal === true ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700" : "hover:bg-accent"
+                  boolVal === true ? "bg-emerald-600 text-white border-emerald-600 hover:bg-amber-400 hover:text-black hover:border-amber-400" : "hover:bg-accent"
                 )}>
                 <FontAwesomeIcon icon={faCheck} className="mr-1 h-3 w-3" /> Validé
               </Button>
               <Button type="button" size="sm" variant="outline" onClick={() => setBoolVal(false)}
                 className={cn("h-10 text-xs sm:text-sm transition-colors",
-                  boolVal === false ? "bg-destructive text-destructive-foreground border-destructive hover:bg-destructive/90" : "hover:bg-accent"
+                  boolVal === false ? "bg-destructive text-white border-destructive hover:bg-amber-400 hover:text-black hover:border-amber-400" : "hover:bg-accent"
                 )}>
                 Non validé
               </Button>
