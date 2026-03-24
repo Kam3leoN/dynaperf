@@ -2,9 +2,9 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { PasswordInput } from "@/components/ui/password-input";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faKey, faFloppyDisk } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
@@ -49,8 +49,7 @@ export default function ChangePassword() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-1.5">
                 <Label className="text-xs">Nouveau mot de passe</Label>
-                <Input
-                  type="password"
+                <PasswordInput
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   placeholder="••••••••"
@@ -61,8 +60,7 @@ export default function ChangePassword() {
               </div>
               <div className="space-y-1.5">
                 <Label className="text-xs">Confirmer le mot de passe</Label>
-                <Input
-                  type="password"
+                <PasswordInput
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   placeholder="••••••••"

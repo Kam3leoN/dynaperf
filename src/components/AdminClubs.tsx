@@ -1,15 +1,17 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Slider } from "@/components/ui/slider";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFilter, faXmark } from "@fortawesome/free-solid-svg-icons";
+import { faFilter, faXmark, faCamera, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "sonner";
+import { useAdmin } from "@/hooks/useAdmin";
 
 interface Club {
   id: string;
@@ -29,6 +31,7 @@ interface Club {
   montant_ca: number;
   date_creation: string | null;
   date_desactivation: string | null;
+  logo_url: string | null;
 }
 
 const FORMAT_OPTIONS = ["Tous", "Développement", "Intensif", "Convivial"];
@@ -65,6 +68,66 @@ function formatDate(d: string | null) {
   return `${day}/${m}/${y}`;
 }
 
+function ClubLogo({ club, isAdmin, onUpdate }: { club: Club; isAdmin: boolean; onUpdate: () => void }) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const path = `${club.id}.${ext}`;
+    const { error: uploadError } = await supabase.storage.from("club-logos").upload(path, file, { upsert: true });
+    if (uploadError) { toast.error("Erreur upload logo"); setUploading(false); return; }
+    const { data: urlData } = supabase.storage.from("club-logos").getPublicUrl(path);
+    const logoUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+    await supabase.from("clubs").update({ logo_url: logoUrl }).eq("id", club.id);
+    toast.success("Logo mis à jour");
+    setUploading(false);
+    onUpdate();
+  };
+
+  const handleDelete = async () => {
+    const ext = club.logo_url?.split(".").pop()?.split("?")[0];
+    if (ext) await supabase.storage.from("club-logos").remove([`${club.id}.${ext}`]);
+    await supabase.from("clubs").update({ logo_url: null }).eq("id", club.id);
+    toast.success("Logo supprimé");
+    onUpdate();
+  };
+
+  return (
+    <div className="relative group">
+      <Avatar className="h-8 w-8 shrink-0">
+        <AvatarImage src={club.logo_url || undefined} alt={club.nom} />
+        <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">
+          {club.nom.substring(0, 2).toUpperCase()}
+        </AvatarFallback>
+      </Avatar>
+      {isAdmin && (
+        <div className="absolute -bottom-1 -right-1 flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="w-4 h-4 rounded-full bg-primary text-primary-foreground flex items-center justify-center"
+            disabled={uploading}
+          >
+            <FontAwesomeIcon icon={faCamera} className="h-2 w-2" />
+          </button>
+          {club.logo_url && (
+            <button
+              onClick={handleDelete}
+              className="w-4 h-4 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center"
+            >
+              <FontAwesomeIcon icon={faTrash} className="h-2 w-2" />
+            </button>
+          )}
+        </div>
+      )}
+      <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleUpload} />
+    </div>
+  );
+}
+
 export default function AdminClubs() {
   const [clubs, setClubs] = useState<Club[]>([]);
   const [loading, setLoading] = useState(true);
@@ -78,6 +141,7 @@ export default function AdminClubs() {
   const [leadsMin, setLeadsMin] = useState(0);
   const [caMin, setCaMin] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const { isAdmin } = useAdmin();
 
   const loadClubs = useCallback(async () => {
     setLoading(true);
@@ -90,9 +154,7 @@ export default function AdminClubs() {
 
   const uniqueYears = useMemo(() => {
     const years = new Set<string>();
-    clubs.forEach(c => {
-      if (c.date_creation) years.add(c.date_creation.substring(0, 4));
-    });
+    clubs.forEach(c => { if (c.date_creation) years.add(c.date_creation.substring(0, 4)); });
     return ["Tous", ...Array.from(years).sort()];
   }, [clubs]);
 
@@ -113,14 +175,9 @@ export default function AdminClubs() {
   const maxCA = useMemo(() => Math.max(1, ...clubs.map(c => c.montant_ca)), [clubs]);
 
   const activeFiltersCount = [
-    filterFormat !== "Tous",
-    filterStatut !== "Tous",
-    filterAnnee !== "Tous",
-    filterDept !== "Tous",
-    filterSecteur !== "Tous",
-    membresMin > 0,
-    leadsMin > 0,
-    caMin > 0,
+    filterFormat !== "Tous", filterStatut !== "Tous", filterAnnee !== "Tous",
+    filterDept !== "Tous", filterSecteur !== "Tous",
+    membresMin > 0, leadsMin > 0, caMin > 0,
   ].filter(Boolean).length;
 
   const resetFilters = () => {
@@ -150,79 +207,53 @@ export default function AdminClubs() {
 
   const FilterPanel = () => (
     <div className="space-y-5 p-1">
-      {/* Format */}
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Format</label>
         <Select value={filterFormat} onValueChange={setFilterFormat}>
           <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {FORMAT_OPTIONS.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}
-          </SelectContent>
+          <SelectContent>{FORMAT_OPTIONS.map(f => <SelectItem key={f} value={f}>{f}</SelectItem>)}</SelectContent>
         </Select>
       </div>
-
-      {/* Statut */}
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Statut</label>
         <Select value={filterStatut} onValueChange={setFilterStatut}>
           <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {STATUT_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-          </SelectContent>
+          <SelectContent>{STATUT_OPTIONS.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
         </Select>
       </div>
-
-      {/* Année */}
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Année de création</label>
         <Select value={filterAnnee} onValueChange={setFilterAnnee}>
           <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {uniqueYears.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
-          </SelectContent>
+          <SelectContent>{uniqueYears.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
         </Select>
       </div>
-
-      {/* Département */}
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Département</label>
         <Select value={filterDept} onValueChange={setFilterDept}>
           <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {uniqueDepts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}
-          </SelectContent>
+          <SelectContent>{uniqueDepts.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
         </Select>
       </div>
-
-      {/* Secteur (Agence mère) */}
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Secteur (Agence mère)</label>
         <Select value={filterSecteur} onValueChange={setFilterSecteur}>
           <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {uniqueSecteurs.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-          </SelectContent>
+          <SelectContent>{uniqueSecteurs.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
         </Select>
       </div>
-
-      {/* Membres min */}
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Membres min : {membresMin}</label>
         <Slider value={[membresMin]} onValueChange={([v]) => setMembresMin(v)} min={0} max={maxMembres} step={1} />
       </div>
-
-      {/* Leads min */}
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Leads min : {leadsMin}</label>
         <Slider value={[leadsMin]} onValueChange={([v]) => setLeadsMin(v)} min={0} max={maxLeads} step={1} />
       </div>
-
-      {/* CA min */}
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1.5 block">CA min : {formatCA(caMin)}</label>
         <Slider value={[caMin]} onValueChange={([v]) => setCaMin(v)} min={0} max={maxCA} step={1000} />
       </div>
-
       {activeFiltersCount > 0 && (
         <Button variant="outline" size="sm" onClick={resetFilters} className="w-full gap-1.5 text-xs">
           <FontAwesomeIcon icon={faXmark} className="h-3 w-3" />
@@ -234,10 +265,13 @@ export default function AdminClubs() {
 
   const MobileCard = ({ c }: { c: Club }) => (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-card border border-border rounded-lg p-3 space-y-2">
-      <div className="flex items-start justify-between">
-        <div className="min-w-0">
-          <p className="text-sm font-semibold text-foreground truncate">{c.nom}</p>
-          <p className="text-xs text-muted-foreground truncate">{c.president_nom}</p>
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2 min-w-0">
+          <ClubLogo club={c} isAdmin={isAdmin} onUpdate={loadClubs} />
+          <div className="min-w-0">
+            <p className="text-sm font-semibold text-foreground truncate">{c.nom}</p>
+            <p className="text-xs text-muted-foreground truncate">{c.president_nom}</p>
+          </div>
         </div>
         <div className="flex gap-1.5 shrink-0">
           <FormatBadge format={c.format} />
@@ -270,12 +304,7 @@ export default function AdminClubs() {
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h3 className="text-sm font-semibold text-foreground">Clubs d'affaires</h3>
         <div className="flex items-center gap-2 sm:gap-3 flex-1 sm:flex-none justify-end">
-          <Input
-            placeholder="Rechercher…"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-48 sm:w-[260px] h-9 text-sm rounded-md"
-          />
+          <Input placeholder="Rechercher…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-48 sm:w-[260px] h-9 text-sm rounded-md" />
           <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" size="sm" className="gap-1.5 text-xs relative shrink-0">
@@ -287,18 +316,13 @@ export default function AdminClubs() {
               </Button>
             </SheetTrigger>
             <SheetContent side="right" className="w-80 sm:w-96">
-              <SheetHeader>
-                <SheetTitle>Filtres</SheetTitle>
-              </SheetHeader>
-              <div className="mt-4">
-                <FilterPanel />
-              </div>
+              <SheetHeader><SheetTitle>Filtres</SheetTitle></SheetHeader>
+              <div className="mt-4"><FilterPanel /></div>
             </SheetContent>
           </Sheet>
         </div>
       </div>
 
-      {/* Stats bar */}
       <div className="flex flex-wrap gap-3 mb-4">
         <div className="bg-secondary/50 rounded-md px-3 py-1.5 text-center">
           <p className="text-sm font-bold text-foreground">{filtered.length}</p>
@@ -322,7 +346,6 @@ export default function AdminClubs() {
         <div className="text-center py-12 text-muted-foreground text-sm">Chargement…</div>
       ) : (
         <>
-          {/* Mobile */}
           <div className="md:hidden space-y-2">
             <AnimatePresence>
               {filtered.map(c => <MobileCard key={c.id} c={c} />)}
@@ -330,11 +353,11 @@ export default function AdminClubs() {
             {filtered.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">Aucun club trouvé</p>}
           </div>
 
-          {/* Desktop */}
           <div className="hidden md:block">
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10"></TableHead>
                   <TableHead>Club</TableHead>
                   <TableHead>Format</TableHead>
                   <TableHead>Président</TableHead>
@@ -349,6 +372,7 @@ export default function AdminClubs() {
               <TableBody>
                 {filtered.map(c => (
                   <TableRow key={c.id}>
+                    <TableCell><ClubLogo club={c} isAdmin={isAdmin} onUpdate={loadClubs} /></TableCell>
                     <TableCell className="font-medium text-sm">{c.nom}</TableCell>
                     <TableCell><FormatBadge format={c.format} /></TableCell>
                     <TableCell className="text-sm">{c.president_nom}</TableCell>
@@ -362,7 +386,7 @@ export default function AdminClubs() {
                 ))}
                 {filtered.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center text-sm text-muted-foreground py-8">Aucun club trouvé</TableCell>
+                    <TableCell colSpan={10} className="text-center text-sm text-muted-foreground py-8">Aucun club trouvé</TableCell>
                   </TableRow>
                 )}
               </TableBody>
