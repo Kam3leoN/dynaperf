@@ -260,12 +260,15 @@ export type Database = {
           email_president: string | null
           format: string
           id: string
+          latitude: number | null
           logo_url: string | null
+          longitude: number | null
           montant_ca: number
           nb_leads_transformes: number
           nb_membres_actifs: number
           nom: string
           president_nom: string
+          secteur_id: string | null
           statut: string
           telephone_president: string | null
           telephone_vice_president: string | null
@@ -283,12 +286,15 @@ export type Database = {
           email_president?: string | null
           format?: string
           id?: string
+          latitude?: number | null
           logo_url?: string | null
+          longitude?: number | null
           montant_ca?: number
           nb_leads_transformes?: number
           nb_membres_actifs?: number
           nom: string
           president_nom?: string
+          secteur_id?: string | null
           statut?: string
           telephone_president?: string | null
           telephone_vice_president?: string | null
@@ -306,19 +312,30 @@ export type Database = {
           email_president?: string | null
           format?: string
           id?: string
+          latitude?: number | null
           logo_url?: string | null
+          longitude?: number | null
           montant_ca?: number
           nb_leads_transformes?: number
           nb_membres_actifs?: number
           nom?: string
           president_nom?: string
+          secteur_id?: string | null
           statut?: string
           telephone_president?: string | null
           telephone_vice_president?: string | null
           updated_at?: string
           vice_president_nom?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "clubs_secteur_id_fkey"
+            columns: ["secteur_id"]
+            isOneToOne: false
+            referencedRelation: "secteurs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       collaborateur_config: {
         Row: {
@@ -476,6 +493,27 @@ export type Database = {
           title?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      secteurs: {
+        Row: {
+          created_at: string
+          id: string
+          nom: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          nom: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          nom?: string
+          updated_at?: string
         }
         Relationships: []
       }

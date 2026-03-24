@@ -13,6 +13,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AdminSecteurs from "@/components/AdminSecteurs";
 
 function ArcText({ text, radius = 78, fontSize = 13 }: { text: string; radius?: number; fontSize?: number }) {
   const id = "arcPath";
@@ -384,6 +386,12 @@ export default function Admin() {
 
   return (
     <AppLayout>
+      <Tabs defaultValue="collaborateurs" className="space-y-4">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="collaborateurs">Collaborateurs</TabsTrigger>
+          <TabsTrigger value="secteurs">Secteurs</TabsTrigger>
+        </TabsList>
+        <TabsContent value="collaborateurs">
       <div className="space-y-4">
       <div className="bg-card rounded-lg shadow-soft p-4 sm:p-5">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
@@ -850,6 +858,11 @@ export default function Admin() {
         </DialogContent>
       </Dialog>
       </div>
+        </TabsContent>
+        <TabsContent value="secteurs">
+          <AdminSecteurs />
+        </TabsContent>
+      </Tabs>
     </AppLayout>
   );
 }

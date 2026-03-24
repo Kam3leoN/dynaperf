@@ -26,6 +26,7 @@ import ChangePassword from "./pages/ChangePassword";
 import Reseau from "./pages/Reseau";
 import Partenaires from "./pages/Partenaires";
 import Clubs from "./pages/Clubs";
+import Secteurs from "./pages/Secteurs";
 import Notifications from "./pages/Notifications";
 const queryClient = new QueryClient();
 
@@ -92,6 +93,7 @@ const App = () => (
               <Route path="/reseau" element={<ProtectedRoute><Reseau /></ProtectedRoute>} />
               <Route path="/reseau/partenaires" element={<ProtectedRoute><Partenaires /></ProtectedRoute>} />
               <Route path="/reseau/clubs" element={<ProtectedRoute><Clubs /></ProtectedRoute>} />
+              <Route path="/reseau/secteurs" element={<ProtectedRoute><Secteurs /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
               <Route path="/reset-password" element={<ResetPassword />} />

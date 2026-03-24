@@ -19,6 +19,7 @@ import {
   faBell,
   faUsers,
   faBriefcase,
+  faMapLocationDot,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { ThemeToggle } from "./ThemeToggle";
@@ -82,7 +83,7 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
 
   const isAuditSection = ["/dashboard", "/audits", "/audits/new", "/audits/new/form"].includes(location.pathname);
   const isActiviteSection = ["/activite", "/activite/new", "/activite/dashboard"].includes(location.pathname);
-  const isReseauSection = ["/reseau", "/reseau/partenaires", "/reseau/clubs"].includes(location.pathname);
+  const isReseauSection = ["/reseau", "/reseau/partenaires", "/reseau/clubs", "/reseau/secteurs"].includes(location.pathname);
 
   const dropdownClass = (active: boolean) =>
     `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
@@ -237,6 +238,12 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
               Clubs d'affaires
             </Link>
           </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/reseau/secteurs" className="flex items-center gap-2 cursor-pointer">
+              <FontAwesomeIcon icon={faMapLocationDot} className="h-3.5 w-3.5" />
+              Secteurs / Zones
+            </Link>
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -296,6 +303,10 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
       <NavLink to="/reseau/clubs" className={() => linkClass("/reseau/clubs")} onClick={() => setMobileOpen(false)}>
         <FontAwesomeIcon icon={faBriefcase} className="h-3.5 w-3.5" />
         <span>Clubs d'affaires</span>
+      </NavLink>
+      <NavLink to="/reseau/secteurs" className={() => linkClass("/reseau/secteurs")} onClick={() => setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faMapLocationDot} className="h-3.5 w-3.5" />
+        <span>Secteurs / Zones</span>
       </NavLink>
 
       <div className="border-t border-border my-2" />
