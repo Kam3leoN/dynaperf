@@ -20,6 +20,7 @@ import NotFound from "./pages/NotFound";
 import SuiviActiviteList from "./pages/SuiviActiviteList";
 import SuiviActiviteForm from "./pages/SuiviActiviteForm";
 import SuiviActiviteDashboard from "./pages/SuiviActiviteDashboard";
+import SuiviActiviteDetail from "./pages/SuiviActiviteDetail";
 const queryClient = new QueryClient();
 
 function FullPageLoader() {
@@ -77,6 +78,7 @@ const App = () => (
               <Route path="/admin/audit-grid" element={<AdminRoute><AdminAuditGrid /></AdminRoute>} />
               <Route path="/business-plan" element={<ProtectedRoute><BusinessPlan /></ProtectedRoute>} />
               <Route path="/activite/dashboard" element={<ProtectedRoute><SuiviActiviteDashboard /></ProtectedRoute>} />
+              <Route path="/activite/:id" element={<ProtectedRoute><SuiviActiviteDetail /></ProtectedRoute>} />
               <Route path="/activite" element={<ProtectedRoute><SuiviActiviteList /></ProtectedRoute>} />
               <Route path="/activite/new" element={<ProtectedRoute><SuiviActiviteForm /></ProtectedRoute>} />
               <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
