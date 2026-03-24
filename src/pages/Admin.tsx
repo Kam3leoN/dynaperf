@@ -122,6 +122,30 @@ function matchesSearch(user: ManagedUser, search: string) {
   return term.split(/\s+/).every(word => haystack.includes(word));
 }
 
+function BackupButton() {
+  const [loading, setLoading] = useState(false);
+  const handleBackup = async () => {
+    setLoading(true);
+    try {
+      const res = await supabase.functions.invoke("backup-all");
+      if (res.data?.success) {
+        toast.success(`Sauvegarde réussie : ${res.data.file}`);
+      } else {
+        toast.error(res.data?.error || "Erreur de sauvegarde");
+      }
+    } catch {
+      toast.error("Erreur de sauvegarde");
+    }
+    setLoading(false);
+  };
+  return (
+    <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleBackup} disabled={loading}>
+      <FontAwesomeIcon icon={loading ? faSpinner : faDownload} className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+      <span className="hidden sm:inline">Sauvegarder</span>
+    </Button>
+  );
+}
+
 export default function Admin() {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
