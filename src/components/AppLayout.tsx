@@ -152,6 +152,18 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
 
       <div className="border-t border-border my-2" />
 
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pt-2 pb-1">Activité</p>
+      <NavLink to="/activite" className={() => linkClass("/activite")} onClick={() => setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5" />
+        <span>Voir tous les suivis</span>
+      </NavLink>
+      <NavLink to="/activite/new" className={() => linkClass("/activite/new")} onClick={() => setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
+        <span>Créer un suivi</span>
+      </NavLink>
+
+      <div className="border-t border-border my-2" />
+
       <NavLink to="/business-plan" className={() => linkClass("/business-plan")} onClick={() => setMobileOpen(false)}>
         <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
         <span>Business Plan</span>
