@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faTrash, faEye } from "@fortawesome/free-solid-svg-icons";
 import { SuiviActiviteExportExcel, SuiviActiviteExportPDF } from "@/components/SuiviActiviteExport";
+import { SuiviActivitePdfDetail } from "@/components/SuiviActivitePdfDetail";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -106,6 +107,7 @@ export default function SuiviActiviteList() {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
+                  <SuiviActivitePdfDetail suiviId={s.id} />
                   <Button asChild variant="outline" size="sm" className="gap-1.5">
                     <Link to={`/activite/${s.id}`}>
                       <FontAwesomeIcon icon={faEye} className="h-3 w-3" />
