@@ -1,5 +1,4 @@
 import * as XLSX from "xlsx";
-import jsPDF from "jspdf";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faDownload, faFilePdf } from "@fortawesome/free-solid-svg-icons";
@@ -56,7 +55,8 @@ export function SuiviActiviteExportExcel({ suivis }: SuiviActiviteExportProps) {
 }
 
 export function SuiviActiviteExportPDF({ suivis }: SuiviActiviteExportProps) {
-  const handleExport = () => {
+  const handleExport = async () => {
+    const { default: jsPDF } = await import("jspdf");
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
     const pageW = doc.internal.pageSize.getWidth();
 

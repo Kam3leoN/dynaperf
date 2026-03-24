@@ -42,8 +42,8 @@ export default function SuiviActiviteForm() {
   const [saving, setSaving] = useState(false);
 
   // Header fields
-  const [agence, setAgence] = useState("");
-  const [agenceReferente, setAgenceReferente] = useState("");
+  const [partenaire, setPartenaire] = useState("");
+  const [accompagnePar, setAccompagnePar] = useState("");
   const [suiviPar, setSuiviPar] = useState("");
   const [dateEntretien, setDateEntretien] = useState<Date | undefined>();
   const [nbContratsTotal, setNbContratsTotal] = useState("");
@@ -52,20 +52,24 @@ export default function SuiviActiviteForm() {
   // Answers per item
   const [answers, setAnswers] = useState<Record<string, ItemAnswer>>({});
 
-  // Auditeurs for dropdown
+  const [partenaires, setPartenaires] = useState<{prenom: string; nom: string}[]>([]);
   const [auditeurs, setAuditeurs] = useState<string[]>([]);
 
   useEffect(() => {
     Promise.all([
       fetchSuiviItemsConfig(),
       supabase.from("profiles").select("display_name"),
-    ]).then(([configItems, { data: profiles }]) => {
+      supabase.from("partenaires").select("prenom, nom").eq("statut", "actif"),
+    ]).then(([configItems, { data: profiles }, { data: parts }]) => {
       setItems(configItems);
       setAuditeurs(
         (profiles ?? [])
           .map((p) => p.display_name)
           .filter((n): n is string => !!n)
           .sort()
+      );
+      setPartenaires(
+        (parts ?? []).map((p) => ({ prenom: p.prenom, nom: p.nom })).sort((a, b) => a.nom.localeCompare(b.nom))
       );
       setLoading(false);
     });
@@ -81,8 +85,8 @@ export default function SuiviActiviteForm() {
   // Progress
   const totalItems = items.length;
   const answeredCount = Object.values(answers).filter((a) => a.status !== null && a.status !== undefined).length;
-  const headerFields = [agence, suiviPar, dateEntretien].filter(Boolean).length;
-  const totalExpected = 3 + totalItems; // 3 required header fields + items
+  const headerFields = [partenaire, suiviPar, dateEntretien].filter(Boolean).length;
+  const totalExpected = 3 + totalItems;
   const totalFilled = headerFields + answeredCount;
   const progress = totalExpected > 0 ? (totalFilled / totalExpected) * 100 : 0;
 
@@ -101,8 +105,8 @@ export default function SuiviActiviteForm() {
   }, [items]);
 
   const handleSave = async () => {
-    if (!agence.trim() || !suiviPar.trim() || !dateEntretien) {
-      toast.error("Remplis les champs obligatoires (Agence, Suivi par, Date)");
+    if (!partenaire.trim() || !suiviPar.trim() || !dateEntretien) {
+      toast.error("Remplis les champs obligatoires (Partenaire, Accompagné par, Date)");
       return;
     }
 
@@ -120,8 +124,8 @@ export default function SuiviActiviteForm() {
 
     const { error } = await supabase.from("suivi_activite").insert({
       date: format(dateEntretien, "yyyy-MM-dd"),
-      agence: agence.trim(),
-      agence_referente: agenceReferente.trim() || null,
+      agence: partenaire.trim(),
+      agence_referente: accompagnePar.trim() || null,
       suivi_par: suiviPar.trim(),
       nb_contrats_total: parseInt(nbContratsTotal) || 0,
       nb_contrats_depuis_dernier: parseInt(nbContratsDernier) || 0,
@@ -174,15 +178,25 @@ export default function SuiviActiviteForm() {
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
               <div className="space-y-1.5">
-                <Label>Agence Commerciale *</Label>
-                <Input value={agence} onChange={(e) => setAgence(e.target.value)} placeholder="ex: Troyes" />
+                <Label>Partenaire audité (Prénom NOM) *</Label>
+                <AutocompleteInput
+                  value={partenaire}
+                  onChange={setPartenaire}
+                  suggestions={partenaires.map((p) => `${p.prenom} ${p.nom.toUpperCase()}`)}
+                  placeholder="ex: Émilie BLAISE"
+                />
               </div>
               <div className="space-y-1.5">
-                <Label>Agence Commerciale Référente</Label>
-                <Input value={agenceReferente} onChange={(e) => setAgenceReferente(e.target.value)} placeholder="ex: Reims" />
+                <Label>Accompagné par (Prénom NOM)</Label>
+                <AutocompleteInput
+                  value={accompagnePar}
+                  onChange={setAccompagnePar}
+                  suggestions={partenaires.map((p) => `${p.prenom} ${p.nom.toUpperCase()}`)}
+                  placeholder="ex: Marie DUPONT"
+                />
               </div>
               <div className="space-y-1.5">
-                <Label>Suivi réalisé par *</Label>
+                <Label>Accompagné par (Prénom NOM) *</Label>
                 {auditeurs.length > 0 ? (
                   <Select value={suiviPar} onValueChange={setSuiviPar}>
                     <SelectTrigger>
@@ -345,13 +359,13 @@ export default function SuiviActiviteForm() {
           <div className="pt-4 border-t border-border">
             <Button
               onClick={handleSave}
-              disabled={saving || !agence.trim() || !suiviPar.trim() || !dateEntretien}
+              disabled={saving || !partenaire.trim() || !suiviPar.trim() || !dateEntretien}
               className="w-full gap-2"
             >
               <FontAwesomeIcon icon={faSave} className="h-3.5 w-3.5" />
               {saving ? "Enregistrement…" : "Enregistrer le suivi"}
             </Button>
-            {(!agence.trim() || !suiviPar.trim() || !dateEntretien) && (
+            {(!partenaire.trim() || !suiviPar.trim() || !dateEntretien) && (
               <p className="text-xs text-muted-foreground text-center mt-2">
                 Remplis les champs obligatoires (*) pour enregistrer
               </p>
