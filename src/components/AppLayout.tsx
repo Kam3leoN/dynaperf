@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { NavLink, useLocation, Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faClipboardList,
@@ -12,6 +12,10 @@ import {
   faChevronDown,
   faListCheck,
   faEye,
+  faUser,
+  faKey,
+  faEnvelope,
+  faHandshake,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { ThemeToggle } from "./ThemeToggle";
@@ -27,10 +31,13 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "./ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import type { Filters } from "@/hooks/useAuditData";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -44,8 +51,24 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
   const { resolvedTheme } = useTheme();
   const isMobile = useIsMobile();
   const location = useLocation();
+  const navigate = useNavigate();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from("profiles")
+      .select("display_name, avatar_url")
+      .eq("user_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        setDisplayName(data?.display_name ?? null);
+        setAvatarUrl(data?.avatar_url ?? null);
+      });
+  }, [user]);
 
   const linkClass = (path: string) =>
     `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -56,6 +79,7 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
 
   const isAuditSection = ["/dashboard", "/audits", "/audits/new", "/audits/new/form"].includes(location.pathname);
   const isActiviteSection = ["/activite", "/activite/new", "/activite/dashboard"].includes(location.pathname);
+  const isReseauSection = location.pathname === "/reseau";
 
   const dropdownClass = (active: boolean) =>
     `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
@@ -64,7 +88,63 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
         : "text-foreground/70 hover:text-foreground hover:bg-secondary"
     }`;
 
-  // Desktop nav with Audits dropdown
+  const handleForgotPassword = async () => {
+    if (!user?.email) return;
+    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Email de réinitialisation envoyé à " + user.email);
+  };
+
+  const initials = (displayName || user?.email?.split("@")[0] || "?")
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+
+  const profileButton = () => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="h-9 w-9 rounded-full overflow-hidden border border-border hover:ring-2 hover:ring-primary/30 transition-all flex items-center justify-center shrink-0" title="Profil">
+          {avatarUrl ? (
+            <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-xs font-semibold text-primary">{initials}</span>
+          )}
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <div className="px-3 py-2 border-b border-border">
+          <p className="text-sm font-medium text-foreground truncate">{displayName || "Utilisateur"}</p>
+          <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+        </div>
+        <DropdownMenuItem asChild>
+          <Link to="/profile" className="flex items-center gap-2 cursor-pointer">
+            <FontAwesomeIcon icon={faUser} className="h-3.5 w-3.5" />
+            Modifier mon profil
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/change-password" className="flex items-center gap-2 cursor-pointer">
+            <FontAwesomeIcon icon={faKey} className="h-3.5 w-3.5" />
+            Modifier mon mot de passe
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={handleForgotPassword} className="flex items-center gap-2 cursor-pointer">
+          <FontAwesomeIcon icon={faEnvelope} className="h-3.5 w-3.5" />
+          Mot de passe oublié
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={signOut} className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive">
+          <FontAwesomeIcon icon={faRightFromBracket} className="h-3.5 w-3.5" />
+          Déconnexion
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
   const desktopNav = () => (
     <>
       <DropdownMenu>
@@ -127,6 +207,11 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
         </DropdownMenuContent>
       </DropdownMenu>
 
+      <NavLink to="/reseau" className={() => linkClass("/reseau")}>
+        <FontAwesomeIcon icon={faHandshake} className="h-3.5 w-3.5" />
+        <span>Réseau</span>
+      </NavLink>
+
       <NavLink to="/business-plan" className={() => linkClass("/business-plan")}>
         <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
         <span>Business Plan</span>
@@ -141,7 +226,6 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
     </>
   );
 
-  // Mobile nav (flat links)
   const mobileNav = () => (
     <>
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pt-2 pb-1">Audits</p>
@@ -176,6 +260,14 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
 
       <div className="border-t border-border my-2" />
 
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pt-2 pb-1">Réseau</p>
+      <NavLink to="/reseau" className={() => linkClass("/reseau")} onClick={() => setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faHandshake} className="h-3.5 w-3.5" />
+        <span>Partenaires & Clubs</span>
+      </NavLink>
+
+      <div className="border-t border-border my-2" />
+
       <NavLink to="/business-plan" className={() => linkClass("/business-plan")} onClick={() => setMobileOpen(false)}>
         <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
         <span>Business Plan</span>
@@ -187,6 +279,26 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
           <span>Admin</span>
         </NavLink>
       )}
+
+      <div className="border-t border-border my-2" />
+
+      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pt-2 pb-1">Profil</p>
+      <NavLink to="/profile" className={() => linkClass("/profile")} onClick={() => setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faUser} className="h-3.5 w-3.5" />
+        <span>Modifier mon profil</span>
+      </NavLink>
+      <NavLink to="/change-password" className={() => linkClass("/change-password")} onClick={() => setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faKey} className="h-3.5 w-3.5" />
+        <span>Modifier mon mot de passe</span>
+      </NavLink>
+      <button onClick={() => { setMobileOpen(false); handleForgotPassword(); }} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-secondary transition-colors text-left">
+        <FontAwesomeIcon icon={faEnvelope} className="h-3.5 w-3.5" />
+        <span>Mot de passe oublié</span>
+      </button>
+      <button onClick={() => { setMobileOpen(false); signOut(); }} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors text-left">
+        <FontAwesomeIcon icon={faRightFromBracket} className="h-3.5 w-3.5" />
+        <span>Déconnexion</span>
+      </button>
     </>
   );
 
@@ -221,9 +333,8 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
             )}
 
             <ThemeToggle />
-            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={signOut} title="Déconnexion">
-              <FontAwesomeIcon icon={faRightFromBracket} className="h-4 w-4" />
-            </Button>
+
+            {!isMobile && profileButton()}
 
             {isMobile && (
               <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -234,10 +345,20 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
                 </SheetTrigger>
                 <SheetContent side="right" className="w-72 p-0">
                   <div className="flex flex-col h-full">
-                    <div className="flex items-center justify-between p-4 border-b border-border">
-                      <span className="text-sm font-bold text-foreground">Menu</span>
+                    <div className="flex items-center gap-3 p-4 border-b border-border">
+                      {avatarUrl ? (
+                        <img src={avatarUrl} alt="Avatar" className="w-8 h-8 rounded-full object-cover border border-border" />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold flex items-center justify-center text-xs border border-border">
+                          {initials}
+                        </div>
+                      )}
+                      <div className="min-w-0">
+                        <p className="text-sm font-bold text-foreground truncate">{displayName || "Menu"}</p>
+                        <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
+                      </div>
                     </div>
-                    <nav className="flex flex-col gap-1 p-4">
+                    <nav className="flex flex-col gap-1 p-4 overflow-y-auto flex-1">
                       {mobileNav()}
                     </nav>
                   </div>
@@ -248,7 +369,6 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
         </div>
       </header>
 
-      {/* Filters drawer */}
       {filters && setFilters && (
         <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
           <SheetContent side="right" className="w-80 sm:w-96">
