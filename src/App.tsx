@@ -21,6 +21,9 @@ import SuiviActiviteList from "./pages/SuiviActiviteList";
 import SuiviActiviteForm from "./pages/SuiviActiviteForm";
 import SuiviActiviteDashboard from "./pages/SuiviActiviteDashboard";
 import SuiviActiviteDetail from "./pages/SuiviActiviteDetail";
+import Profile from "./pages/Profile";
+import ChangePassword from "./pages/ChangePassword";
+import Reseau from "./pages/Reseau";
 const queryClient = new QueryClient();
 
 function FullPageLoader() {
@@ -81,6 +84,9 @@ const App = () => (
               <Route path="/activite/:id" element={<ProtectedRoute><SuiviActiviteDetail /></ProtectedRoute>} />
               <Route path="/activite" element={<ProtectedRoute><SuiviActiviteList /></ProtectedRoute>} />
               <Route path="/activite/new" element={<ProtectedRoute><SuiviActiviteForm /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+              <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
+              <Route path="/reseau" element={<ProtectedRoute><Reseau /></ProtectedRoute>} />
               <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<NotFound />} />
