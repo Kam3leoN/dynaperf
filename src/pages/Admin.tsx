@@ -856,6 +856,11 @@ export default function Admin() {
         </DialogContent>
       </Dialog>
       </div>
+        </TabsContent>
+        <TabsContent value="secteurs">
+          <AdminSecteurs />
+        </TabsContent>
+      </Tabs>
     </AppLayout>
   );
 }
