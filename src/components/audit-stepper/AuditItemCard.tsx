@@ -72,6 +72,15 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
     if (isAutoFilled && !isNoShowAuto) return String(autoValue ?? 0);
     return answer?.rawValue !== undefined ? String(answer.rawValue) : "";
   });
+
+  // Sync boolVal & numVal when autoValue changes (e.g. step 0 data updated)
+  useEffect(() => {
+    if (isNoShowAuto) {
+      setBoolVal((autoValue ?? 0) > 0);
+    } else if (isAutoFilled) {
+      setNumVal(String(autoValue ?? 0));
+    }
+  }, [autoValue, isNoShowAuto, isAutoFilled]);
   const [checklist, setChecklist] = useState<boolean[]>(
     answer?.checklist ?? new Array(item.checklistItems?.length ?? 0).fill(false)
   );
