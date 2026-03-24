@@ -64,7 +64,8 @@ const App = () => (
           <InstallPrompt />
           <BrowserRouter basename="/dynaperf">
             <Routes>
-              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+              <Route path="/" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/audits" element={<ProtectedRoute><Registre /></ProtectedRoute>} />
               <Route path="/audits/new" element={<ProtectedRoute><NewAudit /></ProtectedRoute>} />
               <Route path="/audits/new/form" element={<ProtectedRoute><AuditForm /></ProtectedRoute>} />
