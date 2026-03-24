@@ -16,6 +16,9 @@ import {
   faKey,
   faEnvelope,
   faHandshake,
+  faBell,
+  faUsers,
+  faBriefcase,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { ThemeToggle } from "./ThemeToggle";
@@ -79,7 +82,7 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
 
   const isAuditSection = ["/dashboard", "/audits", "/audits/new", "/audits/new/form"].includes(location.pathname);
   const isActiviteSection = ["/activite", "/activite/new", "/activite/dashboard"].includes(location.pathname);
-  const isReseauSection = location.pathname === "/reseau";
+  const isReseauSection = ["/reseau", "/reseau/partenaires", "/reseau/clubs"].includes(location.pathname);
 
   const dropdownClass = (active: boolean) =>
     `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
@@ -135,6 +138,12 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
         <DropdownMenuItem onClick={handleForgotPassword} className="flex items-center gap-2 cursor-pointer">
           <FontAwesomeIcon icon={faEnvelope} className="h-3.5 w-3.5" />
           Mot de passe oublié
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
+          <Link to="/notifications" className="flex items-center gap-2 cursor-pointer">
+            <FontAwesomeIcon icon={faBell} className="h-3.5 w-3.5" />
+            Notifications
+          </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={signOut} className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive">
@@ -207,10 +216,29 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <NavLink to="/reseau" className={() => linkClass("/reseau")}>
-        <FontAwesomeIcon icon={faHandshake} className="h-3.5 w-3.5" />
-        <span>Réseau</span>
-      </NavLink>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className={dropdownClass(isReseauSection)}>
+            <FontAwesomeIcon icon={faHandshake} className="h-3.5 w-3.5" />
+            <span>Réseau</span>
+            <FontAwesomeIcon icon={faChevronDown} className="h-2.5 w-2.5 ml-0.5 opacity-60" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-52">
+          <DropdownMenuItem asChild>
+            <Link to="/reseau/partenaires" className="flex items-center gap-2 cursor-pointer">
+              <FontAwesomeIcon icon={faUsers} className="h-3.5 w-3.5" />
+              Partenaires
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link to="/reseau/clubs" className="flex items-center gap-2 cursor-pointer">
+              <FontAwesomeIcon icon={faBriefcase} className="h-3.5 w-3.5" />
+              Clubs d'affaires
+            </Link>
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <NavLink to="/business-plan" className={() => linkClass("/business-plan")}>
         <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
@@ -261,9 +289,13 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
       <div className="border-t border-border my-2" />
 
       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pt-2 pb-1">Réseau</p>
-      <NavLink to="/reseau" className={() => linkClass("/reseau")} onClick={() => setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faHandshake} className="h-3.5 w-3.5" />
-        <span>Partenaires & Clubs</span>
+      <NavLink to="/reseau/partenaires" className={() => linkClass("/reseau/partenaires")} onClick={() => setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faUsers} className="h-3.5 w-3.5" />
+        <span>Partenaires</span>
+      </NavLink>
+      <NavLink to="/reseau/clubs" className={() => linkClass("/reseau/clubs")} onClick={() => setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faBriefcase} className="h-3.5 w-3.5" />
+        <span>Clubs d'affaires</span>
       </NavLink>
 
       <div className="border-t border-border my-2" />
