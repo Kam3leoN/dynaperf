@@ -110,7 +110,7 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
         doc.text(label, margin + 2, y);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(30, 30, 30);
-        doc.text(value, margin + 60, y);
+        doc.text(value, margin + 65, y);
         y += 7;
       });
 
