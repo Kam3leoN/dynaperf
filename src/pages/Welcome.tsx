@@ -15,7 +15,7 @@ const actions = [
   {
     label: "Créer un suivi d'activité",
     icon: faChartLine,
-    to: "/dashboard",
+    to: "/activite/new",
   },
   {
     label: "Créer un business plan",
