@@ -125,8 +125,8 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
     data.dateEvenement;
 
   return (
-    <div className="space-y-5 max-w-xl mx-auto">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="space-y-5 max-w-3xl mx-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-1.5">
           <Label>Partenaire audité (Prénom NOM) *</Label>
           <AutocompleteInput
@@ -246,7 +246,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
               Statistiques de l'événement
             </p>
           </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
             <div className="space-y-1.5">
               <Label>
                 {isClub(typeEvenement) ? "Nb membres" : "Nb adhérents"}
@@ -306,8 +306,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
             </div>
           </div>
 
-          {/* Ratios automatiques */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="rounded-lg border border-border bg-muted/50 p-3">
               <p className="text-xs text-muted-foreground">Ratio invités / participants</p>
               <p className="text-lg font-semibold tabular-nums">
