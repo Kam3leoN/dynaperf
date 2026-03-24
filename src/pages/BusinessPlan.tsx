@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { AppLayout } from "@/components/AppLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -8,7 +8,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChartLine, faEuroSign, faUsers, faHandshake, faCar, faRocket, faBriefcase, faArrowTrendUp } from "@fortawesome/free-solid-svg-icons";
+import { faChartLine, faEuroSign, faUsers, faHandshake, faCar, faRocket, faBriefcase, faArrowTrendUp, faGift, faBolt } from "@fortawesome/free-solid-svg-icons";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, AreaChart } from "recharts";
 
 interface YearData {
@@ -24,6 +24,18 @@ interface YearData {
   totalClubMembers: number;
   caClubs: number;
   commClubs: number;
+  // One-shot
+  oneShotRD: number;
+  caOneShotRD: number;
+  commOneShotRD: number;
+  oneShotAvantages: number;
+  caOneShotAvantages: number;
+  commOneShotAvantages: number;
+  // Referrals
+  filleuls: number;
+  caFilleuls: number;
+  commFilleuls: number;
+  // Totals
   totalCA: number;
   totalCommissions: number;
   redevanceAnnuelle: number;
@@ -53,6 +65,19 @@ export default function BusinessPlan() {
   const [vehiculeFloque, setVehiculeFloque] = useState(false);
   const [droitsEntree, setDroitsEntree] = useState(0);
 
+  // One-shot sales
+  const [oneShotRDParAn, setOneShotRDParAn] = useState(5);
+  const [prixOneShotRD, setPrixOneShotRD] = useState(1600);
+  const [commOneShotRDPct, setCommOneShotRDPct] = useState(50);
+  const [oneShotAvantagesParAn, setOneShotAvantagesParAn] = useState(3);
+  const [prixOneShotAvantages, setPrixOneShotAvantages] = useState(2400);
+  const [commOneShotAvantagesPct, setCommOneShotAvantagesPct] = useState(50);
+
+  // Referrals / Filleuls
+  const [tauxParrainage, setTauxParrainage] = useState(10); // % of clients who refer someone
+  const [primeParrainage, setPrimeParrainage] = useState(100); // € per successful referral
+  const [tauxConversionFilleul, setTauxConversionFilleul] = useState(30); // % conversion rate
+
   // Derived
   const commAvantagesEffective = packPerformance ? 60 : commAvantagesPct;
   const redevanceMensuelle = packPerformance
@@ -69,18 +94,10 @@ export default function BusinessPlan() {
       const growthFactor = 1 + croissanceAnnuelle / 100;
       const retentionRate = 1 - tauxResiliation / 100;
 
-      // Renewed from previous stock
       const renewedAvantages = Math.round(stockAvantages * retentionRate);
       const renewedClubMembers = Math.round(stockClubMembers * retentionRate);
 
-      // New business for year y
       const newAvantagesRaw = y === 1 ? nbAvantagesAnN : Math.round(nbAvantagesAnN * Math.pow(growthFactor, y - 1));
-      const nbClubsY = y === 1 ? nbClubs : Math.min(nbClubs + Math.floor((y - 1) * 0.5), nbClubs + nbAnnees);
-      const newClubMembersRaw = y === 1
-        ? nbClubs * membresParClub
-        : Math.round((nbClubsY - (y === 1 ? 0 : (y === 2 ? nbClubs : nbClubsY - 1))) * membresParClub + (nbClubsY > nbClubs ? Math.round(membresParClub * 0.3) : 0));
-
-      // Simpler: new club members = new clubs opened * members + growth on existing
       const existingClubGrowth = y === 1 ? 0 : Math.round(renewedClubMembers * (croissanceAnnuelle / 100) * 0.3);
       const newClubsOpened = y === 1 ? nbClubs : Math.max(0, Math.floor((y - 1) * 0.5));
       const newClubMembers = y === 1
@@ -90,21 +107,33 @@ export default function BusinessPlan() {
       const totalAvantages = renewedAvantages + newAvantagesRaw;
       const totalClubMembers = renewedClubMembers + newClubMembers;
 
-      // Update stock for next year
       stockAvantages = totalAvantages;
       stockClubMembers = totalClubMembers;
 
-      // Revenue
       const caAvantages = totalAvantages * prixAvantages;
       const caClubs = totalClubMembers * prixClub;
-      const totalCA = caAvantages + caClubs;
 
-      // Commissions earned
-      const commAvantages = Math.round(caAvantages * commAvantagesEffective / 100);
+      const commAvantagesVal = Math.round(caAvantages * commAvantagesEffective / 100);
       const commClubs = Math.round(caClubs * commClubPct / 100);
-      const totalCommissions = commAvantages + commClubs;
 
-      // Charges
+      // One-shot (no renewal, each year is new sales only)
+      const oneShotRD = Math.round(oneShotRDParAn * Math.pow(growthFactor, y - 1));
+      const caOSRD = oneShotRD * prixOneShotRD;
+      const commOSRD = Math.round(caOSRD * commOneShotRDPct / 100);
+
+      const oneShotAv = Math.round(oneShotAvantagesParAn * Math.pow(growthFactor, y - 1));
+      const caOSAv = oneShotAv * prixOneShotAvantages;
+      const commOSAv = Math.round(caOSAv * commOneShotAvantagesPct / 100);
+
+      // Referrals: based on total active client base
+      const totalClients = totalAvantages + totalClubMembers;
+      const nbReferrals = Math.round(totalClients * tauxParrainage / 100);
+      const filleulsConverted = Math.round(nbReferrals * tauxConversionFilleul / 100);
+      const commFilleuls = filleulsConverted * primeParrainage;
+
+      const totalCA = caAvantages + caClubs + caOSRD + caOSAv;
+      const totalCommissions = commAvantagesVal + commClubs + commOSRD + commOSAv + commFilleuls;
+
       const redevanceAnnuelle = redevanceMensuelle * 12;
       const droitsEntreeY = y === 1 ? droitsEntree : 0;
       const totalCharges = redevanceAnnuelle + droitsEntreeY;
@@ -119,12 +148,21 @@ export default function BusinessPlan() {
         renewedAvantages,
         totalAvantages,
         caAvantages,
-        commAvantages,
+        commAvantages: commAvantagesVal,
         newClubMembers,
         renewedClubMembers,
         totalClubMembers,
         caClubs,
         commClubs,
+        oneShotRD: oneShotRD,
+        caOneShotRD: caOSRD,
+        commOneShotRD: commOSRD,
+        oneShotAvantages: oneShotAv,
+        caOneShotAvantages: caOSAv,
+        commOneShotAvantages: commOSAv,
+        filleuls: filleulsConverted,
+        caFilleuls: filleulsConverted * prixAvantages, // estimated CA from referrals
+        commFilleuls,
         totalCA,
         totalCommissions,
         redevanceAnnuelle,
@@ -135,7 +173,7 @@ export default function BusinessPlan() {
       });
     }
     return data;
-  }, [nbAvantagesAnN, nbClubs, membresParClub, croissanceAnnuelle, tauxResiliation, nbAnnees, prixAvantages, prixClub, commAvantagesEffective, commClubPct, redevanceMensuelle, droitsEntree]);
+  }, [nbAvantagesAnN, nbClubs, membresParClub, croissanceAnnuelle, tauxResiliation, nbAnnees, prixAvantages, prixClub, commAvantagesEffective, commClubPct, redevanceMensuelle, droitsEntree, oneShotRDParAn, prixOneShotRD, commOneShotRDPct, oneShotAvantagesParAn, prixOneShotAvantages, commOneShotAvantagesPct, tauxParrainage, primeParrainage, tauxConversionFilleul]);
 
   const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
 
@@ -233,7 +271,7 @@ export default function BusinessPlan() {
                 <Separator />
 
                 <div className="space-y-3">
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tarification</h4>
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Tarification abonnements</h4>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs">Prix Avantages (€)</Label>
@@ -252,6 +290,81 @@ export default function BusinessPlan() {
                       <Input type="number" value={commClubPct} onChange={e => setCommClubPct(+e.target.value)} />
                     </div>
                   </div>
+                </div>
+
+                <Separator />
+
+                {/* One-shot sales */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <FontAwesomeIcon icon={faBolt} className="h-3 w-3 text-amber-500" />
+                    Ventes one-shot (paiement unique)
+                  </h4>
+                  <p className="text-[11px] text-muted-foreground">
+                    Ventes à vie sans reconduction — paiement unique.
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">RD à vie / an</Label>
+                      <Input type="number" value={oneShotRDParAn} onChange={e => setOneShotRDParAn(+e.target.value)} min={0} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Prix RD à vie (€)</Label>
+                      <Input type="number" value={prixOneShotRD} onChange={e => setPrixOneShotRD(+e.target.value)} min={0} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Comm. RD one-shot (%)</Label>
+                      <Input type="number" value={commOneShotRDPct} onChange={e => setCommOneShotRDPct(+e.target.value)} min={0} max={100} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Avantages à vie / an</Label>
+                      <Input type="number" value={oneShotAvantagesParAn} onChange={e => setOneShotAvantagesParAn(+e.target.value)} min={0} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Prix Avantages à vie (€)</Label>
+                      <Input type="number" value={prixOneShotAvantages} onChange={e => setPrixOneShotAvantages(+e.target.value)} min={0} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Comm. Avantages one-shot (%)</Label>
+                      <Input type="number" value={commOneShotAvantagesPct} onChange={e => setCommOneShotAvantagesPct(+e.target.value)} min={0} max={100} />
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Referrals / Filleuls */}
+                <div className="space-y-3">
+                  <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <FontAwesomeIcon icon={faGift} className="h-3 w-3 text-purple-500" />
+                    Parrainage clients (filleuls)
+                  </h4>
+                  <p className="text-[11px] text-muted-foreground">
+                    Projection des clients apportés par le bouche-à-oreille et parrainages de votre base existante.
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">Taux parrainage (%)</Label>
+                      <Input type="number" value={tauxParrainage} onChange={e => setTauxParrainage(+e.target.value)} min={0} max={100} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Taux conversion (%)</Label>
+                      <Input type="number" value={tauxConversionFilleul} onChange={e => setTauxConversionFilleul(+e.target.value)} min={0} max={100} />
+                    </div>
+                    <div className="col-span-2">
+                      <Label className="text-xs">Prime / filleul converti (€)</Label>
+                      <Input type="number" value={primeParrainage} onChange={e => setPrimeParrainage(+e.target.value)} min={0} />
+                    </div>
+                  </div>
+                  {firstYear && (
+                    <div className="bg-purple-500/5 border border-purple-500/20 rounded-lg p-2.5">
+                      <p className="text-[11px] text-muted-foreground">
+                        Estimation An 1 : <strong>{firstYear.filleuls}</strong> filleuls convertis → <strong>{fmt(firstYear.commFilleuls)}</strong> de primes
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 <Separator />
@@ -334,6 +447,9 @@ export default function BusinessPlan() {
                           <Legend />
                           <Area type="monotone" dataKey="commAvantages" stackId="1" name="Comm. Avantages" fill="hsl(var(--primary))" fillOpacity={0.6} stroke="hsl(var(--primary))" />
                           <Area type="monotone" dataKey="commClubs" stackId="1" name="Comm. Clubs" fill="hsl(var(--chart-2))" fillOpacity={0.6} stroke="hsl(var(--chart-2))" />
+                          <Area type="monotone" dataKey="commOneShotRD" stackId="1" name="One-shot RD" fill="hsl(var(--chart-4))" fillOpacity={0.5} stroke="hsl(var(--chart-4))" />
+                          <Area type="monotone" dataKey="commOneShotAvantages" stackId="1" name="One-shot Avantages" fill="hsl(var(--chart-5))" fillOpacity={0.5} stroke="hsl(var(--chart-5))" />
+                          <Area type="monotone" dataKey="commFilleuls" stackId="1" name="Primes filleuls" fill="#a855f7" fillOpacity={0.5} stroke="#a855f7" />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
@@ -376,6 +492,7 @@ export default function BusinessPlan() {
                           <Legend />
                           <Line type="monotone" dataKey="totalAvantages" name="Contrats Avantages" stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 3 }} />
                           <Line type="monotone" dataKey="totalClubMembers" name="Membres Clubs" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={{ r: 3 }} />
+                          <Line type="monotone" dataKey="filleuls" name="Filleuls convertis" stroke="#a855f7" strokeWidth={2} dot={{ r: 3 }} strokeDasharray="5 5" />
                         </LineChart>
                       </ResponsiveContainer>
                     </div>
@@ -399,7 +516,7 @@ export default function BusinessPlan() {
                         <tbody className="divide-y">
                           <tr className="bg-primary/5">
                             <td className="p-3 font-semibold sticky left-0 bg-primary/5" colSpan={nbAnnees + 1}>
-                              <FontAwesomeIcon icon={faHandshake} className="mr-1.5 text-primary" /> Dynabuy Avantages
+                              <FontAwesomeIcon icon={faHandshake} className="mr-1.5 text-primary" /> Dynabuy Avantages (abonnement)
                             </td>
                           </tr>
                           <TableRow label="Nouveaux contrats" data={projections.map(p => p.newAvantages)} />
@@ -410,7 +527,7 @@ export default function BusinessPlan() {
 
                           <tr className="bg-primary/5">
                             <td className="p-3 font-semibold sticky left-0 bg-primary/5" colSpan={nbAnnees + 1}>
-                              <FontAwesomeIcon icon={faUsers} className="mr-1.5 text-primary" /> Clubs d'affaires
+                              <FontAwesomeIcon icon={faUsers} className="mr-1.5 text-primary" /> Clubs d'affaires (abonnement)
                             </td>
                           </tr>
                           <TableRow label="Nouveaux membres" data={projections.map(p => p.newClubMembers)} />
@@ -418,6 +535,26 @@ export default function BusinessPlan() {
                           <TableRow label="Total membres actifs" data={projections.map(p => p.totalClubMembers)} bold />
                           <TableRow label="CA généré" data={projections.map(p => p.caClubs)} money />
                           <TableRow label={`Commission (${commClubPct}%)`} data={projections.map(p => p.commClubs)} money bold />
+
+                          <tr className="bg-amber-500/5">
+                            <td className="p-3 font-semibold sticky left-0 bg-amber-500/5" colSpan={nbAnnees + 1}>
+                              <FontAwesomeIcon icon={faBolt} className="mr-1.5 text-amber-500" /> Ventes one-shot
+                            </td>
+                          </tr>
+                          <TableRow label="RD à vie (ventes)" data={projections.map(p => p.oneShotRD)} />
+                          <TableRow label="CA RD one-shot" data={projections.map(p => p.caOneShotRD)} money />
+                          <TableRow label={`Commission RD (${commOneShotRDPct}%)`} data={projections.map(p => p.commOneShotRD)} money bold />
+                          <TableRow label="Avantages à vie (ventes)" data={projections.map(p => p.oneShotAvantages)} />
+                          <TableRow label="CA Avantages one-shot" data={projections.map(p => p.caOneShotAvantages)} money />
+                          <TableRow label={`Commission Avantages (${commOneShotAvantagesPct}%)`} data={projections.map(p => p.commOneShotAvantages)} money bold />
+
+                          <tr className="bg-purple-500/5">
+                            <td className="p-3 font-semibold sticky left-0 bg-purple-500/5" colSpan={nbAnnees + 1}>
+                              <FontAwesomeIcon icon={faGift} className="mr-1.5 text-purple-500" /> Parrainage / Filleuls
+                            </td>
+                          </tr>
+                          <TableRow label="Filleuls convertis" data={projections.map(p => p.filleuls)} />
+                          <TableRow label="Primes parrainage" data={projections.map(p => p.commFilleuls)} money bold />
 
                           <tr className="bg-muted/30">
                             <td className="p-3 font-semibold sticky left-0 bg-muted/30" colSpan={nbAnnees + 1}>
