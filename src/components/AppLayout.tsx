@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { NavLink, useLocation, useNavigate, Link } from "react-router-dom";
+import { NavLink, useLocation, Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faClipboardList, faRightFromBracket, faBars, faSliders, faUserShield, faChartLine } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -27,9 +27,6 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  /* eslint-disable @typescript-eslint/no-unused-vars */
-  const _navigate = useNavigate(); // kept for potential future use
-  /* eslint-enable @typescript-eslint/no-unused-vars */
 
   const linkClass = (path: string) =>
     `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
