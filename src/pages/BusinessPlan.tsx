@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, useCallback } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -6,10 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChartLine, faEuroSign, faUsers, faHandshake, faCar, faRocket, faBriefcase, faArrowTrendUp, faGift, faBolt } from "@fortawesome/free-solid-svg-icons";
+import { faChartLine, faEuroSign, faUsers, faHandshake, faCar, faRocket, faBriefcase, faArrowTrendUp, faGift, faBolt, faFilePdf, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, AreaChart } from "recharts";
+import { toast } from "sonner";
 
 interface YearData {
   year: number;
