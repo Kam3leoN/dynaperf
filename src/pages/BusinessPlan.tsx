@@ -182,6 +182,50 @@ export default function BusinessPlan() {
 
   const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
 
+  const handleExportPDF = useCallback(async () => {
+    if (!pdfRef.current) return;
+    setExporting(true);
+    try {
+      const html2canvas = (await import("html2canvas-pro")).default;
+      const { jsPDF } = await import("jspdf");
+
+      const element = pdfRef.current;
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+      });
+
+      const imgData = canvas.toDataURL("image/jpeg", 0.95);
+      const imgWidth = 210; // A4 width in mm
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      
+      const pdf = new jsPDF("p", "mm", "a4");
+      let heightLeft = imgHeight;
+      let position = 0;
+      const pageHeight = 297; // A4 height in mm
+
+      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save(`Business_Plan_Dynabuy_${new Date().toISOString().slice(0, 10)}.pdf`);
+      toast.success("PDF exporté avec succès !");
+    } catch (err) {
+      console.error("PDF export error:", err);
+      toast.error("Erreur lors de l'export PDF");
+    } finally {
+      setExporting(false);
+    }
+  }, []);
+
   const lastYear = projections[projections.length - 1];
   const firstYear = projections[0];
 
