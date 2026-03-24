@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useCallback } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -48,7 +48,7 @@ interface YearData {
 }
 
 export default function BusinessPlan() {
-  const pdfRef = useRef<HTMLDivElement>(null);
+  
   const [exporting, setExporting] = useState(false);
   
   // --- Inputs ---
@@ -93,27 +93,26 @@ export default function BusinessPlan() {
     const data: YearData[] = [];
     let cumulBenefice = 0;
     let stockAvantages = 0;
-    let stockClubMembers = 0;
+
+    // Clubs: fixed number of clubs × fixed members per club (no growth)
+    const totalClubMembersFixed = nbClubs * membresParClub;
 
     for (let y = 1; y <= nbAnnees; y++) {
       const growthFactor = 1 + croissanceAnnuelle / 100;
       const retentionRate = 1 - tauxResiliation / 100;
 
       const renewedAvantages = Math.round(stockAvantages * retentionRate);
-      const renewedClubMembers = Math.round(stockClubMembers * retentionRate);
 
       const newAvantagesRaw = y === 1 ? nbAvantagesAnN : Math.round(nbAvantagesAnN * Math.pow(growthFactor, y - 1));
-      const existingClubGrowth = y === 1 ? 0 : Math.round(renewedClubMembers * (croissanceAnnuelle / 100) * 0.3);
-      const newClubsOpened = y === 1 ? nbClubs : Math.max(0, Math.floor((y - 1) * 0.5));
-      const newClubMembers = y === 1
-        ? nbClubs * membresParClub
-        : newClubsOpened * membresParClub + existingClubGrowth;
 
       const totalAvantages = renewedAvantages + newAvantagesRaw;
-      const totalClubMembers = renewedClubMembers + newClubMembers;
+
+      // Clubs: apply retention on members but cap at the fixed max
+      const renewedClubMembers = y === 1 ? 0 : Math.round(totalClubMembersFixed * retentionRate);
+      const newClubMembers = y === 1 ? totalClubMembersFixed : totalClubMembersFixed - renewedClubMembers;
+      const totalClubMembers = y === 1 ? totalClubMembersFixed : Math.min(totalClubMembersFixed, renewedClubMembers + newClubMembers);
 
       stockAvantages = totalAvantages;
-      stockClubMembers = totalClubMembers;
 
       const caAvantages = totalAvantages * prixAvantages;
       const caClubs = totalClubMembers * prixClub;
@@ -182,56 +181,193 @@ export default function BusinessPlan() {
 
   const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
 
+  const lastYear = projections[projections.length - 1];
+  const firstYear = projections[0];
+
   const handleExportPDF = useCallback(async () => {
-    if (!pdfRef.current) return;
+    if (projections.length === 0) return;
     setExporting(true);
     try {
-      const html2canvas = (await import("html2canvas-pro")).default;
       const { jsPDF } = await import("jspdf");
+      const doc = new jsPDF("p", "mm", "a4");
+      const W = 210;
+      const mg = 15;
+      const cw = W - mg * 2;
+      let y = 15;
 
-      const element = pdfRef.current;
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff",
+      const addLine = (x: number, y1: number, x2: number, y2: number, color = [200, 200, 200]) => {
+        doc.setDrawColor(color[0], color[1], color[2]);
+        doc.setLineWidth(0.3);
+        doc.line(x, y1, x2, y2);
+      };
+
+      // === HEADER ===
+      doc.setFillColor(14, 34, 44);
+      doc.rect(0, 0, W, 32, "F");
+      doc.setTextColor(255, 255, 255);
+      doc.setFontSize(18);
+      doc.setFont("helvetica", "bold");
+      doc.text("DynaPerf — Business Plan Partenaire", mg, 15);
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Simulation sur ${nbAnnees} ans — Généré le ${new Date().toLocaleDateString("fr-FR")}`, mg, 23);
+      doc.setFontSize(8);
+      doc.text("Document confidentiel — Usage interne Dynabuy", mg, 28);
+      y = 40;
+
+      // === KPI BOXES ===
+      const kpis = [
+        { label: "Revenus An 1", value: fmt(firstYear?.totalCommissions ?? 0), color: [226, 0, 26] },
+        { label: `Revenus An ${nbAnnees}`, value: fmt(lastYear?.totalCommissions ?? 0), color: [226, 0, 26] },
+        { label: `Bénéfice net An ${nbAnnees}`, value: fmt(lastYear?.beneficeNet ?? 0), color: [34, 139, 34] },
+        { label: `Cumul sur ${nbAnnees} ans`, value: fmt(lastYear?.cumulBenefice ?? 0), color: [34, 139, 34] },
+      ];
+      const boxW = (cw - 9) / 4;
+      kpis.forEach((kpi, i) => {
+        const bx = mg + i * (boxW + 3);
+        doc.setFillColor(245, 245, 248);
+        doc.roundedRect(bx, y, boxW, 20, 2, 2, "F");
+        doc.setFontSize(7);
+        doc.setTextColor(120, 120, 120);
+        doc.text(kpi.label.toUpperCase(), bx + 3, y + 7);
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
+        doc.text(kpi.value, bx + 3, y + 16);
+        doc.setFont("helvetica", "normal");
       });
+      y += 26;
 
-      const imgData = canvas.toDataURL("image/jpeg", 0.95);
-      const imgWidth = 210; // A4 width in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      
-      const pdf = new jsPDF("p", "mm", "a4");
-      let heightLeft = imgHeight;
-      let position = 0;
-      const pageHeight = 297; // A4 height in mm
+      // === PARAMÈTRES ===
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(14, 34, 44);
+      doc.text("Paramètres de simulation", mg, y);
+      y += 5;
+      addLine(mg, y, mg + cw, y);
+      y += 4;
 
-      pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+      doc.setFontSize(8);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(60, 60, 60);
+      const params = [
+        [`Contrats Avantages/an: ${nbAvantagesAnN}`, `Prix Avantages: ${fmt(prixAvantages)}`, `Comm: ${commAvantagesEffective}%`],
+        [`Clubs: ${nbClubs} x ${membresParClub} membres (fixe)`, `Prix Club: ${fmt(prixClub)}`, `Comm: ${commClubPct}%`],
+        [`Croissance Avantages: +${croissanceAnnuelle}%/an`, `Taux resiliation: ${tauxResiliation}%`, `Redevance: ${fmt(redevanceMensuelle)}/mois`],
+        [`One-shot RD: ${oneShotRDParAn}/an x ${fmt(prixOneShotRD)}`, `One-shot Avantages: ${oneShotAvantagesParAn}/an x ${fmt(prixOneShotAvantages)}`, `Parrainage: ${tauxParrainage}% -> ${tauxConversionFilleul}% conv.`],
+      ];
+      params.forEach(row => {
+        row.forEach((text, i) => {
+          doc.text(text, mg + i * (cw / 3), y);
+        });
+        y += 5;
+      });
+      y += 3;
 
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, "JPEG", 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
+      // === TABLEAU ===
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(14, 34, 44);
+      doc.text("Projection financiere detaillee", mg, y);
+      y += 5;
+      addLine(mg, y, mg + cw, y, [14, 34, 44]);
+      y += 4;
 
-      pdf.save(`Business_Plan_Dynabuy_${new Date().toISOString().slice(0, 10)}.pdf`);
-      toast.success("PDF exporté avec succès !");
+      const cols = projections.length;
+      const labelW = 42;
+      const colW = (cw - labelW) / cols;
+
+      // Table header
+      doc.setFillColor(14, 34, 44);
+      doc.rect(mg, y - 3, cw, 6, "F");
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(255, 255, 255);
+      projections.forEach((p, i) => {
+        doc.text(p.label, mg + labelW + i * colW + colW / 2, y, { align: "center" });
+      });
+      y += 5;
+
+      const fmtN = (n: number) => new Intl.NumberFormat("fr-FR").format(n);
+
+      const addTableRow = (label: string, values: number[], isMoney = false, isBold = false, bgColor?: number[]) => {
+        if (bgColor) {
+          doc.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
+          doc.rect(mg, y - 3, cw, 5, "F");
+        }
+        doc.setFontSize(7);
+        doc.setFont("helvetica", isBold ? "bold" : "normal");
+        doc.setTextColor(isBold ? 14 : 80, isBold ? 34 : 80, isBold ? 44 : 80);
+        doc.text(label, mg + 1, y);
+        values.forEach((v, i) => {
+          const text = isMoney ? fmt(v) : fmtN(v);
+          doc.text(text, mg + labelW + i * colW + colW - 1, y, { align: "right" });
+        });
+        y += 5;
+      };
+
+      const addSectionHeader = (label: string, color: number[]) => {
+        doc.setFillColor(color[0], color[1], color[2]);
+        doc.rect(mg, y - 3, cw, 5, "F");
+        doc.setFontSize(7);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(255, 255, 255);
+        doc.text(label, mg + 2, y);
+        y += 5;
+      };
+
+      addSectionHeader("DYNABUY AVANTAGES (ABONNEMENT)", [226, 0, 26]);
+      addTableRow("Nouveaux contrats", projections.map(p => p.newAvantages));
+      addTableRow("Contrats reconduits", projections.map(p => p.renewedAvantages));
+      addTableRow("Total actifs", projections.map(p => p.totalAvantages), false, true);
+      addTableRow("CA genere", projections.map(p => p.caAvantages), true);
+      addTableRow(`Commission (${commAvantagesEffective}%)`, projections.map(p => p.commAvantages), true, true);
+
+      addSectionHeader("CLUBS D'AFFAIRES (ABONNEMENT)", [255, 189, 35]);
+      addTableRow("Membres actifs (fixe)", projections.map(p => p.totalClubMembers), false, true);
+      addTableRow("CA genere", projections.map(p => p.caClubs), true);
+      addTableRow(`Commission (${commClubPct}%)`, projections.map(p => p.commClubs), true, true);
+
+      addSectionHeader("VENTES ONE-SHOT", [180, 120, 20]);
+      addTableRow("RD a vie (ventes)", projections.map(p => p.oneShotRD));
+      addTableRow("Commission RD", projections.map(p => p.commOneShotRD), true, true);
+      addTableRow("Avantages a vie (ventes)", projections.map(p => p.oneShotAvantages));
+      addTableRow("Commission Avantages", projections.map(p => p.commOneShotAvantages), true, true);
+
+      addSectionHeader("PARRAINAGE / FILLEULS", [128, 0, 200]);
+      addTableRow("Filleuls convertis", projections.map(p => p.filleuls));
+      addTableRow("Primes parrainage", projections.map(p => p.commFilleuls), true, true);
+
+      y += 2;
+      addLine(mg, y - 3, mg + cw, y - 3, [14, 34, 44]);
+      addSectionHeader("SYNTHESE", [14, 34, 44]);
+      addTableRow("Total commissions", projections.map(p => p.totalCommissions), true, true, [240, 248, 240]);
+      addTableRow("Charges annuelles", projections.map(p => -(p.redevanceAnnuelle + p.droitsEntree)), true);
+      addTableRow("BENEFICE NET", projections.map(p => p.beneficeNet), true, true, [220, 245, 220]);
+      addTableRow("CUMUL BENEFICE", projections.map(p => p.cumulBenefice), true, true, [200, 235, 200]);
+
+      // === FOOTER ===
+      y = 280;
+      addLine(mg, y, mg + cw, y);
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "italic");
+      doc.setTextColor(150, 150, 150);
+      doc.text("Ce document est une simulation indicative et ne constitue pas un engagement contractuel.", mg, y + 4);
+      doc.text("DynaPerf — Dynabuy " + new Date().getFullYear(), W - mg, y + 4, { align: "right" });
+
+      doc.save(`Business_Plan_Dynabuy_${new Date().toISOString().slice(0, 10)}.pdf`);
+      toast.success("PDF exporte avec succes !");
     } catch (err) {
       console.error("PDF export error:", err);
       toast.error("Erreur lors de l'export PDF");
     } finally {
       setExporting(false);
     }
-  }, []);
-
-  const lastYear = projections[projections.length - 1];
-  const firstYear = projections[0];
+  }, [projections, nbAnnees, firstYear, lastYear, nbAvantagesAnN, prixAvantages, commAvantagesEffective, nbClubs, membresParClub, prixClub, commClubPct, croissanceAnnuelle, tauxResiliation, redevanceMensuelle, oneShotRDParAn, prixOneShotRD, commOneShotRDPct, oneShotAvantagesParAn, prixOneShotAvantages, commOneShotAvantagesPct, tauxParrainage, tauxConversionFilleul, fmt]);
 
   return (
     <AppLayout>
-      <div ref={pdfRef} className="space-y-6">
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
