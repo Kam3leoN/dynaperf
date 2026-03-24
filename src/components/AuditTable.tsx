@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faPenToSquare, faTrashCan, faSort, faEye } from "@fortawesome/free-solid-svg-icons";
 import { motion, AnimatePresence } from "framer-motion";
@@ -40,6 +41,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [search, setSearch] = useState("");
   const [detailAudit, setDetailAudit] = useState<{ id: string; type: string } | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const handleSort = (key: SortKey) => {
     if (sortKey === key) setSortDir(sortDir === "asc" ? "desc" : "asc");
@@ -104,7 +106,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
           <button onClick={() => openEdit(a)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors">
             <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
           </button>
-          <button onClick={() => onDelete(a.id)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors">
+          <button onClick={() => setDeleteId(a.id)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors">
             <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
           </button>
         </div>
@@ -267,7 +269,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
                       <button onClick={() => openEdit(a)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors">
                         <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
                       </button>
-                      <button onClick={() => onDelete(a.id)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors">
+                      <button onClick={() => setDeleteId(a.id)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors">
                         <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
                       </button>
                     </div>
@@ -298,6 +300,26 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
           onClose={() => setDetailAudit(null)}
         />
       )}
+
+      <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cet audit ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irréversible. L'audit et toutes ses données associées seront définitivement supprimés.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              onClick={() => { if (deleteId) { onDelete(deleteId); setDeleteId(null); } }}
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
