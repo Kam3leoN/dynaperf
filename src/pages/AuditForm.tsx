@@ -218,26 +218,31 @@ export default function AuditForm() {
 
   return (
     <AppLayout>
-      <div className="py-6 sm:py-10 max-w-4xl mx-auto px-4">
-        {/* Header + progress */}
-        <div className="mb-6">
-          <div className="flex items-center gap-3 mb-2">
+      {/* Sticky progress bar */}
+      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-2.5 -mx-4 mb-6">
+        <div className="max-w-4xl mx-auto">
+          <div className="flex items-center gap-3 mb-1.5">
             <Badge variant="outline" className="text-xs">
               {typeEvenement}
             </Badge>
             <span className="text-xs text-muted-foreground">
               {totalFilled} / {totalExpected} champs renseignés
             </span>
+            <span className="ml-auto text-xs font-semibold text-foreground tabular-nums">
+              {Math.round(progress)}%
+            </span>
           </div>
-          <h1 className="text-xl font-semibold text-foreground">
-            {phase === "photos"
-              ? "Photos de l'audit"
-              : phase === "saving"
-              ? "Enregistrement..."
-              : "Nouvel audit"}
-          </h1>
-          <Progress value={progress} className="mt-3 h-2" />
+          <Progress value={progress} className="h-2" />
         </div>
+      </div>
+      <div className="max-w-4xl mx-auto px-4">
+        <h1 className="text-xl font-semibold text-foreground mb-6">
+          {phase === "photos"
+            ? "Photos de l'audit"
+            : phase === "saving"
+            ? "Enregistrement..."
+            : "Nouvel audit"}
+        </h1>
 
         {phase === "main" && (
           <div className="space-y-8">
