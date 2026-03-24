@@ -93,27 +93,26 @@ export default function BusinessPlan() {
     const data: YearData[] = [];
     let cumulBenefice = 0;
     let stockAvantages = 0;
-    let stockClubMembers = 0;
+
+    // Clubs: fixed number of clubs × fixed members per club (no growth)
+    const totalClubMembersFixed = nbClubs * membresParClub;
 
     for (let y = 1; y <= nbAnnees; y++) {
       const growthFactor = 1 + croissanceAnnuelle / 100;
       const retentionRate = 1 - tauxResiliation / 100;
 
       const renewedAvantages = Math.round(stockAvantages * retentionRate);
-      const renewedClubMembers = Math.round(stockClubMembers * retentionRate);
 
       const newAvantagesRaw = y === 1 ? nbAvantagesAnN : Math.round(nbAvantagesAnN * Math.pow(growthFactor, y - 1));
-      const existingClubGrowth = y === 1 ? 0 : Math.round(renewedClubMembers * (croissanceAnnuelle / 100) * 0.3);
-      const newClubsOpened = y === 1 ? nbClubs : Math.max(0, Math.floor((y - 1) * 0.5));
-      const newClubMembers = y === 1
-        ? nbClubs * membresParClub
-        : newClubsOpened * membresParClub + existingClubGrowth;
 
       const totalAvantages = renewedAvantages + newAvantagesRaw;
-      const totalClubMembers = renewedClubMembers + newClubMembers;
+
+      // Clubs: apply retention on members but cap at the fixed max
+      const renewedClubMembers = y === 1 ? 0 : Math.round(totalClubMembersFixed * retentionRate);
+      const newClubMembers = y === 1 ? totalClubMembersFixed : totalClubMembersFixed - renewedClubMembers;
+      const totalClubMembers = y === 1 ? totalClubMembersFixed : Math.min(totalClubMembersFixed, renewedClubMembers + newClubMembers);
 
       stockAvantages = totalAvantages;
-      stockClubMembers = totalClubMembers;
 
       const caAvantages = totalAvantages * prixAvantages;
       const caClubs = totalClubMembers * prixClub;
