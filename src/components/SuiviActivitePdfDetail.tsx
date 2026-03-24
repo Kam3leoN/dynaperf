@@ -64,6 +64,7 @@ export function SuiviActivitePdfDetail({ suiviId }: Props) {
       y += 7;
 
       doc.setFontSize(9);
+      const rate = suivi.total_items ? Math.round(((suivi.total_items_valides ?? 0) / suivi.total_items) * 100) : 0;
       const infoRows: [string, string][] = [
         ["Partenaire accompagné", suivi.agence || "—"],
         ["Partenaire référent", suivi.agence_referente || "—"],
@@ -72,10 +73,8 @@ export function SuiviActivitePdfDetail({ suiviId }: Props) {
         ["Contrats total (année)", String(suivi.nb_contrats_total ?? 0)],
         ["Contrats depuis dernier", String(suivi.nb_contrats_depuis_dernier ?? 0)],
         ["Score global", `${suivi.total_items_valides ?? 0}/${suivi.total_items ?? 0} validés`],
+        ["Taux de réussite", `${rate}%`],
       ];
-
-      const rate = suivi.total_items ? Math.round(((suivi.total_items_valides ?? 0) / suivi.total_items) * 100) : 0;
-      infoRows.push(["Taux de réussite", `${rate}%`]);
 
       infoRows.forEach(([label, value], idx) => {
         checkPageBreak(7);
@@ -96,13 +95,16 @@ export function SuiviActivitePdfDetail({ suiviId }: Props) {
 
       // ── Items par catégorie ──
       let currentCat = "";
-      configItems.forEach((item, idx) => {
+      configItems.forEach((item) => {
         const answer = items[item.id];
         const status = answer?.status ?? null;
         const observation = answer?.observation ?? "";
         const isFait = status === "fait";
         const isPasFait = status === "pas_fait";
         const isNc = status === "nc";
+        const hasConditions = !!item.conditions;
+        const hasInterets = !!item.interets;
+        const hasConseils = !!item.conseils;
 
         // Category header
         if (item.categorie !== currentCat) {
@@ -118,54 +120,89 @@ export function SuiviActivitePdfDetail({ suiviId }: Props) {
           y += 10;
         }
 
-        const rowHeight = observation ? 13 : 7;
-        checkPageBreak(rowHeight);
-
-        if (idx % 2 === 0) {
-          doc.setFillColor(250, 250, 252);
-          doc.rect(margin, y - 4, contentW, rowHeight, "F");
-        }
+        // Title + status
+        checkPageBreak(10);
 
         // Color indicator
         if (isFait) doc.setFillColor(34, 197, 94);
         else if (isPasFait) doc.setFillColor(239, 68, 68);
         else if (isNc) doc.setFillColor(160, 160, 160);
         else doc.setFillColor(220, 220, 220);
-        doc.rect(margin, y - 4, 2, rowHeight, "F");
+        doc.rect(margin, y - 4, 2, 7, "F");
 
         doc.setFontSize(8);
-
-        // Number
         doc.setFont("helvetica", "normal");
         doc.setTextColor(140, 140, 140);
         doc.text(`${item.numero}.`, margin + 4, y);
 
-        // Title
-        doc.setFont("helvetica", "normal");
+        doc.setFont("helvetica", "bold");
         doc.setTextColor(30, 30, 30);
         const titleLines = doc.splitTextToSize(item.titre, contentW - 45);
         doc.text(titleLines[0], margin + 12, y);
+        if (titleLines.length > 1) {
+          y += 3.5;
+          doc.setFont("helvetica", "normal");
+          doc.text(titleLines.slice(1, 3).join("\n"), margin + 12, y);
+          y += (Math.min(titleLines.length - 1, 2)) * 3.5;
+        }
 
         // Status
         doc.setFont("helvetica", "bold");
         if (isFait) {
           doc.setTextColor(34, 130, 60);
-          doc.text("Fait ✓", contentW + margin - 3, y, { align: "right" });
+          doc.text("Fait ✓", contentW + margin - 3, y - (titleLines.length > 1 ? (Math.min(titleLines.length - 1, 2)) * 3.5 : 0), { align: "right" });
         } else if (isPasFait) {
           doc.setTextColor(220, 60, 60);
-          doc.text("Pas fait ✗", contentW + margin - 3, y, { align: "right" });
+          doc.text("Pas fait ✗", contentW + margin - 3, y - (titleLines.length > 1 ? (Math.min(titleLines.length - 1, 2)) * 3.5 : 0), { align: "right" });
         } else if (isNc) {
           doc.setTextColor(130, 130, 130);
-          doc.text("N/C", contentW + margin - 3, y, { align: "right" });
+          doc.text("N/C", contentW + margin - 3, y - (titleLines.length > 1 ? (Math.min(titleLines.length - 1, 2)) * 3.5 : 0), { align: "right" });
         } else {
           doc.setTextColor(180, 180, 180);
-          doc.text("—", contentW + margin - 3, y, { align: "right" });
+          doc.text("—", contentW + margin - 3, y - (titleLines.length > 1 ? (Math.min(titleLines.length - 1, 2)) * 3.5 : 0), { align: "right" });
         }
 
-        y += 6;
+        y += 5;
+
+        // Conditions
+        if (hasConditions) {
+          const condLines = doc.splitTextToSize(`Conditions : ${item.conditions}`, contentW - 20);
+          const cl = condLines.slice(0, 3);
+          checkPageBreak(cl.length * 3.5 + 1);
+          doc.setFontSize(6.5);
+          doc.setFont("helvetica", "italic");
+          doc.setTextColor(120, 120, 120);
+          doc.text(cl.join("\n"), margin + 12, y);
+          y += cl.length * 3.5;
+        }
+
+        // Intérêts
+        if (hasInterets) {
+          const intLines = doc.splitTextToSize(`Intérêts : ${item.interets}`, contentW - 20);
+          const il = intLines.slice(0, 2);
+          checkPageBreak(il.length * 3.5 + 1);
+          doc.setFontSize(6.5);
+          doc.setFont("helvetica", "italic");
+          doc.setTextColor(100, 100, 160);
+          doc.text(il.join("\n"), margin + 12, y);
+          y += il.length * 3.5;
+        }
+
+        // Conseils
+        if (hasConseils) {
+          const consLines = doc.splitTextToSize(`Conseils : ${item.conseils}`, contentW - 20);
+          const csl = consLines.slice(0, 2);
+          checkPageBreak(csl.length * 3.5 + 1);
+          doc.setFontSize(6.5);
+          doc.setFont("helvetica", "italic");
+          doc.setTextColor(80, 140, 80);
+          doc.text(csl.join("\n"), margin + 12, y);
+          y += csl.length * 3.5;
+        }
 
         // Observation
         if (observation) {
+          checkPageBreak(6);
           doc.setFontSize(7);
           doc.setFont("helvetica", "italic");
           doc.setTextColor(100, 100, 100);
@@ -174,7 +211,7 @@ export function SuiviActivitePdfDetail({ suiviId }: Props) {
           y += Math.min(obsLines.length, 2) * 4;
         }
 
-        y += 1;
+        y += 2;
       });
 
       // ── Observations globales ──
@@ -196,11 +233,15 @@ export function SuiviActivitePdfDetail({ suiviId }: Props) {
         y += obsLines.length * 4;
       }
 
-      // ── Footer ──
-      doc.setFontSize(7);
-      doc.setTextColor(160, 160, 160);
-      doc.text("DynaPerf — Suivi d'activité", margin, pageH - 8);
-      doc.text(`Page ${doc.getNumberOfPages()}`, pageW - margin, pageH - 8, { align: "right" });
+      // ── Footer on all pages ──
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7);
+        doc.setTextColor(160, 160, 160);
+        doc.text("DynaPerf — Suivi d'activité", margin, pageH - 8);
+        doc.text(`Page ${i}/${totalPages}`, pageW - margin, pageH - 8, { align: "right" });
+      }
 
       doc.save(`suivi_${suivi.agence.replace(/\s+/g, "_")}_${suivi.date}.pdf`);
       toast.success("PDF téléchargé !");

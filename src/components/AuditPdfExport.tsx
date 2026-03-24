@@ -22,7 +22,6 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
     toast.info("Génération du PDF en cours…");
 
     try {
-      // Fetch detail + config in parallel
       const [{ data: detail }, config] = await Promise.all([
         supabase.from("audit_details").select("*").eq("audit_id", auditId).single(),
         fetchAuditConfig(typeEvenement),
@@ -74,15 +73,13 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
       y += 7;
 
       doc.setFontSize(9);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(60, 60, 60);
-
       const infoRows: [string, string][] = [
         ["Partenaire audité", partenaire],
+        ["Partenaire référent", detail.partenaire_referent || "—"],
         ["Auditeur", auditeur],
         ["Ville", lieu || "—"],
         ["Lieu", detail.type_lieu || "—"],
-        ["Partenaire référent", detail.partenaire_referent || "—"],
+        ["Qualité du lieu", detail.qualite_lieu != null ? "★".repeat(detail.qualite_lieu) + "☆".repeat(5 - detail.qualite_lieu) : "—"],
         ["Heure", detail.heure_evenement || "—"],
         ["Note globale", `${detail.note_sur_10 ?? note ?? "—"}/10 (${detail.total_points ?? "—"} pts)`],
       ];
@@ -90,11 +87,18 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
       if (detail.nom_club) infoRows.push(["Club", detail.nom_club]);
       if (detail.nb_adherents != null) infoRows.push(["Adhérents", String(detail.nb_adherents)]);
       if (detail.nb_invites != null) infoRows.push(["Invités", String(detail.nb_invites)]);
-      if (detail.nb_participants != null) infoRows.push(["Participants", String(detail.nb_participants)]);
       if (detail.nb_no_show != null) infoRows.push(["No-show", String(detail.nb_no_show)]);
+      if (detail.nb_participants != null) infoRows.push(["Participants", String(detail.nb_participants)]);
       if (detail.nb_rdv_pris != null) infoRows.push(["RDV pris", String(detail.nb_rdv_pris)]);
 
-      // Info table
+      // Ratios
+      if (detail.nb_invites && detail.nb_participants && detail.nb_participants > 0) {
+        infoRows.push(["Ratio invités/participants", `${((detail.nb_invites / detail.nb_participants) * 100).toFixed(1)}%`]);
+      }
+      if (detail.nb_rdv_pris != null && detail.nb_invites && detail.nb_invites > 0) {
+        infoRows.push(["Ratio RDV/invités", `${((detail.nb_rdv_pris / detail.nb_invites) * 100).toFixed(1)}%`]);
+      }
+
       infoRows.forEach(([label, value], idx) => {
         checkPageBreak(7);
         if (idx % 2 === 0) {
@@ -106,7 +110,7 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
         doc.text(label, margin + 2, y);
         doc.setFont("helvetica", "normal");
         doc.setTextColor(30, 30, 30);
-        doc.text(value, margin + 55, y);
+        doc.text(value, margin + 60, y);
         y += 7;
       });
 
@@ -114,10 +118,17 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
 
       // ── Items par catégorie ──
       let currentCat = "";
-      allItems.forEach((item, idx) => {
+      let itemGlobalIdx = 0;
+      allItems.forEach((item) => {
+        itemGlobalIdx++;
         const answer = items[item.id];
         const score = answer?.score ?? 0;
         const isMax = score === item.maxPoints;
+        const hasComment = !!answer?.comment;
+        const hasChecklist = item.inputType === "checklist" && item.checklistItems && answer?.checklist;
+        const hasDescription = !!(item.description || item.condition);
+        const hasScoringRules = !!item.scoringRules;
+        const hasRawValue = item.inputType === "number" && answer?.rawValue !== undefined;
 
         // Category header
         if (item.categoryName !== currentCat) {
@@ -133,39 +144,23 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
           y += 10;
         }
 
-        // Item row
-        const commentText = answer?.comment || "";
-        const rowHeight = commentText ? 13 : 7;
-        checkPageBreak(rowHeight);
+        // Item title + score
+        checkPageBreak(12);
 
-        // Alternating row bg
-        if (idx % 2 === 0) {
-          doc.setFillColor(250, 250, 252);
-          doc.rect(margin, y - 4, contentW, rowHeight, "F");
-        }
+        // Color indicator
+        if (isMax) doc.setFillColor(34, 197, 94);
+        else if (score > 0) doc.setFillColor(245, 158, 11);
+        else doc.setFillColor(220, 220, 220);
+        doc.rect(margin, y - 4, 2, 7, "F");
 
-        // Score indicator
-        if (isMax) {
-          doc.setFillColor(34, 197, 94);
-        } else if (score > 0) {
-          doc.setFillColor(245, 158, 11);
-        } else {
-          doc.setFillColor(220, 220, 220);
-        }
-        doc.rect(margin, y - 4, 2, rowHeight, "F");
-
-        doc.setTextColor(30, 30, 30);
         doc.setFontSize(8);
-
-        // Number
         doc.setFont("helvetica", "normal");
         doc.setTextColor(140, 140, 140);
-        doc.text(`${idx + 1}.`, margin + 4, y);
+        doc.text(`${itemGlobalIdx}.`, margin + 4, y);
 
-        // Title
-        doc.setFont("helvetica", "normal");
+        doc.setFont("helvetica", "bold");
         doc.setTextColor(30, 30, 30);
-        const titleLines = doc.splitTextToSize(item.title, contentW - 45);
+        const titleLines = doc.splitTextToSize(item.title, contentW - 50);
         doc.text(titleLines[0], margin + 12, y);
 
         // Score
@@ -173,24 +168,75 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
         doc.setTextColor(isMax ? 34 : score > 0 ? 180 : 140, isMax ? 130 : score > 0 ? 120 : 140, isMax ? 60 : score > 0 ? 20 : 140);
         doc.text(`${score}/${item.maxPoints}`, contentW + margin - 3, y, { align: "right" });
 
-        // Status icon text
+        // Status
         doc.setFontSize(7);
-        doc.setTextColor(isMax ? 34 : 220, isMax ? 130 : 60, isMax ? 60 : 60);
         doc.text(isMax ? "✓" : score > 0 ? "~" : "✗", contentW + margin - 16, y);
-
         y += 6;
 
+        // Description & condition
+        if (hasDescription) {
+          const descParts: string[] = [];
+          if (item.description) descParts.push(item.description);
+          if (item.condition) descParts.push(`Condition : ${item.condition}`);
+          const descText = descParts.join(" | ");
+          const descLines = doc.splitTextToSize(descText, contentW - 20);
+          const linesToShow = descLines.slice(0, 3);
+          checkPageBreak(linesToShow.length * 3.5 + 2);
+          doc.setFontSize(6.5);
+          doc.setFont("helvetica", "italic");
+          doc.setTextColor(120, 120, 120);
+          doc.text(linesToShow.join("\n"), margin + 12, y);
+          y += linesToShow.length * 3.5;
+        }
+
+        // Scoring rules
+        if (hasScoringRules) {
+          const ruleLines = doc.splitTextToSize(`Barème : ${item.scoringRules}`, contentW - 20);
+          const rl = ruleLines.slice(0, 2);
+          checkPageBreak(rl.length * 3.5 + 2);
+          doc.setFontSize(6.5);
+          doc.setFont("helvetica", "italic");
+          doc.setTextColor(100, 100, 160);
+          doc.text(rl.join("\n"), margin + 12, y);
+          y += rl.length * 3.5;
+        }
+
+        // Raw value
+        if (hasRawValue) {
+          checkPageBreak(5);
+          doc.setFontSize(7);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(80, 80, 80);
+          doc.text(`Valeur saisie : ${answer!.rawValue}`, margin + 12, y);
+          y += 4;
+        }
+
+        // Checklist
+        if (hasChecklist && item.checklistItems) {
+          item.checklistItems.forEach((label, ci) => {
+            const checked = answer!.checklist![ci] ?? false;
+            checkPageBreak(5);
+            doc.setFontSize(6.5);
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(checked ? 34 : 180, checked ? 130 : 60, checked ? 60 : 60);
+            doc.text(`${checked ? "☑" : "☐"} ${label}`, margin + 14, y);
+            y += 3.5;
+          });
+          y += 1;
+        }
+
         // Comment
-        if (commentText) {
+        if (hasComment) {
+          checkPageBreak(6);
           doc.setFontSize(7);
           doc.setFont("helvetica", "italic");
           doc.setTextColor(100, 100, 100);
-          const commentLines = doc.splitTextToSize(`→ ${commentText}`, contentW - 20);
+          const commentLines = doc.splitTextToSize(`→ ${answer!.comment}`, contentW - 20);
           doc.text(commentLines.slice(0, 2).join("\n"), margin + 12, y);
           y += Math.min(commentLines.length, 2) * 4;
         }
 
-        y += 1;
+        y += 2;
       });
 
       // ── Photos ──
@@ -225,11 +271,15 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
         }
       }
 
-      // ── Footer on last page ──
-      doc.setFontSize(7);
-      doc.setTextColor(160, 160, 160);
-      doc.text("DynaPerf — Rapport d'audit", margin, pageH - 8);
-      doc.text(`Page ${doc.getNumberOfPages()}`, pageW - margin, pageH - 8, { align: "right" });
+      // ── Footer on all pages ──
+      const totalPages = doc.getNumberOfPages();
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7);
+        doc.setTextColor(160, 160, 160);
+        doc.text("DynaPerf — Rapport d'audit", margin, pageH - 8);
+        doc.text(`Page ${i}/${totalPages}`, pageW - margin, pageH - 8, { align: "right" });
+      }
 
       doc.save(`audit_${partenaire.replace(/\s+/g, "_")}_${date}.pdf`);
       toast.success("PDF téléchargé !");
