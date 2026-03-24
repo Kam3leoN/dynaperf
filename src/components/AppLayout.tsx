@@ -323,6 +323,10 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
         <FontAwesomeIcon icon={faKey} className="h-3.5 w-3.5" />
         <span>Modifier mon mot de passe</span>
       </NavLink>
+      <NavLink to="/notifications" className={() => linkClass("/notifications")} onClick={() => setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faBell} className="h-3.5 w-3.5" />
+        <span>Notifications</span>
+      </NavLink>
       <button onClick={() => { setMobileOpen(false); handleForgotPassword(); }} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-secondary transition-colors text-left">
         <FontAwesomeIcon icon={faEnvelope} className="h-3.5 w-3.5" />
         <span>Mot de passe oublié</span>
