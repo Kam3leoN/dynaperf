@@ -8,7 +8,7 @@ import { PartenaireLeaderboard } from "@/components/PartenaireLeaderboard";
 import { ScoresByTypeChart } from "@/components/ScoresByTypeChart";
 import { PodiumCards } from "@/components/PodiumCards";
 import { AppLayout } from "@/components/AppLayout";
-import { MyObjectives } from "@/components/MyObjectives";
+
 
 const StrokeTitle = ({ text }: { text: string }) => (
   <span className="stroke-title" data-text={text}>
@@ -28,7 +28,7 @@ const Index = () => {
     : collaborateurStats.reduce((sum, c) => sum + c.objectif, 0);
 
   return (
-    <AppLayout audits={audits} filters={filters} setFilters={setFilters}>
+    <AppLayout filters={filters} setFilters={setFilters}>
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <p className="text-muted-foreground">Chargement des audits…</p>
@@ -40,7 +40,7 @@ const Index = () => {
             objectifTotal={objectifTotal}
             objectifNotes={objectifTotal}
           />
-          <MyObjectives />
+          
           <section>
             <h2 className="mb-3"><StrokeTitle text="Podium par type d'événement" /></h2>
             <PodiumCards data={partenaireStats} />

@@ -7,8 +7,8 @@ import { ThemeToggle } from "./ThemeToggle";
 import { useTheme } from "next-themes";
 import logoDark from "@/assets/DynaPerf_dark.svg";
 import logoLight from "@/assets/DynaPerf_light.svg";
-import { ExcelExport } from "./ExcelExport";
 import { FiltersBar } from "./FiltersBar";
+import { OnlineAvatars } from "./OnlineAvatars";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "./ui/sheet";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
@@ -17,12 +17,11 @@ import type { Filters } from "@/hooks/useAuditData";
 
 interface AppLayoutProps {
   children: React.ReactNode;
-  audits?: any[];
   filters?: Filters;
   setFilters?: (f: Filters) => void;
 }
 
-export function AppLayout({ children, audits, filters, setFilters }: AppLayoutProps) {
+export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin(user);
   const { resolvedTheme } = useTheme();
@@ -102,8 +101,11 @@ export function AppLayout({ children, audits, filters, setFilters }: AppLayoutPr
             </nav>
           </div>
 
-          <div className="flex items-center gap-1.5 sm:gap-2">
-            {audits && <div className="hidden sm:block"><ExcelExport audits={audits} /></div>}
+          <div className="flex items-center gap-2 sm:gap-3">
+            {/* Online avatars (Discord-style) */}
+            <div className="hidden sm:block">
+              <OnlineAvatars />
+            </div>
 
             {/* Filters drawer trigger */}
             {filters && setFilters && (
@@ -132,9 +134,6 @@ export function AppLayout({ children, audits, filters, setFilters }: AppLayoutPr
                   <nav className="flex flex-col gap-1 p-4">
                     {navLinks(true)}
                   </nav>
-                  <div className="p-4 space-y-3 border-t border-border">
-                    {audits && <ExcelExport audits={audits} />}
-                  </div>
                 </div>
               </SheetContent>
             </Sheet>
