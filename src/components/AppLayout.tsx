@@ -200,8 +200,8 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
                 className="h-7 sm:h-8"
               />
             </Link>
-            {/* Desktop nav */}
-            <nav className="hidden md:flex items-center gap-1">
+            {/* Desktop nav — lg breakpoint for high-res phones */}
+            <nav className="hidden lg:flex items-center gap-1">
               {desktopNav()}
             </nav>
           </div>
@@ -225,7 +225,7 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
             {/* Mobile hamburger */}
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9 md:hidden">
+                <Button variant="ghost" size="icon" className="h-9 w-9 lg:hidden">
                   <FontAwesomeIcon icon={faBars} className="h-4 w-4" />
                 </Button>
               </SheetTrigger>
