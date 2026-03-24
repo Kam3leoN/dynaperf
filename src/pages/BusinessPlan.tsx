@@ -48,6 +48,9 @@ interface YearData {
 }
 
 export default function BusinessPlan() {
+  const pdfRef = useRef<HTMLDivElement>(null);
+  const [exporting, setExporting] = useState(false);
+  
   // --- Inputs ---
   const [nbAvantagesAnN, setNbAvantagesAnN] = useState(30);
   const [nbClubs, setNbClubs] = useState(2);
