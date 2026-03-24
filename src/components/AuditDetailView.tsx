@@ -12,12 +12,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { fetchAuditConfig, AuditTypeConfig } from "@/data/auditItems";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck, faXmark, faPenToSquare } from "@fortawesome/free-solid-svg-icons";
+import { AuditPdfExport } from "@/components/AuditPdfExport";
 
 interface AuditDetailViewProps {
   auditId: string;
   typeEvenement: string;
   open: boolean;
   onClose: () => void;
+  partenaire?: string;
+  date?: string;
+  lieu?: string | null;
+  auditeur?: string;
+  note?: number | null;
 }
 
 interface DetailData {
@@ -35,7 +41,7 @@ interface DetailData {
   nb_rdv_pris: number | null;
 }
 
-export function AuditDetailView({ auditId, typeEvenement, open, onClose }: AuditDetailViewProps) {
+export function AuditDetailView({ auditId, typeEvenement, open, onClose, partenaire, date, lieu, auditeur, note }: AuditDetailViewProps) {
   const [detail, setDetail] = useState<DetailData | null>(null);
   const [config, setConfig] = useState<AuditTypeConfig | null>(null);
   const [loading, setLoading] = useState(true);
@@ -67,7 +73,18 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose }: Audit
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Détail de l'audit</DialogTitle>
+          <div className="flex items-center justify-between gap-2 flex-wrap">
+            <DialogTitle>Détail de l'audit</DialogTitle>
+            <AuditPdfExport
+              auditId={auditId}
+              partenaire={partenaire ?? ""}
+              typeEvenement={typeEvenement}
+              date={date ?? ""}
+              lieu={lieu}
+              auditeur={auditeur ?? ""}
+              note={note}
+            />
+          </div>
         </DialogHeader>
 
         {loading ? (

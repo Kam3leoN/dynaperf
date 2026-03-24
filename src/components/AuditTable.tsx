@@ -40,7 +40,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
   const [sortKey, setSortKey] = useState<SortKey>("date");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [search, setSearch] = useState("");
-  const [detailAudit, setDetailAudit] = useState<{ id: string; type: string } | null>(null);
+  const [detailAudit, setDetailAudit] = useState<{ id: string; type: string; partenaire: string; date: string; lieu?: string | null; auditeur: string; note?: number | null } | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const handleSort = (key: SortKey) => {
@@ -99,7 +99,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
         </div>
         <div className="flex gap-1 shrink-0">
           {a.statut === "OK" && (
-            <button onClick={() => setDetailAudit({ id: a.id, type: a.typeEvenement })} className="p-1.5 rounded-sm hover:bg-secondary transition-colors">
+            <button onClick={() => setDetailAudit({ id: a.id, type: a.typeEvenement, partenaire: a.partenaire, date: a.date, lieu: a.lieu, auditeur: a.auditeur, note: a.note })} className="p-1.5 rounded-sm hover:bg-secondary transition-colors">
               <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
           )}
@@ -262,7 +262,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
                   <TableCell>
                     <div className="flex gap-1">
                       {a.statut === "OK" && (
-                        <button onClick={() => setDetailAudit({ id: a.id, type: a.typeEvenement })} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Voir le détail">
+                        <button onClick={() => setDetailAudit({ id: a.id, type: a.typeEvenement, partenaire: a.partenaire, date: a.date, lieu: a.lieu, auditeur: a.auditeur, note: a.note })} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Voir le détail">
                           <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
                         </button>
                       )}
@@ -296,6 +296,11 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
         <AuditDetailView
           auditId={detailAudit.id}
           typeEvenement={detailAudit.type}
+          partenaire={detailAudit.partenaire}
+          date={detailAudit.date}
+          lieu={detailAudit.lieu}
+          auditeur={detailAudit.auditeur}
+          note={detailAudit.note}
           open={true}
           onClose={() => setDetailAudit(null)}
         />

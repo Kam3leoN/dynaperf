@@ -58,7 +58,7 @@ export default function AuditForm() {
   );
 
   const totalItems = allItems.length;
-  const answeredCount = Object.keys(answers).length;
+  const answeredCount = Object.values(answers).filter((a) => a.touched).length;
   const infoFilled = countInfoFilled(stepZeroData);
 
   // Global progress: info fields + audit items

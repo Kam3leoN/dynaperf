@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ export interface ItemAnswer {
   comment?: string;
   checklist?: boolean[];
   rawValue?: number;
+  touched?: boolean;
 }
 
 interface Props {
@@ -76,14 +77,21 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
   );
   const [comment, setComment] = useState(answer?.comment ?? "");
 
+  const mountedRef = useRef(false);
+
   // Emit changes
   useEffect(() => {
     const score = computeScore(item, boolVal, numVal, checklist, autoValue);
+    const isTouched = mountedRef.current || isAutoFilled;
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+    }
     onChange({
       score,
       comment: comment.trim() || undefined,
       checklist: item.inputType === "checklist" ? checklist : undefined,
       rawValue: item.inputType === "number" ? parseInt(numVal) || 0 : undefined,
+      touched: isTouched,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [boolVal, numVal, checklist, comment]);
