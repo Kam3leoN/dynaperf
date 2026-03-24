@@ -218,7 +218,7 @@ export default function AuditForm() {
 
   return (
     <AppLayout>
-      <div className="py-6 sm:py-10 max-w-2xl mx-auto px-4">
+      <div className="py-6 sm:py-10 max-w-4xl mx-auto px-4">
         {/* Header + progress */}
         <div className="mb-6">
           <div className="flex items-center gap-3 mb-2">
