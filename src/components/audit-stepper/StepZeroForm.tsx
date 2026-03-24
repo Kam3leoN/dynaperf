@@ -36,6 +36,7 @@ interface Props {
   typeEvenement: string;
   initialData?: StepZeroData;
   onSubmit: (data: StepZeroData) => void;
+  hideSubmitButton?: boolean;
 }
 
 const isRdOrClub = (type: string) =>
@@ -50,7 +51,7 @@ interface SuggestionLists {
   referents: string[];
 }
 
-export function StepZeroForm({ typeEvenement, initialData, onSubmit }: Props) {
+export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitButton }: Props) {
   const [data, setData] = useState<StepZeroData>(
     initialData ?? {
       partenaireAudite: "",
