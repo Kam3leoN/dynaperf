@@ -63,9 +63,10 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
   const autoValue = getAutoValue(item, stepZeroData);
   const isAutoFilled = autoValue !== undefined;
   const isNoShowAuto = item.autoField === "nbNoShow";
+  const noShowNotEntered = isNoShowAuto && autoValue === undefined;
 
   const [boolVal, setBoolVal] = useState<boolean | null>(() => {
-    if (isNoShowAuto) return (autoValue ?? 0) > 0;
+    if (isNoShowAuto) return autoValue !== undefined ? autoValue > 0 : null;
     return answer ? answer.score > 0 : null;
   });
   const [numVal, setNumVal] = useState<string>(() => {
@@ -76,7 +77,7 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
   // Sync boolVal & numVal when autoValue changes (e.g. step 0 data updated)
   useEffect(() => {
     if (isNoShowAuto) {
-      setBoolVal((autoValue ?? 0) > 0);
+      setBoolVal(autoValue !== undefined ? autoValue > 0 : null);
     } else if (isAutoFilled) {
       setNumVal(String(autoValue ?? 0));
     }
@@ -165,7 +166,7 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
             </div>
           )}
 
-          {isNoShowAuto && (
+          {isNoShowAuto && !noShowNotEntered && (
             <div className="space-y-1.5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                 <Button type="button" size="sm" variant={boolVal ? "default" : "outline"} disabled
@@ -181,6 +182,12 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
                 {(autoValue ?? 0) > 0 ? `${autoValue} no-show — validé.` : "Aucun no-show — non validé."}
               </p>
             </div>
+          )}
+
+          {isNoShowAuto && noShowNotEntered && (
+            <p className="text-[11px] text-muted-foreground italic">
+              Renseignez le nombre de no-show dans les informations générales pour pré-remplir ce champ.
+            </p>
           )}
 
           {item.inputType === "boolean" && !isAutoFilled && (
