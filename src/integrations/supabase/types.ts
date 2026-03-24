@@ -409,6 +409,7 @@ export type Database = {
           created_at: string
           date_anniversaire: string | null
           email: string
+          genre: string | null
           id: string
           is_cadre_externalise: boolean
           is_directeur_agence: boolean
@@ -429,6 +430,7 @@ export type Database = {
           created_at?: string
           date_anniversaire?: string | null
           email?: string
+          genre?: string | null
           id?: string
           is_cadre_externalise?: boolean
           is_directeur_agence?: boolean
@@ -449,6 +451,7 @@ export type Database = {
           created_at?: string
           date_anniversaire?: string | null
           email?: string
+          genre?: string | null
           id?: string
           is_cadre_externalise?: boolean
           is_directeur_agence?: boolean
@@ -463,6 +466,27 @@ export type Database = {
           statut?: string
           telephone?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      prenoms_genre: {
+        Row: {
+          created_at: string
+          genre: string
+          id: string
+          prenom: string
+        }
+        Insert: {
+          created_at?: string
+          genre: string
+          id?: string
+          prenom: string
+        }
+        Update: {
+          created_at?: string
+          genre?: string
+          id?: string
+          prenom?: string
         }
         Relationships: []
       }
