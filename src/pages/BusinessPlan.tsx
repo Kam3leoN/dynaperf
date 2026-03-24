@@ -48,7 +48,7 @@ interface YearData {
 }
 
 export default function BusinessPlan() {
-  const pdfRef = useRef<HTMLDivElement>(null);
+  
   const [exporting, setExporting] = useState(false);
   
   // --- Inputs ---
@@ -367,7 +367,7 @@ export default function BusinessPlan() {
 
   return (
     <AppLayout>
-      <div ref={pdfRef} className="space-y-6">
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
