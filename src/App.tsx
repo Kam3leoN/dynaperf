@@ -54,6 +54,8 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 
 import { InstallPrompt } from "@/components/InstallPrompt";
 
+const routerBase = import.meta.env.BASE_URL.replace(/\/$/, "") || "/";
+
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
     <QueryClientProvider client={queryClient}>
@@ -62,7 +64,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <InstallPrompt />
-          <BrowserRouter basename="/dynaperf">
+          <BrowserRouter basename={routerBase}>
             <Routes>
               <Route path="/" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />

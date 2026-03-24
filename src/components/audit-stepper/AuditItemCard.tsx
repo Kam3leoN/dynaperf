@@ -96,12 +96,11 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
       "transition-all border-l-4",
       isMax ? "border-l-emerald-500" : currentScore > 0 ? "border-l-amber-500" : "border-l-border"
     )}>
-      <CardContent className="p-4 space-y-3">
-        {/* Header */}
+      <CardContent className="p-3 sm:p-4 space-y-3 sm:space-y-4">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-1">
-              <span className="text-xs text-muted-foreground font-mono">{index + 1}.</span>
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap mb-1.5">
+              <span className="text-[11px] sm:text-xs text-muted-foreground font-mono">{index + 1}.</span>
               <Badge variant="secondary" className="text-[10px]">{categoryName}</Badge>
               <Badge
                 className={cn(
@@ -117,50 +116,46 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
                 </Badge>
               )}
             </div>
-            <h3 className="text-sm font-semibold text-foreground">{item.title}</h3>
+            <h3 className="text-sm sm:text-base font-semibold text-foreground leading-tight">{item.title}</h3>
           </div>
         </div>
 
-        {/* Description + Conditions */}
         {(item.description || item.condition) && (
-          <div className="rounded-md border border-border bg-muted/30 p-2.5 space-y-1">
+          <div className="rounded-md border border-border bg-muted/30 p-2.5 sm:p-3 space-y-1.5">
             {item.description && (
-              <p className="text-xs text-muted-foreground whitespace-pre-line">{item.description}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground whitespace-pre-line leading-relaxed">{item.description}</p>
             )}
             {item.condition && (
-              <div className="flex items-start gap-1.5 text-xs text-foreground/70">
+              <div className="flex items-start gap-1.5 text-xs sm:text-sm text-foreground/70 leading-relaxed">
                 <FontAwesomeIcon icon={faCircleInfo} className="h-3 w-3 mt-0.5 flex-shrink-0" />
                 <span className="whitespace-pre-line">{item.condition}</span>
               </div>
             )}
             {item.scoringRules && (
-              <p className="text-xs text-foreground/70 pt-1 border-t border-border whitespace-pre-line">
+              <p className="text-xs sm:text-sm text-foreground/70 pt-1.5 border-t border-border whitespace-pre-line leading-relaxed">
                 {item.scoringRules}
               </p>
             )}
           </div>
         )}
 
-        {/* Input area */}
         <div className="space-y-3">
-          {/* Auto-filled number */}
           {isAutoFilled && !isNoShowAuto && item.inputType === "number" && (
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <Label className="text-xs">Nombre (pré-rempli)</Label>
-              <Input type="number" value={numVal} disabled className="bg-muted cursor-not-allowed h-9 text-sm" />
+              <Input type="number" value={numVal} disabled className="bg-muted cursor-not-allowed h-10 text-sm" />
               <p className="text-[11px] text-muted-foreground">Valeur renseignée à l'étape précédente.</p>
             </div>
           )}
 
-          {/* Auto no-show */}
           {isNoShowAuto && (
-            <div className="space-y-1">
-              <div className="flex items-center gap-3">
+            <div className="space-y-1.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                 <Button type="button" size="sm" variant={boolVal ? "default" : "outline"} disabled
-                  className={cn("flex-1 cursor-not-allowed h-8 text-xs", boolVal && "bg-emerald-600 text-white")}>
+                  className={cn("h-10 text-xs sm:text-sm cursor-not-allowed", boolVal && "bg-emerald-600 text-white")}>
                   <FontAwesomeIcon icon={faCheck} className="mr-1 h-3 w-3" /> Validé
                 </Button>
-                <Button type="button" size="sm" variant={!boolVal ? "destructive" : "outline"} disabled className="flex-1 cursor-not-allowed h-8 text-xs">
+                <Button type="button" size="sm" variant={!boolVal ? "destructive" : "outline"} disabled className="h-10 text-xs sm:text-sm cursor-not-allowed">
                   Non validé
                 </Button>
               </div>
@@ -170,17 +165,16 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
             </div>
           )}
 
-          {/* Regular boolean */}
           {item.inputType === "boolean" && !isAutoFilled && (
-            <div className="flex items-center gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
               <Button type="button" size="sm" variant="outline" onClick={() => setBoolVal(true)}
-                className={cn("flex-1 h-8 text-xs transition-colors",
+                className={cn("h-10 text-xs sm:text-sm transition-colors",
                   boolVal === true ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700" : "hover:bg-accent"
                 )}>
                 <FontAwesomeIcon icon={faCheck} className="mr-1 h-3 w-3" /> Validé
               </Button>
               <Button type="button" size="sm" variant="outline" onClick={() => setBoolVal(false)}
-                className={cn("flex-1 h-8 text-xs transition-colors",
+                className={cn("h-10 text-xs sm:text-sm transition-colors",
                   boolVal === false ? "bg-destructive text-destructive-foreground border-destructive hover:bg-destructive/90" : "hover:bg-accent"
                 )}>
                 Non validé
@@ -188,32 +182,29 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
             </div>
           )}
 
-          {/* Regular number */}
           {item.inputType === "number" && !isAutoFilled && (
-            <div className="space-y-1">
-              <Label className="text-xs">Nombre</Label>
-              <Input type="number" min={0} value={numVal} onChange={e => setNumVal(e.target.value)} placeholder="Entrez le nombre..." className="h-9 text-sm" />
+            <div className="space-y-1.5">
+              <Label className="text-xs sm:text-sm">Nombre</Label>
+              <Input type="number" min={0} value={numVal} onChange={e => setNumVal(e.target.value)} placeholder="Entrez le nombre..." className="h-10 text-sm" />
             </div>
           )}
 
-          {/* Checklist */}
           {item.inputType === "checklist" && item.checklistItems && (
-            <div className="space-y-1.5 max-h-[300px] overflow-y-auto">
+            <div className="space-y-1.5 max-h-[320px] overflow-y-auto pr-1">
               {item.checklistItems.map((label, idx) => (
                 <label key={idx}
-                  className="flex items-start gap-2.5 rounded-md border border-border p-2.5 cursor-pointer transition-colors hover:bg-accent/50 text-sm"
+                  className="flex items-start gap-2.5 rounded-md border border-border p-3 cursor-pointer transition-colors hover:bg-accent/50"
                   style={checklist[idx] ? { borderColor: "hsl(var(--chart-2))", backgroundColor: "hsl(var(--chart-2) / 0.06)" } : {}}>
                   <Checkbox checked={checklist[idx]} onCheckedChange={v => { const next = [...checklist]; next[idx] = !!v; setChecklist(next); }} className="mt-0.5" />
-                  <span className="text-xs leading-snug">{label}</span>
+                  <span className="text-xs sm:text-sm leading-relaxed">{label}</span>
                 </label>
               ))}
             </div>
           )}
 
-          {/* Comment */}
-          <div className="space-y-1">
-            <Label className="text-[11px] text-muted-foreground">Commentaire (optionnel)</Label>
-            <Textarea value={comment} onChange={e => setComment(e.target.value)} placeholder="Ajouter un commentaire..." rows={1} className="text-xs min-h-[32px]" />
+          <div className="space-y-1.5">
+            <Label className="text-[11px] sm:text-xs text-muted-foreground">Commentaire (optionnel)</Label>
+            <Textarea value={comment} onChange={e => setComment(e.target.value)} placeholder="Ajouter un commentaire..." rows={2} className="text-sm min-h-[72px] resize-y" />
           </div>
         </div>
       </CardContent>
