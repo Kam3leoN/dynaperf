@@ -20,6 +20,8 @@ import {
   faUsers,
   faBriefcase,
   faMapLocationDot,
+  faComments,
+  faClockRotateLeft,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { ThemeToggle } from "./ThemeToggle";
@@ -252,6 +254,16 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
         <span>Business Plan</span>
       </NavLink>
 
+      <NavLink to="/messages" className={() => linkClass("/messages")}>
+        <FontAwesomeIcon icon={faComments} className="h-3.5 w-3.5" />
+        <span>Messages</span>
+      </NavLink>
+
+      <NavLink to="/historique" className={() => linkClass("/historique")}>
+        <FontAwesomeIcon icon={faClockRotateLeft} className="h-3.5 w-3.5" />
+        <span>Historique</span>
+      </NavLink>
+
       {isAdmin && (
         <NavLink to="/admin" className={() => linkClass("/admin")}>
           <FontAwesomeIcon icon={faUserShield} className="h-3.5 w-3.5" />
@@ -314,6 +326,14 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
       <NavLink to="/business-plan" className={() => linkClass("/business-plan")} onClick={() => setMobileOpen(false)}>
         <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
         <span>Business Plan</span>
+      </NavLink>
+      <NavLink to="/messages" className={() => linkClass("/messages")} onClick={() => setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faComments} className="h-3.5 w-3.5" />
+        <span>Messages</span>
+      </NavLink>
+      <NavLink to="/historique" className={() => linkClass("/historique")} onClick={() => setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faClockRotateLeft} className="h-3.5 w-3.5" />
+        <span>Historique</span>
       </NavLink>
 
       {isAdmin && (
