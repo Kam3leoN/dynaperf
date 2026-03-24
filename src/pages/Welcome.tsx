@@ -1,46 +1,36 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faClipboardList, faChartLine, faBriefcase, faUserTie } from "@fortawesome/free-solid-svg-icons";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { Button } from "@/components/ui/button";
-import { faRightFromBracket } from "@fortawesome/free-solid-svg-icons";
-import logoDark from "@/assets/DynaPerf_dark.svg";
-import logoLight from "@/assets/DynaPerf_light.svg";
+import { AppLayout } from "@/components/AppLayout";
 
 const actions = [
   {
     label: "Créer un Audit",
     icon: faClipboardList,
     to: "/audits/new",
-    color: "hsl(var(--primary))",
   },
   {
     label: "Créer un suivi d'activité",
     icon: faChartLine,
     to: "/dashboard",
-    color: "hsl(var(--accent-foreground))",
   },
   {
     label: "Créer un business plan",
     icon: faBriefcase,
     to: "/business-plan",
-    color: "hsl(var(--primary))",
   },
   {
     label: "Suivre une candidature",
     icon: faUserTie,
     to: "#",
-    color: "hsl(var(--accent-foreground))",
   },
 ];
 
 export default function Welcome() {
-  const { user, signOut } = useAuth();
-  const { resolvedTheme } = useTheme();
+  const { user } = useAuth();
   const [displayName, setDisplayName] = useState<string | null>(null);
 
   useEffect(() => {
@@ -58,26 +48,8 @@ export default function Welcome() {
   const greeting = displayName ?? user?.email?.split("@")[0] ?? "Utilisateur";
 
   return (
-    <div className="min-h-screen bg-secondary/30 flex flex-col">
-      {/* Minimal header */}
-      <header className="bg-card shadow-soft border-b border-border px-4 sm:px-6 py-3">
-        <div className="max-w-[1440px] mx-auto flex items-center justify-between">
-          <img
-            src={resolvedTheme === "dark" ? logoDark : logoLight}
-            alt="DynaPerf"
-            className="h-7 sm:h-8"
-          />
-          <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={signOut} title="Déconnexion">
-              <FontAwesomeIcon icon={faRightFromBracket} className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main content */}
-      <main className="flex-1 flex items-center justify-center px-4 py-12">
+    <AppLayout>
+      <section className="min-h-[calc(100vh-10rem)] flex items-center justify-center px-4 py-12">
         <div className="text-center max-w-2xl w-full">
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
             Bonjour {greeting} <span className="inline-block animate-bounce">😉</span>
@@ -103,7 +75,7 @@ export default function Welcome() {
             ))}
           </div>
         </div>
-      </main>
-    </div>
+      </section>
+    </AppLayout>
   );
 }
