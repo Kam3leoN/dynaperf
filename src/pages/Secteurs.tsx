@@ -1,18 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-
-// Fix default marker icon
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png",
-  iconUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png",
-  shadowUrl: "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-});
+import maplibregl from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
 
 interface Club {
   id: string;
@@ -34,28 +25,11 @@ interface Secteur {
   nom: string;
 }
 
-// Color palette for sectors
 const SECTOR_COLORS = [
   "#EE4540", "#2563EB", "#16A34A", "#D97706", "#9333EA",
   "#0891B2", "#E11D48", "#4F46E5", "#059669", "#CA8A04",
 ];
 
-function createColorIcon(color: string) {
-  return L.divIcon({
-    className: "custom-marker",
-    html: `<div style="
-      background:${color};
-      width:28px;height:28px;border-radius:50%;border:3px solid white;
-      box-shadow:0 2px 8px rgba(0,0,0,0.3);
-      display:flex;align-items:center;justify-content:center;
-    "><div style="width:8px;height:8px;background:white;border-radius:50%;"></div></div>`,
-    iconSize: [28, 28],
-    iconAnchor: [14, 14],
-    popupAnchor: [0, -14],
-  });
-}
-
-// France departement approximate coordinates (for clubs without lat/lng)
 const DEPT_COORDS: Record<string, [number, number]> = {
   "01": [46.2, 5.3], "02": [49.5, 3.6], "03": [46.3, 3.2], "04": [44.1, 6.2],
   "05": [44.7, 6.3], "06": [43.7, 7.1], "07": [44.7, 4.6], "08": [49.6, 4.6],
@@ -86,13 +60,18 @@ const DEPT_COORDS: Record<string, [number, number]> = {
 };
 
 function getClubCoords(club: Club): [number, number] | null {
-  if (club.latitude && club.longitude) return [club.latitude, club.longitude];
+  if (club.latitude && club.longitude) return [club.longitude, club.latitude]; // MapLibre uses [lng, lat]
   if (club.departement && DEPT_COORDS[club.departement]) {
     const [lat, lng] = DEPT_COORDS[club.departement];
-    // Add small random offset to avoid stacking
-    return [lat + (Math.random() - 0.5) * 0.3, lng + (Math.random() - 0.5) * 0.3];
+    return [lng + (Math.random() - 0.5) * 0.3, lat + (Math.random() - 0.5) * 0.3];
   }
   return null;
+}
+
+function formatCA(n: number) {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M€`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(0)}k€`;
+  return `${n}€`;
 }
 
 export default function Secteurs() {
@@ -101,6 +80,9 @@ export default function Secteurs() {
   const [selectedSecteur, setSelectedSecteur] = useState("all");
   const [selectedClub, setSelectedClub] = useState("all");
   const [loading, setLoading] = useState(true);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<maplibregl.Map | null>(null);
+  const markersRef = useRef<maplibregl.Marker[]>([]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -124,7 +106,11 @@ export default function Secteurs() {
   const filteredClubs = useMemo(() => {
     let result = clubs;
     if (selectedSecteur !== "all") {
-      result = result.filter(c => c.secteur_id === selectedSecteur);
+      if (selectedSecteur === "__none") {
+        result = result.filter(c => !c.secteur_id);
+      } else {
+        result = result.filter(c => c.secteur_id === selectedSecteur);
+      }
     }
     if (selectedClub !== "all") {
       result = result.filter(c => c.id === selectedClub);
@@ -133,14 +119,78 @@ export default function Secteurs() {
   }, [clubs, selectedSecteur, selectedClub]);
 
   const clubsWithCoords = useMemo(() =>
-    filteredClubs.map(c => ({ ...c, coords: getClubCoords(c) })).filter(c => c.coords !== null),
+    filteredClubs.map(c => ({ ...c, coords: getClubCoords(c) })).filter(c => c.coords !== null) as (Club & { coords: [number, number] })[],
   [filteredClubs]);
 
-  const formatCA = (n: number) => {
-    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M€`;
-    if (n >= 1_000) return `${(n / 1_000).toFixed(0)}k€`;
-    return `${n}€`;
-  };
+  // Initialize map
+  useEffect(() => {
+    if (loading || !mapContainerRef.current || mapRef.current) return;
+    const map = new maplibregl.Map({
+      container: mapContainerRef.current,
+      style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
+      center: [2.5, 46.6],
+      zoom: 5.2,
+    });
+    map.addControl(new maplibregl.NavigationControl(), "top-right");
+    mapRef.current = map;
+    return () => { map.remove(); mapRef.current = null; };
+  }, [loading]);
+
+  // Update markers
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+
+    // Clear existing markers
+    markersRef.current.forEach(m => m.remove());
+    markersRef.current = [];
+
+    clubsWithCoords.forEach(c => {
+      const color = c.secteur_id ? (sectorColorMap[c.secteur_id] || "#6B7280") : "#6B7280";
+      const sectorName = secteurs.find(s => s.id === c.secteur_id)?.nom || "Sans secteur";
+
+      const el = document.createElement("div");
+      el.style.cssText = `
+        width:28px;height:28px;border-radius:50%;border:3px solid white;
+        background:${color};box-shadow:0 2px 8px rgba(0,0,0,0.3);
+        cursor:pointer;display:flex;align-items:center;justify-content:center;
+      `;
+      const inner = document.createElement("div");
+      inner.style.cssText = "width:8px;height:8px;background:white;border-radius:50%;";
+      el.appendChild(inner);
+
+      const popup = new maplibregl.Popup({ offset: 14, maxWidth: "240px" }).setHTML(`
+        <div style="font-family:system-ui;font-size:13px;">
+          <p style="font-weight:700;margin:0 0 4px;">${c.nom}</p>
+          <p style="color:#888;font-size:11px;margin:0 0 6px;">${sectorName}</p>
+          <div style="border-top:1px solid #eee;padding-top:6px;font-size:11px;line-height:1.6;">
+            <p style="margin:0;">👤 ${c.president_nom}</p>
+            <p style="margin:0;">📍 Dpt. ${c.departement || "—"}</p>
+            <p style="margin:0;">👥 ${c.nb_membres_actifs} membres</p>
+            <p style="margin:0;">💰 ${formatCA(c.montant_ca)}</p>
+            ${c.adresse ? `<p style="margin:0;">📌 ${c.adresse}</p>` : ""}
+          </div>
+        </div>
+      `);
+
+      const marker = new maplibregl.Marker({ element: el })
+        .setLngLat(c.coords)
+        .setPopup(popup)
+        .addTo(map);
+      markersRef.current.push(marker);
+    });
+
+    // Fit bounds if clubs exist
+    if (clubsWithCoords.length > 0) {
+      const bounds = new maplibregl.LngLatBounds();
+      clubsWithCoords.forEach(c => bounds.extend(c.coords));
+      if (clubsWithCoords.length === 1) {
+        map.flyTo({ center: clubsWithCoords[0].coords, zoom: 10, duration: 800 });
+      } else {
+        map.fitBounds(bounds, { padding: 60, duration: 800 });
+      }
+    }
+  }, [clubsWithCoords, sectorColorMap, secteurs]);
 
   return (
     <AppLayout>
@@ -194,7 +244,7 @@ export default function Secteurs() {
             </div>
           </div>
 
-          <div className="text-xs text-muted-foreground mb-2">
+          <div className="text-xs text-muted-foreground">
             {clubsWithCoords.length} club{clubsWithCoords.length > 1 ? "s" : ""} affiché{clubsWithCoords.length > 1 ? "s" : ""}
           </div>
         </div>
@@ -203,34 +253,7 @@ export default function Secteurs() {
           {loading ? (
             <div className="flex items-center justify-center h-full text-sm text-muted-foreground">Chargement de la carte…</div>
           ) : (
-            <MapContainer center={[46.6, 2.5]} zoom={6} style={{ height: "100%", width: "100%" }} scrollWheelZoom>
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
-              {clubsWithCoords.map(c => {
-                const color = c.secteur_id ? (sectorColorMap[c.secteur_id] || "#6B7280") : "#6B7280";
-                return (
-                  <Marker key={c.id} position={c.coords as [number, number]} icon={createColorIcon(color)}>
-                    <Popup>
-                      <div className="text-sm space-y-1 min-w-[180px]">
-                        <p className="font-bold text-foreground">{c.nom}</p>
-                        <p className="text-muted-foreground text-xs">
-                          {secteurs.find(s => s.id === c.secteur_id)?.nom || "Sans secteur"}
-                        </p>
-                        <div className="border-t pt-1 mt-1 space-y-0.5 text-xs">
-                          <p>👤 {c.president_nom}</p>
-                          <p>📍 Dpt. {c.departement || "—"}</p>
-                          <p>👥 {c.nb_membres_actifs} membres</p>
-                          <p>💰 {formatCA(c.montant_ca)}</p>
-                          {c.adresse && <p>📌 {c.adresse}</p>}
-                        </div>
-                      </div>
-                    </Popup>
-                  </Marker>
-                );
-              })}
-            </MapContainer>
+            <div ref={mapContainerRef} style={{ height: "100%", width: "100%" }} />
           )}
         </div>
       </div>
