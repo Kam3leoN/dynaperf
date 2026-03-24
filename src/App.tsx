@@ -20,6 +20,7 @@ import NotFound from "./pages/NotFound";
 import SuiviActiviteList from "./pages/SuiviActiviteList";
 import SuiviActiviteForm from "./pages/SuiviActiviteForm";
 import SuiviActiviteDashboard from "./pages/SuiviActiviteDashboard";
+import SuiviActiviteDetail from "./pages/SuiviActiviteDetail";
 const queryClient = new QueryClient();
 
 function FullPageLoader() {
