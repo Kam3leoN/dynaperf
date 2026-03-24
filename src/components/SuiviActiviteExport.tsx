@@ -1,6 +1,5 @@
 import * as XLSX from "xlsx";
 import { Button } from "@/components/ui/button";
-import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faDownload, faFilePdf } from "@fortawesome/free-solid-svg-icons";
 import { format } from "date-fns";
