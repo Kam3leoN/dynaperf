@@ -49,8 +49,8 @@ export default function Welcome() {
 
   return (
     <AppLayout>
-      <section className="min-h-[calc(100vh-10rem)] flex items-center justify-center px-4 py-12">
-        <div className="text-center max-w-2xl w-full">
+      <section className="min-h-[calc(100vh-10rem)] flex flex-col items-center justify-center px-4 py-12">
+        <div className="text-center max-w-2xl w-full flex-1 flex flex-col items-center justify-center">
           <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
             Bonjour {greeting} <span className="inline-block animate-bounce">😉</span>
           </h1>
@@ -74,6 +74,13 @@ export default function Welcome() {
               </Link>
             ))}
           </div>
+        </div>
+
+        {/* Version chip */}
+        <div className="mt-10 flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 py-1 text-[11px] text-muted-foreground">
+            v1.0.0 — Dernière mise à jour le 24/03/2026
+          </span>
         </div>
       </section>
     </AppLayout>

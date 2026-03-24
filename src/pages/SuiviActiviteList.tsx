@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faTrash, faEye } from "@fortawesome/free-solid-svg-icons";
+import { SuiviActiviteExportExcel, SuiviActiviteExportPDF } from "@/components/SuiviActiviteExport";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -29,6 +30,8 @@ interface SuiviRow {
   suivi_par: string;
   total_items_valides: number;
   total_items: number;
+  nb_contrats_total: number;
+  nb_contrats_depuis_dernier: number;
   created_at: string;
 }
 
@@ -40,7 +43,7 @@ export default function SuiviActiviteList() {
     setLoading(true);
     const { data } = await supabase
       .from("suivi_activite")
-      .select("id, date, agence, suivi_par, total_items_valides, total_items, created_at")
+      .select("id, date, agence, suivi_par, total_items_valides, total_items, nb_contrats_total, nb_contrats_depuis_dernier, created_at")
       .order("date", { ascending: false });
     setSuivis((data as SuiviRow[]) ?? []);
     setLoading(false);
@@ -65,12 +68,16 @@ export default function SuiviActiviteList() {
           <h1 className="text-xl sm:text-2xl font-bold text-foreground">Suivis d'activité</h1>
           <p className="text-sm text-muted-foreground">{suivis.length} suivi{suivis.length !== 1 ? "s" : ""} enregistré{suivis.length !== 1 ? "s" : ""}</p>
         </div>
-        <Button asChild className="gap-2">
-          <Link to="/activite/new">
-            <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
-            Nouveau suivi
-          </Link>
-        </Button>
+        <div className="flex items-center gap-2 flex-wrap">
+          <SuiviActiviteExportExcel suivis={suivis} />
+          <SuiviActiviteExportPDF suivis={suivis} />
+          <Button asChild className="gap-2">
+            <Link to="/activite/new">
+              <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
+              Nouveau suivi
+            </Link>
+          </Button>
+        </div>
       </div>
 
       {loading ? (
