@@ -96,7 +96,14 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
   }, []);
 
   const set = <K extends keyof StepZeroData>(k: K, v: StepZeroData[K]) =>
-    setData((prev) => ({ ...prev, [k]: v }));
+    setData((prev) => {
+      const next = { ...prev, [k]: v };
+      if (hideSubmitButton) {
+        // In inline mode, emit changes immediately
+        setTimeout(() => onSubmit(next), 0);
+      }
+      return next;
+    });
 
   const showRdClubFields = isRdOrClub(typeEvenement);
   const showClubField = isClub(typeEvenement);
@@ -317,16 +324,18 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
         </>
       )}
 
-      <div className="pt-4">
-        <Button
-          onClick={() => onSubmit(data)}
-          disabled={!isValid}
-          className="w-full gap-2"
-        >
-          Commencer l'audit
-          <FontAwesomeIcon icon={faChevronRight} className="h-3 w-3" />
-        </Button>
-      </div>
+      {!hideSubmitButton && (
+        <div className="pt-4">
+          <Button
+            onClick={() => onSubmit(data)}
+            disabled={!isValid}
+            className="w-full gap-2"
+          >
+            Commencer l'audit
+            <FontAwesomeIcon icon={faChevronRight} className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
