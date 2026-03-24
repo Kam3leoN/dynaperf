@@ -2,6 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChartLine, faRightToBracket } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
@@ -66,8 +67,7 @@ export default function Auth() {
           </div>
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">Mot de passe</label>
-            <Input
-              type="password"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"

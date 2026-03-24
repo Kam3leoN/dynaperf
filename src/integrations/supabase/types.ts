@@ -260,6 +260,7 @@ export type Database = {
           email_president: string | null
           format: string
           id: string
+          logo_url: string | null
           montant_ca: number
           nb_leads_transformes: number
           nb_membres_actifs: number
@@ -282,6 +283,7 @@ export type Database = {
           email_president?: string | null
           format?: string
           id?: string
+          logo_url?: string | null
           montant_ca?: number
           nb_leads_transformes?: number
           nb_membres_actifs?: number
@@ -304,6 +306,7 @@ export type Database = {
           email_president?: string | null
           format?: string
           id?: string
+          logo_url?: string | null
           montant_ca?: number
           nb_leads_transformes?: number
           nb_membres_actifs?: number

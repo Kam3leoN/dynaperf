@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faWaveSquare, faKey } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
@@ -44,8 +44,7 @@ export default function ResetPassword() {
         <form onSubmit={handleReset} className="space-y-4">
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">Nouveau mot de passe</label>
-            <Input
-              type="password"
+            <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
