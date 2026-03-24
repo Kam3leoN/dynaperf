@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faChevronDown, faChevronUp, faCamera, faEye, faEyeSlash } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faChevronDown, faChevronUp, faCamera, faEye, faEyeSlash, faDownload, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -387,10 +387,15 @@ export default function Admin() {
   return (
     <AppLayout>
       <Tabs defaultValue="collaborateurs" className="space-y-4">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
-          <TabsTrigger value="collaborateurs">Collaborateurs</TabsTrigger>
-          <TabsTrigger value="secteurs">Secteurs</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="collaborateurs">Collaborateurs</TabsTrigger>
+            <TabsTrigger value="secteurs">Secteurs</TabsTrigger>
+          </TabsList>
+          {currentUser && users.find(u => u.id === currentUser.id)?.roles.includes("super_admin") && (
+            <BackupButton />
+          )}
+        </div>
         <TabsContent value="collaborateurs">
       <div className="space-y-4">
       <div className="bg-card rounded-lg shadow-soft p-4 sm:p-5">
