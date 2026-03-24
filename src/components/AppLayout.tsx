@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { NavLink, useLocation, useNavigate, Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faClipboardList, faRightFromBracket, faBars, faSliders, faUserShield, faPlus, faList, faChartLine } from "@fortawesome/free-solid-svg-icons";
+import { faClipboardList, faRightFromBracket, faBars, faSliders, faUserShield, faChartLine } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { ThemeToggle } from "./ThemeToggle";
 import { useTheme } from "next-themes";
@@ -11,7 +11,6 @@ import { FiltersBar } from "./FiltersBar";
 import { OnlineAvatars } from "./OnlineAvatars";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "./ui/sheet";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
 import type { Filters } from "@/hooks/useAuditData";
 
@@ -28,6 +27,9 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  /* eslint-disable @typescript-eslint/no-unused-vars */
+  const _navigate = useNavigate(); // kept for potential future use
+  /* eslint-enable @typescript-eslint/no-unused-vars */
 
   const linkClass = (path: string) =>
     `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
@@ -36,40 +38,16 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
         : "text-foreground/70 hover:text-foreground hover:bg-secondary"
     }`;
 
-  const navigate = useNavigate();
-  const isAuditsActive = location.pathname === "/audits" || location.pathname === "/audits/new";
-
-  const auditsDropdown = (onItemClick?: () => void) => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-            isAuditsActive
-              ? "bg-primary text-primary-foreground"
-              : "text-foreground/70 hover:text-foreground hover:bg-secondary"
-          }`}
-        >
-          <FontAwesomeIcon icon={faClipboardList} className="h-3.5 w-3.5" />
-          <span>Audits</span>
-          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="ml-0.5 opacity-60"><path d="m6 9 6 6 6-6"/></svg>
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start" className="w-52">
-        <DropdownMenuItem onClick={() => { navigate("/audits"); onItemClick?.(); }} className="gap-2 cursor-pointer">
-          <FontAwesomeIcon icon={faList} className="h-3.5 w-3.5 text-muted-foreground" />
-          Vue d'ensemble
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => { navigate("/audits/new"); onItemClick?.(); }} className="gap-2 cursor-pointer">
-          <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5 text-muted-foreground" />
-          Ajouter un nouvel audit
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-
   const navLinks = (closeMobile?: boolean) => (
     <>
-      {auditsDropdown(closeMobile ? () => setMobileOpen(false) : undefined)}
+      <NavLink to="/" end className={() => linkClass("/")} onClick={() => closeMobile && setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
+        <span>Tableau de bord</span>
+      </NavLink>
+      <NavLink to="/audits" className={() => linkClass("/audits")} onClick={() => closeMobile && setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faClipboardList} className="h-3.5 w-3.5" />
+        <span>Voir tous les audits</span>
+      </NavLink>
       <NavLink to="/business-plan" className={() => linkClass("/business-plan")} onClick={() => closeMobile && setMobileOpen(false)}>
         <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
         <span>Business Plan</span>
