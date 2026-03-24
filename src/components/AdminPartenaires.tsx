@@ -7,12 +7,13 @@ import { Separator } from "@/components/ui/separator";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faCamera, faEye, faFilter } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faCamera, faEye, faFilter, faMars, faVenus, faGears } from "@fortawesome/free-solid-svg-icons";
 import { faLinkedin } from "@fortawesome/free-brands-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
+import GenreManager from "@/components/GenreManager";
 
 interface Partenaire {
   id: string;
@@ -31,6 +32,7 @@ interface Partenaire {
   telephone: string;
   date_anniversaire: string | null;
   statut: string;
+  genre: string | null;
   created_at: string;
 }
 
@@ -43,6 +45,12 @@ const STATUT_OPTIONS = [
 function StatutBadge({ statut }: { statut: string }) {
   const opt = STATUT_OPTIONS.find(o => o.value === statut) || STATUT_OPTIONS[0];
   return <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${opt.color}`}>{opt.label}</span>;
+}
+
+function GenderIcon({ genre }: { genre: string | null }) {
+  if (genre === 'M') return <FontAwesomeIcon icon={faMars} className="h-3.5 w-3.5 text-blue-500" />;
+  if (genre === 'F') return <FontAwesomeIcon icon={faVenus} className="h-3.5 w-3.5 text-pink-300" />;
+  return <span className="text-[10px] text-muted-foreground">?</span>;
 }
 
 function PartenaireAvatar({ url, name, size = 32 }: { url: string | null; name: string; size?: number }) {
@@ -87,6 +95,7 @@ const emptyForm = {
   email: "",
   telephone: "",
   date_anniversaire: "",
+  genre: "",
 };
 
 export default function AdminPartenaires() {
@@ -103,6 +112,8 @@ export default function AdminPartenaires() {
   const [saving, setSaving] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [prenomsGenre, setPrenomsGenre] = useState<Record<string, string>>({});
+  const [genreManagerOpen, setGenreManagerOpen] = useState(false);
 
   const loadPartenaires = useCallback(async () => {
     setLoading(true);
@@ -111,7 +122,21 @@ export default function AdminPartenaires() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { loadPartenaires(); }, [loadPartenaires]);
+  const loadPrenomsGenre = useCallback(async () => {
+    const { data } = await supabase.from("prenoms_genre" as any).select("prenom, genre");
+    if (data) {
+      const map: Record<string, string> = {};
+      (data as any[]).forEach((d: any) => { map[d.prenom.toLowerCase()] = d.genre; });
+      setPrenomsGenre(map);
+    }
+  }, []);
+
+  useEffect(() => { loadPartenaires(); loadPrenomsGenre(); }, [loadPartenaires, loadPrenomsGenre]);
+
+  const detectGenre = useCallback((prenom: string): string | null => {
+    const key = prenom.trim().split(/[-\s]/)[0].toLowerCase();
+    return prenomsGenre[key] || null;
+  }, [prenomsGenre]);
 
   const resetForm = () => { setForm(emptyForm); setAvatarFile(null); setAvatarPreview(null); };
 
@@ -146,6 +171,7 @@ export default function AdminPartenaires() {
     email: form.email.trim(),
     telephone: form.telephone.trim(),
     date_anniversaire: form.date_anniversaire || null,
+    genre: form.genre || null,
   });
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -183,6 +209,7 @@ export default function AdminPartenaires() {
       email: p.email,
       telephone: p.telephone,
       date_anniversaire: p.date_anniversaire || "",
+      genre: p.genre || "",
     });
     setAvatarPreview(p.photo_url);
     setAvatarFile(null);
@@ -231,6 +258,11 @@ export default function AdminPartenaires() {
     return term.split(/\s+/).every(w => hay.includes(w));
   });
 
+  // Gender stats
+  const nbHommes = filtered.filter(p => p.genre === 'M').length;
+  const nbFemmes = filtered.filter(p => p.genre === 'F').length;
+  const nbInconnu = filtered.length - nbHommes - nbFemmes;
+
   const FormFields = ({ isEdit = false }: { isEdit?: boolean }) => (
     <div className="space-y-3">
       {/* Avatar */}
@@ -252,12 +284,39 @@ export default function AdminPartenaires() {
       <div className="grid grid-cols-2 gap-2">
         <div>
           <label className="text-xs text-muted-foreground mb-1 block">Prénom</label>
-          <Input value={form.prenom} onChange={(e) => setForm(f => ({ ...f, prenom: e.target.value }))} className="h-9 text-sm" placeholder="Prénom" required />
+          <Input
+            value={form.prenom}
+            onChange={(e) => {
+              const v = e.target.value;
+              const g = detectGenre(v);
+              setForm(f => ({ ...f, prenom: v, ...(g ? { genre: g } : {}) }));
+            }}
+            className="h-9 text-sm"
+            placeholder="Prénom"
+            required
+          />
         </div>
         <div>
           <label className="text-xs text-muted-foreground mb-1 block">Nom</label>
           <Input value={form.nom} onChange={(e) => setForm(f => ({ ...f, nom: e.target.value }))} className="h-9 text-sm" placeholder="NOM" required />
         </div>
+      </div>
+
+      {/* Genre */}
+      <div>
+        <label className="text-xs text-muted-foreground mb-1 block">Genre</label>
+        <Select value={form.genre || "non_defini"} onValueChange={(v) => setForm(f => ({ ...f, genre: v === "non_defini" ? "" : v }))}>
+          <SelectTrigger className="h-9 text-sm w-44"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="non_defini">Non défini</SelectItem>
+            <SelectItem value="M">
+              <span className="flex items-center gap-1.5"><FontAwesomeIcon icon={faMars} className="h-3 w-3 text-blue-500" /> Homme</span>
+            </SelectItem>
+            <SelectItem value="F">
+              <span className="flex items-center gap-1.5"><FontAwesomeIcon icon={faVenus} className="h-3 w-3 text-pink-300" /> Femme</span>
+            </SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Statut */}
@@ -354,6 +413,30 @@ export default function AdminPartenaires() {
 
   return (
     <div className="bg-card rounded-lg shadow-soft p-4 sm:p-5">
+      {/* Gender balance bar */}
+      <div className="flex items-center gap-3 mb-3 flex-wrap">
+        <div className="flex items-center gap-1.5 bg-blue-500/10 rounded-md px-2.5 py-1">
+          <FontAwesomeIcon icon={faMars} className="h-3.5 w-3.5 text-blue-500" />
+          <span className="text-xs font-semibold text-blue-700 dark:text-blue-400">{nbHommes}</span>
+        </div>
+        <div className="flex items-center gap-1.5 bg-pink-300/15 rounded-md px-2.5 py-1">
+          <FontAwesomeIcon icon={faVenus} className="h-3.5 w-3.5 text-pink-300" />
+          <span className="text-xs font-semibold text-pink-500 dark:text-pink-300">{nbFemmes}</span>
+        </div>
+        {nbInconnu > 0 && (
+          <span className="text-[10px] text-muted-foreground">({nbInconnu} non défini{nbInconnu > 1 ? "s" : ""})</span>
+        )}
+        {filtered.length > 0 && (nbHommes + nbFemmes) > 0 && (
+          <div className="flex items-center gap-1 ml-1">
+            <div className="h-2 rounded-full bg-blue-500" style={{ width: `${Math.max(4, (nbHommes / (nbHommes + nbFemmes)) * 80)}px` }} />
+            <div className="h-2 rounded-full bg-pink-300" style={{ width: `${Math.max(4, (nbFemmes / (nbHommes + nbFemmes)) * 80)}px` }} />
+          </div>
+        )}
+        <button onClick={() => setGenreManagerOpen(true)} className="p-1 rounded hover:bg-secondary transition-colors ml-auto" title="Gérer les prénoms">
+          <FontAwesomeIcon icon={faGears} className="h-3.5 w-3.5 text-muted-foreground" />
+        </button>
+      </div>
+
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h3 className="text-sm font-semibold text-foreground">Gestion des partenaires</h3>
         <div className="flex items-center gap-2 sm:gap-3 flex-1 sm:flex-none justify-end">
@@ -450,7 +533,12 @@ export default function AdminPartenaires() {
                   {filtered.map((p) => (
                     <motion.tr key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="border-b border-border hover:bg-secondary/50 transition-colors">
                       <TableCell><PartenaireAvatar url={p.photo_url} name={`${p.prenom} ${p.nom}`} /></TableCell>
-                      <TableCell className="text-sm font-medium">{p.prenom} {p.nom}</TableCell>
+                      <TableCell className="text-sm font-medium">
+                        <span className="flex items-center gap-1.5">
+                          <GenderIcon genre={p.genre} />
+                          {p.prenom} {p.nom}
+                        </span>
+                      </TableCell>
                       <TableCell><StatutBadge statut={p.statut} /></TableCell>
                       <TableCell><RoleChips p={p} /></TableCell>
                       <TableCell className="text-sm text-muted-foreground">{p.societe || "—"}</TableCell>
@@ -486,7 +574,10 @@ export default function AdminPartenaires() {
                     <div className="flex items-center gap-2 min-w-0">
                       <PartenaireAvatar url={p.photo_url} name={`${p.prenom} ${p.nom}`} />
                       <div className="min-w-0">
-                        <p className="text-sm font-semibold text-foreground truncate">{p.prenom} {p.nom}</p>
+                        <p className="text-sm font-semibold text-foreground truncate flex items-center gap-1">
+                          <GenderIcon genre={p.genre} />
+                          {p.prenom} {p.nom}
+                        </p>
                         <p className="text-xs text-muted-foreground truncate">{p.societe}</p>
                       </div>
                     </div>
@@ -528,7 +619,10 @@ export default function AdminPartenaires() {
           {viewP && (
             <div className="space-y-4 py-2">
               <div className="text-center">
-                <p className="text-sm font-semibold text-foreground">{viewP.prenom} {viewP.nom}</p>
+                <p className="text-sm font-semibold text-foreground flex items-center justify-center gap-1.5">
+                  <GenderIcon genre={viewP.genre} />
+                  {viewP.prenom} {viewP.nom}
+                </p>
                 <p className="text-xs text-muted-foreground">{viewP.societe}</p>
                 <div className="mt-1 flex items-center justify-center gap-2">
                   <StatutBadge statut={viewP.statut} />
@@ -579,6 +673,9 @@ export default function AdminPartenaires() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Genre Manager */}
+      <GenreManager open={genreManagerOpen} onOpenChange={setGenreManagerOpen} onUpdate={() => { loadPrenomsGenre(); loadPartenaires(); }} />
     </div>
   );
 }
