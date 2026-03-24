@@ -51,6 +51,8 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+import { InstallPrompt } from "@/components/InstallPrompt";
+
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
     <QueryClientProvider client={queryClient}>
@@ -58,6 +60,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <InstallPrompt />
           <BrowserRouter basename="/dynaperf">
             <Routes>
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
