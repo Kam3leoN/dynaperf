@@ -43,7 +43,7 @@ export default function SuiviActiviteDashboard() {
         .order("date", { ascending: false }),
       fetchSuiviItemsConfig(),
     ]).then(([{ data }, config]) => {
-      setSuivis((data as SuiviRecord[]) ?? []);
+      setSuivis((data as unknown as SuiviRecord[]) ?? []);
       setItemsConfig(config);
       setLoading(false);
     });
@@ -242,7 +242,7 @@ export default function SuiviActiviteDashboard() {
                         (s.total_items_valides ?? 0) / Math.max(s.total_items ?? 1, 1) >= 0.7
                           ? "bg-emerald-600 text-white"
                           : (s.total_items_valides ?? 0) / Math.max(s.total_items ?? 1, 1) >= 0.4
-                          ? "bg-amber-500 text-white"
+                          ? "bg-amber-500 text-white dark:bg-amber-600"
                           : "bg-destructive text-destructive-foreground"
                       }
                     >
