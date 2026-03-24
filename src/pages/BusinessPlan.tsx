@@ -231,7 +231,7 @@ export default function BusinessPlan() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div ref={pdfRef} className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
@@ -243,7 +243,19 @@ export default function BusinessPlan() {
               Simulateur de rentabilité pour les candidats au réseau Dynabuy
             </p>
           </div>
-          <Badge variant="outline" className="text-xs w-fit">Projection sur {nbAnnees} ans</Badge>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportPDF}
+              disabled={exporting}
+              className="gap-1.5"
+            >
+              <FontAwesomeIcon icon={exporting ? faSpinner : faFilePdf} className={`h-3.5 w-3.5 ${exporting ? "animate-spin" : ""}`} />
+              {exporting ? "Export..." : "Exporter PDF"}
+            </Button>
+            <Badge variant="outline" className="text-xs w-fit">Projection sur {nbAnnees} ans</Badge>
+          </div>
         </div>
 
         {/* KPI Cards */}
