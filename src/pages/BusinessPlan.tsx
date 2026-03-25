@@ -179,7 +179,11 @@ export default function BusinessPlan() {
     return data;
   }, [nbAvantagesAnN, nbClubs, membresParClub, croissanceAnnuelle, tauxResiliation, nbAnnees, prixAvantages, prixClub, commAvantagesEffective, commClubPct, redevanceMensuelle, droitsEntree, oneShotRDParAn, prixOneShotRD, commOneShotRDPct, oneShotAvantagesParAn, prixOneShotAvantages, commOneShotAvantagesPct, tauxParrainage, primeParrainage, tauxConversionFilleul]);
 
-  const fmt = (n: number) => new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
+  const fmt = (n: number) => {
+    const raw = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
+    // Replace all non-breaking / narrow non-breaking spaces with regular spaces for jsPDF compatibility
+    return raw.replace(/[\u00A0\u202F]/g, " ");
+  };
 
   const lastYear = projections[projections.length - 1];
   const firstYear = projections[0];
