@@ -1000,6 +1000,17 @@ function UserConfigPanel({
           </div>
         </div>
       </div>
+      <div>
+        <label className="text-xs font-semibold text-foreground block mb-2">Temps réaliste (semaines indisponibles)</label>
+        <div className="flex items-center gap-2">
+          <Input
+            type="number" min={0} max={52} value={semainesIndispo}
+            onChange={(e) => setSemainesIndispo(parseInt(e.target.value) || 0)}
+            className="h-9 text-sm w-20"
+          />
+          <span className="text-xs text-muted-foreground">semaines (CP, séminaire, frein commercial)</span>
+        </div>
+      </div>
       <Button onClick={handleSave} disabled={saving} className="gap-2 h-9 text-sm">
         <FontAwesomeIcon icon={faFloppyDisk} className="h-3.5 w-3.5" />
         {saving ? "Enregistrement…" : "Enregistrer"}
