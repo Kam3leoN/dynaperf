@@ -5,7 +5,7 @@ import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => {
+// Read at top level so it's available for define(({ mode }) => {
   const basePath = mode === "development" ? "/" : "/dynaperf/";
 
   return {
