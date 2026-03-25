@@ -381,6 +381,7 @@ export type Database = {
           prime_audit_1: number
           prime_audit_2: number
           prime_audit_3_plus: number
+          semaines_indisponibles: number
           updated_at: string
           user_id: string
         }
@@ -394,6 +395,7 @@ export type Database = {
           prime_audit_1?: number
           prime_audit_2?: number
           prime_audit_3_plus?: number
+          semaines_indisponibles?: number
           updated_at?: string
           user_id: string
         }
@@ -407,6 +409,7 @@ export type Database = {
           prime_audit_1?: number
           prime_audit_2?: number
           prime_audit_3_plus?: number
+          semaines_indisponibles?: number
           updated_at?: string
           user_id?: string
         }
@@ -583,18 +586,21 @@ export type Database = {
       secteurs: {
         Row: {
           created_at: string
+          departements: string[]
           id: string
           nom: string
           updated_at: string
         }
         Insert: {
           created_at?: string
+          departements?: string[]
           id?: string
           nom: string
           updated_at?: string
         }
         Update: {
           created_at?: string
+          departements?: string[]
           id?: string
           nom?: string
           updated_at?: string
