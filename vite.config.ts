@@ -11,6 +11,7 @@ export default defineConfig(({ mode }) => {
   return {
     define: {
       __BUILD_DATE__: JSON.stringify(new Date().toISOString()),
+      __APP_VERSION__: JSON.stringify(process.env.npm_package_version || "1.0.0"),
     },
     base: basePath,
     server: {
