@@ -18,7 +18,7 @@ const StrokeTitle = ({ text }: { text: string }) => (
 
 const Index = () => {
   const {
-    audits, filters, setFilters,
+    audits, filters, setFilters, availableYears,
     scoresByType, collaborateurStats, monthlyData,
     partenaireStats, scoreDistribution, globalStats, loading,
   } = useAuditData();
@@ -28,7 +28,7 @@ const Index = () => {
     : collaborateurStats.reduce((sum, c) => sum + c.objectif, 0);
 
   return (
-    <AppLayout filters={filters} setFilters={setFilters}>
+    <AppLayout filters={filters} setFilters={setFilters} availableYears={availableYears}>
       {loading ? (
         <div className="flex items-center justify-center py-20">
           <p className="text-muted-foreground">Chargement des audits…</p>
