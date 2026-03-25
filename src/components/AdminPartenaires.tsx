@@ -263,7 +263,7 @@ export default function AdminPartenaires() {
   const nbFemmes = filtered.filter(p => p.genre === 'F').length;
   const nbInconnu = filtered.length - nbHommes - nbFemmes;
 
-  const FormFields = ({ isEdit = false }: { isEdit?: boolean }) => (
+  const renderFormFields = (isEdit = false) => (
     <div className="space-y-3">
       {/* Avatar */}
       <div className="flex justify-center">
@@ -459,7 +459,7 @@ export default function AdminPartenaires() {
                 <DialogDescription>Ajoutez un partenaire avec ses informations.</DialogDescription>
               </DialogHeader>
               <form onSubmit={handleCreate} className="py-3">
-                <FormFields />
+                {renderFormFields(false)}
                 <div className="flex justify-end gap-2 pt-4">
                   <Button type="button" variant="outline" size="sm" onClick={() => { setCreateOpen(false); resetForm(); }} className="rounded-md">Annuler</Button>
                   <Button type="submit" size="sm" disabled={saving} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md">
@@ -661,8 +661,8 @@ export default function AdminPartenaires() {
             <DialogTitle>Modifier le partenaire</DialogTitle>
             <DialogDescription>Modifiez les informations de {editP?.prenom} {editP?.nom}</DialogDescription>
           </DialogHeader>
-          <div className="py-3">
-            <FormFields isEdit />
+           <div className="py-3">
+            {renderFormFields(true)}
             <div className="flex justify-end gap-2 pt-4">
               <Button variant="outline" size="sm" onClick={() => { setEditP(null); resetForm(); }} className="rounded-md">Annuler</Button>
               <Button size="sm" disabled={saving} onClick={handleEditSave} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5">

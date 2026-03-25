@@ -12,11 +12,10 @@ interface GlobalStatsProps {
   objectifTotal?: number;
   objectifNotes?: number;
   annee?: string;
+  semainesIndisponibles?: number;
 }
 
-const SEMAINES_INDISPONIBLES = 10; // 5 CP + ~4 sem freeze 15/12-15/01 + 1 séminaire/inter-agence
-
-export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttente, objectifTotal, annee }: GlobalStatsProps) {
+export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttente, objectifTotal, annee, semainesIndisponibles = 10 }: GlobalStatsProps) {
   const [modeRealiste, setModeRealiste] = useState(false);
 
   const obj = objectifTotal ?? 0;
@@ -32,9 +31,9 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
   const joursRestants = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
   const semainesRestantesTotal = Math.max(1, Math.ceil(joursRestants / 7));
 
-  // Mode réaliste : on retire 10 semaines
+  // Mode réaliste : on retire les semaines indisponibles
   const semainesEffectives = modeRealiste
-    ? Math.max(1, semainesRestantesTotal - SEMAINES_INDISPONIBLES)
+    ? Math.max(1, semainesRestantesTotal - semainesIndisponibles)
     : semainesRestantesTotal;
   const moyenneParSemaine = restant > 0 ? +(restant / semainesEffectives).toFixed(1) : 0;
 
@@ -150,7 +149,7 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
           {modeRealiste && (
             <p className="text-[10px] text-amber-500 mt-1 flex items-center gap-1">
               <FontAwesomeIcon icon={faUmbrellaBeach} className="h-2.5 w-2.5" />
-              −10 sem. (CP, séminaire, frein commercial)
+              −{semainesIndisponibles} sem. (CP, séminaire, frein commercial)
             </p>
           )}
 

@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
 
     // SAVE CONFIG (objectives + primes)
     if (action === "save-config") {
-      const { userId, objectif, palier_1, palier_2, palier_3, prime_audit_1, prime_audit_2, prime_audit_3_plus } = body;
+      const { userId, objectif, palier_1, palier_2, palier_3, prime_audit_1, prime_audit_2, prime_audit_3_plus, semaines_indisponibles } = body;
       if (!userId) return jsonError("userId requis", 400);
       const { error } = await adminClient.from("collaborateur_config").upsert(
         {
@@ -99,6 +99,7 @@ Deno.serve(async (req) => {
           prime_audit_1: prime_audit_1 ?? 0,
           prime_audit_2: prime_audit_2 ?? 0,
           prime_audit_3_plus: prime_audit_3_plus ?? 0,
+          semaines_indisponibles: semaines_indisponibles ?? 10,
         },
         { onConflict: "user_id" }
       );
