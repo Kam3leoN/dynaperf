@@ -49,9 +49,10 @@ interface AppLayoutProps {
   children: React.ReactNode;
   filters?: Filters;
   setFilters?: (f: Filters) => void;
+  availableYears?: number[];
 }
 
-export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
+export function AppLayout({ children, filters, setFilters, availableYears }: AppLayoutProps) {
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin(user);
   const { resolvedTheme } = useTheme();
@@ -446,7 +447,7 @@ export function AppLayout({ children, filters, setFilters }: AppLayoutProps) {
               </SheetTitle>
             </SheetHeader>
             <div className="mt-6">
-              <FiltersBar filters={filters} setFilters={setFilters} vertical />
+              <FiltersBar filters={filters} setFilters={setFilters} vertical availableYears={availableYears} />
             </div>
           </SheetContent>
         </Sheet>

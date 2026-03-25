@@ -20,6 +20,7 @@ export interface Filters {
   typeEvenement: string;
   moisVersement: string;
   statut: string;
+  annee: string;
 }
 
 function dbToAudit(row: any): Audit {
@@ -44,6 +45,7 @@ export function useAuditData() {
     typeEvenement: "Tous",
     moisVersement: "Tous",
     statut: "Tous",
+    annee: String(new Date().getFullYear()),
   });
 
   // Load from Supabase
@@ -61,8 +63,15 @@ export function useAuditData() {
     fetchAudits();
   }, []);
 
+  // Extract available years from all audits
+  const availableYears = useMemo(() => {
+    const years = [...new Set(audits.map((a) => new Date(a.date).getFullYear()))].sort((a, b) => b - a);
+    return years;
+  }, [audits]);
+
   const filtered = useMemo(() => {
     return audits.filter((a) => {
+      if (filters.annee !== "Tous" && String(new Date(a.date).getFullYear()) !== filters.annee) return false;
       if (filters.auditeur !== "Tous" && a.auditeur !== filters.auditeur) return false;
       if (filters.typeEvenement !== "Tous" && a.typeEvenement !== filters.typeEvenement) return false;
       if (filters.moisVersement !== "Tous" && a.moisVersement !== filters.moisVersement) return false;
@@ -202,6 +211,7 @@ export function useAuditData() {
   return {
     audits: filtered,
     allAudits: audits,
+    availableYears,
     filters,
     setFilters,
     scoresByType,
