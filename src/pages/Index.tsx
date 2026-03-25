@@ -39,6 +39,7 @@ const Index = () => {
             {...globalStats}
             objectifTotal={objectifTotal}
             objectifNotes={objectifTotal}
+            annee={filters.annee}
           />
           
           <section>
