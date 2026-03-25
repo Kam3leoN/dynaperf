@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import { useAuditData } from "@/hooks/useAuditData";
 import { GlobalStats } from "@/components/GlobalStats";
 import { ScoreCard } from "@/components/ScoreCard";
@@ -8,6 +9,7 @@ import { PartenaireLeaderboard } from "@/components/PartenaireLeaderboard";
 import { ScoresByTypeChart } from "@/components/ScoresByTypeChart";
 import { PodiumCards } from "@/components/PodiumCards";
 import { AppLayout } from "@/components/AppLayout";
+import { supabase } from "@/integrations/supabase/client";
 
 
 const StrokeTitle = ({ text }: { text: string }) => (
@@ -22,6 +24,18 @@ const Index = () => {
     scoresByType, collaborateurStats, monthlyData,
     partenaireStats, scoreDistribution, globalStats, loading,
   } = useAuditData();
+
+  const [semainesIndisponibles, setSemainesIndisponibles] = useState(10);
+
+  useEffect(() => {
+    const loadConfig = async () => {
+      const { data } = await supabase.rpc("get_my_config") as any;
+      if (data && data.length > 0) {
+        setSemainesIndisponibles(data[0].semaines_indisponibles ?? 10);
+      }
+    };
+    loadConfig();
+  }, []);
 
   const objectifTotal = filters.auditeur !== "Tous"
     ? collaborateurStats.find((c) => c.nom === filters.auditeur)?.objectif ?? 0
@@ -40,6 +54,7 @@ const Index = () => {
             objectifTotal={objectifTotal}
             objectifNotes={objectifTotal}
             annee={filters.annee}
+            semainesIndisponibles={semainesIndisponibles}
           />
           
           <section>
