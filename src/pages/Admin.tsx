@@ -47,6 +47,7 @@ interface UserConfig {
   prime_audit_1: number;
   prime_audit_2: number;
   prime_audit_3_plus: number;
+  semaines_indisponibles: number;
 }
 
 interface ManagedUser {
@@ -339,6 +340,7 @@ export default function Admin() {
         prime_audit_1: parseFloat(editPrime1) || 0,
         prime_audit_2: parseFloat(editPrime2) || 0,
         prime_audit_3_plus: parseFloat(editPrime3) || 0,
+        semaines_indisponibles: editUser.config?.semaines_indisponibles ?? 10,
       },
     });
 
@@ -929,6 +931,7 @@ function UserConfigPanel({
   const [prime1, setPrime1] = useState(config?.prime_audit_1 ?? 0);
   const [prime2, setPrime2] = useState(config?.prime_audit_2 ?? 0);
   const [prime3, setPrime3] = useState(config?.prime_audit_3_plus ?? 0);
+  const [semainesIndispo, setSemainesIndispo] = useState(config?.semaines_indisponibles ?? 10);
   const [saving, setSaving] = useState(false);
 
   const handleSave = async () => {
@@ -944,6 +947,7 @@ function UserConfigPanel({
         prime_audit_1: prime1,
         prime_audit_2: prime2,
         prime_audit_3_plus: prime3,
+        semaines_indisponibles: semainesIndispo,
       },
     });
     if (res.data?.error) toast.error(res.data.error);
@@ -994,6 +998,17 @@ function UserConfigPanel({
             <span className="text-[10px] text-muted-foreground">3e et suivants</span>
             <Input type="number" min={0} step={0.01} value={prime3} onChange={(e) => setPrime3(parseFloat(e.target.value) || 0)} className="h-9 text-sm" />
           </div>
+        </div>
+      </div>
+      <div>
+        <label className="text-xs font-semibold text-foreground block mb-2">Temps réaliste (semaines indisponibles)</label>
+        <div className="flex items-center gap-2">
+          <Input
+            type="number" min={0} max={52} value={semainesIndispo}
+            onChange={(e) => setSemainesIndispo(parseInt(e.target.value) || 0)}
+            className="h-9 text-sm w-20"
+          />
+          <span className="text-xs text-muted-foreground">semaines (CP, séminaire, frein commercial)</span>
         </div>
       </div>
       <Button onClick={handleSave} disabled={saving} className="gap-2 h-9 text-sm">
