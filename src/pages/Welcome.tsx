@@ -79,7 +79,7 @@ export default function Welcome() {
         {/* Version chip */}
         <div className="mt-10 flex items-center gap-2">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 py-1 text-[11px] text-muted-foreground">
-            v1.0.0 — Dernière mise à jour le 24/03/2026
+            v{__APP_VERSION__} — Dernière mise à jour le {new Date(__BUILD_DATE__).toLocaleDateString("fr-FR")}
           </span>
         </div>
       </section>

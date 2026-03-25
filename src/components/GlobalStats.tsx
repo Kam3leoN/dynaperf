@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowTrendUp, faArrowTrendDown, faCheckCircle, faHourglassHalf } from "@fortawesome/free-solid-svg-icons";
+import { faCheckCircle, faHourglassHalf, faArrowTrendUp, faCalendarDay, faCalculator } from "@fortawesome/free-solid-svg-icons";
 import { Progress } from "@/components/ui/progress";
 
 interface GlobalStatsProps {
@@ -10,13 +10,23 @@ interface GlobalStatsProps {
   enAttente: number;
   objectifTotal?: number;
   objectifNotes?: number;
+  annee?: string;
 }
 
-export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttente, objectifTotal, objectifNotes }: GlobalStatsProps) {
+export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttente, objectifTotal, annee }: GlobalStatsProps) {
   const obj = objectifTotal ?? 0;
   const pctRealises = obj > 0 ? Math.min(100, (totalAudits / obj) * 100) : 0;
   const restant = Math.max(0, obj - totalAudits);
   const pctRestant = obj > 0 ? (restant / obj) * 100 : 0;
+
+  // Calculate remaining days until Dec 31 of selected year
+  const selectedYear = annee && annee !== "Tous" ? parseInt(annee) : new Date().getFullYear();
+  const now = new Date();
+  const endOfYear = new Date(selectedYear, 11, 31); // Dec 31
+  const diffMs = endOfYear.getTime() - now.getTime();
+  const joursRestants = Math.max(0, Math.ceil(diffMs / (1000 * 60 * 60 * 24)));
+  const semainesRestantes = Math.max(1, Math.ceil(joursRestants / 7));
+  const moyenneParSemaine = restant > 0 ? +(restant / semainesRestantes).toFixed(1) : 0;
 
   const stats = [
     {
@@ -36,7 +46,16 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
       iconColor: "text-amber-500",
     },
     { label: "Moyenne globale", value: moyenneGlobale, suffix: "/10", highlight: true },
-    { label: "En attente", value: enAttente, suffix: "", warn: enAttente > 0 },
+    {
+      label: "Temps restant",
+      isCountdown: true,
+      jours: joursRestants,
+      semaines: semainesRestantes,
+      moyenneSemaine: moyenneParSemaine,
+      restantCount: restant,
+      icon: faCalendarDay,
+      iconColor: "text-blue-500",
+    },
   ];
 
   return (
@@ -55,33 +74,52 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
             )}
             {s.label}
           </p>
-          <div className="flex items-baseline gap-1 sm:gap-1.5 mt-1.5 sm:mt-2">
-            <span className={`text-2xl sm:text-3xl font-bold tabular-nums ${s.highlight ? "text-primary" : "text-foreground"}`}>
-              {s.value}
-            </span>
-            {'objectif' in s && s.objectif > 0 ? (
-              <span className="text-sm sm:text-base text-muted-foreground tabular-nums">/{s.objectif}</span>
-            ) : s.suffix ? (
-              <span className="text-xs sm:text-sm text-muted-foreground">{s.suffix}</span>
-            ) : null}
-          </div>
-          {'pct' in s && s.objectif && s.objectif > 0 && (
-            <div className="mt-2 space-y-1">
-              <Progress value={s.pct} className="h-2" />
-              <p className="text-[10px] text-muted-foreground tabular-nums font-medium">
-                {s.pct.toFixed(0)}% de l'objectif
-              </p>
+
+          {'isCountdown' in s && s.isCountdown ? (
+            <div className="mt-1.5 sm:mt-2">
+              <div className="flex items-baseline gap-1">
+                <span className="text-2xl sm:text-3xl font-bold tabular-nums text-foreground">{s.jours}</span>
+                <span className="text-xs sm:text-sm text-muted-foreground">jours restants</span>
+              </div>
+              {s.restantCount > 0 ? (
+                <div className="mt-2 flex items-center gap-1.5 text-[10px] sm:text-xs text-muted-foreground">
+                  <FontAwesomeIcon icon={faCalculator} className="h-3 w-3 text-primary" />
+                  <span className="tabular-nums font-medium">
+                    {s.moyenneSemaine} audits/sem. nécessaires
+                  </span>
+                </div>
+              ) : (
+                <p className="text-[10px] sm:text-xs text-emerald-500 mt-1.5 flex items-center gap-1">
+                  <FontAwesomeIcon icon={faCheckCircle} className="h-3 w-3" /> Objectif atteint !
+                </p>
+              )}
             </div>
-          )}
-          {'warn' in s && s.warn && (
-            <p className="text-[10px] sm:text-xs text-primary mt-1.5 sm:mt-2 flex items-center gap-1">
-              <FontAwesomeIcon icon={faArrowTrendDown} className="h-3 w-3" /> À noter
-            </p>
-          )}
-          {s.highlight && s.value >= 6.5 && (
-            <p className="text-[10px] sm:text-xs text-foreground/60 mt-1.5 sm:mt-2 flex items-center gap-1">
-              <FontAwesomeIcon icon={faArrowTrendUp} className="h-3 w-3" /> Bonne performance
-            </p>
+          ) : (
+            <>
+              <div className="flex items-baseline gap-1 sm:gap-1.5 mt-1.5 sm:mt-2">
+                <span className={`text-2xl sm:text-3xl font-bold tabular-nums ${'highlight' in s && s.highlight ? "text-primary" : "text-foreground"}`}>
+                  {s.value}
+                </span>
+                {'objectif' in s && s.objectif && s.objectif > 0 ? (
+                  <span className="text-sm sm:text-base text-muted-foreground tabular-nums">/{s.objectif}</span>
+                ) : 'suffix' in s && s.suffix ? (
+                  <span className="text-xs sm:text-sm text-muted-foreground">{s.suffix}</span>
+                ) : null}
+              </div>
+              {'pct' in s && 'objectif' in s && s.objectif && s.objectif > 0 && (
+                <div className="mt-2 space-y-1">
+                  <Progress value={s.pct} className="h-2" />
+                  <p className="text-[10px] text-muted-foreground tabular-nums font-medium">
+                    {s.pct.toFixed(0)}% de l'objectif
+                  </p>
+                </div>
+              )}
+              {'highlight' in s && s.highlight && s.value >= 6.5 && (
+                <p className="text-[10px] sm:text-xs text-foreground/60 mt-1.5 sm:mt-2 flex items-center gap-1">
+                  <FontAwesomeIcon icon={faArrowTrendUp} className="h-3 w-3" /> Bonne performance
+                </p>
+              )}
+            </>
           )}
         </motion.div>
       ))}
