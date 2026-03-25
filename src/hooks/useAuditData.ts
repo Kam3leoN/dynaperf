@@ -211,6 +211,7 @@ export function useAuditData() {
   return {
     audits: filtered,
     allAudits: audits,
+    availableYears,
     filters,
     setFilters,
     scoresByType,

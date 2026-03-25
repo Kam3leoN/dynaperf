@@ -8,14 +8,16 @@ interface FiltersBarProps {
   filters: Filters;
   setFilters: (f: Filters) => void;
   vertical?: boolean;
+  availableYears?: number[];
 }
 
-export function FiltersBar({ filters, setFilters, vertical }: FiltersBarProps) {
+export function FiltersBar({ filters, setFilters, vertical, availableYears }: FiltersBarProps) {
   const update = (key: keyof Filters, value: string) => {
     setFilters({ ...filters, [key]: value });
   };
 
   const selectClass = vertical ? "w-full" : "w-[130px] sm:w-[160px]";
+  const years = availableYears && availableYears.length > 0 ? availableYears : [2024, 2025, 2026];
 
   return (
     <div className={`flex items-center gap-2 sm:gap-3 ${vertical ? "flex-col items-stretch" : "flex-nowrap"}`}>
@@ -25,6 +27,17 @@ export function FiltersBar({ filters, setFilters, vertical }: FiltersBarProps) {
           <span className="text-xs sm:text-sm font-semibold tracking-tight hidden sm:inline">Filtres</span>
         </div>
       )}
+      <Select value={filters.annee} onValueChange={(v) => update("annee", v)}>
+        <SelectTrigger className={`${selectClass} h-8 sm:h-9 text-xs sm:text-sm rounded-md shadow-soft border-border`}>
+          <SelectValue placeholder="Année" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="Tous">Toutes années</SelectItem>
+          {years.map((y) => (
+            <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <Select value={filters.auditeur} onValueChange={(v) => update("auditeur", v)}>
         <SelectTrigger className={`${selectClass} h-8 sm:h-9 text-xs sm:text-sm rounded-md shadow-soft border-border`}>
           <SelectValue placeholder="Auditeur" />
