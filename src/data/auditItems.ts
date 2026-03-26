@@ -12,6 +12,8 @@ export interface AuditItemDef {
   sortOrder: number;
   categoryId: string;
   autoField?: string;
+  interets?: string;
+  commentYParvenir?: string;
 }
 
 export interface AuditCategoryDef {
@@ -77,6 +79,8 @@ export async function fetchAuditConfig(typeKey: string): Promise<AuditTypeConfig
         sortOrder: i.sort_order,
         categoryId: c.id,
         autoField: (i as any).auto_field ?? undefined,
+        interets: (i as any).interets ?? undefined,
+        commentYParvenir: (i as any).comment_y_parvenir ?? undefined,
       })),
   }));
 
