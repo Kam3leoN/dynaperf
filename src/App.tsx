@@ -85,6 +85,7 @@ const App = () => (
               <Route path="/audits" element={<ProtectedRoute><Registre /></ProtectedRoute>} />
               <Route path="/audits/new" element={<ProtectedRoute><NewAudit /></ProtectedRoute>} />
               <Route path="/audits/new/form" element={<ProtectedRoute><AuditForm /></ProtectedRoute>} />
+              <Route path="/audits/edit/:auditId" element={<ProtectedRoute><AuditForm /></ProtectedRoute>} />
               <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
               <Route path="/admin/audit-grid" element={<AdminRoute><AdminAuditGrid /></AdminRoute>} />
               <Route path="/business-plan" element={<ProtectedRoute><BusinessPlan /></ProtectedRoute>} />

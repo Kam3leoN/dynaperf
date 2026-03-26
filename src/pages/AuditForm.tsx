@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useNavigate, useSearchParams, useParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { StepZeroForm, StepZeroData } from "@/components/audit-stepper/StepZeroForm";
 import { AuditItemCard, ItemAnswer } from "@/components/audit-stepper/AuditItemCard";
@@ -27,12 +27,14 @@ function countInfoFilled(data: StepZeroData | undefined): number {
   return count;
 }
 
-const INFO_REQUIRED_FIELDS = 5; // partenaire, auditeur, lieu, typeLieu, date
+const INFO_REQUIRED_FIELDS = 5;
 
 export default function AuditForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { auditId } = useParams<{ auditId: string }>();
   const typeEvenement = searchParams.get("type") || "RD Présentiel";
+  const isEditMode = !!auditId;
 
   const [config, setConfig] = useState<AuditTypeConfig | null>(null);
   const [configLoading, setConfigLoading] = useState(true);
@@ -40,14 +42,69 @@ export default function AuditForm() {
   const [stepZeroData, setStepZeroData] = useState<StepZeroData | undefined>();
   const [answers, setAnswers] = useState<Record<string, ItemAnswer>>({});
   const [photos, setPhotos] = useState<File[]>([]);
+  const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
+  const [editLoaded, setEditLoaded] = useState(false);
   const itemsSectionRef = useRef<HTMLDivElement>(null);
 
+  // Load config
   useEffect(() => {
     fetchAuditConfig(typeEvenement).then((c) => {
       setConfig(c);
       setConfigLoading(false);
     });
   }, [typeEvenement]);
+
+  // Load existing audit data for edit mode
+  useEffect(() => {
+    if (!isEditMode || !auditId || editLoaded) return;
+    
+    const loadExistingAudit = async () => {
+      const [{ data: audit }, { data: detail }] = await Promise.all([
+        supabase.from("audits").select("*").eq("id", auditId).single(),
+        supabase.from("audit_details").select("*").eq("audit_id", auditId).single(),
+      ]);
+
+      if (audit) {
+        setStepZeroData({
+          partenaireAudite: audit.partenaire,
+          partenaireReferent: detail?.partenaire_referent || "",
+          auditeur: audit.auditeur,
+          lieu: audit.lieu || "",
+          typeLieu: detail?.type_lieu || "",
+          dateEvenement: new Date(audit.date),
+          heureEvenement: detail?.heure_evenement || "",
+          nomClub: detail?.nom_club || undefined,
+          qualiteLieu: detail?.qualite_lieu ?? undefined,
+          nbAdherents: detail?.nb_adherents ?? undefined,
+          nbInvites: detail?.nb_invites ?? undefined,
+          nbNoShow: detail?.nb_no_show ?? undefined,
+          nbParticipants: detail?.nb_participants ?? undefined,
+          nbRdvPris: detail?.nb_rdv_pris ?? undefined,
+        });
+
+        if (detail?.items) {
+          const itemsData = detail.items as Record<string, any>;
+          const loadedAnswers: Record<string, ItemAnswer> = {};
+          Object.entries(itemsData).forEach(([id, ans]) => {
+            loadedAnswers[id] = {
+              score: ans.score ?? 0,
+              touched: true,
+              comment: ans.comment,
+              checklist: ans.checklist,
+              rawValue: ans.rawValue,
+            };
+          });
+          setAnswers(loadedAnswers);
+        }
+
+        if (detail?.photos) {
+          setExistingPhotos(detail.photos as string[]);
+        }
+      }
+      setEditLoaded(true);
+    };
+    loadExistingAudit();
+  }, [isEditMode, auditId, editLoaded]);
 
   const allItems = useMemo(
     () =>
@@ -61,7 +118,6 @@ export default function AuditForm() {
   const answeredCount = Object.values(answers).filter((a) => a.touched).length;
   const infoFilled = countInfoFilled(stepZeroData);
 
-  // Global progress: info fields + audit items
   const totalExpected = INFO_REQUIRED_FIELDS + totalItems;
   const totalFilled = infoFilled + answeredCount;
   const progress = totalExpected > 0 ? (totalFilled / totalExpected) * 100 : 0;
@@ -91,11 +147,11 @@ export default function AuditForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [answers]);
 
-  const uploadPhotos = async (auditId: string): Promise<string[]> => {
+  const uploadPhotos = async (id: string): Promise<string[]> => {
     const urls: string[] = [];
     for (const file of photos) {
       const ext = file.name.split(".").pop() || "jpg";
-      const path = `${auditId}/${crypto.randomUUID()}.${ext}`;
+      const path = `${id}/${crypto.randomUUID()}.${ext}`;
       const { error } = await supabase.storage
         .from("audit-photos")
         .upload(path, file, { contentType: file.type });
@@ -123,31 +179,54 @@ export default function AuditForm() {
     const moisVersementIdx = Math.min(month + 1, 11);
     const moisVersement = MOIS_ORDRE[moisVersementIdx];
 
-    const { data: auditRow, error: auditErr } = await supabase
-      .from("audits")
-      .insert({
-        date: dateStr,
-        partenaire: stepZeroData.partenaireAudite,
-        lieu: stepZeroData.lieu,
-        auditeur: stepZeroData.auditeur,
-        type_evenement: typeEvenement,
-        note: noteSur10,
-        mois_versement: moisVersement,
-        statut: "OK",
-      })
-      .select()
-      .single();
+    const auditPayload = {
+      date: dateStr,
+      partenaire: stepZeroData.partenaireAudite,
+      lieu: stepZeroData.lieu,
+      auditeur: stepZeroData.auditeur,
+      type_evenement: typeEvenement,
+      note: noteSur10,
+      mois_versement: moisVersement,
+      statut: "OK" as const,
+    };
 
-    if (auditErr) {
-      toast.error("Erreur lors de la création de l'audit");
-      console.error(auditErr);
-      setPhase("main");
-      return;
+    let targetAuditId: string;
+
+    if (isEditMode && auditId) {
+      // Update existing audit
+      const { error: auditErr } = await supabase
+        .from("audits")
+        .update(auditPayload)
+        .eq("id", auditId);
+
+      if (auditErr) {
+        toast.error("Erreur lors de la modification de l'audit");
+        console.error(auditErr);
+        setPhase("main");
+        return;
+      }
+      targetAuditId = auditId;
+    } else {
+      // Create new audit
+      const { data: auditRow, error: auditErr } = await supabase
+        .from("audits")
+        .insert(auditPayload)
+        .select()
+        .single();
+
+      if (auditErr) {
+        toast.error("Erreur lors de la création de l'audit");
+        console.error(auditErr);
+        setPhase("main");
+        return;
+      }
+      targetAuditId = auditRow.id;
     }
 
-    let photoUrls: string[] = [];
+    let photoUrls: string[] = [...existingPhotos];
     if (photos.length > 0) {
-      photoUrls = await uploadPhotos(auditRow.id);
+      const newUrls = await uploadPhotos(targetAuditId);
+      photoUrls = [...photoUrls, ...newUrls];
     }
 
     const itemsJson: Record<string, any> = {};
@@ -160,8 +239,8 @@ export default function AuditForm() {
       };
     });
 
-    const { error: detailErr } = await supabase.from("audit_details").insert({
-      audit_id: auditRow.id,
+    const detailPayload = {
+      audit_id: targetAuditId,
       partenaire_referent: stepZeroData.partenaireReferent || null,
       type_lieu: stepZeroData.typeLieu || null,
       qualite_lieu: stepZeroData.qualiteLieu ?? null,
@@ -176,20 +255,51 @@ export default function AuditForm() {
       total_points: totalPoints,
       note_sur_10: noteSur10,
       photos: photoUrls,
-    });
+    };
 
-    if (detailErr) {
-      toast.error("Erreur lors de l'enregistrement des détails");
-      console.error(detailErr);
-      setPhase("main");
-      return;
+    if (isEditMode) {
+      // Update or upsert detail
+      const { data: existingDetail } = await supabase
+        .from("audit_details")
+        .select("id")
+        .eq("audit_id", targetAuditId)
+        .single();
+
+      if (existingDetail) {
+        const { error: detailErr } = await supabase
+          .from("audit_details")
+          .update(detailPayload)
+          .eq("audit_id", targetAuditId);
+        if (detailErr) {
+          toast.error("Erreur lors de la modification des détails");
+          console.error(detailErr);
+          setPhase("main");
+          return;
+        }
+      } else {
+        const { error: detailErr } = await supabase.from("audit_details").insert(detailPayload);
+        if (detailErr) {
+          toast.error("Erreur lors de l'enregistrement des détails");
+          console.error(detailErr);
+          setPhase("main");
+          return;
+        }
+      }
+    } else {
+      const { error: detailErr } = await supabase.from("audit_details").insert(detailPayload);
+      if (detailErr) {
+        toast.error("Erreur lors de l'enregistrement des détails");
+        console.error(detailErr);
+        setPhase("main");
+        return;
+      }
     }
 
-    toast.success(`Audit enregistré — Note : ${noteSur10}/10`);
+    toast.success(isEditMode ? `Audit modifié — Note : ${noteSur10}/10` : `Audit enregistré — Note : ${noteSur10}/10`);
     navigate("/audits");
   };
 
-  if (configLoading) {
+  if (configLoading || (isEditMode && !editLoaded)) {
     return (
       <AppLayout>
         <div className="flex items-center justify-center py-20">
@@ -241,12 +351,13 @@ export default function AuditForm() {
             ? "Photos de l'audit"
             : phase === "saving"
             ? "Enregistrement..."
+            : isEditMode
+            ? "Modifier l'audit"
             : "Nouvel audit"}
         </h1>
 
         {phase === "main" && (
           <div className="space-y-8">
-            {/* Section info — always visible, scrollable */}
             <div>
               <h2 className="text-sm font-bold text-foreground uppercase tracking-wider border-b border-border pb-2 mb-4">
                 Informations générales
@@ -259,7 +370,6 @@ export default function AuditForm() {
               />
             </div>
 
-            {/* Audit items — shown below info */}
             <div ref={itemsSectionRef} className="space-y-6">
               {categories.map((cat) => {
                 const catItems = allItems.filter((i) => i.categoryId === cat.id);
@@ -288,7 +398,6 @@ export default function AuditForm() {
               })}
             </div>
 
-            {/* Action button */}
             <div className="pt-4 border-t border-border">
               <Button
                 onClick={handleGoToPhotos}

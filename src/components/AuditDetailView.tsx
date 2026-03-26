@@ -226,7 +226,21 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
                                   <span className="whitespace-pre-line">{item.condition}</span>
                                 </div>
                               )}
-                              {item.scoringRules && (
+                          {/* Intérêts & Comment y parvenir */}
+                          {item.interets && (
+                            <div className="rounded-md border border-border bg-emerald-500/5 p-2.5">
+                              <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 block mb-0.5">Quel intérêt ?</span>
+                              <p className="text-xs sm:text-sm text-foreground/80 whitespace-pre-line">{item.interets}</p>
+                            </div>
+                          )}
+                          {item.commentYParvenir && (
+                            <div className="rounded-md border border-border bg-blue-500/5 p-2.5">
+                              <span className="text-xs font-semibold text-blue-700 dark:text-blue-400 block mb-0.5">Comment y parvenir ?</span>
+                              <p className="text-xs sm:text-sm text-foreground/80 whitespace-pre-line">{item.commentYParvenir}</p>
+                            </div>
+                          )}
+
+                          {item.scoringRules && (
                                 <p className="text-xs sm:text-sm text-foreground/70 pt-1.5 border-t border-border whitespace-pre-line leading-relaxed">
                                   {item.scoringRules}
                                 </p>

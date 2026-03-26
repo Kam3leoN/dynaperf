@@ -158,11 +158,13 @@ export type Database = {
           auto_field: string | null
           category_id: string
           checklist_items: Json | null
+          comment_y_parvenir: string
           condition: string
           created_at: string
           description: string
           id: string
           input_type: string
+          interets: string
           max_points: number
           scoring_rules: string | null
           sort_order: number
@@ -173,11 +175,13 @@ export type Database = {
           auto_field?: string | null
           category_id: string
           checklist_items?: Json | null
+          comment_y_parvenir?: string
           condition?: string
           created_at?: string
           description?: string
           id?: string
           input_type?: string
+          interets?: string
           max_points?: number
           scoring_rules?: string | null
           sort_order?: number
@@ -188,11 +192,13 @@ export type Database = {
           auto_field?: string | null
           category_id?: string
           checklist_items?: Json | null
+          comment_y_parvenir?: string
           condition?: string
           created_at?: string
           description?: string
           id?: string
           input_type?: string
+          interets?: string
           max_points?: number
           scoring_rules?: string | null
           sort_order?: number

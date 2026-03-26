@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminSecteurs from "@/components/AdminSecteurs";
+import AdminAuditGridInline from "@/components/AdminAuditGrid";
 
 function ArcText({ text, radius = 78, fontSize = 13 }: { text: string; radius?: number; fontSize?: number }) {
   const id = "arcPath";
@@ -414,8 +415,9 @@ export default function Admin() {
     <AppLayout>
       <Tabs defaultValue="collaborateurs" className="space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
-            <TabsTrigger value="collaborateurs">Collaborateurs</TabsTrigger>
+          <TabsList className="grid w-full max-w-md grid-cols-3">
+            <TabsTrigger value="collaborateurs">Utilisateurs</TabsTrigger>
+            <TabsTrigger value="audits">Audits</TabsTrigger>
             <TabsTrigger value="secteurs">Secteurs</TabsTrigger>
           </TabsList>
           {currentUser && users.find(u => u.id === currentUser.id)?.roles.includes("super_admin") && (
@@ -426,12 +428,8 @@ export default function Admin() {
       <div className="space-y-4">
       <div className="bg-card rounded-lg shadow-soft p-4 sm:p-5">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
-          <h3 className="text-sm font-semibold text-foreground">Gestion des collaborateurs</h3>
+          <h3 className="text-sm font-semibold text-foreground">Gestion des utilisateurs</h3>
           <div className="flex items-center gap-2 sm:gap-3 flex-1 sm:flex-none justify-end">
-            <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => navigate("/admin/audit-grid")}>
-              <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3" />
-              <span className="hidden sm:inline">Grilles d'audit</span>
-            </Button>
             <div className="flex gap-1.5">
               <Input
                 placeholder="Rechercher…"
@@ -451,7 +449,7 @@ export default function Admin() {
                 <DialogHeader>
                   <DialogTitle>Nouvel utilisateur</DialogTitle>
                   <DialogDescription>
-                    Créez un collaborateur puis attribuez-lui son rôle, ses objectifs et ses primes.
+                    Créez un utilisateur puis attribuez-lui son rôle, ses objectifs et ses primes.
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleCreate} className="grid gap-3 py-3">
@@ -685,7 +683,7 @@ export default function Admin() {
             </div>
 
             <p className="text-xs text-muted-foreground mt-3 tabular-nums">
-              {filtered.length} collaborateur{filtered.length > 1 ? "s" : ""} affiché{filtered.length > 1 ? "s" : ""}
+              {filtered.length} utilisateur{filtered.length > 1 ? "s" : ""} affiché{filtered.length > 1 ? "s" : ""}
             </p>
           </>
         )}
@@ -889,6 +887,9 @@ export default function Admin() {
         </DialogContent>
       </Dialog>
       </div>
+        </TabsContent>
+        <TabsContent value="audits">
+          <AdminAuditGridInline />
         </TabsContent>
         <TabsContent value="secteurs">
           <AdminSecteurs />
