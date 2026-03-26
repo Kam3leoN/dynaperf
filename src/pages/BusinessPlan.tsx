@@ -350,6 +350,25 @@ export default function BusinessPlan() {
       addTableRow("BENEFICE NET", projections.map(p => p.beneficeNet), true, true, [220, 245, 220]);
       addTableRow("CUMUL BENEFICE", projections.map(p => p.cumulBenefice), true, true, [200, 235, 200]);
 
+      // === LEGAL DISCLAIMER BANNER ===
+      y += 6;
+      doc.setFillColor(255, 240, 240);
+      doc.roundedRect(mg, y - 3, cw, 14, 2, 2, "F");
+      doc.setDrawColor(226, 0, 26);
+      doc.setLineWidth(0.5);
+      doc.roundedRect(mg, y - 3, cw, 14, 2, 2, "S");
+      doc.setFontSize(7);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(180, 0, 0);
+      doc.text("AVERTISSEMENT LEGAL", mg + 3, y + 2);
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(6);
+      doc.setTextColor(100, 0, 0);
+      const disclaimerText = "Ce document constitue une simulation a caractere strictement indicatif et previsionnel. Il ne saurait en aucun cas etre considere comme un engagement contractuel, une promesse de revenus ou une garantie de resultats de la part de Dynabuy SAS. Les chiffres presentes reposent sur des hypotheses variables et ne prennent pas en compte l'ensemble des facteurs economiques, commerciaux et conjoncturels susceptibles d'impacter les resultats reels.";
+      const disclaimerLines = doc.splitTextToSize(disclaimerText, cw - 6);
+      doc.text(disclaimerLines.join("\n"), mg + 3, y + 6);
+      y += 16;
+
       // === FOOTER ===
       y = 280;
       addLine(mg, y, mg + cw, y);
@@ -358,6 +377,31 @@ export default function BusinessPlan() {
       doc.setTextColor(150, 150, 150);
       doc.text("Ce document est une simulation indicative et ne constitue pas un engagement contractuel.", mg, y + 4);
       doc.text("DynaPerf — Dynabuy " + new Date().getFullYear(), W - mg, y + 4, { align: "right" });
+
+      // === WATERMARK "CONFIDENTIEL" on every page ===
+      const totalPages = doc.getNumberOfPages();
+      for (let p = 1; p <= totalPages; p++) {
+        doc.setPage(p);
+        doc.saveGraphicsState();
+        doc.setGState(new (doc as any).GState({ opacity: 0.06 }));
+        doc.setFontSize(72);
+        doc.setFont("helvetica", "bold");
+        doc.setTextColor(150, 150, 150);
+        // Rotate text diagonally
+        const cx = W / 2;
+        const cy = 297 / 2;
+        const angle = -35;
+        const rad = (angle * Math.PI) / 180;
+        const cos = Math.cos(rad);
+        const sin = Math.sin(rad);
+        // Use internal transform for rotation
+        (doc.internal as any).write(
+          `q ${cos.toFixed(4)} ${sin.toFixed(4)} ${(-sin).toFixed(4)} ${cos.toFixed(4)} ${(cx * 2.835).toFixed(2)} ${((297 - cy) * 2.835).toFixed(2)} cm`
+        );
+        doc.text("CONFIDENTIEL", 0, 0, { align: "center", baseline: "middle" });
+        (doc.internal as any).write("Q");
+        doc.restoreGraphicsState();
+      }
 
       doc.save(`Business_Plan_Dynabuy_${new Date().toISOString().slice(0, 10)}.pdf`);
       toast.success("PDF exporte avec succes !");
