@@ -120,8 +120,8 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
         <span className={`text-sm font-bold tabular-nums ${a.note !== null ? (a.note >= 7 ? "text-foreground" : "text-primary") : "text-muted-foreground"}`}>
           {a.note !== null ? a.note.toFixed(2) : "—"}
         </span>
-        <span className={`text-xs px-2 py-0.5 rounded-sm font-medium ${a.statut === "OK" ? "bg-foreground/5 text-foreground" : "bg-primary/10 text-primary"}`}>
-          {a.statut === "OK" ? "Noté" : "En attente"}
+        <span className={`text-xs px-2 py-0.5 rounded-sm font-medium ${a.statut === "OK" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"}`}>
+          {a.statut === "OK" ? "Terminé" : "Planifié"}
         </span>
       </div>
     </motion.div>
@@ -201,8 +201,8 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
                     <Select value={form.statut} onValueChange={(v) => setForm({ ...form, statut: v as "OK" | "NON" })}>
                       <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="OK">Noté</SelectItem>
-                        <SelectItem value="NON">En attente</SelectItem>
+                        <SelectItem value="OK">Terminé</SelectItem>
+                        <SelectItem value="NON">Planifié</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
@@ -255,8 +255,8 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
                     {a.note !== null ? a.note.toFixed(2) : "—"}
                   </TableCell>
                   <TableCell>
-                    <span className={`text-xs px-2 py-0.5 rounded-sm font-medium ${a.statut === "OK" ? "bg-foreground/5 text-foreground" : "bg-primary/10 text-primary"}`}>
-                      {a.statut === "OK" ? "Noté" : "En attente"}
+                    <span className={`text-xs px-2 py-0.5 rounded-sm font-medium ${a.statut === "OK" ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400" : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"}`}>
+                      {a.statut === "OK" ? "Terminé" : "Planifié"}
                     </span>
                   </TableCell>
                   <TableCell>

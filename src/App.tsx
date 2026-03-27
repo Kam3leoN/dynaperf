@@ -30,6 +30,7 @@ import Secteurs from "./pages/Secteurs";
 import Notifications from "./pages/Notifications";
 import Messages from "./pages/Messages";
 import ActivityLog from "./pages/ActivityLog";
+import Preferences from "./pages/Preferences";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 const queryClient = new QueryClient();
 
@@ -102,6 +103,7 @@ const App = () => (
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
               <Route path="/historique" element={<ProtectedRoute><ActivityLog /></ProtectedRoute>} />
+              <Route path="/preferences" element={<ProtectedRoute><Preferences /></ProtectedRoute>} />
               <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<NotFound />} />

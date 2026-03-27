@@ -20,11 +20,10 @@ import {
   faUsers,
   faBriefcase,
   faMapLocationDot,
-  faComments,
   faClockRotateLeft,
+  faGear,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
-import { ThemeToggle } from "./ThemeToggle";
 import { useTheme } from "next-themes";
 import logoDark from "@/assets/DynaPerf_dark.svg";
 import logoLight from "@/assets/DynaPerf_light.svg";
@@ -63,6 +62,8 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [unreadMessages, setUnreadMessages] = useState(0);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   useEffect(() => {
     if (!user) return;
@@ -75,6 +76,35 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
         setDisplayName(data?.display_name ?? null);
         setAvatarUrl(data?.avatar_url ?? null);
       });
+
+    // Count unread messages
+    supabase
+      .from("messages")
+      .select("id", { count: "exact", head: true })
+      .eq("recipient_id", user.id)
+      .eq("read", false)
+      .then(({ count }) => setUnreadMessages(count ?? 0));
+  }, [user]);
+
+  // Realtime unread messages
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel("unread-messages")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "messages", filter: `recipient_id=eq.${user.id}` },
+        () => {
+          supabase
+            .from("messages")
+            .select("id", { count: "exact", head: true })
+            .eq("recipient_id", user.id)
+            .eq("read", false)
+            .then(({ count }) => setUnreadMessages(count ?? 0));
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [user]);
 
   const linkClass = (path: string) =>
@@ -111,6 +141,17 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
     .toUpperCase()
     .slice(0, 2);
 
+  const iconButton = (icon: typeof faBell, to: string, count: number, title: string) => (
+    <Link to={to} className="relative h-9 w-9 rounded-md flex items-center justify-center hover:bg-secondary transition-colors" title={title}>
+      <FontAwesomeIcon icon={icon} className="h-4 w-4 text-foreground/70" />
+      {count > 0 && (
+        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1">
+          {count > 99 ? "99+" : count}
+        </span>
+      )}
+    </Link>
+  );
+
   const profileButton = () => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -144,9 +185,9 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
           Mot de passe oublié
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/notifications" className="flex items-center gap-2 cursor-pointer">
-            <FontAwesomeIcon icon={faBell} className="h-3.5 w-3.5" />
-            Notifications
+          <Link to="/preferences" className="flex items-center gap-2 cursor-pointer">
+            <FontAwesomeIcon icon={faGear} className="h-3.5 w-3.5" />
+            Préférences
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
@@ -255,11 +296,6 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
         <span>Business Plan</span>
       </NavLink>
 
-      <NavLink to="/messages" className={() => linkClass("/messages")}>
-        <FontAwesomeIcon icon={faComments} className="h-3.5 w-3.5" />
-        <span>Messages</span>
-      </NavLink>
-
       <NavLink to="/historique" className={() => linkClass("/historique")}>
         <FontAwesomeIcon icon={faClockRotateLeft} className="h-3.5 w-3.5" />
         <span>Historique</span>
@@ -328,10 +364,6 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
         <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
         <span>Business Plan</span>
       </NavLink>
-      <NavLink to="/messages" className={() => linkClass("/messages")} onClick={() => setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faComments} className="h-3.5 w-3.5" />
-        <span>Messages</span>
-      </NavLink>
       <NavLink to="/historique" className={() => linkClass("/historique")} onClick={() => setMobileOpen(false)}>
         <FontAwesomeIcon icon={faClockRotateLeft} className="h-3.5 w-3.5" />
         <span>Historique</span>
@@ -355,9 +387,9 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
         <FontAwesomeIcon icon={faKey} className="h-3.5 w-3.5" />
         <span>Modifier mon mot de passe</span>
       </NavLink>
-      <NavLink to="/notifications" className={() => linkClass("/notifications")} onClick={() => setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faBell} className="h-3.5 w-3.5" />
-        <span>Notifications</span>
+      <NavLink to="/preferences" className={() => linkClass("/preferences")} onClick={() => setMobileOpen(false)}>
+        <FontAwesomeIcon icon={faGear} className="h-3.5 w-3.5" />
+        <span>Préférences</span>
       </NavLink>
       <button onClick={() => { setMobileOpen(false); handleForgotPassword(); }} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-secondary transition-colors text-left">
         <FontAwesomeIcon icon={faEnvelope} className="h-3.5 w-3.5" />
@@ -390,9 +422,11 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="max-w-[120px] sm:max-w-none overflow-hidden">
-              <OnlineAvatars />
-            </div>
+            {!isMobile && (
+              <div className="max-w-[120px] sm:max-w-none overflow-hidden">
+                <OnlineAvatars />
+              </div>
+            )}
 
             {filters && setFilters && (
               <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setFiltersOpen(true)} title="Filtres">
@@ -400,38 +434,48 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
               </Button>
             )}
 
-            <ThemeToggle />
+            {/* Notification & Message icons — on mobile: left of avatar */}
+            {iconButton(faBell, "/notifications", unreadNotifications, "Notifications")}
+            {iconButton(faEnvelope, "/messages", unreadMessages, "Messages")}
+
+            {/* Gear icon for preferences */}
+            <Link to="/preferences" className="h-9 w-9 rounded-md flex items-center justify-center hover:bg-secondary transition-colors" title="Préférences">
+              <FontAwesomeIcon icon={faGear} className="h-4 w-4 text-foreground/70" />
+            </Link>
 
             {!isMobile && profileButton()}
 
             {isMobile && (
-              <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="h-9 w-9">
-                    <FontAwesomeIcon icon={faBars} className="h-4 w-4" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-72 p-0">
-                  <div className="flex flex-col h-full">
-                    <div className="flex items-center gap-3 p-4 border-b border-border">
-                      {avatarUrl ? (
-                        <img src={avatarUrl} alt="Avatar" className="w-8 h-8 rounded-full object-cover border border-border" />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold flex items-center justify-center text-xs border border-border">
-                          {initials}
+              <>
+                {profileButton()}
+                <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+                  <SheetTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-9 w-9">
+                      <FontAwesomeIcon icon={faBars} className="h-4 w-4" />
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="right" className="w-72 p-0">
+                    <div className="flex flex-col h-full">
+                      <div className="flex items-center gap-3 p-4 border-b border-border">
+                        {avatarUrl ? (
+                          <img src={avatarUrl} alt="Avatar" className="w-8 h-8 rounded-full object-cover border border-border" />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold flex items-center justify-center text-xs border border-border">
+                            {initials}
+                          </div>
+                        )}
+                        <div className="min-w-0">
+                          <p className="text-sm font-bold text-foreground truncate">{displayName || "Menu"}</p>
+                          <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
                         </div>
-                      )}
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-foreground truncate">{displayName || "Menu"}</p>
-                        <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
                       </div>
+                      <nav className="flex flex-col gap-1 p-4 overflow-y-auto flex-1">
+                        {mobileNav()}
+                      </nav>
                     </div>
-                    <nav className="flex flex-col gap-1 p-4 overflow-y-auto flex-1">
-                      {mobileNav()}
-                    </nav>
-                  </div>
-                </SheetContent>
-              </Sheet>
+                  </SheetContent>
+                </Sheet>
+              </>
             )}
           </div>
         </div>
