@@ -31,6 +31,7 @@ import Notifications from "./pages/Notifications";
 import Messages from "./pages/Messages";
 import ActivityLog from "./pages/ActivityLog";
 import Preferences from "./pages/Preferences";
+import DashboardHub from "./pages/DashboardHub";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 const queryClient = new QueryClient();
 
