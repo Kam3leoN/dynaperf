@@ -31,6 +31,7 @@ import Notifications from "./pages/Notifications";
 import Messages from "./pages/Messages";
 import ActivityLog from "./pages/ActivityLog";
 import Preferences from "./pages/Preferences";
+import DashboardHub from "./pages/DashboardHub";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 const queryClient = new QueryClient();
 
@@ -104,6 +105,7 @@ const App = () => (
               <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
               <Route path="/historique" element={<ProtectedRoute><ActivityLog /></ProtectedRoute>} />
               <Route path="/preferences" element={<ProtectedRoute><Preferences /></ProtectedRoute>} />
+              <Route path="/hub" element={<ProtectedRoute><DashboardHub /></ProtectedRoute>} />
               <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<NotFound />} />

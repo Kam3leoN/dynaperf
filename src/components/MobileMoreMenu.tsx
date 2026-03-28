@@ -33,7 +33,7 @@ function MenuGroup({ title, children }: { title: string; children: React.ReactNo
   return (
     <div className="mb-3">
       <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider px-4 py-1.5">{title}</p>
-      <div className="grid grid-cols-3 gap-1 px-2">{children}</div>
+      <div className="grid grid-cols-3 gap-1.5 px-2">{children}</div>
     </div>
   );
 }
@@ -41,7 +41,7 @@ function MenuGroup({ title, children }: { title: string; children: React.ReactNo
 function MenuItem({ icon, label, to, onClick, destructive }: {
   icon: IconDefinition; label: string; to?: string; onClick?: () => void; destructive?: boolean;
 }) {
-  const cls = `flex flex-col items-center gap-1.5 rounded-2xl p-3 min-h-[72px] justify-center transition-colors active:bg-secondary ${destructive ? "text-destructive" : "text-foreground/80"}`;
+  const cls = `flex flex-col items-center gap-1.5 rounded-2xl p-3 min-h-[72px] justify-center transition-colors bg-secondary/40 hover:bg-secondary/70 active:bg-secondary ${destructive ? "text-destructive" : "text-foreground/80"}`;
 
   if (to) {
     return (

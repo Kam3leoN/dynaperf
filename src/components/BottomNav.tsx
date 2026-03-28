@@ -1,11 +1,10 @@
 import { useLocation, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faHouse,
-  faClipboardList,
-  faPlus,
-  faListCheck,
+  faBars,
+  faChartLine,
   faEllipsis,
+  faGear,
 } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -13,58 +12,80 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
 import { MobileMoreMenu } from "./MobileMoreMenu";
 
 const navItems = [
-  { icon: faHouse, label: "Accueil", path: "/" },
-  { icon: faClipboardList, label: "Audits", path: "/dashboard" },
-  { icon: faPlus, label: "", path: "/audits/new", isFab: true },
-  { icon: faListCheck, label: "Activité", path: "/activite" },
-  { icon: faEllipsis, label: "Plus", path: "__more__" },
+  { icon: faBars, label: "Menu", path: "__menu__" },
+  { icon: faChartLine, label: "Dashboard", path: "/hub" },
+  { icon: null, label: "", path: "/", isFab: true },
+  { icon: faEllipsis, label: "...", path: "__noop__" },
+  { icon: faGear, label: "Réglages", path: "/preferences" },
 ];
 
 export function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [moreOpen, setMoreOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const isActive = (path: string) => {
     if (path === "/") return location.pathname === "/";
-    if (path === "/dashboard") return location.pathname.startsWith("/dashboard") || location.pathname.startsWith("/audits");
-    if (path === "/activite") return location.pathname.startsWith("/activite");
-    return location.pathname === path;
+    if (path === "/hub") return location.pathname === "/hub";
+    if (path === "/preferences") return location.pathname === "/preferences";
+    return false;
   };
 
   return (
     <>
       <nav className="fixed bottom-0 inset-x-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border safe-area-bottom lg:hidden">
         <div className="flex items-end justify-around px-2 pt-1 pb-1">
-          {navItems.map((item) => {
+          {navItems.map((item, idx) => {
             if (item.isFab) {
               return (
                 <button
                   key="fab"
-                  onClick={() => navigate(item.path)}
-                  className="relative -top-3 flex items-center justify-center w-14 h-14 rounded-2xl bg-primary text-primary-foreground shadow-lg active:scale-95 transition-transform"
-                  aria-label="Créer"
+                  onClick={() => navigate("/")}
+                  className="relative -top-3 flex items-center justify-center w-14 h-14 rounded-2xl shadow-lg active:scale-95 transition-transform"
+                  style={{ backgroundColor: "#212121" }}
+                  aria-label="Accueil"
                 >
-                  <FontAwesomeIcon icon={item.icon} className="h-6 w-6" />
+                  <img src="/pwaDynaperf.svg" alt="DynaPerf" className="h-8 w-8" />
                 </button>
               );
             }
 
-            if (item.path === "__more__") {
+            if (item.path === "__menu__") {
               return (
                 <button
-                  key="more"
-                  onClick={() => setMoreOpen(true)}
+                  key="menu"
+                  onClick={() => setMenuOpen(true)}
                   className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-2"
                 >
-                  <FontAwesomeIcon
-                    icon={item.icon}
-                    className="h-5 w-5 text-muted-foreground"
-                  />
+                  <div className="flex items-center justify-center w-16 h-8 rounded-2xl bg-transparent">
+                    <FontAwesomeIcon
+                      icon={item.icon!}
+                      className="h-5 w-5 text-muted-foreground"
+                    />
+                  </div>
                   <span className="text-[10px] font-medium text-muted-foreground">
                     {item.label}
                   </span>
                 </button>
+              );
+            }
+
+            if (item.path === "__noop__") {
+              return (
+                <div
+                  key="noop"
+                  className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-2 opacity-40"
+                >
+                  <div className="flex items-center justify-center w-16 h-8 rounded-2xl bg-transparent">
+                    <FontAwesomeIcon
+                      icon={item.icon!}
+                      className="h-5 w-5 text-muted-foreground"
+                    />
+                  </div>
+                  <span className="text-[10px] font-medium text-muted-foreground">
+                    {item.label}
+                  </span>
+                </div>
               );
             }
 
@@ -82,7 +103,7 @@ export function BottomNav() {
                   )}
                 >
                   <FontAwesomeIcon
-                    icon={item.icon}
+                    icon={item.icon!}
                     className={cn(
                       "h-5 w-5 transition-colors",
                       active ? "text-primary" : "text-muted-foreground"
@@ -103,12 +124,12 @@ export function BottomNav() {
         </div>
       </nav>
 
-      <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
+      <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
         <SheetContent side="bottom" className="rounded-t-3xl px-2 pb-8 max-h-[80vh]">
           <SheetHeader className="pb-2">
             <SheetTitle className="text-base">Menu</SheetTitle>
           </SheetHeader>
-          <MobileMoreMenu onClose={() => setMoreOpen(false)} />
+          <MobileMoreMenu onClose={() => setMenuOpen(false)} />
         </SheetContent>
       </Sheet>
     </>
