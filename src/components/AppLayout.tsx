@@ -4,7 +4,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faClipboardList,
   faRightFromBracket,
-  faBars,
   faSliders,
   faUserShield,
   faChartLine,
@@ -28,7 +27,6 @@ import { useTheme } from "next-themes";
 import logoDark from "@/assets/DynaPerf_dark.svg";
 import logoLight from "@/assets/DynaPerf_light.svg";
 import { FiltersBar } from "./FiltersBar";
-import { OnlineAvatars } from "./OnlineAvatars";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "./ui/sheet";
 import {
@@ -43,6 +41,7 @@ import type { Filters } from "@/hooks/useAuditData";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { BottomNav } from "./BottomNav";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -58,7 +57,6 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
   const isMobile = useIsMobile();
   const location = useLocation();
   const navigate = useNavigate();
-  const [mobileOpen, setMobileOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
@@ -77,7 +75,6 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
         setAvatarUrl(data?.avatar_url ?? null);
       });
 
-    // Count unread messages
     supabase
       .from("messages")
       .select("id", { count: "exact", head: true })
@@ -86,7 +83,6 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
       .then(({ count }) => setUnreadMessages(count ?? 0));
   }, [user]);
 
-  // Realtime unread messages
   useEffect(() => {
     if (!user) return;
     const channel = supabase
@@ -107,23 +103,9 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
     return () => { supabase.removeChannel(channel); };
   }, [user]);
 
-  const linkClass = (path: string) =>
-    `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-      location.pathname === path
-        ? "bg-primary text-primary-foreground"
-        : "text-foreground/70 hover:text-foreground hover:bg-secondary"
-    }`;
-
   const isAuditSection = ["/dashboard", "/audits", "/audits/new", "/audits/new/form"].includes(location.pathname);
   const isActiviteSection = ["/activite", "/activite/new", "/activite/dashboard"].includes(location.pathname);
   const isReseauSection = ["/reseau", "/reseau/partenaires", "/reseau/clubs", "/reseau/secteurs"].includes(location.pathname);
-
-  const dropdownClass = (active: boolean) =>
-    `flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-colors cursor-pointer ${
-      active
-        ? "bg-primary text-primary-foreground"
-        : "text-foreground/70 hover:text-foreground hover:bg-secondary"
-    }`;
 
   const handleForgotPassword = async () => {
     if (!user?.email) return;
@@ -141,11 +123,19 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
     .toUpperCase()
     .slice(0, 2);
 
-  const iconButton = (icon: typeof faBell, to: string, count: number, title: string) => (
-    <Link to={to} className="relative h-9 w-9 rounded-md flex items-center justify-center hover:bg-secondary transition-colors" title={title}>
-      <FontAwesomeIcon icon={icon} className="h-4 w-4 text-foreground/70" />
+  /* ── M3 nav pill helper ── */
+  const navPill = (active: boolean) =>
+    `flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all ${
+      active
+        ? "bg-primary/12 text-primary"
+        : "text-foreground/60 hover:text-foreground hover:bg-secondary/60"
+    }`;
+
+  const iconBadge = (icon: typeof faBell, to: string, count: number, title: string) => (
+    <Link to={to} className="relative h-10 w-10 rounded-full flex items-center justify-center hover:bg-secondary/60 transition-colors" title={title}>
+      <FontAwesomeIcon icon={icon} className="h-[18px] w-[18px] text-foreground/60" />
       {count > 0 && (
-        <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1">
+        <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1">
           {count > 99 ? "99+" : count}
         </span>
       )}
@@ -155,7 +145,7 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
   const profileButton = () => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="h-9 w-9 rounded-full overflow-hidden border border-border hover:ring-2 hover:ring-primary/30 transition-all flex items-center justify-center shrink-0" title="Profil">
+        <button className="h-10 w-10 rounded-full overflow-hidden border-2 border-border hover:border-primary/40 transition-all flex items-center justify-center shrink-0" title="Profil">
           {avatarUrl ? (
             <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
           ) : (
@@ -163,69 +153,70 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
           )}
         </button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-56">
-        <div className="px-3 py-2 border-b border-border">
-          <p className="text-sm font-medium text-foreground truncate">{displayName || "Utilisateur"}</p>
+      <DropdownMenuContent align="end" className="w-56 rounded-2xl">
+        <div className="px-3 py-2.5 border-b border-border">
+          <p className="text-sm font-semibold text-foreground truncate">{displayName || "Utilisateur"}</p>
           <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
         </div>
         <DropdownMenuItem asChild>
-          <Link to="/profile" className="flex items-center gap-2 cursor-pointer">
-            <FontAwesomeIcon icon={faUser} className="h-3.5 w-3.5" />
+          <Link to="/profile" className="flex items-center gap-2.5 cursor-pointer">
+            <FontAwesomeIcon icon={faUser} className="h-4 w-4 text-muted-foreground" />
             Modifier mon profil
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/change-password" className="flex items-center gap-2 cursor-pointer">
-            <FontAwesomeIcon icon={faKey} className="h-3.5 w-3.5" />
+          <Link to="/change-password" className="flex items-center gap-2.5 cursor-pointer">
+            <FontAwesomeIcon icon={faKey} className="h-4 w-4 text-muted-foreground" />
             Modifier mon mot de passe
           </Link>
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={handleForgotPassword} className="flex items-center gap-2 cursor-pointer">
-          <FontAwesomeIcon icon={faEnvelope} className="h-3.5 w-3.5" />
+        <DropdownMenuItem onClick={handleForgotPassword} className="flex items-center gap-2.5 cursor-pointer">
+          <FontAwesomeIcon icon={faEnvelope} className="h-4 w-4 text-muted-foreground" />
           Mot de passe oublié
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/preferences" className="flex items-center gap-2 cursor-pointer">
-            <FontAwesomeIcon icon={faGear} className="h-3.5 w-3.5" />
+          <Link to="/preferences" className="flex items-center gap-2.5 cursor-pointer">
+            <FontAwesomeIcon icon={faGear} className="h-4 w-4 text-muted-foreground" />
             Préférences
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={signOut} className="flex items-center gap-2 cursor-pointer text-destructive focus:text-destructive">
-          <FontAwesomeIcon icon={faRightFromBracket} className="h-3.5 w-3.5" />
+        <DropdownMenuItem onClick={signOut} className="flex items-center gap-2.5 cursor-pointer text-destructive focus:text-destructive">
+          <FontAwesomeIcon icon={faRightFromBracket} className="h-4 w-4" />
           Déconnexion
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 
+  /* ── Desktop navigation ── */
   const desktopNav = () => (
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className={dropdownClass(isAuditSection)}>
-            <FontAwesomeIcon icon={faClipboardList} className="h-3.5 w-3.5" />
+          <button className={navPill(isAuditSection)}>
+            <FontAwesomeIcon icon={faClipboardList} className="h-4 w-4" />
             <span>Audits</span>
-            <FontAwesomeIcon icon={faChevronDown} className="h-2.5 w-2.5 ml-0.5 opacity-60" />
+            <FontAwesomeIcon icon={faChevronDown} className="h-2.5 w-2.5 opacity-50" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-52">
+        <DropdownMenuContent align="start" className="w-56 rounded-2xl">
           <DropdownMenuItem asChild>
-            <Link to="/dashboard" className="flex items-center gap-2 cursor-pointer">
-              <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
-              Tableau de bord audits
+            <Link to="/dashboard" className="flex items-center gap-2.5 cursor-pointer">
+              <FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-muted-foreground" />
+              Tableau de bord
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/audits" className="flex items-center gap-2 cursor-pointer">
-              <FontAwesomeIcon icon={faClipboardList} className="h-3.5 w-3.5" />
-              Voir tous les audits
+            <Link to="/audits" className="flex items-center gap-2.5 cursor-pointer">
+              <FontAwesomeIcon icon={faClipboardList} className="h-4 w-4 text-muted-foreground" />
+              Tous les audits
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/audits/new" className="flex items-center gap-2 cursor-pointer">
-              <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
-              Créer un nouvel audit
+            <Link to="/audits/new" className="flex items-center gap-2.5 cursor-pointer">
+              <FontAwesomeIcon icon={faPlus} className="h-4 w-4 text-muted-foreground" />
+              Nouvel audit
             </Link>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -233,29 +224,29 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className={dropdownClass(isActiviteSection)}>
-            <FontAwesomeIcon icon={faListCheck} className="h-3.5 w-3.5" />
+          <button className={navPill(isActiviteSection)}>
+            <FontAwesomeIcon icon={faListCheck} className="h-4 w-4" />
             <span>Activité</span>
-            <FontAwesomeIcon icon={faChevronDown} className="h-2.5 w-2.5 ml-0.5 opacity-60" />
+            <FontAwesomeIcon icon={faChevronDown} className="h-2.5 w-2.5 opacity-50" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-52">
+        <DropdownMenuContent align="start" className="w-56 rounded-2xl">
           <DropdownMenuItem asChild>
-            <Link to="/activite/dashboard" className="flex items-center gap-2 cursor-pointer">
-              <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
-              Tableau de bord suivis
+            <Link to="/activite/dashboard" className="flex items-center gap-2.5 cursor-pointer">
+              <FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-muted-foreground" />
+              Tableau de bord
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/activite" className="flex items-center gap-2 cursor-pointer">
-              <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5" />
-              Voir tous les suivis
+            <Link to="/activite" className="flex items-center gap-2.5 cursor-pointer">
+              <FontAwesomeIcon icon={faEye} className="h-4 w-4 text-muted-foreground" />
+              Tous les suivis
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/activite/new" className="flex items-center gap-2 cursor-pointer">
-              <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
-              Créer un suivi d'activité
+            <Link to="/activite/new" className="flex items-center gap-2.5 cursor-pointer">
+              <FontAwesomeIcon icon={faPlus} className="h-4 w-4 text-muted-foreground" />
+              Nouveau suivi
             </Link>
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -263,155 +254,64 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <button className={dropdownClass(isReseauSection)}>
-            <FontAwesomeIcon icon={faHandshake} className="h-3.5 w-3.5" />
+          <button className={navPill(isReseauSection)}>
+            <FontAwesomeIcon icon={faHandshake} className="h-4 w-4" />
             <span>Réseau</span>
-            <FontAwesomeIcon icon={faChevronDown} className="h-2.5 w-2.5 ml-0.5 opacity-60" />
+            <FontAwesomeIcon icon={faChevronDown} className="h-2.5 w-2.5 opacity-50" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-52">
+        <DropdownMenuContent align="start" className="w-56 rounded-2xl">
           <DropdownMenuItem asChild>
-            <Link to="/reseau/partenaires" className="flex items-center gap-2 cursor-pointer">
-              <FontAwesomeIcon icon={faUsers} className="h-3.5 w-3.5" />
+            <Link to="/reseau/partenaires" className="flex items-center gap-2.5 cursor-pointer">
+              <FontAwesomeIcon icon={faUsers} className="h-4 w-4 text-muted-foreground" />
               Partenaires
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/reseau/clubs" className="flex items-center gap-2 cursor-pointer">
-              <FontAwesomeIcon icon={faBriefcase} className="h-3.5 w-3.5" />
+            <Link to="/reseau/clubs" className="flex items-center gap-2.5 cursor-pointer">
+              <FontAwesomeIcon icon={faBriefcase} className="h-4 w-4 text-muted-foreground" />
               Clubs d'affaires
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
-            <Link to="/reseau/secteurs" className="flex items-center gap-2 cursor-pointer">
-              <FontAwesomeIcon icon={faMapLocationDot} className="h-3.5 w-3.5" />
+            <Link to="/reseau/secteurs" className="flex items-center gap-2.5 cursor-pointer">
+              <FontAwesomeIcon icon={faMapLocationDot} className="h-4 w-4 text-muted-foreground" />
               Secteurs / Zones
             </Link>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <NavLink to="/business-plan" className={() => linkClass("/business-plan")}>
-        <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
+      <NavLink to="/business-plan" className={() => navPill(location.pathname === "/business-plan")}>
+        <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" />
         <span>Business Plan</span>
       </NavLink>
 
-      <NavLink to="/historique" className={() => linkClass("/historique")}>
-        <FontAwesomeIcon icon={faClockRotateLeft} className="h-3.5 w-3.5" />
+      <NavLink to="/historique" className={() => navPill(location.pathname === "/historique")}>
+        <FontAwesomeIcon icon={faClockRotateLeft} className="h-4 w-4" />
         <span>Historique</span>
       </NavLink>
 
       {isAdmin && (
-        <NavLink to="/admin" className={() => linkClass("/admin")}>
-          <FontAwesomeIcon icon={faUserShield} className="h-3.5 w-3.5" />
+        <NavLink to="/admin" className={() => navPill(location.pathname === "/admin")}>
+          <FontAwesomeIcon icon={faUserShield} className="h-4 w-4" />
           <span>Admin</span>
         </NavLink>
       )}
-    </>
-  );
-
-  const mobileNav = () => (
-    <>
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pt-2 pb-1">Audits</p>
-      <NavLink to="/dashboard" end className={() => linkClass("/dashboard")} onClick={() => setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
-        <span>Tableau de bord audits</span>
-      </NavLink>
-      <NavLink to="/audits" className={() => linkClass("/audits")} onClick={() => setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faClipboardList} className="h-3.5 w-3.5" />
-        <span>Voir tous les audits</span>
-      </NavLink>
-      <NavLink to="/audits/new" className={() => linkClass("/audits/new")} onClick={() => setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
-        <span>Créer un nouvel audit</span>
-      </NavLink>
-
-      <div className="border-t border-border my-2" />
-
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pt-2 pb-1">Activité</p>
-      <NavLink to="/activite/dashboard" className={() => linkClass("/activite/dashboard")} onClick={() => setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
-        <span>Tableau de bord suivis</span>
-      </NavLink>
-      <NavLink to="/activite" className={() => linkClass("/activite")} onClick={() => setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5" />
-        <span>Voir tous les suivis</span>
-      </NavLink>
-      <NavLink to="/activite/new" className={() => linkClass("/activite/new")} onClick={() => setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
-        <span>Créer un suivi</span>
-      </NavLink>
-
-      <div className="border-t border-border my-2" />
-
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pt-2 pb-1">Réseau</p>
-      <NavLink to="/reseau/partenaires" className={() => linkClass("/reseau/partenaires")} onClick={() => setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faUsers} className="h-3.5 w-3.5" />
-        <span>Partenaires</span>
-      </NavLink>
-      <NavLink to="/reseau/clubs" className={() => linkClass("/reseau/clubs")} onClick={() => setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faBriefcase} className="h-3.5 w-3.5" />
-        <span>Clubs d'affaires</span>
-      </NavLink>
-      <NavLink to="/reseau/secteurs" className={() => linkClass("/reseau/secteurs")} onClick={() => setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faMapLocationDot} className="h-3.5 w-3.5" />
-        <span>Secteurs / Zones</span>
-      </NavLink>
-
-      <div className="border-t border-border my-2" />
-
-      <NavLink to="/business-plan" className={() => linkClass("/business-plan")} onClick={() => setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faChartLine} className="h-3.5 w-3.5" />
-        <span>Business Plan</span>
-      </NavLink>
-      <NavLink to="/historique" className={() => linkClass("/historique")} onClick={() => setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faClockRotateLeft} className="h-3.5 w-3.5" />
-        <span>Historique</span>
-      </NavLink>
-
-      {isAdmin && (
-        <NavLink to="/admin" className={() => linkClass("/admin")} onClick={() => setMobileOpen(false)}>
-          <FontAwesomeIcon icon={faUserShield} className="h-3.5 w-3.5" />
-          <span>Admin</span>
-        </NavLink>
-      )}
-
-      <div className="border-t border-border my-2" />
-
-      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-3 pt-2 pb-1">Profil</p>
-      <NavLink to="/profile" className={() => linkClass("/profile")} onClick={() => setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faUser} className="h-3.5 w-3.5" />
-        <span>Modifier mon profil</span>
-      </NavLink>
-      <NavLink to="/change-password" className={() => linkClass("/change-password")} onClick={() => setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faKey} className="h-3.5 w-3.5" />
-        <span>Modifier mon mot de passe</span>
-      </NavLink>
-      <NavLink to="/preferences" className={() => linkClass("/preferences")} onClick={() => setMobileOpen(false)}>
-        <FontAwesomeIcon icon={faGear} className="h-3.5 w-3.5" />
-        <span>Préférences</span>
-      </NavLink>
-      <button onClick={() => { setMobileOpen(false); handleForgotPassword(); }} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-foreground/70 hover:text-foreground hover:bg-secondary transition-colors text-left">
-        <FontAwesomeIcon icon={faEnvelope} className="h-3.5 w-3.5" />
-        <span>Mot de passe oublié</span>
-      </button>
-      <button onClick={() => { setMobileOpen(false); signOut(); }} className="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors text-left">
-        <FontAwesomeIcon icon={faRightFromBracket} className="h-3.5 w-3.5" />
-        <span>Déconnexion</span>
-      </button>
     </>
   );
 
   return (
-    <div className="min-h-screen bg-secondary/30">
-      <header className="bg-card shadow-soft border-b border-border px-4 sm:px-6 py-3">
-        <div className="max-w-[1440px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4 sm:gap-6">
+    <div className="min-h-screen bg-background">
+      {/* ── Top app bar ── */}
+      <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border/60 px-4 lg:px-6">
+        <div className="max-w-[1440px] mx-auto flex items-center justify-between h-16">
+          <div className="flex items-center gap-5">
             <Link to="/" className="shrink-0">
               <img
                 src={resolvedTheme === "dark" ? logoDark : logoLight}
                 alt="DynaPerf"
-                className="h-7 sm:h-8"
+                className="h-7 lg:h-8"
               />
             </Link>
             {!isMobile && (
@@ -421,66 +321,26 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
             )}
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            {!isMobile && (
-              <div className="max-w-[120px] sm:max-w-none overflow-hidden">
-                <OnlineAvatars />
-              </div>
-            )}
-
+          <div className="flex items-center gap-1.5">
             {filters && setFilters && (
-              <Button variant="ghost" size="icon" className="h-9 w-9" onClick={() => setFiltersOpen(true)} title="Filtres">
-                <FontAwesomeIcon icon={faSliders} className="h-4 w-4" />
+              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full" onClick={() => setFiltersOpen(true)} title="Filtres">
+                <FontAwesomeIcon icon={faSliders} className="h-[18px] w-[18px]" />
               </Button>
             )}
 
-            {/* Notification & Message icons — on mobile: left of avatar */}
-            {iconButton(faBell, "/notifications", unreadNotifications, "Notifications")}
-            {iconButton(faEnvelope, "/messages", unreadMessages, "Messages")}
+            {iconBadge(faBell, "/notifications", unreadNotifications, "Notifications")}
+            {iconBadge(faEnvelope, "/messages", unreadMessages, "Messages")}
 
-            {/* Gear icon for preferences */}
-            <Link to="/preferences" className="h-9 w-9 rounded-md flex items-center justify-center hover:bg-secondary transition-colors" title="Préférences">
-              <FontAwesomeIcon icon={faGear} className="h-4 w-4 text-foreground/70" />
+            <Link to="/preferences" className="h-10 w-10 rounded-full flex items-center justify-center hover:bg-secondary/60 transition-colors" title="Préférences">
+              <FontAwesomeIcon icon={faGear} className="h-[18px] w-[18px] text-foreground/60" />
             </Link>
 
-            {!isMobile && profileButton()}
-
-            {isMobile && (
-              <>
-                {profileButton()}
-                <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-                  <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-9 w-9">
-                      <FontAwesomeIcon icon={faBars} className="h-4 w-4" />
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="right" className="w-72 p-0">
-                    <div className="flex flex-col h-full">
-                      <div className="flex items-center gap-3 p-4 border-b border-border">
-                        {avatarUrl ? (
-                          <img src={avatarUrl} alt="Avatar" className="w-8 h-8 rounded-full object-cover border border-border" />
-                        ) : (
-                          <div className="w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold flex items-center justify-center text-xs border border-border">
-                            {initials}
-                          </div>
-                        )}
-                        <div className="min-w-0">
-                          <p className="text-sm font-bold text-foreground truncate">{displayName || "Menu"}</p>
-                          <p className="text-[11px] text-muted-foreground truncate">{user?.email}</p>
-                        </div>
-                      </div>
-                      <nav className="flex flex-col gap-1 p-4 overflow-y-auto flex-1">
-                        {mobileNav()}
-                      </nav>
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              </>
-            )}
+            {profileButton()}
           </div>
         </div>
       </header>
 
+      {/* ── Filters sheet ── */}
       {filters && setFilters && (
         <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
           <SheetContent side="right" className="w-80 sm:w-96">
@@ -497,9 +357,13 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
         </Sheet>
       )}
 
-      <main className="max-w-[1440px] mx-auto px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6">
+      {/* ── Main content ── */}
+      <main className="max-w-[1440px] mx-auto px-4 lg:px-6 py-4 lg:py-6 space-y-4 lg:space-y-6 pb-24 lg:pb-6">
         {children}
       </main>
+
+      {/* ── Bottom navigation (mobile only) ── */}
+      {isMobile && <BottomNav />}
     </div>
   );
 }

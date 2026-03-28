@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faClipboardList, faChartLine, faBriefcase, faUserTie } from "@fortawesome/free-solid-svg-icons";
 import { AppLayout } from "@/components/AppLayout";
+import { OnlineAvatars } from "@/components/OnlineAvatars";
 
 const actions = [
   {
@@ -13,17 +14,17 @@ const actions = [
     to: "/audits/new",
   },
   {
-    label: "Créer un suivi d'activité",
+    label: "Suivi d'activité",
     icon: faChartLine,
     to: "/activite/new",
   },
   {
-    label: "Créer un business plan",
+    label: "Business plan",
     icon: faBriefcase,
     to: "/business-plan",
   },
   {
-    label: "Suivre une candidature",
+    label: "Candidature",
     icon: faUserTie,
     to: "#",
   },
@@ -31,7 +32,7 @@ const actions = [
 
 export default function Welcome() {
   const { user } = useAuth();
-  const [displayName, setDisplayName] = useState<string | null>(null);
+  const [firstName, setFirstName] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -41,34 +42,43 @@ export default function Welcome() {
       .eq("user_id", user.id)
       .maybeSingle()
       .then(({ data }) => {
-        setDisplayName(data?.display_name ?? user.email?.split("@")[0] ?? "Utilisateur");
+        const full = data?.display_name ?? user.email?.split("@")[0] ?? "Utilisateur";
+        // Extract first name only
+        setFirstName(full.split(" ")[0]);
       });
   }, [user]);
 
-  const greeting = displayName ?? user?.email?.split("@")[0] ?? "Utilisateur";
+  const greeting = firstName ?? user?.email?.split("@")[0] ?? "Utilisateur";
 
   return (
     <AppLayout>
-      <section className="min-h-[calc(100vh-10rem)] flex flex-col items-center justify-center px-4 py-12">
-        <div className="text-center max-w-2xl w-full flex-1 flex flex-col items-center justify-center">
-          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
-            Bonjour {greeting} <span className="inline-block animate-bounce">😉</span>
-          </h1>
-          <p className="text-muted-foreground text-base sm:text-lg mb-10">
-            Que souhaites-tu faire aujourd'hui ?
-          </p>
+      <section className="min-h-[calc(100vh-12rem)] flex flex-col items-center justify-center px-4 py-8">
+        <div className="text-center max-w-md w-full flex-1 flex flex-col items-center justify-center gap-6">
+          {/* Online avatars */}
+          <OnlineAvatars />
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mx-auto">
+          {/* Greeting */}
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+              Bonjour {greeting} <span className="inline-block animate-bounce">😉</span>
+            </h1>
+            <p className="text-muted-foreground text-base mt-1.5">
+              Que souhaites-tu faire aujourd'hui ?
+            </p>
+          </div>
+
+          {/* Action cards — M3 tonal surface style */}
+          <div className="grid grid-cols-2 gap-3 w-full">
             {actions.map((action) => (
               <Link
                 key={action.label}
                 to={action.to}
-                className="group flex items-center gap-3 rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:shadow-md hover:border-primary/30 hover:-translate-y-0.5 active:scale-[0.98]"
+                className="group flex flex-col items-center gap-2.5 rounded-3xl bg-card border border-border/60 p-5 shadow-soft transition-all hover:shadow-hover hover:-translate-y-0.5 active:scale-[0.97]"
               >
-                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary transition-transform group-hover:scale-110">
+                <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/10 text-primary transition-transform group-hover:scale-110">
                   <FontAwesomeIcon icon={action.icon} className="h-5 w-5" />
                 </div>
-                <span className="text-sm font-medium text-foreground text-left leading-snug">
+                <span className="text-xs font-medium text-foreground text-center leading-snug">
                   {action.label}
                 </span>
               </Link>
@@ -77,9 +87,9 @@ export default function Welcome() {
         </div>
 
         {/* Version chip */}
-        <div className="mt-10 flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/50 px-3 py-1 text-[11px] text-muted-foreground">
-            v{(globalThis as any).__APP_VERSION__ ?? typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'} — Dernière mise à jour le {new Date(typeof __BUILD_DATE__ !== 'undefined' ? __BUILD_DATE__ : new Date().toISOString()).toLocaleDateString("fr-FR")}
+        <div className="mt-8 flex items-center gap-2">
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-border/50 bg-muted/40 px-3 py-1 text-[10px] text-muted-foreground">
+            v{(globalThis as any).__APP_VERSION__ ?? typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '1.0.0'} — {new Date(typeof __BUILD_DATE__ !== 'undefined' ? __BUILD_DATE__ : new Date().toISOString()).toLocaleDateString("fr-FR")}
           </span>
         </div>
       </section>
