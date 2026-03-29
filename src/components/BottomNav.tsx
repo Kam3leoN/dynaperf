@@ -125,7 +125,7 @@ export function BottomNav() {
       </nav>
 
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl px-2 pb-8 max-h-[80vh]">
+        <SheetContent side="bottom" className="rounded-t-3xl px-2 pb-8">
           <SheetHeader className="pb-2">
             <SheetTitle className="text-base">Menu</SheetTitle>
           </SheetHeader>

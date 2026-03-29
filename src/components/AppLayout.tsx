@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -28,7 +28,7 @@ import logoDark from "@/assets/DynaPerf_dark.svg";
 import logoLight from "@/assets/DynaPerf_light.svg";
 import { FiltersBar } from "./FiltersBar";
 import { Button } from "./ui/button";
-import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from "./ui/sheet";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -123,7 +123,6 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
     .toUpperCase()
     .slice(0, 2);
 
-  /* ── M3 nav pill helper ── */
   const navPill = (active: boolean) =>
     `flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all ${
       active
@@ -189,7 +188,6 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
     </DropdownMenu>
   );
 
-  /* ── Desktop navigation ── */
   const desktopNav = () => (
     <>
       <DropdownMenu>
@@ -201,24 +199,9 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56 rounded-2xl">
-          <DropdownMenuItem asChild>
-            <Link to="/dashboard" className="flex items-center gap-2.5 cursor-pointer">
-              <FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-muted-foreground" />
-              Tableau de bord
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/audits" className="flex items-center gap-2.5 cursor-pointer">
-              <FontAwesomeIcon icon={faClipboardList} className="h-4 w-4 text-muted-foreground" />
-              Tous les audits
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/audits/new" className="flex items-center gap-2.5 cursor-pointer">
-              <FontAwesomeIcon icon={faPlus} className="h-4 w-4 text-muted-foreground" />
-              Nouvel audit
-            </Link>
-          </DropdownMenuItem>
+          <DropdownMenuItem asChild><Link to="/dashboard" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-muted-foreground" />Tableau de bord</Link></DropdownMenuItem>
+          <DropdownMenuItem asChild><Link to="/audits" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faClipboardList} className="h-4 w-4 text-muted-foreground" />Tous les audits</Link></DropdownMenuItem>
+          <DropdownMenuItem asChild><Link to="/audits/new" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faPlus} className="h-4 w-4 text-muted-foreground" />Nouvel audit</Link></DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -231,24 +214,9 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56 rounded-2xl">
-          <DropdownMenuItem asChild>
-            <Link to="/activite/dashboard" className="flex items-center gap-2.5 cursor-pointer">
-              <FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-muted-foreground" />
-              Tableau de bord
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/activite" className="flex items-center gap-2.5 cursor-pointer">
-              <FontAwesomeIcon icon={faEye} className="h-4 w-4 text-muted-foreground" />
-              Tous les suivis
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/activite/new" className="flex items-center gap-2.5 cursor-pointer">
-              <FontAwesomeIcon icon={faPlus} className="h-4 w-4 text-muted-foreground" />
-              Nouveau suivi
-            </Link>
-          </DropdownMenuItem>
+          <DropdownMenuItem asChild><Link to="/activite/dashboard" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-muted-foreground" />Tableau de bord</Link></DropdownMenuItem>
+          <DropdownMenuItem asChild><Link to="/activite" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faEye} className="h-4 w-4 text-muted-foreground" />Tous les suivis</Link></DropdownMenuItem>
+          <DropdownMenuItem asChild><Link to="/activite/new" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faPlus} className="h-4 w-4 text-muted-foreground" />Nouveau suivi</Link></DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -261,41 +229,23 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-56 rounded-2xl">
-          <DropdownMenuItem asChild>
-            <Link to="/reseau/partenaires" className="flex items-center gap-2.5 cursor-pointer">
-              <FontAwesomeIcon icon={faUsers} className="h-4 w-4 text-muted-foreground" />
-              Partenaires
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/reseau/clubs" className="flex items-center gap-2.5 cursor-pointer">
-              <FontAwesomeIcon icon={faBriefcase} className="h-4 w-4 text-muted-foreground" />
-              Clubs d'affaires
-            </Link>
-          </DropdownMenuItem>
-          <DropdownMenuItem asChild>
-            <Link to="/reseau/secteurs" className="flex items-center gap-2.5 cursor-pointer">
-              <FontAwesomeIcon icon={faMapLocationDot} className="h-4 w-4 text-muted-foreground" />
-              Secteurs / Zones
-            </Link>
-          </DropdownMenuItem>
+          <DropdownMenuItem asChild><Link to="/reseau/partenaires" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faUsers} className="h-4 w-4 text-muted-foreground" />Partenaires</Link></DropdownMenuItem>
+          <DropdownMenuItem asChild><Link to="/reseau/clubs" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faBriefcase} className="h-4 w-4 text-muted-foreground" />Clubs d'affaires</Link></DropdownMenuItem>
+          <DropdownMenuItem asChild><Link to="/reseau/secteurs" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faMapLocationDot} className="h-4 w-4 text-muted-foreground" />Secteurs / Zones</Link></DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
       <NavLink to="/business-plan" className={() => navPill(location.pathname === "/business-plan")}>
-        <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" />
-        <span>Business Plan</span>
+        <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" /><span>Business Plan</span>
       </NavLink>
 
       <NavLink to="/historique" className={() => navPill(location.pathname === "/historique")}>
-        <FontAwesomeIcon icon={faClockRotateLeft} className="h-4 w-4" />
-        <span>Historique</span>
+        <FontAwesomeIcon icon={faClockRotateLeft} className="h-4 w-4" /><span>Historique</span>
       </NavLink>
 
       {isAdmin && (
         <NavLink to="/admin" className={() => navPill(location.pathname === "/admin")}>
-          <FontAwesomeIcon icon={faUserShield} className="h-4 w-4" />
-          <span>Admin</span>
+          <FontAwesomeIcon icon={faUserShield} className="h-4 w-4" /><span>Admin</span>
         </NavLink>
       )}
     </>
@@ -303,7 +253,7 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
 
   return (
     <div className="min-h-screen bg-background">
-      {/* ── Top app bar ── */}
+      {/* Top app bar */}
       <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border/60 px-4 lg:px-6">
         <div className="max-w-[1440px] mx-auto flex items-center justify-between h-16">
           <div className="flex items-center gap-5">
@@ -331,16 +281,19 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
             {iconBadge(faBell, "/notifications", unreadNotifications, "Notifications")}
             {iconBadge(faEnvelope, "/messages", unreadMessages, "Messages")}
 
-            <Link to="/preferences" className="h-10 w-10 rounded-full flex items-center justify-center hover:bg-secondary/60 transition-colors" title="Préférences">
-              <FontAwesomeIcon icon={faGear} className="h-[18px] w-[18px] text-foreground/60" />
-            </Link>
+            {/* Gear icon only on desktop */}
+            {!isMobile && (
+              <Link to="/preferences" className="h-10 w-10 rounded-full flex items-center justify-center hover:bg-secondary/60 transition-colors" title="Préférences">
+                <FontAwesomeIcon icon={faGear} className="h-[18px] w-[18px] text-foreground/60" />
+              </Link>
+            )}
 
             {profileButton()}
           </div>
         </div>
       </header>
 
-      {/* ── Filters sheet ── */}
+      {/* Filters sheet */}
       {filters && setFilters && (
         <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
           <SheetContent side="right" className="w-80 sm:w-96">
@@ -357,12 +310,12 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
         </Sheet>
       )}
 
-      {/* ── Main content ── */}
+      {/* Main content */}
       <main className="max-w-[1440px] mx-auto px-4 lg:px-6 py-4 lg:py-6 space-y-4 lg:space-y-6 pb-24 lg:pb-6">
         {children}
       </main>
 
-      {/* ── Bottom navigation (mobile only) ── */}
+      {/* Bottom navigation (mobile only) */}
       {isMobile && <BottomNav />}
     </div>
   );

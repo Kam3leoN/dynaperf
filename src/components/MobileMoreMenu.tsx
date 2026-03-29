@@ -5,11 +5,9 @@ import {
   faClipboardList,
   faPlus,
   faEye,
-  faListCheck,
   faUsers,
   faBriefcase,
   faMapLocationDot,
-  faHandshake,
   faClockRotateLeft,
   faUserShield,
   faGear,
@@ -63,18 +61,8 @@ export function MobileMoreMenu({ onClose }: Props) {
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin(user);
 
-  const handleForgotPassword = async () => {
-    if (!user?.email) return;
-    const { error } = await supabase.auth.resetPasswordForEmail(user.email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    if (error) toast.error(error.message);
-    else toast.success("Email de réinitialisation envoyé à " + user.email);
-    onClose();
-  };
-
   return (
-    <div className="overflow-y-auto">
+    <div className="overflow-y-auto max-h-[60vh] pb-6">
       <MenuGroup title="Audits">
         <MenuItem icon={faChartLine} label="Dashboard" to="/dashboard" onClick={onClose} />
         <MenuItem icon={faClipboardList} label="Tous" to="/audits" onClick={onClose} />

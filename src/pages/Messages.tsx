@@ -131,7 +131,6 @@ export default function Messages() {
   const showConversation = isMobile ? !!selectedUserId : true;
   const showContacts = isMobile ? !selectedUserId : true;
 
-  // Group messages by date
   const groupedMessages: { date: string; msgs: Message[] }[] = [];
   conversation.forEach(m => {
     const dateKey = format(new Date(m.created_at), "yyyy-MM-dd");
@@ -143,10 +142,108 @@ export default function Messages() {
     }
   });
 
+  // Mobile conversation view: full-screen between top nav and bottom nav
+  if (isMobile && selectedUserId) {
+    return (
+      <AppLayout>
+        <div className="fixed inset-0 top-16 bottom-[68px] z-30 flex flex-col bg-background">
+          {/* Sticky conversation header */}
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card shrink-0">
+            <button onClick={() => setSelectedUserId(null)} className="text-muted-foreground hover:text-foreground">
+              <FontAwesomeIcon icon={faArrowLeft} className="h-4 w-4" />
+            </button>
+            <Avatar className="h-9 w-9">
+              {selectedProfile?.avatar_url && <AvatarImage src={selectedProfile.avatar_url} />}
+              <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
+                {getInitials(selectedProfile?.display_name || "U")}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="text-sm font-semibold text-foreground">{selectedProfile?.display_name || "Utilisateur"}</p>
+              <p className="text-[10px] text-muted-foreground">En ligne</p>
+            </div>
+          </div>
+
+          {/* Scrollable messages */}
+          <div
+            ref={scrollRef}
+            className="flex-1 overflow-y-auto px-4 py-3 space-y-1"
+            style={{
+              backgroundImage: "radial-gradient(circle at 20% 50%, hsl(var(--primary) / 0.03) 0%, transparent 50%), radial-gradient(circle at 80% 20%, hsl(var(--accent) / 0.04) 0%, transparent 50%)",
+              backgroundColor: "hsl(var(--secondary) / 0.3)",
+            }}
+          >
+            {groupedMessages.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-full text-center gap-2 py-12">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faComments} className="h-7 w-7 text-primary/40" />
+                </div>
+                <p className="text-sm text-muted-foreground">Démarrez la conversation…</p>
+              </div>
+            )}
+            {groupedMessages.map(group => (
+              <div key={group.date}>
+                <div className="flex items-center justify-center my-3">
+                  <span className="text-[10px] bg-secondary/80 text-muted-foreground px-3 py-1 rounded-full font-medium shadow-sm">
+                    {formatMessageDate(group.msgs[0].created_at)}
+                  </span>
+                </div>
+                {group.msgs.map((m, i) => {
+                  const isMine = m.sender_id === user?.id;
+                  const showTail = i === 0 || group.msgs[i - 1].sender_id !== m.sender_id;
+                  return (
+                    <div key={m.id} className={`flex ${isMine ? "justify-end" : "justify-start"} ${showTail ? "mt-2" : "mt-0.5"}`}>
+                      <div
+                        className={`max-w-[80%] px-3 py-1.5 text-sm shadow-sm ${
+                          isMine
+                            ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
+                            : "bg-card text-card-foreground border border-border/50 rounded-2xl rounded-bl-md"
+                        }`}
+                      >
+                        <p className="whitespace-pre-wrap break-words leading-relaxed">{m.content}</p>
+                        <div className={`flex items-center gap-1 justify-end mt-0.5 ${isMine ? "text-primary-foreground/50" : "text-muted-foreground"}`}>
+                          <span className="text-[10px]">{format(new Date(m.created_at), "HH:mm")}</span>
+                          {isMine && (
+                            <FontAwesomeIcon
+                              icon={m.read ? faCheckDouble : faCheck}
+                              className={`h-2.5 w-2.5 ${m.read ? "text-blue-300" : ""}`}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+
+          {/* Sticky input at bottom */}
+          <div className="px-3 py-2.5 border-t border-border bg-card flex items-end gap-2 shrink-0">
+            <Textarea
+              value={newMsg}
+              onChange={e => setNewMsg(e.target.value)}
+              placeholder="Écrivez un message…"
+              className="flex-1 min-h-[40px] max-h-[120px] resize-none text-sm rounded-xl bg-secondary border-none focus-visible:ring-1 focus-visible:ring-primary/30"
+              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+            />
+            <Button
+              size="icon"
+              onClick={sendMessage}
+              disabled={!newMsg.trim() || sending}
+              className="h-10 w-10 rounded-full shrink-0"
+            >
+              <FontAwesomeIcon icon={faPaperPlane} className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <div className="h-[calc(100vh-120px)] flex flex-col">
-        {/* Header */}
         <div className="flex items-center gap-2 mb-3">
           <FontAwesomeIcon icon={faComments} className="h-5 w-5 text-primary" />
           <h1 className="text-lg font-bold text-foreground">Messagerie</h1>
@@ -156,7 +253,6 @@ export default function Messages() {
           {/* Sidebar contacts */}
           {showContacts && (
             <div className={`${isMobile ? "w-full" : "w-[320px]"} flex flex-col border-r border-border bg-card`}>
-              {/* Search */}
               <div className="p-3 border-b border-border">
                 <div className="relative">
                   <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
@@ -170,7 +266,6 @@ export default function Messages() {
                 </div>
               </div>
 
-              {/* Contact list */}
               <ScrollArea className="flex-1">
                 <div className="divide-y divide-border/50">
                   {contacts.map(p => {
@@ -182,9 +277,7 @@ export default function Messages() {
                         key={p.user_id}
                         onClick={() => setSelectedUserId(p.user_id)}
                         className={`w-full flex items-center gap-3 px-3 py-3 transition-colors text-left ${
-                          isActive
-                            ? "bg-primary/10"
-                            : "hover:bg-secondary/80"
+                          isActive ? "bg-primary/10" : "hover:bg-secondary/80"
                         }`}
                       >
                         <Avatar className="h-11 w-11 shrink-0">
@@ -228,18 +321,12 @@ export default function Messages() {
             </div>
           )}
 
-          {/* Conversation panel */}
+          {/* Desktop conversation panel */}
           {showConversation && (
             <div className="flex-1 flex flex-col min-w-0">
               {selectedUserId ? (
                 <>
-                  {/* Conversation header */}
                   <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card">
-                    {isMobile && (
-                      <button onClick={() => setSelectedUserId(null)} className="text-muted-foreground hover:text-foreground mr-1">
-                        <FontAwesomeIcon icon={faArrowLeft} className="h-4 w-4" />
-                      </button>
-                    )}
                     <Avatar className="h-9 w-9">
                       {selectedProfile?.avatar_url && <AvatarImage src={selectedProfile.avatar_url} />}
                       <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
@@ -252,7 +339,6 @@ export default function Messages() {
                     </div>
                   </div>
 
-                  {/* Messages area with chat wallpaper */}
                   <div
                     ref={scrollRef}
                     className="flex-1 overflow-y-auto px-4 py-3 space-y-1"
@@ -271,13 +357,11 @@ export default function Messages() {
                     )}
                     {groupedMessages.map(group => (
                       <div key={group.date}>
-                        {/* Date separator */}
                         <div className="flex items-center justify-center my-3">
                           <span className="text-[10px] bg-secondary/80 text-muted-foreground px-3 py-1 rounded-full font-medium shadow-sm">
                             {formatMessageDate(group.msgs[0].created_at)}
                           </span>
                         </div>
-                        {/* Messages */}
                         {group.msgs.map((m, i) => {
                           const isMine = m.sender_id === user?.id;
                           const showTail = i === 0 || group.msgs[i - 1].sender_id !== m.sender_id;
@@ -286,8 +370,8 @@ export default function Messages() {
                               <div
                                 className={`max-w-[80%] px-3 py-1.5 text-sm shadow-sm ${
                                   isMine
-                                    ? `bg-primary text-primary-foreground ${showTail ? "rounded-2xl rounded-br-md" : "rounded-2xl rounded-br-md"}`
-                                    : `bg-card text-card-foreground border border-border/50 ${showTail ? "rounded-2xl rounded-bl-md" : "rounded-2xl rounded-bl-md"}`
+                                    ? "bg-primary text-primary-foreground rounded-2xl rounded-br-md"
+                                    : "bg-card text-card-foreground border border-border/50 rounded-2xl rounded-bl-md"
                                 }`}
                               >
                                 <p className="whitespace-pre-wrap break-words leading-relaxed">{m.content}</p>
@@ -308,7 +392,6 @@ export default function Messages() {
                     ))}
                   </div>
 
-                  {/* Input area */}
                   <div className="px-3 py-2.5 border-t border-border bg-card flex items-end gap-2">
                     <Textarea
                       value={newMsg}
