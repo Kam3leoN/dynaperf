@@ -161,8 +161,8 @@ export default function Preferences() {
             <CardContent>
               {biometricEnabled ? (
                 <div className="space-y-3">
-                  <div className="flex items-center gap-3 px-1 py-2 rounded-md bg-green-500/10 border border-green-500/20">
-                    <FontAwesomeIcon icon={faFingerprint} className="h-5 w-5 text-green-600" />
+                  <div className="flex items-center gap-3 px-1 py-2 rounded-md bg-primary/10 border border-primary/20">
+                    <FontAwesomeIcon icon={faFingerprint} className="h-5 w-5 text-primary" />
                     <div>
                       <p className="text-sm font-medium text-foreground">Biométrie activée</p>
                       <p className="text-xs text-muted-foreground">Votre appareil est enregistré pour la connexion rapide.</p>
