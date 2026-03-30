@@ -4,17 +4,21 @@
  * Ce service gère l'enregistrement et l'authentification via l'API WebAuthn
  * (empreinte digitale, Face ID, etc.) pour les utilisateurs de DynaPerf.
  *
+ * Après un login classique réussi, le refresh_token Supabase est stocké
+ * localement. Lors d'une reconnexion biométrique, ce token est utilisé
+ * pour restaurer la session sans re-saisir le mot de passe.
+ *
  * @module WebAuthnService
  */
 
-/** Clé de stockage local pour les identifiants WebAuthn */
+/** Clés de stockage local */
 const CREDENTIAL_STORAGE_KEY = "dynaperf_webauthn_credential";
 const USER_ID_STORAGE_KEY = "dynaperf_webauthn_user_id";
 const USER_EMAIL_STORAGE_KEY = "dynaperf_webauthn_user_email";
+const REFRESH_TOKEN_KEY = "dynaperf_webauthn_refresh_token";
 
 /**
  * Identifiant relying party (domaine de l'application)
- * En production, utiliser le domaine réel.
  */
 function getRpId(): string {
   return window.location.hostname;
@@ -27,7 +31,6 @@ function getRpId(): string {
 export async function isWebAuthnSupported(): Promise<boolean> {
   try {
     if (!window.PublicKeyCredential) return false;
-    // Vérifie si l'authentificateur de plateforme (biométrique) est disponible
     const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
     return available;
   } catch {
@@ -60,10 +63,23 @@ export function getStoredUserId(): string | null {
 }
 
 /**
- * Convertit un ArrayBuffer en chaîne Base64 URL-safe
- * @param {ArrayBuffer} buffer - Le buffer à convertir
- * @returns {string} La chaîne encodée
+ * Stocke le refresh_token Supabase après un login réussi.
+ * Ce token sera utilisé pour restaurer la session après validation biométrique.
+ * @param {string} refreshToken - Le refresh_token de la session Supabase
  */
+export function storeRefreshToken(refreshToken: string): void {
+  localStorage.setItem(REFRESH_TOKEN_KEY, refreshToken);
+}
+
+/**
+ * Récupère le refresh_token stocké
+ * @returns {string | null} Le refresh_token ou null
+ */
+export function getStoredRefreshToken(): string | null {
+  return localStorage.getItem(REFRESH_TOKEN_KEY);
+}
+
+/** Convertit un ArrayBuffer en chaîne Base64 URL-safe */
 function bufferToBase64url(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   let str = "";
@@ -71,11 +87,7 @@ function bufferToBase64url(buffer: ArrayBuffer): string {
   return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
 }
 
-/**
- * Convertit une chaîne Base64 URL-safe en ArrayBuffer
- * @param {string} base64url - La chaîne à décoder
- * @returns {ArrayBuffer} Le buffer résultant
- */
+/** Convertit une chaîne Base64 URL-safe en ArrayBuffer */
 function base64urlToBuffer(base64url: string): ArrayBuffer {
   const base64 = base64url.replace(/-/g, "+").replace(/_/g, "/");
   const pad = base64.length % 4;
@@ -86,44 +98,31 @@ function base64urlToBuffer(base64url: string): ArrayBuffer {
   return bytes.buffer;
 }
 
-/**
- * Génère un challenge aléatoire pour les opérations WebAuthn
- * @returns {Uint8Array} Un tableau de 32 octets aléatoires
- */
+/** Génère un challenge aléatoire pour les opérations WebAuthn */
 function generateChallenge(): Uint8Array {
   return crypto.getRandomValues(new Uint8Array(32)) as unknown as Uint8Array;
 }
 
-/**
- * Résultat de l'enregistrement WebAuthn
- */
 export interface WebAuthnRegistrationResult {
-  /** Identifiant du credential (base64url) */
   credentialId: string;
-  /** Clé publique (base64url) */
   publicKey: string;
-  /** Succès de l'opération */
   success: boolean;
 }
 
 /**
  * Enregistre un nouveau credential WebAuthn (biométrique) pour l'utilisateur.
- *
- * Cette fonction déclenche le prompt biométrique natif (empreinte / Face ID).
  * L'utilisateur doit être déjà connecté avec email/mot de passe.
  *
  * @param {string} userId - L'identifiant unique de l'utilisateur (UUID)
  * @param {string} userEmail - L'email de l'utilisateur
  * @param {string} displayName - Le nom d'affichage de l'utilisateur
  * @returns {Promise<WebAuthnRegistrationResult>} Le résultat de l'enregistrement
- * @throws {Error} Si l'utilisateur annule ou si le matériel n'est pas supporté
  */
 export async function registerWebAuthnCredential(
   userId: string,
   userEmail: string,
   displayName: string
 ): Promise<WebAuthnRegistrationResult> {
-  // Vérifie le support avant de commencer
   const supported = await isWebAuthnSupported();
   if (!supported) {
     throw new Error("L'authentification biométrique n'est pas supportée sur cet appareil.");
@@ -132,33 +131,28 @@ export async function registerWebAuthnCredential(
   const challenge = generateChallenge();
   const userIdBytes = new TextEncoder().encode(userId);
 
-  // Options de création du credential
   const publicKeyOptions: PublicKeyCredentialCreationOptions = {
     challenge: challenge as BufferSource,
-    rp: {
-      name: "DynaPerf",
-      id: getRpId(),
-    },
+    rp: { name: "DynaPerf", id: getRpId() },
     user: {
       id: userIdBytes as BufferSource,
       name: userEmail,
       displayName: displayName || userEmail,
     },
     pubKeyCredParams: [
-      { alg: -7, type: "public-key" },   // ES256
-      { alg: -257, type: "public-key" },  // RS256
+      { alg: -7, type: "public-key" },
+      { alg: -257, type: "public-key" },
     ],
     authenticatorSelection: {
-      authenticatorAttachment: "platform", // Force l'utilisation du biométrique intégré
-      userVerification: "required",        // Exige la vérification de l'utilisateur
+      authenticatorAttachment: "platform",
+      userVerification: "required",
       residentKey: "preferred",
     },
-    timeout: 60000, // 60 secondes pour répondre au prompt
+    timeout: 60000,
     attestation: "none",
   };
 
   try {
-    // Déclenche le prompt biométrique natif
     const credential = (await navigator.credentials.create({
       publicKey: publicKeyOptions,
     })) as PublicKeyCredential | null;
@@ -171,14 +165,12 @@ export async function registerWebAuthnCredential(
     const credentialId = bufferToBase64url(credential.rawId);
     const publicKey = bufferToBase64url(response.attestationObject);
 
-    // Stocke les informations en localStorage pour les reconnexions futures
     localStorage.setItem(CREDENTIAL_STORAGE_KEY, credentialId);
     localStorage.setItem(USER_ID_STORAGE_KEY, userId);
     localStorage.setItem(USER_EMAIL_STORAGE_KEY, userEmail);
 
     return { credentialId, publicKey, success: true };
   } catch (error: any) {
-    // Gestion spécifique de l'annulation par l'utilisateur
     if (error.name === "NotAllowedError") {
       throw new Error("L'authentification biométrique a été annulée par l'utilisateur.");
     }
@@ -191,12 +183,9 @@ export async function registerWebAuthnCredential(
 
 /**
  * Authentifie l'utilisateur via le credential WebAuthn stocké.
+ * Déclenche le prompt biométrique (empreinte / Face ID).
  *
- * Cette fonction déclenche le prompt biométrique (empreinte / Face ID)
- * et retourne true si l'authentification réussit.
- *
- * @returns {Promise<{ success: boolean; credentialId: string }>} Résultat de l'authentification
- * @throws {Error} Si aucun credential n'est stocké ou si l'utilisateur annule
+ * @returns {Promise<{ success: boolean; credentialId: string }>}
  */
 export async function authenticateWithWebAuthn(): Promise<{
   success: boolean;
@@ -214,7 +203,6 @@ export async function authenticateWithWebAuthn(): Promise<{
 
   const challenge = generateChallenge();
 
-  // Options d'authentification
   const publicKeyOptions: PublicKeyCredentialRequestOptions = {
     challenge: challenge as BufferSource,
     rpId: getRpId(),
@@ -222,7 +210,7 @@ export async function authenticateWithWebAuthn(): Promise<{
       {
         id: base64urlToBuffer(storedCredentialId),
         type: "public-key",
-        transports: ["internal"], // Authentificateur de plateforme uniquement
+        transports: ["internal"],
       },
     ],
     userVerification: "required",
@@ -230,7 +218,6 @@ export async function authenticateWithWebAuthn(): Promise<{
   };
 
   try {
-    // Déclenche le prompt biométrique
     const assertion = (await navigator.credentials.get({
       publicKey: publicKeyOptions,
     })) as PublicKeyCredential | null;
@@ -251,11 +238,11 @@ export async function authenticateWithWebAuthn(): Promise<{
 
 /**
  * Supprime le credential WebAuthn stocké localement.
- * L'utilisateur devra se reconnecter avec email/mot de passe
- * et réenregistrer le biométrique s'il le souhaite.
+ * Ne supprime PAS le refresh_token pour permettre une ré-activation.
  */
 export function removeStoredCredential(): void {
   localStorage.removeItem(CREDENTIAL_STORAGE_KEY);
   localStorage.removeItem(USER_ID_STORAGE_KEY);
   localStorage.removeItem(USER_EMAIL_STORAGE_KEY);
+  localStorage.removeItem(REFRESH_TOKEN_KEY);
 }

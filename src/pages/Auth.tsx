@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,8 @@ import {
   isWebAuthnSupported,
   hasStoredCredential,
   getStoredUserEmail,
+  getStoredRefreshToken,
+  storeRefreshToken,
   authenticateWithWebAuthn,
 } from "@/services/WebAuthnService";
 
@@ -20,57 +22,82 @@ export default function Auth() {
   const [loading, setLoading] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
   const [biometricLoading, setBiometricLoading] = useState(false);
+  const autoTriggered = useRef(false);
 
-  // Vérifie si un credential biométrique est disponible au montage
+  // Vérifie la disponibilité biométrique et déclenche automatiquement
   useEffect(() => {
     (async () => {
       const supported = await isWebAuthnSupported();
       const hasCredential = hasStoredCredential();
-      setBiometricAvailable(supported && hasCredential);
+      const hasToken = !!getStoredRefreshToken();
+      const available = supported && hasCredential && hasToken;
+      setBiometricAvailable(available);
 
-      // Pré-remplit l'email si un credential existe
       if (hasCredential) {
         const storedEmail = getStoredUserEmail();
         if (storedEmail) setEmail(storedEmail);
       }
+
+      // Déclenche automatiquement le prompt biométrique au chargement
+      if (available && !autoTriggered.current) {
+        autoTriggered.current = true;
+        // Petit délai pour laisser le composant se monter
+        setTimeout(() => triggerBiometricLogin(), 300);
+      }
     })();
   }, []);
+
+  /** Connexion biométrique — restaure la session via le refresh_token stocké */
+  const triggerBiometricLogin = async () => {
+    setBiometricLoading(true);
+    try {
+      const result = await authenticateWithWebAuthn();
+      if (result.success) {
+        const refreshToken = getStoredRefreshToken();
+        if (!refreshToken) {
+          toast.info("Veuillez vous reconnecter avec votre mot de passe une première fois.");
+          return;
+        }
+
+        // Utilise le refresh_token pour restaurer la session Supabase
+        const { error } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
+        if (error) {
+          // Token expiré ou révoqué — fallback sur le login classique
+          toast.info("Session expirée. Veuillez vous reconnecter avec votre mot de passe.");
+        } else {
+          toast.success("Connexion biométrique réussie !");
+          // Met à jour le refresh token stocké avec le nouveau
+          const { data: sessionData } = await supabase.auth.getSession();
+          if (sessionData?.session?.refresh_token) {
+            storeRefreshToken(sessionData.session.refresh_token);
+          }
+        }
+      }
+    } catch (error: any) {
+      // Ne pas afficher d'erreur si l'utilisateur a simplement annulé
+      if (!error.message?.includes("annulée")) {
+        toast.error(error.message);
+      }
+    } finally {
+      setBiometricLoading(false);
+    }
+  };
 
   /** Connexion classique email/mot de passe */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       toast.error(error.message);
     } else {
       toast.success("Connexion réussie");
+      // Stocke le refresh_token pour la reconnexion biométrique future
+      if (data.session?.refresh_token && hasStoredCredential()) {
+        storeRefreshToken(data.session.refresh_token);
+      }
     }
     setLoading(false);
-  };
-
-  /** Connexion biométrique */
-  const handleBiometricLogin = async () => {
-    setBiometricLoading(true);
-    try {
-      const result = await authenticateWithWebAuthn();
-      if (result.success) {
-        // Récupère l'email et le mot de passe stockés pour la session Supabase
-        // WebAuthn valide l'identité locale ; on utilise un token refresh ou
-        // on reconnecte via la session persistante de Supabase
-        const { data: session } = await supabase.auth.getSession();
-        if (session?.session) {
-          toast.success("Connexion biométrique réussie !");
-        } else {
-          // Pas de session active, redirige vers le login classique
-          toast.info("Veuillez vous reconnecter avec votre mot de passe une première fois.");
-        }
-      }
-    } catch (error: any) {
-      toast.error(error.message);
-    } finally {
-      setBiometricLoading(false);
-    }
   };
 
   /** Mot de passe oublié */
@@ -107,7 +134,7 @@ export default function Auth() {
           <div className="mb-6">
             <Button
               variant="outline"
-              onClick={handleBiometricLogin}
+              onClick={triggerBiometricLogin}
               disabled={biometricLoading}
               className="w-full gap-3 h-14 text-base border-primary/30 hover:border-primary/60 hover:bg-primary/5"
             >
