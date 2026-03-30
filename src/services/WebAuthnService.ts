@@ -134,13 +134,13 @@ export async function registerWebAuthnCredential(
 
   // Options de création du credential
   const publicKeyOptions: PublicKeyCredentialCreationOptions = {
-    challenge,
+    challenge: challenge as BufferSource,
     rp: {
       name: "DynaPerf",
       id: getRpId(),
     },
     user: {
-      id: userIdBytes,
+      id: userIdBytes as BufferSource,
       name: userEmail,
       displayName: displayName || userEmail,
     },
@@ -216,7 +216,7 @@ export async function authenticateWithWebAuthn(): Promise<{
 
   // Options d'authentification
   const publicKeyOptions: PublicKeyCredentialRequestOptions = {
-    challenge,
+    challenge: challenge as BufferSource,
     rpId: getRpId(),
     allowCredentials: [
       {
