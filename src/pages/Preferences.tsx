@@ -16,6 +16,7 @@ import {
   hasStoredCredential,
   registerWebAuthnCredential,
   removeStoredCredential,
+  storeRefreshToken,
 } from "@/services/WebAuthnService";
 
 export default function Preferences() {
@@ -70,6 +71,12 @@ export default function Preferences() {
       );
 
       if (result.success) {
+        // Stocke le refresh_token pour la reconnexion biométrique
+        const { data: sessionData } = await supabase.auth.getSession();
+        if (sessionData?.session?.refresh_token) {
+          storeRefreshToken(sessionData.session.refresh_token);
+        }
+
         // Sauvegarde le credential en DB
         await supabase.from("webauthn_credentials").insert({
           user_id: user.id,
