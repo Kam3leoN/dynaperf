@@ -91,7 +91,7 @@ function base64urlToBuffer(base64url: string): ArrayBuffer {
  * @returns {Uint8Array} Un tableau de 32 octets aléatoires
  */
 function generateChallenge(): Uint8Array {
-  return crypto.getRandomValues(new Uint8Array(32));
+  return crypto.getRandomValues(new Uint8Array(32)) as unknown as Uint8Array;
 }
 
 /**

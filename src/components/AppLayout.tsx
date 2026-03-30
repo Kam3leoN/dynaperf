@@ -42,6 +42,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BottomNav } from "./BottomNav";
+import { useNotifications } from "@/hooks/useNotifications";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -61,7 +62,7 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
-  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const { unreadCount: unreadNotifications } = useNotifications();
 
   useEffect(() => {
     if (!user) return;
