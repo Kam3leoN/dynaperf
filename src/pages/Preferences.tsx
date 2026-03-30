@@ -1,56 +1,115 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGear, faMoon, faSun, faSave } from "@fortawesome/free-solid-svg-icons";
+import { faGear, faMoon, faSun, faSave, faFingerprint, faTrash, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
-
-interface NotifItem {
-  key: string;
-  label: string;
-  email: boolean;
-  push: boolean;
-}
-
-const defaultItems: NotifItem[] = [
-  { key: "auditCreated", label: "Nouvel audit créé", email: true, push: true },
-  { key: "auditCompleted", label: "Audit complété", email: true, push: false },
-  { key: "suiviCreated", label: "Nouveau suivi d'activité", email: false, push: true },
-  { key: "weeklyDigest", label: "Résumé hebdomadaire", email: true, push: false },
-  { key: "partenaireUpdates", label: "Mises à jour partenaires", email: false, push: false },
-  { key: "clubUpdates", label: "Mises à jour clubs d'affaires", email: false, push: false },
-  { key: "reminders", label: "Rappels", email: true, push: true },
-];
-
-const STORAGE_KEY = "dynaperf_notif_prefs";
+import { useUserPreferences, type NotifPref } from "@/hooks/useUserPreferences";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  isWebAuthnSupported,
+  hasStoredCredential,
+  registerWebAuthnCredential,
+  removeStoredCredential,
+} from "@/services/WebAuthnService";
 
 export default function Preferences() {
   const { resolvedTheme, setTheme } = useTheme();
   const isDark = resolvedTheme === "dark";
+  const { user } = useAuth();
+  const { preferences, loading: prefsLoading, savePreferences } = useUserPreferences();
 
-  const [items, setItems] = useState<NotifItem[]>(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      return stored ? JSON.parse(stored) : defaultItems;
-    } catch {
-      return defaultItems;
+  const [notifItems, setNotifItems] = useState<NotifPref[]>([]);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [webauthnSupported, setWebauthnSupported] = useState(false);
+  const [biometricLoading, setBiometricLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Synchronise l'état local avec les préférences chargées
+  useEffect(() => {
+    if (!prefsLoading) {
+      setNotifItems(preferences.notifications);
+      setBiometricEnabled(preferences.biometricEnabled && hasStoredCredential());
     }
-  });
+  }, [prefsLoading, preferences]);
 
-  const toggle = (index: number, channel: "email" | "push") => {
-    setItems((prev) =>
+  // Vérifie le support WebAuthn au montage
+  useEffect(() => {
+    isWebAuthnSupported().then(setWebauthnSupported);
+  }, []);
+
+  const toggleNotif = (index: number, channel: "email" | "push") => {
+    setNotifItems(prev =>
       prev.map((item, i) =>
         i === index ? { ...item, [channel]: !item[channel] } : item
       )
     );
   };
 
-  const save = () => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+  /** Active l'authentification biométrique */
+  const enableBiometric = async () => {
+    if (!user) return;
+    setBiometricLoading(true);
+    try {
+      // Récupère le display_name
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("display_name")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      const result = await registerWebAuthnCredential(
+        user.id,
+        user.email || "",
+        profile?.display_name || user.email || ""
+      );
+
+      if (result.success) {
+        // Sauvegarde le credential en DB
+        await supabase.from("webauthn_credentials").insert({
+          user_id: user.id,
+          credential_id: result.credentialId,
+          public_key: result.publicKey,
+          user_email: user.email || "",
+          device_name: navigator.userAgent.slice(0, 100),
+        } as any);
+
+        setBiometricEnabled(true);
+        toast.success("Connexion biométrique activée !");
+      }
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setBiometricLoading(false);
+    }
+  };
+
+  /** Désactive l'authentification biométrique */
+  const disableBiometric = async () => {
+    removeStoredCredential();
+    if (user) {
+      await supabase
+        .from("webauthn_credentials")
+        .delete()
+        .eq("user_id", user.id) as any;
+    }
+    setBiometricEnabled(false);
+    toast.success("Connexion biométrique désactivée.");
+  };
+
+  /** Sauvegarde toutes les préférences */
+  const save = async () => {
+    setSaving(true);
+    await savePreferences({
+      notifications: notifItems,
+      biometricEnabled,
+    });
+    setSaving(false);
     toast.success("Préférences enregistrées");
   };
 
@@ -87,6 +146,47 @@ export default function Preferences() {
           </CardContent>
         </Card>
 
+        {/* Biométrie */}
+        {webauthnSupported && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <FontAwesomeIcon icon={faFingerprint} className="h-4 w-4 text-primary" />
+                Connexion biométrique
+              </CardTitle>
+              <CardDescription>
+                Utilisez votre empreinte digitale ou Face ID pour vous connecter rapidement.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {biometricEnabled ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-3 px-1 py-2 rounded-md bg-primary/10 border border-primary/20">
+                    <FontAwesomeIcon icon={faFingerprint} className="h-5 w-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground">Biométrie activée</p>
+                      <p className="text-xs text-muted-foreground">Votre appareil est enregistré pour la connexion rapide.</p>
+                    </div>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={disableBiometric} className="gap-2 text-destructive">
+                    <FontAwesomeIcon icon={faTrash} className="h-3 w-3" />
+                    Désactiver la biométrie
+                  </Button>
+                </div>
+              ) : (
+                <Button onClick={enableBiometric} disabled={biometricLoading} className="gap-2">
+                  {biometricLoading ? (
+                    <FontAwesomeIcon icon={faSpinner} className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <FontAwesomeIcon icon={faFingerprint} className="h-3.5 w-3.5" />
+                  )}
+                  Activer la connexion biométrique
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         {/* Notifications settings */}
         <Card>
           <CardHeader className="pb-3">
@@ -100,17 +200,17 @@ export default function Preferences() {
               <span className="text-xs font-medium text-muted-foreground text-center">Push</span>
             </div>
             <div className="space-y-1">
-              {items.map((item, i) => (
+              {notifItems.map((item, i) => (
                 <div
                   key={item.key}
                   className="grid grid-cols-[1fr_60px_60px] gap-2 items-center rounded-md px-1 py-2.5 hover:bg-secondary/40 transition-colors"
                 >
                   <Label className="text-sm cursor-default">{item.label}</Label>
                   <div className="flex justify-center">
-                    <Switch checked={item.email} onCheckedChange={() => toggle(i, "email")} />
+                    <Switch checked={item.email} onCheckedChange={() => toggleNotif(i, "email")} />
                   </div>
                   <div className="flex justify-center">
-                    <Switch checked={item.push} onCheckedChange={() => toggle(i, "push")} />
+                    <Switch checked={item.push} onCheckedChange={() => toggleNotif(i, "push")} />
                   </div>
                 </div>
               ))}
@@ -118,8 +218,12 @@ export default function Preferences() {
           </CardContent>
         </Card>
 
-        <Button onClick={save} className="w-full gap-2">
-          <FontAwesomeIcon icon={faSave} className="h-3.5 w-3.5" />
+        <Button onClick={save} className="w-full gap-2" disabled={saving}>
+          {saving ? (
+            <FontAwesomeIcon icon={faSpinner} className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            <FontAwesomeIcon icon={faSave} className="h-3.5 w-3.5" />
+          )}
           Enregistrer les préférences
         </Button>
       </div>

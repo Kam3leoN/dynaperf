@@ -472,6 +472,39 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          link: string | null
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          body?: string
+          created_at?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          link?: string | null
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       partenaires: {
         Row: {
           commission: number
@@ -700,6 +733,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_preferences: {
+        Row: {
+          created_at: string
+          id: string
+          preferences: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          preferences?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          preferences?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string
@@ -714,6 +771,36 @@ export type Database = {
         Update: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      webauthn_credentials: {
+        Row: {
+          created_at: string
+          credential_id: string
+          device_name: string | null
+          id: string
+          public_key: string
+          user_email: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          credential_id: string
+          device_name?: string | null
+          id?: string
+          public_key: string
+          user_email: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          credential_id?: string
+          device_name?: string | null
+          id?: string
+          public_key?: string
+          user_email?: string
           user_id?: string
         }
         Relationships: []
