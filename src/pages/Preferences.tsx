@@ -5,7 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGear, faMoon, faSun, faSave, faFingerprint, faTrash, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faGear, faMoon, faSun, faSave, faFingerprint, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { useUserPreferences, type NotifPref } from "@/hooks/useUserPreferences";
@@ -57,7 +57,6 @@ export default function Preferences() {
     if (!user) return;
     setBiometricLoading(true);
     try {
-      // Récupère le display_name
       const { data: profile } = await supabase
         .from("profiles")
         .select("display_name")
@@ -71,13 +70,11 @@ export default function Preferences() {
       );
 
       if (result.success) {
-        // Stocke le refresh_token pour la reconnexion biométrique
         const { data: sessionData } = await supabase.auth.getSession();
         if (sessionData?.session?.refresh_token) {
           storeBiometricRefreshToken(sessionData.session.refresh_token);
         }
 
-        // Sauvegarde le credential en DB
         await supabase.from("webauthn_credentials").insert({
           user_id: user.id,
           credential_id: result.credentialId,
@@ -90,7 +87,13 @@ export default function Preferences() {
         toast.success("Connexion biométrique activée !");
       }
     } catch (error: any) {
-      toast.error(error.message);
+      if (error.message?.includes("annulée")) {
+        toast.info("Activation annulée.");
+      } else if (error.name === "NotAllowedError" || error.message?.includes("NotAllowedError")) {
+        toast.error("Biométrie indisponible dans cet environnement. Réessayez depuis l'application installée.");
+      } else {
+        toast.error(error.message);
+      }
     } finally {
       setBiometricLoading(false);
     }
@@ -107,6 +110,15 @@ export default function Preferences() {
     }
     setBiometricEnabled(false);
     toast.success("Connexion biométrique désactivée.");
+  };
+
+  /** Bascule l'état biométrique via un switch */
+  const toggleBiometric = async (checked: boolean) => {
+    if (checked) {
+      await enableBiometric();
+    } else {
+      await disableBiometric();
+    }
   };
 
   /** Sauvegarde toutes les préférences */
@@ -154,7 +166,7 @@ export default function Preferences() {
         </Card>
 
         {/* Biométrie */}
-        {webauthnSupported && (
+        {webauthnSupported && !biometricLoading && (
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
@@ -166,30 +178,24 @@ export default function Preferences() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {biometricEnabled ? (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3 px-1 py-2 rounded-md bg-primary/10 border border-primary/20">
-                    <FontAwesomeIcon icon={faFingerprint} className="h-5 w-5 text-primary" />
-                    <div>
-                      <p className="text-sm font-medium text-foreground">Biométrie activée</p>
-                      <p className="text-xs text-muted-foreground">Votre appareil est enregistré pour la connexion rapide.</p>
-                    </div>
-                  </div>
-                  <Button variant="outline" size="sm" onClick={disableBiometric} className="gap-2 text-destructive">
-                    <FontAwesomeIcon icon={faTrash} className="h-3 w-3" />
-                    Désactiver la biométrie
-                  </Button>
+              <div className="flex items-center justify-between rounded-md px-1 py-3">
+                <div className="flex items-center gap-3">
+                  <FontAwesomeIcon icon={faFingerprint} className="h-4 w-4 text-muted-foreground" />
+                  <Label className="text-sm cursor-default">
+                    {biometricEnabled ? "Biométrie activée" : "Activer la biométrie"}
+                  </Label>
                 </div>
-              ) : (
-                <Button onClick={enableBiometric} disabled={biometricLoading} className="gap-2">
-                  {biometricLoading ? (
-                    <FontAwesomeIcon icon={faSpinner} className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <FontAwesomeIcon icon={faFingerprint} className="h-3.5 w-3.5" />
-                  )}
-                  Activer la connexion biométrique
-                </Button>
-              )}
+                <Switch checked={biometricEnabled} onCheckedChange={toggleBiometric} />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {webauthnSupported && biometricLoading && (
+          <Card>
+            <CardContent className="flex items-center justify-center py-8 gap-3">
+              <FontAwesomeIcon icon={faSpinner} className="h-4 w-4 animate-spin text-primary" />
+              <span className="text-sm text-muted-foreground">Enregistrement biométrique…</span>
             </CardContent>
           </Card>
         )}
