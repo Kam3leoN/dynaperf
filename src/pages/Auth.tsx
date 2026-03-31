@@ -11,10 +11,13 @@ import {
   isWebAuthnSupported,
   hasStoredCredential,
   getStoredUserEmail,
-  getStoredRefreshToken,
-  storeRefreshToken,
   authenticateWithWebAuthn,
 } from "@/services/WebAuthnService";
+import {
+  getBiometricRefreshToken,
+  markAppSessionUnlocked,
+  storeBiometricRefreshToken,
+} from "@/services/BiometricSessionService";
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -29,7 +32,7 @@ export default function Auth() {
     (async () => {
       const supported = await isWebAuthnSupported();
       const hasCredential = hasStoredCredential();
-      const hasToken = !!getStoredRefreshToken();
+      const hasToken = !!getBiometricRefreshToken();
       const available = supported && hasCredential && hasToken;
       setBiometricAvailable(available);
 
@@ -53,23 +56,22 @@ export default function Auth() {
     try {
       const result = await authenticateWithWebAuthn();
       if (result.success) {
-        const refreshToken = getStoredRefreshToken();
+        const refreshToken = getBiometricRefreshToken();
         if (!refreshToken) {
           toast.info("Veuillez vous reconnecter avec votre mot de passe une première fois.");
           return;
         }
 
-        // Utilise le refresh_token pour restaurer la session Supabase
+        // Utilise le refresh_token biométrique pour restaurer la session
         const { error } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
         if (error) {
-          // Token expiré ou révoqué — fallback sur le login classique
           toast.info("Session expirée. Veuillez vous reconnecter avec votre mot de passe.");
         } else {
+          markAppSessionUnlocked();
           toast.success("Connexion biométrique réussie !");
-          // Met à jour le refresh token stocké avec le nouveau
           const { data: sessionData } = await supabase.auth.getSession();
           if (sessionData?.session?.refresh_token) {
-            storeRefreshToken(sessionData.session.refresh_token);
+            storeBiometricRefreshToken(sessionData.session.refresh_token);
           }
         }
       }
@@ -92,9 +94,8 @@ export default function Auth() {
       toast.error(error.message);
     } else {
       toast.success("Connexion réussie");
-      // Stocke le refresh_token pour la reconnexion biométrique future
       if (data.session?.refresh_token && hasStoredCredential()) {
-        storeRefreshToken(data.session.refresh_token);
+        storeBiometricRefreshToken(data.session.refresh_token);
       }
     }
     setLoading(false);
@@ -125,11 +126,17 @@ export default function Auth() {
           </div>
           <div>
             <h1 className="text-lg font-bold text-foreground tracking-tight">DynaPerf</h1>
-            <p className="text-xs text-muted-foreground">Connexion</p>
+            <p className="text-xs text-muted-foreground">{biometricAvailable ? "Biométrie" : "Connexion"}</p>
           </div>
         </div>
 
-        {/* Bouton biométrique si disponible */}
+        {biometricAvailable && (
+          <div className="mb-5 space-y-1">
+            <p className="text-base font-semibold text-foreground">Biométrie</p>
+            <p className="text-sm text-muted-foreground">Utilisez la biométrie pour vous connecter</p>
+          </div>
+        )}
+
         {biometricAvailable && (
           <div className="mb-6">
             <Button
