@@ -2,6 +2,14 @@ import { createContext, createElement, useContext, useEffect, useMemo, useState 
 import { supabase } from "@/integrations/supabase/client";
 import type { ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
+import {
+  clearPersistedAuthSession,
+  hasAppSessionUnlocked,
+  lockAppLocally,
+  markAppSessionUnlocked,
+  storeBiometricRefreshToken,
+} from "@/services/BiometricSessionService";
+import { hasStoredCredential } from "@/services/WebAuthnService";
 
 interface AuthContextValue {
   user: User | null;
@@ -24,13 +32,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setLoading(false);
     };
 
+    const syncBiometricToken = (session: Session | null) => {
+      if (!session?.refresh_token || !hasStoredCredential()) return;
+      storeBiometricRefreshToken(session.refresh_token);
+      markAppSessionUnlocked();
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      syncBiometricToken(session);
       applySession(session);
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    (async () => {
+      if (hasStoredCredential() && !hasAppSessionUnlocked()) {
+        await supabase.auth.stopAutoRefresh().catch(() => undefined);
+        await (supabase.auth as any)._removeSession?.();
+        clearPersistedAuthSession();
+      }
+
+      const { data: { session } } = await supabase.auth.getSession();
+      syncBiometricToken(session);
       applySession(session);
-    });
+    })();
 
     return () => {
       mounted = false;
@@ -39,7 +62,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    lockAppLocally();
+    await supabase.auth.stopAutoRefresh().catch(() => undefined);
+    await (supabase.auth as any)._removeSession?.();
+    setUser(null);
+    setLoading(false);
   };
 
   const value = useMemo(() => ({ user, loading, signOut }), [user, loading]);
