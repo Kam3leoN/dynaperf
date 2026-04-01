@@ -81,6 +81,7 @@ const App = () => {
             <InstallPrompt />
             <OfflineIndicator />
             {!splashDone && <SplashScreen onFinished={() => setSplashDone(true)} />}
+            {splashDone && (
             <BrowserRouter basename={routerBase}>
               <Routes>
                 <Route path="/" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
