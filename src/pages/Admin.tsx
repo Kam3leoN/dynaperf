@@ -779,6 +779,8 @@ export default function Admin() {
                   <div className="flex justify-between"><span className="text-muted-foreground">Club Affaires</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_club_1 ?? 0}€ / {viewUser.config?.prime_club_2 ?? 0}€ / {viewUser.config?.prime_club_3_plus ?? 0}€</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">RDV Commercial</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_rdv_1 ?? 0}€ / {viewUser.config?.prime_rdv_2 ?? 0}€ / {viewUser.config?.prime_rdv_3_plus ?? 0}€</span></div>
                   <div className="flex justify-between"><span className="text-muted-foreground">Suivi Activité</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_suivi_1 ?? 0}€ / {viewUser.config?.prime_suivi_2 ?? 0}€ / {viewUser.config?.prime_suivi_3_plus ?? 0}€</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Mise en place</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_mep_1 ?? 0}€ / {viewUser.config?.prime_mep_2 ?? 0}€ / {viewUser.config?.prime_mep_3_plus ?? 0}€</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">RD Événementielle</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_evenementiel_1 ?? 0}€ / {viewUser.config?.prime_evenementiel_2 ?? 0}€ / {viewUser.config?.prime_evenementiel_3_plus ?? 0}€</span></div>
                 </div>
               </div>
             </div>
