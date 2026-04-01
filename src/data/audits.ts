@@ -19,10 +19,10 @@ export interface CollaborateurObjectif {
 }
 
 export const collaborateursObjectifs: CollaborateurObjectif[] = [
-  { nom: "Cédric", objectif: 110, palier1: 110, palier2: 150, palier3: 175 },
-  { nom: "Geoffroy", objectif: 38, palier1: 38, palier2: 0, palier3: 0 },
-  { nom: "Tiphaine", objectif: 1, palier1: 1, palier2: 0, palier3: 0 },
-  { nom: "Catherine", objectif: 1, palier1: 1, palier2: 0, palier3: 0 },
+  { nom: "Cédric MALZAT", objectif: 110, palier1: 110, palier2: 150, palier3: 175 },
+  { nom: "Geoffroy L'HONNEN", objectif: 38, palier1: 38, palier2: 0, palier3: 0 },
+  { nom: "Tiphaine LEMAITRE", objectif: 1, palier1: 1, palier2: 0, palier3: 0 },
+  { nom: "Catherine PASSE", objectif: 1, palier1: 1, palier2: 0, palier3: 0 },
 ];
 
 let nextId = 100;
@@ -101,5 +101,5 @@ export const initialAudits: Audit[] = [
 ];
 
 export const TYPES_EVENEMENT = ["Club Affaires", "RD Présentiel", "RD Distanciel", "RDV Commercial"] as const;
-export const AUDITEURS = ["Cédric", "Geoffroy", "Tiphaine", "Catherine"] as const;
+export const AUDITEURS = ["Cédric MALZAT", "Geoffroy L'HONNEN", "Tiphaine LEMAITRE", "Catherine PASSE"] as const;
 export const MOIS_ORDRE = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"] as const;
