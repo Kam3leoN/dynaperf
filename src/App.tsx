@@ -99,6 +99,7 @@ const App = () => {
                 <Route path="/activite/dashboard" element={<ProtectedRoute><SuiviActiviteDashboard /></ProtectedRoute>} />
                 <Route path="/activite/:id" element={<ProtectedRoute><SuiviActiviteDetail /></ProtectedRoute>} />
                 <Route path="/activite" element={<ProtectedRoute><SuiviActiviteList /></ProtectedRoute>} />
+                <Route path="/activite/new/version" element={<ProtectedRoute><SuiviActiviteVersionSelect /></ProtectedRoute>} />
                 <Route path="/activite/new" element={<ProtectedRoute><SuiviActiviteForm /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
