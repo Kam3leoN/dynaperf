@@ -22,6 +22,7 @@ import {
   faClockRotateLeft,
   faGear,
   faCalendarPlus,
+  faMoneyBill,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useTheme } from "next-themes";
@@ -241,6 +242,10 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
 
       <NavLink to="/business-plan" className={() => navPill(location.pathname === "/business-plan")}>
         <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" /><span>Business Plan</span>
+      </NavLink>
+
+      <NavLink to="/primes" className={() => navPill(location.pathname === "/primes")}>
+        <FontAwesomeIcon icon={faMoneyBill} className="h-4 w-4" /><span>Primes</span>
       </NavLink>
 
       <NavLink to="/historique" className={() => navPill(location.pathname === "/historique")}>

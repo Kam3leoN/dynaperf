@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBars,
   faChartLine,
-  faEllipsis,
+  faMoneyBill,
   faGear,
 } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,7 @@ const navItems = [
   { icon: faBars, label: "Menu", path: "__menu__" },
   { icon: faChartLine, label: "Dashboard", path: "/hub" },
   { icon: null, label: "", path: "/", isFab: true },
-  { icon: faEllipsis, label: "...", path: "__noop__" },
+  { icon: faMoneyBill, label: "Primes", path: "/primes" },
   { icon: faGear, label: "Réglages", path: "/preferences" },
 ];
 
@@ -28,6 +28,7 @@ export function BottomNav() {
     if (path === "/") return location.pathname === "/";
     if (path === "/hub") return location.pathname === "/hub";
     if (path === "/preferences") return location.pathname === "/preferences";
+    if (path === "/primes") return location.pathname === "/primes";
     return false;
   };
 
@@ -70,24 +71,6 @@ export function BottomNav() {
               );
             }
 
-            if (item.path === "__noop__") {
-              return (
-                <div
-                  key="noop"
-                  className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-2 opacity-40"
-                >
-                  <div className="flex items-center justify-center w-16 h-8 rounded-2xl bg-transparent">
-                    <FontAwesomeIcon
-                      icon={item.icon!}
-                      className="h-5 w-5 text-muted-foreground"
-                    />
-                  </div>
-                  <span className="text-[10px] font-medium text-muted-foreground">
-                    {item.label}
-                  </span>
-                </div>
-              );
-            }
 
             const active = isActive(item.path);
             return (

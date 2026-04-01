@@ -6,7 +6,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faClipboardList, faChartLine, faBriefcase, faUserTie } from "@fortawesome/free-solid-svg-icons";
 import { AppLayout } from "@/components/AppLayout";
 import { OnlineAvatars } from "@/components/OnlineAvatars";
-import { MyPrimeTracker } from "@/components/MyPrimeTracker";
+
 
 const actions = [
   {
@@ -86,8 +86,6 @@ export default function Welcome() {
             ))}
           </div>
 
-          {/* Prime tracker */}
-          <MyPrimeTracker />
         </div>
 
         {/* Version chip */}
