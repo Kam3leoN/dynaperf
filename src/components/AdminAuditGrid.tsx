@@ -318,21 +318,30 @@ export default function AdminAuditGridInline() {
               {uniqueKeys.map((key) => {
                 const firstType = types.find(t => t.key === key);
                 const versionCount = types.filter(t => t.key === key).length;
+                const visual = getAuditTypeVisual(key, firstType?.color);
                 return (
                   <button
                     key={key}
-                    onClick={() => {
-                      const versions = types.filter(t => t.key === key);
-                      if (versions.length === 1) {
-                        setSelectedKey(key);
-                        setSelectedTypeId(versions[0].id);
-                      } else {
-                        setSelectedKey(key);
-                      }
-                    }}
-                    className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5 active:scale-[0.98]"
+                    onClick={() => setSelectedKey(key)}
+                    className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-transparent hover:-translate-y-1 active:scale-[0.97]"
                   >
-                    <FontAwesomeIcon icon={faLayerGroup} className="h-5 w-5 text-primary" />
+                    <div
+                      className="flex items-center justify-center w-14 h-14 rounded-full"
+                      style={{ backgroundColor: `${visual.color}18` }}
+                    >
+                      {visual.icon ? (
+                        <div
+                          className="h-7 w-7"
+                          style={{
+                            backgroundColor: visual.color,
+                            mask: `url(${visual.icon}) no-repeat center / contain`,
+                            WebkitMask: `url(${visual.icon}) no-repeat center / contain`,
+                          }}
+                        />
+                      ) : (
+                        <FontAwesomeIcon icon={faLayerGroup} className="h-5 w-5" style={{ color: visual.color }} />
+                      )}
+                    </div>
                     <span className="text-sm font-semibold text-foreground text-center">{firstType?.label || key}</span>
                     <Badge variant="secondary" className="text-[10px]">{versionCount} version{versionCount > 1 ? "s" : ""}</Badge>
                   </button>
