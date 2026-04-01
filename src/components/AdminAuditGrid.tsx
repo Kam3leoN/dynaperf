@@ -120,7 +120,48 @@ export default function AdminAuditGridInline() {
     loadTypes();
   };
 
-  // === Category CRUD ===
+  const duplicateAsNewVersion = async (typeId: string) => {
+    const source = types.find(t => t.id === typeId);
+    if (!source) return;
+    const sameKeyTypes = types.filter(t => t.key === source.key);
+    const nextVersion = Math.max(...sameKeyTypes.map(t => t.version)) + 1;
+    const versionLabel = `V${nextVersion}`;
+
+    // Create new type
+    const { data: newType, error: typeErr } = await supabase.from("audit_types").insert({
+      key: source.key, label: source.label, version: nextVersion, version_label: versionLabel, is_active: true,
+    }).select().single();
+    if (typeErr || !newType) { toast.error("Erreur lors de la duplication"); return; }
+
+    // Duplicate categories
+    const { data: srcCats } = await supabase.from("audit_categories").select("*").eq("audit_type_id", typeId).order("sort_order");
+    if (srcCats) {
+      for (const cat of srcCats) {
+        const { data: newCat } = await supabase.from("audit_categories").insert({
+          audit_type_id: newType.id, name: cat.name, sort_order: cat.sort_order,
+        }).select().single();
+        if (!newCat) continue;
+        // Duplicate items of this category
+        const { data: srcItems } = await supabase.from("audit_items_config").select("*").eq("category_id", cat.id).order("sort_order");
+        if (srcItems && srcItems.length > 0) {
+          await supabase.from("audit_items_config").insert(
+            srcItems.map(i => ({
+              category_id: newCat.id, sort_order: i.sort_order, title: i.title, description: i.description,
+              max_points: i.max_points, condition: i.condition, scoring_rules: i.scoring_rules,
+              input_type: i.input_type, checklist_items: i.checklist_items as any,
+              interets: i.interets, comment_y_parvenir: i.comment_y_parvenir, auto_field: i.auto_field,
+            }))
+          );
+        }
+      }
+    }
+
+    toast.success(`Version ${versionLabel} créée`);
+    setSelectedTypeId(newType.id);
+    loadTypes();
+  };
+
+
   const openNewCat = () => { setEditingCat(null); setCatName(""); setCatDialogOpen(true); };
   const openEditCat = (cat: Category) => { setEditingCat(cat); setCatName(cat.name); setCatDialogOpen(true); };
 
