@@ -85,6 +85,9 @@ export default function Welcome() {
               </Link>
             ))}
           </div>
+
+          {/* Prime tracker */}
+          <MyPrimeTracker />
         </div>
 
         {/* Version chip */}
