@@ -88,16 +88,16 @@ export default function Primes() {
     const maxYear = recapTo.getFullYear();
 
     Promise.all([
-      supabase.from("audits").select("id, partenaire, type_evenement, lieu, date")
+      supabase.from("audits").select("id, partenaire, type_evenement, lieu, date, custom_prime_id")
         .eq("auditeur", displayName).eq("statut", "OK")
         .gte("date", fromStr).lte("date", toStr).order("date", { ascending: false }),
-      supabase.from("audits").select("id, partenaire, type_evenement, lieu, date")
+      supabase.from("audits").select("id, partenaire, type_evenement, lieu, date, custom_prime_id")
         .eq("auditeur", displayName).eq("statut", "OK")
         .gte("date", `${minYear}-01-01`).lte("date", `${maxYear}-12-31`)
         .order("date", { ascending: true }),
     ]).then(([displayRes, yearRes]) => {
-      setDisplayAudits(displayRes.data ?? []);
-      setYearAudits(yearRes.data ?? []);
+      setDisplayAudits((displayRes.data ?? []) as AuditRow[]);
+      setYearAudits((yearRes.data ?? []) as AuditRow[]);
       setLoading(false);
     });
   }, [user, displayName, recapFrom, recapTo]);
