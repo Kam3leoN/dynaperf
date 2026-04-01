@@ -12,10 +12,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faGripVertical, faLayerGroup,
+  faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faGripVertical, faLayerGroup, faCopy,
 } from "@fortawesome/free-solid-svg-icons";
 
-interface AuditType { id: string; key: string; label: string; }
+interface AuditType { id: string; key: string; label: string; version: number; version_label: string | null; is_active: boolean; }
 interface Category { id: string; audit_type_id: string; name: string; sort_order: number; }
 interface ItemConfig {
   id: string; category_id: string; sort_order: number; title: string; description: string;
