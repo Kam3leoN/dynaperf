@@ -312,9 +312,7 @@ export default function Admin() {
     setEditPalier1(u.config?.palier_1?.toString() ?? "");
     setEditPalier2(u.config?.palier_2?.toString() ?? "");
     setEditPalier3(u.config?.palier_3?.toString() ?? "");
-    setEditPrime1((u.config?.prime_audit_1 ?? 0).toString());
-    setEditPrime2((u.config?.prime_audit_2 ?? 0).toString());
-    setEditPrime3((u.config?.prime_audit_3_plus ?? 0).toString());
+    setEditTitle(u.title || "");
     setEditTitle(u.title || "");
   };
 
