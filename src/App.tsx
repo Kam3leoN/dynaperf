@@ -38,6 +38,7 @@ import Messages from "./pages/Messages";
 import ActivityLog from "./pages/ActivityLog";
 import Preferences from "./pages/Preferences";
 import DashboardHub from "./pages/DashboardHub";
+import Primes from "./pages/Primes";
 
 const queryClient = new QueryClient();
 
