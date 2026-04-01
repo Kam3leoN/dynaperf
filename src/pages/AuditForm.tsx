@@ -4,7 +4,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { StepZeroForm, StepZeroData } from "@/components/audit-stepper/StepZeroForm";
 import { AuditItemCard, ItemAnswer } from "@/components/audit-stepper/AuditItemCard";
 import { AuditPhotoUpload } from "@/components/audit-stepper/AuditPhotoUpload";
-import { fetchAuditConfig, AuditTypeConfig } from "@/data/auditItems";
+import { fetchAuditConfig, fetchAuditConfigById, AuditTypeConfig } from "@/data/auditItems";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
