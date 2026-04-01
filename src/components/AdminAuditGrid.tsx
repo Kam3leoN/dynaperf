@@ -89,8 +89,8 @@ export default function AdminAuditGridInline() {
   useEffect(() => { loadData(); }, [loadData]);
 
   // === Type CRUD ===
-  const openNewType = () => { setEditingType(null); setTypeKey(""); setTypeLabel(""); setTypeVersionLabel(""); setTypeDialogOpen(true); };
-  const openEditType = (t: AuditType) => { setEditingType(t); setTypeKey(t.key); setTypeLabel(t.label); setTypeVersionLabel(t.version_label || ""); setTypeDialogOpen(true); };
+  const openNewType = () => { setEditingType(null); setTypeKey(""); setTypeLabel(""); setTypeVersionLabel(""); setTypeColor(""); setTypeDialogOpen(true); };
+  const openEditType = (t: AuditType) => { setEditingType(t); setTypeKey(t.key); setTypeLabel(t.label); setTypeVersionLabel(t.version_label || ""); setTypeColor(t.color || ""); setTypeDialogOpen(true); };
 
   const saveType = async () => {
     if (!typeKey.trim() || !typeLabel.trim()) return;
