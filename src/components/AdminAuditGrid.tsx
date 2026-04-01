@@ -342,24 +342,41 @@ export default function AdminAuditGridInline() {
           {selectedKey && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {versionsForKey.map((v) => (
-                <button
+                <div
                   key={v.id}
-                  onClick={() => setSelectedTypeId(v.id)}
-                  className="flex flex-col items-start gap-2 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5 active:scale-[0.98] text-left"
+                  className={`flex flex-col items-start gap-2 rounded-xl border bg-card p-4 shadow-sm transition-all text-left ${v.is_active ? "border-border" : "border-border/50 opacity-60"}`}
                 >
                   <div className="flex items-center gap-2 w-full">
-                    <FontAwesomeIcon icon={faLayerGroup} className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-semibold text-foreground">
-                      {v.version_label || `V${v.version}`}
-                    </span>
+                    <button onClick={() => setSelectedTypeId(v.id)} className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                      <FontAwesomeIcon icon={faLayerGroup} className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-semibold text-foreground truncate">
+                        {v.version_label || `V${v.version}`}
+                      </span>
+                    </button>
                     {v.is_active ? (
-                      <Badge className="ml-auto text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-0">Active</Badge>
+                      <Badge className="text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-0">Active</Badge>
                     ) : (
-                      <Badge variant="secondary" className="ml-auto text-[10px]">Archivée</Badge>
+                      <Badge variant="secondary" className="text-[10px]">Archivée</Badge>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">{v.label}</p>
-                </button>
+                  <div className="flex items-center gap-1 w-full pt-1 border-t border-border/50">
+                    <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs flex-1" onClick={() => setSelectedTypeId(v.id)}>
+                      <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3" />
+                      Éditer
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={`h-7 gap-1 text-xs ${v.is_active ? "text-amber-600" : "text-emerald-600"}`}
+                      onClick={(e) => { e.stopPropagation(); toggleActive(v.id, v.is_active); }}
+                      title={v.is_active ? "Archiver" : "Réactiver"}
+                    >
+                      <FontAwesomeIcon icon={v.is_active ? faBoxArchive : faRotateLeft} className="h-3 w-3" />
+                      {v.is_active ? "Archiver" : "Activer"}
+                    </Button>
+                  </div>
+                </div>
               ))}
             </div>
           )}
