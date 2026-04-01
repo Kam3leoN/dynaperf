@@ -101,5 +101,5 @@ export const initialAudits: Audit[] = [
 ];
 
 export const TYPES_EVENEMENT = ["Club Affaires", "RD Présentiel", "RD Distanciel", "RDV Commercial"] as const;
-export const AUDITEURS = ["Cédric", "Geoffroy", "Tiphaine", "Catherine"] as const;
+export const AUDITEURS = ["Cédric MALZAT", "Geoffroy L'HONNEN", "Tiphaine LEMAITRE", "Catherine PASSE"] as const;
 export const MOIS_ORDRE = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"] as const;
