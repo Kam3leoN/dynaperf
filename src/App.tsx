@@ -24,6 +24,7 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import SuiviActiviteList from "./pages/SuiviActiviteList";
 import SuiviActiviteForm from "./pages/SuiviActiviteForm";
+import SuiviActiviteVersionSelect from "./pages/SuiviActiviteVersionSelect";
 import SuiviActiviteDashboard from "./pages/SuiviActiviteDashboard";
 import SuiviActiviteDetail from "./pages/SuiviActiviteDetail";
 import Profile from "./pages/Profile";
