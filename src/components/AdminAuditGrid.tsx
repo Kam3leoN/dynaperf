@@ -52,7 +52,7 @@ export default function AdminAuditGridInline() {
 
   // Load types
   const loadTypes = useCallback(async () => {
-    const { data } = await supabase.from("audit_types").select("*").order("key");
+    const { data } = await supabase.from("audit_types").select("id, key, label, version, version_label, is_active").order("key").order("version", { ascending: false });
     setTypes(data || []);
     if (data && data.length > 0 && !selectedTypeId) setSelectedTypeId(data[0].id);
     setLoading(false);
