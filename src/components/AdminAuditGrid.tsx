@@ -29,6 +29,7 @@ export default function AdminAuditGridInline() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<ItemConfig[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   // Type CRUD dialog
   const [typeDialogOpen, setTypeDialogOpen] = useState(false);
@@ -97,7 +98,7 @@ export default function AdminAuditGridInline() {
       if (error) { toast.error("Erreur"); return; }
       toast.success("Type modifié");
     } else {
-      const { data, error } = await supabase.from("audit_types").insert({ key: typeKey.trim(), label: typeLabel.trim() }).select().single();
+      const { data, error } = await supabase.from("audit_types").insert({ key: typeKey.trim(), label: typeLabel.trim(), version_label: typeVersionLabel.trim() || null }).select().single();
       if (error) { toast.error("Erreur"); return; }
       toast.success("Type créé");
       if (data) setSelectedTypeId(data.id);
@@ -264,48 +265,124 @@ export default function AdminAuditGridInline() {
   const selectedType = types.find((t) => t.id === selectedTypeId);
   const totalMaxPts = items.reduce((s, i) => s + i.max_points, 0);
 
+  // Group types by key for 2-level selection
+  const uniqueKeys = [...new Set(types.map(t => t.key))];
+
+  // When a key is selected, show its versions
+  const versionsForKey = selectedKey ? types.filter(t => t.key === selectedKey) : [];
+
+  // Auto-select key from selectedTypeId
+  useEffect(() => {
+    if (selectedTypeId) {
+      const t = types.find(t => t.id === selectedTypeId);
+      if (t && t.key !== selectedKey) setSelectedKey(t.key);
+    }
+  }, [selectedTypeId, types]);
+
   if (loading) {
     return <div className="flex items-center justify-center py-20"><p className="text-muted-foreground animate-pulse">Chargement…</p></div>;
   }
 
   return (
     <div className="space-y-6">
-      {/* Type selector + CRUD */}
-      <div className="flex items-center gap-3 flex-wrap">
-        <Label className="text-sm shrink-0">Type d'événement</Label>
-        <Select value={selectedTypeId} onValueChange={setSelectedTypeId}>
-          <SelectTrigger className="w-64"><SelectValue placeholder="Sélectionner un type" /></SelectTrigger>
-          <SelectContent>
-            {types.map((t) => (
-              <SelectItem key={t.id} value={t.id}>
-                {t.label || t.key}{t.version_label ? ` (${t.version_label})` : ""}{!t.is_active ? " — archivé" : ""}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {selectedType && (
-          <>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditType(selectedType)}>
-              <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => duplicateAsNewVersion(selectedType.id)} title="Dupliquer comme nouvelle version">
-              <FontAwesomeIcon icon={faCopy} className="h-3 w-3" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteType(selectedType.id)}>
-              <FontAwesomeIcon icon={faTrashCan} className="h-3 w-3" />
-            </Button>
-          </>
-        )}
-        <Button variant="outline" size="sm" className="gap-1.5 text-xs ml-auto" onClick={openNewType}>
-          <FontAwesomeIcon icon={faPlus} className="h-3 w-3" />
-          Nouveau type
-        </Button>
-        {selectedTypeId && (
-          <Badge variant="outline" className="text-xs tabular-nums">
+      {/* Step 1: Type selection cards */}
+      {!selectedTypeId && (
+        <>
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-foreground">
+              {selectedKey ? "Sélectionner une grille" : "Sélectionner un type d'événement"}
+            </h3>
+            <div className="flex gap-2">
+              {selectedKey && (
+                <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => setSelectedKey(null)}>
+                  ← Retour aux types
+                </Button>
+              )}
+              <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={openNewType}>
+                <FontAwesomeIcon icon={faPlus} className="h-3 w-3" />
+                Nouveau type
+              </Button>
+            </div>
+          </div>
+
+          {!selectedKey && (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {uniqueKeys.map((key) => {
+                const firstType = types.find(t => t.key === key);
+                const versionCount = types.filter(t => t.key === key).length;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => {
+                      const versions = types.filter(t => t.key === key);
+                      if (versions.length === 1) {
+                        setSelectedKey(key);
+                        setSelectedTypeId(versions[0].id);
+                      } else {
+                        setSelectedKey(key);
+                      }
+                    }}
+                    className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5 active:scale-[0.98]"
+                  >
+                    <FontAwesomeIcon icon={faLayerGroup} className="h-5 w-5 text-primary" />
+                    <span className="text-sm font-semibold text-foreground text-center">{firstType?.label || key}</span>
+                    <Badge variant="secondary" className="text-[10px]">{versionCount} version{versionCount > 1 ? "s" : ""}</Badge>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {selectedKey && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {versionsForKey.map((v) => (
+                <button
+                  key={v.id}
+                  onClick={() => setSelectedTypeId(v.id)}
+                  className="flex flex-col items-start gap-2 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5 active:scale-[0.98] text-left"
+                >
+                  <div className="flex items-center gap-2 w-full">
+                    <FontAwesomeIcon icon={faLayerGroup} className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-semibold text-foreground">
+                      {v.version_label || `V${v.version}`}
+                    </span>
+                    {v.is_active ? (
+                      <Badge className="ml-auto text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-0">Active</Badge>
+                    ) : (
+                      <Badge variant="secondary" className="ml-auto text-[10px]">Archivée</Badge>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground">{v.label}</p>
+                </button>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+
+      {/* Selected type header */}
+      {selectedTypeId && selectedType && (
+        <div className="flex items-center gap-3 flex-wrap">
+          <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => { setSelectedTypeId(""); }}>
+            ← Retour
+          </Button>
+          <span className="text-sm font-semibold text-foreground">
+            {selectedType.label}{selectedType.version_label ? ` (${selectedType.version_label})` : ""}
+          </span>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditType(selectedType)}>
+            <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => duplicateAsNewVersion(selectedType.id)} title="Dupliquer comme nouvelle version">
+            <FontAwesomeIcon icon={faCopy} className="h-3 w-3" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => { deleteType(selectedType.id); }}>
+            <FontAwesomeIcon icon={faTrashCan} className="h-3 w-3" />
+          </Button>
+          <Badge variant="outline" className="text-xs tabular-nums ml-auto">
             {totalMaxPts} pts max
           </Badge>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Categories + Items */}
       {selectedTypeId && (
@@ -396,12 +473,10 @@ export default function AdminAuditGridInline() {
               <Label>Libellé</Label>
               <Input value={typeLabel} onChange={(e) => setTypeLabel(e.target.value)} placeholder="ex: Rencontre Dirigeants Présentiel" />
             </div>
-            {editingType && (
-              <div className="space-y-1.5">
-                <Label>Label de version</Label>
-                <Input value={typeVersionLabel} onChange={(e) => setTypeVersionLabel(e.target.value)} placeholder="ex: V1, v3.0, 2026-Q1…" />
-              </div>
-            )}
+            <div className="space-y-1.5">
+              <Label>Label de version</Label>
+              <Input value={typeVersionLabel} onChange={(e) => setTypeVersionLabel(e.target.value)} placeholder="ex: V1, v3.0, 2026-Q1…" />
+            </div>
           </div>
           <DialogFooter>
             <Button onClick={saveType} disabled={!typeKey.trim() || !typeLabel.trim()} className="gap-1.5">
