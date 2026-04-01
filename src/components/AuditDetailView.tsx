@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { resolveAuditPhotoUrls } from "@/lib/storageUtils";
 import {
   Dialog,
   DialogContent,
