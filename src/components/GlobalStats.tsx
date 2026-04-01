@@ -23,12 +23,16 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
   const obj = objectifTotal ?? 0;
   const realises = auditsTermines ?? totalAudits;
   const pctRealises = obj > 0 ? Math.min(100, (realises / obj) * 100) : 0;
-  const restant = Math.max(0, obj - realises);
+
+  // Planifiés en % de l'objectif
+  const pctPlanifies = obj > 0 ? Math.min(100, (auditsPlanifies / obj) * 100) : 0;
+
+  // Restant = objectif - réalisés - planifiés (ce qui reste à programmer)
+  const restant = Math.max(0, obj - realises - auditsPlanifies);
   const pctRestant = obj > 0 ? (restant / obj) * 100 : 0;
 
-  // Projection: planifiés couvrent une partie du restant
-  const restantApresPlanif = Math.max(0, restant - auditsPlanifies);
-  const pctPlanifiesCouverture = restant > 0 ? Math.min(100, (auditsPlanifies / restant) * 100) : 0;
+  // Ce qui reste à programmer après les planifiés
+  const restantApresPlanif = restant;
 
   // Calculate remaining days until Dec 31 of selected year
   const selectedYear = annee && annee !== "Tous" ? parseInt(annee) : new Date().getFullYear();
