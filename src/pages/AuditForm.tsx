@@ -34,6 +34,7 @@ export default function AuditForm() {
   const [searchParams] = useSearchParams();
   const { auditId } = useParams<{ auditId: string }>();
   const typeEvenement = searchParams.get("type") || "RD Présentiel";
+  const typeId = searchParams.get("typeId") || "";
   const isEditMode = !!auditId;
 
   const [config, setConfig] = useState<AuditTypeConfig | null>(null);
