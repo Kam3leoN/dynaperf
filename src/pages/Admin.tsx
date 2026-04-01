@@ -915,11 +915,27 @@ function UserConfigPanel({
   const [palier1, setPalier1] = useState<string>(config?.palier_1?.toString() ?? "");
   const [palier2, setPalier2] = useState<string>(config?.palier_2?.toString() ?? "");
   const [palier3, setPalier3] = useState<string>(config?.palier_3?.toString() ?? "");
-  const [prime1, setPrime1] = useState(config?.prime_audit_1 ?? 0);
-  const [prime2, setPrime2] = useState(config?.prime_audit_2 ?? 0);
-  const [prime3, setPrime3] = useState(config?.prime_audit_3_plus ?? 0);
   const [semainesIndispo, setSemainesIndispo] = useState(config?.semaines_indisponibles ?? 10);
   const [saving, setSaving] = useState(false);
+
+  // Per-format primes state
+  const [primes, setPrimes] = useState({
+    prime_audit_1: config?.prime_audit_1 ?? 75, prime_audit_2: config?.prime_audit_2 ?? 10, prime_audit_3_plus: config?.prime_audit_3_plus ?? 5,
+    prime_distanciel_1: config?.prime_distanciel_1 ?? 10, prime_distanciel_2: config?.prime_distanciel_2 ?? 5, prime_distanciel_3_plus: config?.prime_distanciel_3_plus ?? 0,
+    prime_club_1: config?.prime_club_1 ?? 75, prime_club_2: config?.prime_club_2 ?? 10, prime_club_3_plus: config?.prime_club_3_plus ?? 5,
+    prime_rdv_1: config?.prime_rdv_1 ?? 75, prime_rdv_2: config?.prime_rdv_2 ?? 10, prime_rdv_3_plus: config?.prime_rdv_3_plus ?? 5,
+    prime_suivi_1: config?.prime_suivi_1 ?? 75, prime_suivi_2: config?.prime_suivi_2 ?? 10, prime_suivi_3_plus: config?.prime_suivi_3_plus ?? 5,
+  });
+
+  const updatePrime = (key: string, val: number) => setPrimes(p => ({ ...p, [key]: val }));
+
+  const FORMATS = [
+    { label: "RD Présentiel", k1: "prime_audit_1", k2: "prime_audit_2", k3: "prime_audit_3_plus" },
+    { label: "RD Distanciel", k1: "prime_distanciel_1", k2: "prime_distanciel_2", k3: "prime_distanciel_3_plus" },
+    { label: "Club Affaires", k1: "prime_club_1", k2: "prime_club_2", k3: "prime_club_3_plus" },
+    { label: "RDV Commercial", k1: "prime_rdv_1", k2: "prime_rdv_2", k3: "prime_rdv_3_plus" },
+    { label: "Suivi Activité", k1: "prime_suivi_1", k2: "prime_suivi_2", k3: "prime_suivi_3_plus" },
+  ] as const;
 
   const handleSave = async () => {
     setSaving(true);
@@ -931,9 +947,7 @@ function UserConfigPanel({
         palier_1: palier1 ? parseInt(palier1) : null,
         palier_2: palier2 ? parseInt(palier2) : null,
         palier_3: palier3 ? parseInt(palier3) : null,
-        prime_audit_1: prime1,
-        prime_audit_2: prime2,
-        prime_audit_3_plus: prime3,
+        ...primes,
         semaines_indisponibles: semainesIndispo,
       },
     });
@@ -971,20 +985,16 @@ function UserConfigPanel({
         </div>
       </div>
       <div>
-        <label className="text-xs font-semibold text-foreground block mb-2">Primes par audit (€)</label>
-        <div className="grid grid-cols-3 gap-2">
-          <div>
-            <span className="text-[10px] text-muted-foreground">1er audit</span>
-            <Input type="number" min={0} step={0.01} value={prime1} onChange={(e) => setPrime1(parseFloat(e.target.value) || 0)} className="h-9 text-sm" />
-          </div>
-          <div>
-            <span className="text-[10px] text-muted-foreground">2e audit</span>
-            <Input type="number" min={0} step={0.01} value={prime2} onChange={(e) => setPrime2(parseFloat(e.target.value) || 0)} className="h-9 text-sm" />
-          </div>
-          <div>
-            <span className="text-[10px] text-muted-foreground">3e et suivants</span>
-            <Input type="number" min={0} step={0.01} value={prime3} onChange={(e) => setPrime3(parseFloat(e.target.value) || 0)} className="h-9 text-sm" />
-          </div>
+        <label className="text-xs font-semibold text-foreground block mb-2">Primes par format (€) — 1er / 2e / 3e+</label>
+        <div className="space-y-2">
+          {FORMATS.map(({ label, k1, k2, k3 }) => (
+            <div key={k1} className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground w-28 shrink-0">{label}</span>
+              <Input type="number" min={0} step={1} value={(primes as any)[k1]} onChange={(e) => updatePrime(k1, parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" />
+              <Input type="number" min={0} step={1} value={(primes as any)[k2]} onChange={(e) => updatePrime(k2, parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" />
+              <Input type="number" min={0} step={1} value={(primes as any)[k3]} onChange={(e) => updatePrime(k3, parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" />
+            </div>
+          ))}
         </div>
       </div>
       <div>
