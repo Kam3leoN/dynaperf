@@ -88,7 +88,7 @@ export default function SuiviActiviteList() {
             Planifier
           </Button>
           <Button asChild className="gap-2">
-            <Link to="/activite/new">
+             <Link to="/activite/new/version">
               <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
               Nouveau suivi
             </Link>
