@@ -32,6 +32,7 @@ interface AuditRow {
   id: string;
   partenaire: string;
   type_evenement: string;
+  lieu: string | null;
   date: string;
 }
 
