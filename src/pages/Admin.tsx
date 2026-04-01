@@ -177,9 +177,7 @@ export default function Admin() {
   const [editPalier1, setEditPalier1] = useState("");
   const [editPalier2, setEditPalier2] = useState("");
   const [editPalier3, setEditPalier3] = useState("");
-  const [editPrime1, setEditPrime1] = useState("0");
-  const [editPrime2, setEditPrime2] = useState("0");
-  const [editPrime3, setEditPrime3] = useState("0");
+  const [editTitle, setEditTitle] = useState("");
   const [editTitle, setEditTitle] = useState("");
   const [editSaving, setEditSaving] = useState(false);
 
