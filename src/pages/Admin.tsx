@@ -48,6 +48,18 @@ interface UserConfig {
   prime_audit_1: number;
   prime_audit_2: number;
   prime_audit_3_plus: number;
+  prime_distanciel_1: number;
+  prime_distanciel_2: number;
+  prime_distanciel_3_plus: number;
+  prime_club_1: number;
+  prime_club_2: number;
+  prime_club_3_plus: number;
+  prime_rdv_1: number;
+  prime_rdv_2: number;
+  prime_rdv_3_plus: number;
+  prime_suivi_1: number;
+  prime_suivi_2: number;
+  prime_suivi_3_plus: number;
   semaines_indisponibles: number;
 }
 
