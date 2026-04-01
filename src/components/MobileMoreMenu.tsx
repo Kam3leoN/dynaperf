@@ -67,12 +67,14 @@ export function MobileMoreMenu({ onClose }: Props) {
         <MenuItem icon={faChartLine} label="Dashboard" to="/dashboard" onClick={onClose} />
         <MenuItem icon={faClipboardList} label="Tous" to="/audits" onClick={onClose} />
         <MenuItem icon={faPlus} label="Créer" to="/audits/new" onClick={onClose} />
+        <MenuItem icon={faCalendarPlus} label="Planifier" to="/audits?plan=1" onClick={onClose} />
       </MenuGroup>
 
       <MenuGroup title="Activité">
         <MenuItem icon={faChartLine} label="Dashboard" to="/activite/dashboard" onClick={onClose} />
         <MenuItem icon={faEye} label="Tous" to="/activite" onClick={onClose} />
         <MenuItem icon={faPlus} label="Créer" to="/activite/new" onClick={onClose} />
+        <MenuItem icon={faCalendarPlus} label="Planifier" to="/activite?plan=1" onClick={onClose} />
       </MenuGroup>
 
       <MenuGroup title="Réseau">
