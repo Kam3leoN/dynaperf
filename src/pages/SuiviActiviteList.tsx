@@ -88,7 +88,7 @@ export default function SuiviActiviteList() {
             Planifier
           </Button>
           <Button asChild className="gap-2">
-            <Link to="/activite/new">
+             <Link to="/activite/new/version">
               <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
               Nouveau suivi
             </Link>
@@ -102,7 +102,7 @@ export default function SuiviActiviteList() {
         <div className="text-center py-16">
           <p className="text-muted-foreground mb-4">Aucun suivi d'activité enregistré.</p>
           <Button asChild variant="outline">
-            <Link to="/activite/new">Créer votre premier suivi</Link>
+            <Link to="/activite/new/version">Créer votre premier suivi</Link>
           </Button>
         </div>
       ) : (

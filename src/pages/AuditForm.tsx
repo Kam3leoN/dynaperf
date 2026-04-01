@@ -4,7 +4,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { StepZeroForm, StepZeroData } from "@/components/audit-stepper/StepZeroForm";
 import { AuditItemCard, ItemAnswer } from "@/components/audit-stepper/AuditItemCard";
 import { AuditPhotoUpload } from "@/components/audit-stepper/AuditPhotoUpload";
-import { fetchAuditConfig, AuditTypeConfig } from "@/data/auditItems";
+import { fetchAuditConfig, fetchAuditConfigById, AuditTypeConfig } from "@/data/auditItems";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
@@ -34,6 +34,7 @@ export default function AuditForm() {
   const [searchParams] = useSearchParams();
   const { auditId } = useParams<{ auditId: string }>();
   const typeEvenement = searchParams.get("type") || "RD Présentiel";
+  const typeId = searchParams.get("typeId") || "";
   const isEditMode = !!auditId;
 
   const [config, setConfig] = useState<AuditTypeConfig | null>(null);
@@ -46,13 +47,16 @@ export default function AuditForm() {
   const [editLoaded, setEditLoaded] = useState(false);
   const itemsSectionRef = useRef<HTMLDivElement>(null);
 
-  // Load config
+  // Load config - prefer typeId if provided, fallback to typeKey
   useEffect(() => {
-    fetchAuditConfig(typeEvenement).then((c) => {
+    const loadConfig = typeId
+      ? fetchAuditConfigById(typeId)
+      : fetchAuditConfig(typeEvenement);
+    loadConfig.then((c) => {
       setConfig(c);
       setConfigLoading(false);
     });
-  }, [typeEvenement]);
+  }, [typeEvenement, typeId]);
 
   // Load existing audit data for edit mode
   useEffect(() => {

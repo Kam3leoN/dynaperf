@@ -15,6 +15,7 @@ import Welcome from "./pages/Welcome";
 import Auth from "./pages/Auth";
 import Registre from "./pages/Registre";
 import NewAudit from "./pages/NewAudit";
+import AuditVersionSelect from "./pages/AuditVersionSelect";
 import AuditForm from "./pages/AuditForm";
 import Admin from "./pages/Admin";
 import AdminAuditGrid from "./pages/AdminAuditGrid";
@@ -23,6 +24,7 @@ import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import SuiviActiviteList from "./pages/SuiviActiviteList";
 import SuiviActiviteForm from "./pages/SuiviActiviteForm";
+import SuiviActiviteVersionSelect from "./pages/SuiviActiviteVersionSelect";
 import SuiviActiviteDashboard from "./pages/SuiviActiviteDashboard";
 import SuiviActiviteDetail from "./pages/SuiviActiviteDetail";
 import Profile from "./pages/Profile";
@@ -88,6 +90,7 @@ const App = () => {
                 <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                 <Route path="/audits" element={<ProtectedRoute><Registre /></ProtectedRoute>} />
                 <Route path="/audits/new" element={<ProtectedRoute><NewAudit /></ProtectedRoute>} />
+                <Route path="/audits/new/version" element={<ProtectedRoute><AuditVersionSelect /></ProtectedRoute>} />
                 <Route path="/audits/new/form" element={<ProtectedRoute><AuditForm /></ProtectedRoute>} />
                 <Route path="/audits/edit/:auditId" element={<ProtectedRoute><AuditForm /></ProtectedRoute>} />
                 <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
@@ -96,6 +99,7 @@ const App = () => {
                 <Route path="/activite/dashboard" element={<ProtectedRoute><SuiviActiviteDashboard /></ProtectedRoute>} />
                 <Route path="/activite/:id" element={<ProtectedRoute><SuiviActiviteDetail /></ProtectedRoute>} />
                 <Route path="/activite" element={<ProtectedRoute><SuiviActiviteList /></ProtectedRoute>} />
+                <Route path="/activite/new/version" element={<ProtectedRoute><SuiviActiviteVersionSelect /></ProtectedRoute>} />
                 <Route path="/activite/new" element={<ProtectedRoute><SuiviActiviteForm /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />

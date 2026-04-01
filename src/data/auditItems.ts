@@ -31,7 +31,7 @@ export interface AuditTypeConfig {
   maxPoints: number;
 }
 
-/** Fetch the full config (categories + items) for a given audit type key */
+/** Fetch the full config (categories + items) for a given audit type key (latest active) */
 export async function fetchAuditConfig(typeKey: string): Promise<AuditTypeConfig | null> {
   // 1. Get type
   const { data: typeRow, error: typeErr } = await supabase
@@ -99,7 +99,65 @@ export async function fetchAuditConfig(typeKey: string): Promise<AuditTypeConfig
   };
 }
 
-/** Calculate score for participants (item with sort_order 3 in RD Présentiel) */
+/** Fetch config by specific type ID (for version selection) */
+export async function fetchAuditConfigById(typeId: string): Promise<AuditTypeConfig | null> {
+  const { data: typeRow, error: typeErr } = await supabase
+    .from("audit_types")
+    .select("*")
+    .eq("id", typeId)
+    .maybeSingle();
+
+  if (typeErr || !typeRow) return null;
+
+  const { data: cats } = await supabase
+    .from("audit_categories")
+    .select("*")
+    .eq("audit_type_id", typeRow.id)
+    .order("sort_order");
+
+  if (!cats || cats.length === 0) return null;
+
+  const catIds = cats.map((c) => c.id);
+  const { data: items } = await supabase
+    .from("audit_items_config")
+    .select("*")
+    .in("category_id", catIds)
+    .order("sort_order");
+
+  const categories: AuditCategoryDef[] = cats.map((c) => ({
+    id: c.id,
+    name: c.name,
+    sortOrder: c.sort_order,
+    items: (items || [])
+      .filter((i) => i.category_id === c.id)
+      .map((i) => ({
+        id: i.id,
+        title: i.title,
+        description: i.description,
+        maxPoints: i.max_points,
+        condition: i.condition,
+        inputType: i.input_type as "boolean" | "number" | "checklist",
+        scoringRules: i.scoring_rules ?? undefined,
+        checklistItems: i.checklist_items ? (i.checklist_items as string[]) : undefined,
+        sortOrder: i.sort_order,
+        categoryId: c.id,
+        autoField: (i as any).auto_field ?? undefined,
+        interets: (i as any).interets ?? undefined,
+        commentYParvenir: (i as any).comment_y_parvenir ?? undefined,
+      })),
+  }));
+
+  const allItems = categories.flatMap((c) => c.items);
+  const maxPoints = allItems.reduce((s, i) => s + i.maxPoints, 0);
+
+  return {
+    id: typeRow.id,
+    key: typeRow.key,
+    label: typeRow.label,
+    categories,
+    maxPoints,
+  };
+}
 export function calcParticipantsScore(nb: number): number {
   if (nb >= 30) return 10;
   if (nb >= 26) return 5;

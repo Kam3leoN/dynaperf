@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchSuiviItemsConfig, SuiviItemConfig } from "@/data/suiviActiviteItems";
@@ -37,6 +37,8 @@ interface ItemAnswer {
 
 export default function SuiviActiviteForm() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const versionParam = searchParams.get("version");
   const [items, setItems] = useState<SuiviItemConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -57,7 +59,7 @@ export default function SuiviActiviteForm() {
 
   useEffect(() => {
     Promise.all([
-      fetchSuiviItemsConfig(),
+      fetchSuiviItemsConfig(versionParam ? parseInt(versionParam) : undefined),
       supabase.from("profiles").select("display_name"),
       supabase.from("partenaires").select("prenom, nom").eq("statut", "actif"),
     ]).then(([configItems, { data: profiles }, { data: parts }]) => {

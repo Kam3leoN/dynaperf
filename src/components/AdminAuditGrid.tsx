@@ -35,6 +35,7 @@ export default function AdminAuditGridInline() {
   const [editingType, setEditingType] = useState<AuditType | null>(null);
   const [typeKey, setTypeKey] = useState("");
   const [typeLabel, setTypeLabel] = useState("");
+  const [typeVersionLabel, setTypeVersionLabel] = useState("");
 
   // Category dialog
   const [catDialogOpen, setCatDialogOpen] = useState(false);
@@ -86,13 +87,13 @@ export default function AdminAuditGridInline() {
   useEffect(() => { loadData(); }, [loadData]);
 
   // === Type CRUD ===
-  const openNewType = () => { setEditingType(null); setTypeKey(""); setTypeLabel(""); setTypeDialogOpen(true); };
-  const openEditType = (t: AuditType) => { setEditingType(t); setTypeKey(t.key); setTypeLabel(t.label); setTypeDialogOpen(true); };
+  const openNewType = () => { setEditingType(null); setTypeKey(""); setTypeLabel(""); setTypeVersionLabel(""); setTypeDialogOpen(true); };
+  const openEditType = (t: AuditType) => { setEditingType(t); setTypeKey(t.key); setTypeLabel(t.label); setTypeVersionLabel(t.version_label || ""); setTypeDialogOpen(true); };
 
   const saveType = async () => {
     if (!typeKey.trim() || !typeLabel.trim()) return;
     if (editingType) {
-      const { error } = await supabase.from("audit_types").update({ key: typeKey.trim(), label: typeLabel.trim() }).eq("id", editingType.id);
+      const { error } = await supabase.from("audit_types").update({ key: typeKey.trim(), label: typeLabel.trim(), version_label: typeVersionLabel.trim() || null }).eq("id", editingType.id);
       if (error) { toast.error("Erreur"); return; }
       toast.success("Type modifié");
     } else {
@@ -395,6 +396,12 @@ export default function AdminAuditGridInline() {
               <Label>Libellé</Label>
               <Input value={typeLabel} onChange={(e) => setTypeLabel(e.target.value)} placeholder="ex: Rencontre Dirigeants Présentiel" />
             </div>
+            {editingType && (
+              <div className="space-y-1.5">
+                <Label>Label de version</Label>
+                <Input value={typeVersionLabel} onChange={(e) => setTypeVersionLabel(e.target.value)} placeholder="ex: V1, v3.0, 2026-Q1…" />
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button onClick={saveType} disabled={!typeKey.trim() || !typeLabel.trim()} className="gap-1.5">

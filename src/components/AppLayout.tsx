@@ -105,8 +105,8 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
     return () => { supabase.removeChannel(channel); };
   }, [user]);
 
-  const isAuditSection = ["/dashboard", "/audits", "/audits/new", "/audits/new/form"].includes(location.pathname);
-  const isActiviteSection = ["/activite", "/activite/new", "/activite/dashboard"].includes(location.pathname);
+  const isAuditSection = ["/dashboard", "/audits", "/audits/new", "/audits/new/version", "/audits/new/form"].includes(location.pathname);
+  const isActiviteSection = ["/activite", "/activite/new", "/activite/new/version", "/activite/dashboard"].includes(location.pathname);
   const isReseauSection = ["/reseau", "/reseau/partenaires", "/reseau/clubs", "/reseau/secteurs"].includes(location.pathname);
 
   const handleForgotPassword = async () => {
@@ -219,7 +219,7 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
         <DropdownMenuContent align="start" className="w-56 rounded-2xl">
           <DropdownMenuItem asChild><Link to="/activite/dashboard" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-muted-foreground" />Tableau de bord</Link></DropdownMenuItem>
           <DropdownMenuItem asChild><Link to="/activite" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faEye} className="h-4 w-4 text-muted-foreground" />Tous les suivis</Link></DropdownMenuItem>
-          <DropdownMenuItem asChild><Link to="/activite/new" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faPlus} className="h-4 w-4 text-muted-foreground" />Nouveau suivi</Link></DropdownMenuItem>
+          <DropdownMenuItem asChild><Link to="/activite/new/version" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faPlus} className="h-4 w-4 text-muted-foreground" />Nouveau suivi</Link></DropdownMenuItem>
           <DropdownMenuItem asChild><Link to="/activite?plan=1" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faCalendarPlus} className="h-4 w-4 text-amber-500" />Planifier un suivi</Link></DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
