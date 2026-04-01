@@ -363,6 +363,12 @@ export default function Admin() {
         prime_suivi_1: editUser.config?.prime_suivi_1 ?? 75,
         prime_suivi_2: editUser.config?.prime_suivi_2 ?? 10,
         prime_suivi_3_plus: editUser.config?.prime_suivi_3_plus ?? 5,
+        prime_mep_1: editUser.config?.prime_mep_1 ?? 75,
+        prime_mep_2: editUser.config?.prime_mep_2 ?? 10,
+        prime_mep_3_plus: editUser.config?.prime_mep_3_plus ?? 5,
+        prime_evenementiel_1: editUser.config?.prime_evenementiel_1 ?? 75,
+        prime_evenementiel_2: editUser.config?.prime_evenementiel_2 ?? 10,
+        prime_evenementiel_3_plus: editUser.config?.prime_evenementiel_3_plus ?? 5,
         semaines_indisponibles: editUser.config?.semaines_indisponibles ?? 10,
       },
     });
