@@ -10,7 +10,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { PrimeConfig, getFormatPrimes, FORMAT_KEYS } from "@/lib/primeUtils";
+import { PrimeConfig, getFormatPrimes, FORMAT_KEYS, parsePrimeConfig, buildRankMap } from "@/lib/primeUtils";
 
 /** Default range: 16th of current month → 15th of next month */
 function getDefaultRange(): { from: Date; to: Date } {
@@ -48,16 +48,7 @@ export function MyPrimeTracker() {
   useEffect(() => {
     if (!user) return;
     supabase.rpc("get_my_config").then(({ data }: any) => {
-      if (data && data.length > 0) {
-        const d = data[0];
-        setConfig({
-          prime_audit_1: d.prime_audit_1 ?? 0, prime_audit_2: d.prime_audit_2 ?? 0, prime_audit_3_plus: d.prime_audit_3_plus ?? 0,
-          prime_distanciel_1: d.prime_distanciel_1 ?? 0, prime_distanciel_2: d.prime_distanciel_2 ?? 0, prime_distanciel_3_plus: d.prime_distanciel_3_plus ?? 0,
-          prime_club_1: d.prime_club_1 ?? 0, prime_club_2: d.prime_club_2 ?? 0, prime_club_3_plus: d.prime_club_3_plus ?? 0,
-          prime_rdv_1: d.prime_rdv_1 ?? 0, prime_rdv_2: d.prime_rdv_2 ?? 0, prime_rdv_3_plus: d.prime_rdv_3_plus ?? 0,
-          prime_suivi_1: d.prime_suivi_1 ?? 0, prime_suivi_2: d.prime_suivi_2 ?? 0, prime_suivi_3_plus: d.prime_suivi_3_plus ?? 0,
-        });
-      }
+      if (data && data.length > 0) setConfig(parsePrimeConfig(data[0]));
     });
   }, [user]);
 
@@ -91,15 +82,7 @@ export function MyPrimeTracker() {
 
   const prime = useMemo(() => {
     if (!config || yearAudits.length === 0) return 0;
-    const partnerVisits = new Map<string, AuditRow[]>();
-    for (const a of yearAudits) {
-      if (!partnerVisits.has(a.partenaire)) partnerVisits.set(a.partenaire, []);
-      partnerVisits.get(a.partenaire)!.push(a);
-    }
-    const rankMap = new Map<string, number>();
-    for (const [, visits] of partnerVisits) {
-      visits.forEach((v, i) => rankMap.set(v.id, i + 1));
-    }
+    const rankMap = buildRankMap(yearAudits);
     const rangeIds = new Set(rangeAudits.map((a) => a.id));
     let total = 0;
     for (const a of yearAudits) {

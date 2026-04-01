@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { PrimeConfig, parsePrimeConfig, primeForNthVisit } from "@/lib/primeUtils";
+import { PrimeConfig, parsePrimeConfig, primeForNthVisit, buildRankMap } from "@/lib/primeUtils";
 
 interface AuditRow {
   id: string;
@@ -104,16 +104,7 @@ export default function Primes() {
 
   const { grandTotal, perAuditPrimes } = useMemo(() => {
     if (!config) return { grandTotal: 0, perAuditPrimes: new Map<string, number>() };
-    // Build visit order per partner for the civil year
-    const partnerVisits = new Map<string, { id: string; type_evenement: string }[]>();
-    for (const a of [...yearAudits].sort((x, y) => x.date.localeCompare(y.date))) {
-      if (!partnerVisits.has(a.partenaire)) partnerVisits.set(a.partenaire, []);
-      partnerVisits.get(a.partenaire)!.push(a);
-    }
-    const rankMap = new Map<string, number>();
-    for (const [, visits] of partnerVisits) {
-      visits.forEach((v, i) => rankMap.set(v.id, i + 1));
-    }
+    const rankMap = buildRankMap(yearAudits);
     const perAudit = new Map<string, number>();
     let total = 0;
     for (const a of displayAudits) {

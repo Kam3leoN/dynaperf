@@ -60,6 +60,12 @@ interface UserConfig {
   prime_suivi_1: number;
   prime_suivi_2: number;
   prime_suivi_3_plus: number;
+  prime_mep_1: number;
+  prime_mep_2: number;
+  prime_mep_3_plus: number;
+  prime_evenementiel_1: number;
+  prime_evenementiel_2: number;
+  prime_evenementiel_3_plus: number;
   semaines_indisponibles: number;
 }
 
@@ -924,6 +930,8 @@ function UserConfigPanel({
     prime_club_1: config?.prime_club_1 ?? 75, prime_club_2: config?.prime_club_2 ?? 10, prime_club_3_plus: config?.prime_club_3_plus ?? 5,
     prime_rdv_1: config?.prime_rdv_1 ?? 75, prime_rdv_2: config?.prime_rdv_2 ?? 10, prime_rdv_3_plus: config?.prime_rdv_3_plus ?? 5,
     prime_suivi_1: config?.prime_suivi_1 ?? 75, prime_suivi_2: config?.prime_suivi_2 ?? 10, prime_suivi_3_plus: config?.prime_suivi_3_plus ?? 5,
+    prime_mep_1: config?.prime_mep_1 ?? 75, prime_mep_2: config?.prime_mep_2 ?? 10, prime_mep_3_plus: config?.prime_mep_3_plus ?? 5,
+    prime_evenementiel_1: config?.prime_evenementiel_1 ?? 75, prime_evenementiel_2: config?.prime_evenementiel_2 ?? 10, prime_evenementiel_3_plus: config?.prime_evenementiel_3_plus ?? 5,
   });
 
   const updatePrime = (key: string, val: number) => setPrimes(p => ({ ...p, [key]: val }));
@@ -934,6 +942,8 @@ function UserConfigPanel({
     { label: "Club Affaires", k1: "prime_club_1", k2: "prime_club_2", k3: "prime_club_3_plus" },
     { label: "RDV Commercial", k1: "prime_rdv_1", k2: "prime_rdv_2", k3: "prime_rdv_3_plus" },
     { label: "Suivi Activité", k1: "prime_suivi_1", k2: "prime_suivi_2", k3: "prime_suivi_3_plus" },
+    { label: "Mise en place", k1: "prime_mep_1", k2: "prime_mep_2", k3: "prime_mep_3_plus" },
+    { label: "RD Événementielle", k1: "prime_evenementiel_1", k2: "prime_evenementiel_2", k3: "prime_evenementiel_3_plus" },
   ] as const;
 
   const handleSave = async () => {
