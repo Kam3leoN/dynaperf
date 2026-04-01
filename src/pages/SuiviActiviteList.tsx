@@ -74,6 +74,10 @@ export default function SuiviActiviteList() {
         <div className="flex items-center gap-2 flex-wrap">
           <SuiviActiviteExportExcel suivis={suivis} />
           <SuiviActiviteExportPDF suivis={suivis} />
+          <Button variant="outline" className="gap-2" onClick={() => setPlanOpen(true)}>
+            <FontAwesomeIcon icon={faCalendarPlus} className="h-3.5 w-3.5 text-amber-500" />
+            Planifier
+          </Button>
           <Button asChild className="gap-2">
             <Link to="/activite/new">
               <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
