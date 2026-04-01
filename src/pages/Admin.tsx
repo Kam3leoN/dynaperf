@@ -540,11 +540,7 @@ export default function Admin() {
                     </div>
                   </div>
 
-                  {/* Primes are set via the config panel after creation */}
-                        <Input type="number" min={0} step={0.01} value={newPrime3} onChange={(e) => setNewPrime3(e.target.value)} className="h-9 text-sm" />
-                      </div>
-                    </div>
-                  </div>
+                  {/* Primes are set with default values on creation */}
 
                   <div className="flex justify-end gap-2 pt-2">
                     <Button type="button" variant="outline" size="sm" onClick={() => { setCreateOpen(false); resetCreateForm(); }} className="rounded-md">Annuler</Button>
