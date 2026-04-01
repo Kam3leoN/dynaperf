@@ -900,6 +900,12 @@ export type Database = {
           prime_distanciel_1: number
           prime_distanciel_2: number
           prime_distanciel_3_plus: number
+          prime_evenementiel_1: number
+          prime_evenementiel_2: number
+          prime_evenementiel_3_plus: number
+          prime_mep_1: number
+          prime_mep_2: number
+          prime_mep_3_plus: number
           prime_rdv_1: number
           prime_rdv_2: number
           prime_rdv_3_plus: number
