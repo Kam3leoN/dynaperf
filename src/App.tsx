@@ -81,6 +81,7 @@ const App = () => {
             <InstallPrompt />
             <OfflineIndicator />
             {!splashDone && <SplashScreen onFinished={() => setSplashDone(true)} />}
+            {splashDone && (
             <BrowserRouter basename={routerBase}>
               <Routes>
                 <Route path="/" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
@@ -112,6 +113,7 @@ const App = () => {
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
+            )}
           </TooltipProvider>
         </AuthProvider>
       </QueryClientProvider>
