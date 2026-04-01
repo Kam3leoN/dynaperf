@@ -313,7 +313,6 @@ export default function Admin() {
     setEditPalier2(u.config?.palier_2?.toString() ?? "");
     setEditPalier3(u.config?.palier_3?.toString() ?? "");
     setEditTitle(u.title || "");
-    setEditTitle(u.title || "");
   };
 
   const handleEditSave = async () => {
