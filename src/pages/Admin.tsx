@@ -645,8 +645,8 @@ export default function Admin() {
                           </TableCell>
                           <TableCell className="text-sm tabular-nums text-muted-foreground">
                             {showPrimes
-                              ? (u.config ? `${u.config.prime_audit_1}€ / ${u.config.prime_audit_2}€ / ${u.config.prime_audit_3_plus}€` : "—")
-                              : "••• / ••• / •••"}
+                              ? (u.config ? `RD:${u.config.prime_audit_1}€ Dist:${u.config.prime_distanciel_1}€` : "—")
+                              : "••• / •••"}
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-1">
