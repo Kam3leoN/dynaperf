@@ -57,16 +57,12 @@ export default function Preferences() {
     if (!user) return;
     setBiometricLoading(true);
     try {
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("display_name")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
+      // IMPORTANT: déclencher WebAuthn immédiatement après l'action utilisateur
+      // (évite la perte d'activation utilisateur sur certains navigateurs desktop/Windows Hello)
       const result = await registerWebAuthnCredential(
         user.id,
         user.email || "",
-        profile?.display_name || user.email || ""
+        (user.user_metadata?.display_name as string) || user.email || ""
       );
 
       if (result.success) {
