@@ -108,11 +108,13 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
 
   const currentScore = computeScore(item, boolVal, numVal, checklist, autoValue);
   const isMax = currentScore === item.maxPoints;
+  const isTouched = answer?.touched || false;
+  const isExplicitZero = isTouched && currentScore === 0;
 
   return (
     <Card className={cn(
       "transition-all border-l-4",
-      isMax ? "border-l-emerald-500" : currentScore > 0 ? "border-l-amber-500" : "border-l-border"
+      isMax ? "border-l-emerald-500" : currentScore > 0 ? "border-l-amber-500" : isExplicitZero ? "border-l-destructive" : "border-l-border"
     )}>
       <CardContent className="p-3 sm:p-4 space-y-3 sm:space-y-4">
         <div className="flex items-start justify-between gap-2">
@@ -123,7 +125,7 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
               <Badge
                 className={cn(
                   "text-[10px]",
-                  isMax ? "bg-emerald-600 text-white" : currentScore > 0 ? "bg-amber-500 text-white" : "bg-muted text-muted-foreground"
+                  isMax ? "bg-emerald-600 text-white" : currentScore > 0 ? "bg-amber-500 text-white" : isExplicitZero ? "bg-destructive text-white" : "bg-muted text-muted-foreground"
                 )}
               >
                 {currentScore}/{item.maxPoints} pts
