@@ -11,12 +11,19 @@ export interface SuiviItemConfig {
   sort_order: number;
 }
 
-export async function fetchSuiviItemsConfig(): Promise<SuiviItemConfig[]> {
-  const { data, error } = await supabase
+export async function fetchSuiviItemsConfig(version?: number): Promise<SuiviItemConfig[]> {
+  let query = supabase
     .from("suivi_activite_items_config")
     .select("*")
-    .eq("is_active", true)
     .order("sort_order");
+  
+  if (version !== undefined) {
+    query = query.eq("config_version", version);
+  } else {
+    query = query.eq("is_active", true);
+  }
+  
+  const { data, error } = await query;
   if (error) {
     console.error("Error fetching suivi items config:", error);
     return [];
