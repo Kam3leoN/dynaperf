@@ -4,10 +4,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
-import { Badge } from "@/components/ui/badge";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCalendar, faCoins } from "@fortawesome/free-solid-svg-icons";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -16,25 +15,47 @@ import { motion } from "framer-motion";
 function getDefaultRange(): { from: Date; to: Date } {
   const now = new Date();
   const day = now.getDate();
-  let fromDate: Date;
-  let toDate: Date;
-
   if (day >= 16) {
-    // 16 of current month to 15 of next month
-    fromDate = new Date(now.getFullYear(), now.getMonth(), 16);
-    toDate = new Date(now.getFullYear(), now.getMonth() + 1, 15);
-  } else {
-    // 16 of previous month to 15 of current month
-    fromDate = new Date(now.getFullYear(), now.getMonth() - 1, 16);
-    toDate = new Date(now.getFullYear(), now.getMonth(), 15);
+    return {
+      from: new Date(now.getFullYear(), now.getMonth(), 16),
+      to: new Date(now.getFullYear(), now.getMonth() + 1, 15),
+    };
   }
-  return { from: fromDate, to: toDate };
+  return {
+    from: new Date(now.getFullYear(), now.getMonth() - 1, 16),
+    to: new Date(now.getFullYear(), now.getMonth(), 15),
+  };
 }
 
 interface PrimeConfig {
   prime_audit_1: number;
   prime_audit_2: number;
   prime_audit_3_plus: number;
+  prime_distanciel_1: number;
+  prime_distanciel_2: number;
+  prime_distanciel_3_plus: number;
+}
+
+interface AuditRow {
+  id: string;
+  partenaire: string;
+  type_evenement: string;
+  date: string;
+}
+
+function isDistanciel(type: string): boolean {
+  return type.toLowerCase().includes("distanciel");
+}
+
+function primeForNthVisit(nth: number, distanciel: boolean, config: PrimeConfig): number {
+  if (distanciel) {
+    if (nth === 1) return config.prime_distanciel_1;
+    if (nth === 2) return config.prime_distanciel_2;
+    return config.prime_distanciel_3_plus;
+  }
+  if (nth === 1) return config.prime_audit_1;
+  if (nth === 2) return config.prime_audit_2;
+  return config.prime_audit_3_plus;
 }
 
 export function MyPrimeTracker() {
@@ -43,10 +64,10 @@ export function MyPrimeTracker() {
   const [from, setFrom] = useState<Date>(defaultRange.from);
   const [to, setTo] = useState<Date>(defaultRange.to);
   const [config, setConfig] = useState<PrimeConfig | null>(null);
-  const [auditCount, setAuditCount] = useState(0);
+  const [rangeAudits, setRangeAudits] = useState<AuditRow[]>([]);
+  const [yearAudits, setYearAudits] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Load user config
   useEffect(() => {
     if (!user) return;
     supabase.rpc("get_my_config").then(({ data }: any) => {
@@ -55,20 +76,25 @@ export function MyPrimeTracker() {
           prime_audit_1: data[0].prime_audit_1 ?? 0,
           prime_audit_2: data[0].prime_audit_2 ?? 0,
           prime_audit_3_plus: data[0].prime_audit_3_plus ?? 0,
+          prime_distanciel_1: data[0].prime_distanciel_1 ?? 0,
+          prime_distanciel_2: data[0].prime_distanciel_2 ?? 0,
+          prime_distanciel_3_plus: data[0].prime_distanciel_3_plus ?? 0,
         });
       }
     });
   }, [user]);
 
-  // Load audits in date range for current user
   useEffect(() => {
     if (!user) return;
     setLoading(true);
 
     const fromStr = format(from, "yyyy-MM-dd");
     const toStr = format(to, "yyyy-MM-dd");
+    const minYear = from.getFullYear();
+    const maxYear = to.getFullYear();
+    const yearStart = `${minYear}-01-01`;
+    const yearEnd = `${maxYear}-12-31`;
 
-    // Get user display name to match against auditeur field
     supabase
       .from("profiles")
       .select("display_name")
@@ -77,31 +103,56 @@ export function MyPrimeTracker() {
       .then(({ data: profile }) => {
         const displayName = profile?.display_name || user.email?.split("@")[0] || "";
 
-        supabase
-          .from("audits")
-          .select("id", { count: "exact" })
-          .eq("auditeur", displayName)
-          .eq("statut", "OK")
-          .gte("date", fromStr)
-          .lte("date", toStr)
-          .then(({ count }) => {
-            setAuditCount(count ?? 0);
-            setLoading(false);
-          });
+        Promise.all([
+          supabase
+            .from("audits")
+            .select("id, partenaire, type_evenement, date")
+            .eq("auditeur", displayName)
+            .eq("statut", "OK")
+            .gte("date", fromStr)
+            .lte("date", toStr)
+            .order("date", { ascending: true }),
+          supabase
+            .from("audits")
+            .select("id, partenaire, type_evenement, date")
+            .eq("auditeur", displayName)
+            .eq("statut", "OK")
+            .gte("date", yearStart)
+            .lte("date", yearEnd)
+            .order("date", { ascending: true }),
+        ]).then(([rangeRes, yearRes]) => {
+          setRangeAudits(rangeRes.data ?? []);
+          setYearAudits(yearRes.data ?? []);
+          setLoading(false);
+        });
       });
   }, [user, from, to]);
 
-  // Calculate prime
+  // Calculate prime per partenaire per civil year
   const prime = useMemo(() => {
-    if (!config) return 0;
+    if (!config || yearAudits.length === 0) return 0;
+
+    // Build visit order per partner for the full year
+    const partnerVisits = new Map<string, AuditRow[]>();
+    for (const a of yearAudits) {
+      if (!partnerVisits.has(a.partenaire)) partnerVisits.set(a.partenaire, []);
+      partnerVisits.get(a.partenaire)!.push(a);
+    }
+    const rankMap = new Map<string, number>();
+    for (const [, visits] of partnerVisits) {
+      visits.forEach((v, i) => rankMap.set(v.id, i + 1));
+    }
+
+    // Sum only audits in the display range
+    const rangeIds = new Set(rangeAudits.map((a) => a.id));
     let total = 0;
-    for (let i = 1; i <= auditCount; i++) {
-      if (i === 1) total += config.prime_audit_1;
-      else if (i === 2) total += config.prime_audit_2;
-      else total += config.prime_audit_3_plus;
+    for (const a of yearAudits) {
+      if (!rangeIds.has(a.id)) continue;
+      const rank = rankMap.get(a.id) ?? 1;
+      total += primeForNthVisit(rank, isDistanciel(a.type_evenement), config);
     }
     return total;
-  }, [config, auditCount]);
+  }, [config, rangeAudits, yearAudits]);
 
   if (!config) return null;
 
@@ -116,16 +167,14 @@ export function MyPrimeTracker() {
         <h3 className="text-sm font-semibold text-foreground">Ma prime</h3>
       </div>
 
-      {/* Date range selectors */}
       <div className="flex items-center gap-2 flex-wrap mb-3">
         <DatePicker label="Du" date={from} onChange={setFrom} />
         <DatePicker label="Au" date={to} onChange={setTo} />
       </div>
 
-      {/* Result */}
       <div className="flex items-center justify-between rounded-xl bg-muted/50 p-3">
         <div className="text-xs text-muted-foreground">
-          <span className="font-medium text-foreground">{auditCount}</span> audit{auditCount > 1 ? "s" : ""} réalisé{auditCount > 1 ? "s" : ""}
+          <span className="font-medium text-foreground">{rangeAudits.length}</span> audit{rangeAudits.length > 1 ? "s" : ""} réalisé{rangeAudits.length > 1 ? "s" : ""}
         </div>
         <div className="flex items-center gap-1.5">
           <span className="text-lg font-bold text-foreground tabular-nums">
