@@ -191,9 +191,7 @@ export default function Admin() {
   const [newPalier1, setNewPalier1] = useState("");
   const [newPalier2, setNewPalier2] = useState("");
   const [newPalier3, setNewPalier3] = useState("");
-  const [newPrime1, setNewPrime1] = useState("0");
-  const [newPrime2, setNewPrime2] = useState("0");
-  const [newPrime3, setNewPrime3] = useState("0");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
