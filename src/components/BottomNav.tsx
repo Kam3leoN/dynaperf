@@ -15,7 +15,7 @@ const navItems = [
   { icon: faBars, label: "Menu", path: "__menu__" },
   { icon: faChartLine, label: "Dashboard", path: "/hub" },
   { icon: null, label: "", path: "/", isFab: true },
-  { icon: faEllipsis, label: "...", path: "__noop__" },
+  { icon: faMoneyBill, label: "Primes", path: "/primes" },
   { icon: faGear, label: "Réglages", path: "/preferences" },
 ];
 
