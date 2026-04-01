@@ -41,6 +41,15 @@ export default function SuiviActiviteList() {
   const [suivis, setSuivis] = useState<SuiviRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [planOpen, setPlanOpen] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Auto-open plan dialog from URL
+  useEffect(() => {
+    if (searchParams.get("plan") === "1") {
+      setPlanOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   const load = async () => {
     setLoading(true);

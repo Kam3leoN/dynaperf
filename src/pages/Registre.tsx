@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useAuditData } from "@/hooks/useAuditData";
 import { AuditTable } from "@/components/AuditTable";
 import { AppLayout } from "@/components/AppLayout";
@@ -11,10 +12,24 @@ import { faCalendarPlus } from "@fortawesome/free-solid-svg-icons";
 export default function Registre() {
   const { audits, filters, setFilters, availableYears, addAudit, updateAudit, deleteAudit, loading } = useAuditData();
   const [planOpen, setPlanOpen] = useState(false);
+  const [editAuditId, setEditAuditId] = useState<string | undefined>();
+  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Force reload by re-fetching — simple approach: window reload after plan
+  // Auto-open plan dialog from URL
+  useEffect(() => {
+    if (searchParams.get("plan") === "1") {
+      setPlanOpen(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
   const handlePlanCreated = () => {
     window.location.reload();
+  };
+
+  const handleEditPlan = (auditId: string) => {
+    setEditAuditId(auditId);
+    setPlanOpen(true);
   };
 
   return (
@@ -26,16 +41,16 @@ export default function Registre() {
       ) : (
         <div className="space-y-4">
           <div className="flex justify-end gap-2">
-            <Button variant="outline" size="sm" className="gap-1.5 rounded-md" onClick={() => setPlanOpen(true)}>
+            <Button variant="outline" size="sm" className="gap-1.5 rounded-md" onClick={() => { setEditAuditId(undefined); setPlanOpen(true); }}>
               <FontAwesomeIcon icon={faCalendarPlus} className="h-4 w-4 text-amber-500" />
               Planifier
             </Button>
             <ExcelExport audits={audits} />
           </div>
-          <AuditTable audits={audits} onAdd={addAudit} onUpdate={updateAudit} onDelete={deleteAudit} />
+          <AuditTable audits={audits} onAdd={addAudit} onUpdate={updateAudit} onDelete={deleteAudit} onEditPlan={handleEditPlan} />
         </div>
       )}
-      <PlanAuditDialog open={planOpen} onOpenChange={setPlanOpen} onCreated={handlePlanCreated} />
+      <PlanAuditDialog open={planOpen} onOpenChange={(o) => { setPlanOpen(o); if (!o) setEditAuditId(undefined); }} onCreated={handlePlanCreated} editAuditId={editAuditId} />
     </AppLayout>
   );
 }
