@@ -95,13 +95,13 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
         </p>
         <div className="flex items-baseline gap-1 sm:gap-1.5 mt-1.5 sm:mt-2">
           <span className="text-2xl sm:text-3xl font-bold tabular-nums text-amber-600 dark:text-amber-400">{auditsPlanifies}</span>
-          <span className="text-xs sm:text-sm text-muted-foreground">à venir</span>
+          {obj > 0 && <span className="text-sm sm:text-base text-muted-foreground tabular-nums">/{obj}</span>}
         </div>
-        {restant > 0 && (
+        {obj > 0 && (
           <div className="mt-2 space-y-1">
-            <Progress value={pctPlanifiesCouverture} className="h-2" />
+            <Progress value={pctPlanifies} className="h-2" />
             <p className="text-[10px] text-muted-foreground tabular-nums font-medium">
-              {pctPlanifiesCouverture.toFixed(0)}% du restant couvert
+              {pctPlanifies.toFixed(0)}% de l'objectif
             </p>
           </div>
         )}
