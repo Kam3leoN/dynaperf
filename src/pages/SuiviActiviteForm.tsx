@@ -59,7 +59,7 @@ export default function SuiviActiviteForm() {
 
   useEffect(() => {
     Promise.all([
-      fetchSuiviItemsConfig(),
+      fetchSuiviItemsConfig(versionParam ? parseInt(versionParam) : undefined),
       supabase.from("profiles").select("display_name"),
       supabase.from("partenaires").select("prenom, nom").eq("statut", "actif"),
     ]).then(([configItems, { data: profiles }, { data: parts }]) => {
