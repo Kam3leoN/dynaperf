@@ -17,7 +17,31 @@ import {
   getBiometricRefreshToken,
   markAppSessionUnlocked,
   storeBiometricRefreshToken,
+  clearBiometricRefreshToken,
 } from "@/services/BiometricSessionService";
+
+/** Sanitize string input to prevent XSS */
+function sanitize(value: string): string {
+  return value.replace(/[<>"'&]/g, "").trim();
+}
+
+/** Log login IP via edge function (fire-and-forget) */
+async function logLoginIp() {
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+    const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    await fetch(`https://${projectId}.supabase.co/functions/v1/log-login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+    });
+  } catch {
+    // non-blocking
+  }
+}
 
 export default function Auth() {
   const [email, setEmail] = useState("");
@@ -27,7 +51,6 @@ export default function Auth() {
   const [biometricLoading, setBiometricLoading] = useState(false);
   const autoTriggered = useRef(false);
 
-  // Vérifie la disponibilité biométrique et déclenche automatiquement
   useEffect(() => {
     (async () => {
       const supported = await isWebAuthnSupported();
@@ -41,16 +64,13 @@ export default function Auth() {
         if (storedEmail) setEmail(storedEmail);
       }
 
-      // Déclenche automatiquement le prompt biométrique au chargement
       if (available && !autoTriggered.current) {
         autoTriggered.current = true;
-        // Petit délai pour laisser le composant se monter
         setTimeout(() => triggerBiometricLogin(), 300);
       }
     })();
   }, []);
 
-  /** Connexion biométrique — restaure la session via le refresh_token stocké */
   const triggerBiometricLogin = async () => {
     setBiometricLoading(true);
     try {
@@ -58,25 +78,25 @@ export default function Auth() {
       if (result.success) {
         const refreshToken = getBiometricRefreshToken();
         if (!refreshToken) {
-          toast.info("Veuillez vous reconnecter avec votre mot de passe une première fois.");
+          toast.info("Veuillez vous reconnecter avec votre mot de passe.");
           return;
         }
 
-        // Utilise le refresh_token biométrique pour restaurer la session
-        const { error } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
+        const { data, error } = await supabase.auth.refreshSession({ refresh_token: refreshToken });
         if (error) {
-          toast.info("Session expirée. Veuillez vous reconnecter avec votre mot de passe.");
+          clearBiometricRefreshToken();
+          toast.info("Session expirée. Reconnectez-vous avec votre mot de passe.");
         } else {
           markAppSessionUnlocked();
-          toast.success("Connexion biométrique réussie !");
-          const { data: sessionData } = await supabase.auth.getSession();
-          if (sessionData?.session?.refresh_token) {
-            storeBiometricRefreshToken(sessionData.session.refresh_token);
+          // Rotate token
+          if (data.session?.refresh_token) {
+            storeBiometricRefreshToken(data.session.refresh_token);
           }
+          toast.success("Connexion biométrique réussie !");
+          logLoginIp();
         }
       }
     } catch (error: any) {
-      // Ne pas afficher d'erreur si l'utilisateur a simplement annulé
       if (!error.message?.includes("annulée")) {
         toast.error(error.message);
       }
@@ -85,29 +105,42 @@ export default function Auth() {
     }
   };
 
-  /** Connexion classique email/mot de passe */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const cleanEmail = sanitize(email);
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      toast.error("Adresse email invalide");
+      return;
+    }
+    if (password.length < 6) {
+      toast.error("Le mot de passe doit contenir au moins 6 caractères");
+      return;
+    }
     setLoading(true);
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: cleanEmail,
+      password,
+    });
     if (error) {
       toast.error(error.message);
     } else {
       toast.success("Connexion réussie");
+      markAppSessionUnlocked();
       if (data.session?.refresh_token && hasStoredCredential()) {
         storeBiometricRefreshToken(data.session.refresh_token);
       }
+      logLoginIp();
     }
     setLoading(false);
   };
 
-  /** Mot de passe oublié */
   const handleForgotPassword = async () => {
-    if (!email) {
+    const cleanEmail = sanitize(email);
+    if (!cleanEmail) {
       toast.error("Entrez votre email d'abord");
       return;
     }
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
       redirectTo: `${window.location.origin}/reset-password`,
     });
     if (error) toast.error(error.message);
@@ -120,47 +153,45 @@ export default function Auth() {
         <ThemeToggle />
       </div>
       <div className="bg-card rounded-lg shadow-soft p-8 w-full max-w-md">
+        {/* Header — Logo + DynaPerf */}
         <div className="flex items-center gap-3 mb-6">
           <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
             <FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-primary-foreground" />
           </div>
-          <div>
-            <h1 className="text-lg font-bold text-foreground tracking-tight">DynaPerf</h1>
-            <p className="text-xs text-muted-foreground">{biometricAvailable ? "Biométrie" : "Connexion"}</p>
-          </div>
+          <h1 className="text-lg font-bold text-foreground tracking-tight">DynaPerf</h1>
         </div>
 
+        {/* Biometric section — 4 lines only */}
         {biometricAvailable && (
-          <div className="mb-5 space-y-1">
-            <p className="text-base font-semibold text-foreground">Biométrie</p>
-            <p className="text-sm text-muted-foreground">Utilisez la biométrie pour vous connecter</p>
-          </div>
-        )}
-
-        {biometricAvailable && (
-          <div className="mb-6">
-            <Button
-              variant="outline"
-              onClick={triggerBiometricLogin}
-              disabled={biometricLoading}
-              className="w-full gap-3 h-14 text-base border-primary/30 hover:border-primary/60 hover:bg-primary/5"
-            >
-              {biometricLoading ? (
-                <FontAwesomeIcon icon={faSpinner} className="h-5 w-5 animate-spin text-primary" />
-              ) : (
-                <FontAwesomeIcon icon={faFingerprint} className="h-5 w-5 text-primary" />
-              )}
-              Se connecter avec la biométrie
-            </Button>
-            <div className="flex items-center gap-3 my-4">
-              <div className="flex-1 border-t border-border" />
-              <span className="text-xs text-muted-foreground">ou</span>
-              <div className="flex-1 border-t border-border" />
+          <>
+            <div className="mb-4">
+              <p className="text-base font-semibold text-foreground">Biométrie</p>
+              <p className="text-sm text-muted-foreground">Utilisez la biométrie pour vous connecter</p>
             </div>
-          </div>
+            <div className="mb-6">
+              <Button
+                variant="outline"
+                onClick={triggerBiometricLogin}
+                disabled={biometricLoading}
+                className="w-full gap-3 h-14 text-base border-primary/30 hover:border-primary/60 hover:bg-primary/5"
+              >
+                {biometricLoading ? (
+                  <FontAwesomeIcon icon={faSpinner} className="h-5 w-5 animate-spin text-primary" />
+                ) : (
+                  <FontAwesomeIcon icon={faFingerprint} className="h-5 w-5 text-primary" />
+                )}
+                Se connecter avec la biométrie
+              </Button>
+              <div className="flex items-center gap-3 my-4">
+                <div className="flex-1 border-t border-border" />
+                <span className="text-xs text-muted-foreground">ou</span>
+                <div className="flex-1 border-t border-border" />
+              </div>
+            </div>
+          </>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">Email</label>
             <Input
@@ -170,6 +201,8 @@ export default function Auth() {
               placeholder="email@exemple.com"
               className="h-10 text-sm"
               required
+              maxLength={255}
+              autoComplete="email"
             />
           </div>
           <div>
@@ -181,6 +214,8 @@ export default function Auth() {
               className="h-10 text-sm"
               required
               minLength={6}
+              maxLength={128}
+              autoComplete="current-password"
             />
           </div>
 
