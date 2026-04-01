@@ -40,6 +40,7 @@ interface SuiviRow {
 export default function SuiviActiviteList() {
   const [suivis, setSuivis] = useState<SuiviRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [planOpen, setPlanOpen] = useState(false);
 
   const load = async () => {
     setLoading(true);
