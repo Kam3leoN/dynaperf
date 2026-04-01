@@ -37,6 +37,8 @@ interface ItemAnswer {
 
 export default function SuiviActiviteForm() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const versionParam = searchParams.get("version");
   const [items, setItems] = useState<SuiviItemConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
