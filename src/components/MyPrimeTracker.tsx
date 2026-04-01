@@ -93,13 +93,13 @@ export function MyPrimeTracker() {
     for (const a of yearAudits) {
       if (!rangeIds.has(a.id)) continue;
       const rank = rankMap.get(a.id) ?? 1;
-      const primes = getFormatPrimes(a.type_evenement, config);
-      if (rank === 1) total += primes[0];
-      else if (rank === 2) total += primes[1];
-      else total += primes[2];
+      const [p1, p2, p3] = getPrimeValues(a, config, customPrimes);
+      if (rank === 1) total += p1;
+      else if (rank === 2) total += p2;
+      else total += p3;
     }
     return total;
-  }, [config, rangeAudits, yearAudits]);
+  }, [config, customPrimes, rangeAudits, yearAudits]);
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
