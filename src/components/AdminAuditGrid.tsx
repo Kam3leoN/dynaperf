@@ -12,10 +12,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faGripVertical, faLayerGroup,
+  faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faGripVertical, faLayerGroup, faCopy,
 } from "@fortawesome/free-solid-svg-icons";
 
-interface AuditType { id: string; key: string; label: string; }
+interface AuditType { id: string; key: string; label: string; version: number; version_label: string | null; is_active: boolean; }
 interface Category { id: string; audit_type_id: string; name: string; sort_order: number; }
 interface ItemConfig {
   id: string; category_id: string; sort_order: number; title: string; description: string;
@@ -52,7 +52,7 @@ export default function AdminAuditGridInline() {
 
   // Load types
   const loadTypes = useCallback(async () => {
-    const { data } = await supabase.from("audit_types").select("*").order("key");
+    const { data } = await supabase.from("audit_types").select("id, key, label, version, version_label, is_active").order("key").order("version", { ascending: false });
     setTypes(data || []);
     if (data && data.length > 0 && !selectedTypeId) setSelectedTypeId(data[0].id);
     setLoading(false);
@@ -120,7 +120,48 @@ export default function AdminAuditGridInline() {
     loadTypes();
   };
 
-  // === Category CRUD ===
+  const duplicateAsNewVersion = async (typeId: string) => {
+    const source = types.find(t => t.id === typeId);
+    if (!source) return;
+    const sameKeyTypes = types.filter(t => t.key === source.key);
+    const nextVersion = Math.max(...sameKeyTypes.map(t => t.version)) + 1;
+    const versionLabel = `V${nextVersion}`;
+
+    // Create new type
+    const { data: newType, error: typeErr } = await supabase.from("audit_types").insert({
+      key: source.key, label: source.label, version: nextVersion, version_label: versionLabel, is_active: true,
+    }).select().single();
+    if (typeErr || !newType) { toast.error("Erreur lors de la duplication"); return; }
+
+    // Duplicate categories
+    const { data: srcCats } = await supabase.from("audit_categories").select("*").eq("audit_type_id", typeId).order("sort_order");
+    if (srcCats) {
+      for (const cat of srcCats) {
+        const { data: newCat } = await supabase.from("audit_categories").insert({
+          audit_type_id: newType.id, name: cat.name, sort_order: cat.sort_order,
+        }).select().single();
+        if (!newCat) continue;
+        // Duplicate items of this category
+        const { data: srcItems } = await supabase.from("audit_items_config").select("*").eq("category_id", cat.id).order("sort_order");
+        if (srcItems && srcItems.length > 0) {
+          await supabase.from("audit_items_config").insert(
+            srcItems.map(i => ({
+              category_id: newCat.id, sort_order: i.sort_order, title: i.title, description: i.description,
+              max_points: i.max_points, condition: i.condition, scoring_rules: i.scoring_rules,
+              input_type: i.input_type, checklist_items: i.checklist_items as any,
+              interets: i.interets, comment_y_parvenir: i.comment_y_parvenir, auto_field: i.auto_field,
+            }))
+          );
+        }
+      }
+    }
+
+    toast.success(`Version ${versionLabel} créée`);
+    setSelectedTypeId(newType.id);
+    loadTypes();
+  };
+
+
   const openNewCat = () => { setEditingCat(null); setCatName(""); setCatDialogOpen(true); };
   const openEditCat = (cat: Category) => { setEditingCat(cat); setCatName(cat.name); setCatDialogOpen(true); };
 
@@ -235,7 +276,9 @@ export default function AdminAuditGridInline() {
           <SelectTrigger className="w-64"><SelectValue placeholder="Sélectionner un type" /></SelectTrigger>
           <SelectContent>
             {types.map((t) => (
-              <SelectItem key={t.id} value={t.id}>{t.label || t.key}</SelectItem>
+              <SelectItem key={t.id} value={t.id}>
+                {t.label || t.key}{t.version_label ? ` (${t.version_label})` : ""}{!t.is_active ? " — archivé" : ""}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -243,6 +286,9 @@ export default function AdminAuditGridInline() {
           <>
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditType(selectedType)}>
               <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3" />
+            </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => duplicateAsNewVersion(selectedType.id)} title="Dupliquer comme nouvelle version">
+              <FontAwesomeIcon icon={faCopy} className="h-3 w-3" />
             </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteType(selectedType.id)}>
               <FontAwesomeIcon icon={faTrashCan} className="h-3 w-3" />

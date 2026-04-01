@@ -17,6 +17,7 @@ interface AuditTableProps {
   onAdd: (audit: Omit<Audit, "id">) => void;
   onUpdate: (id: string, data: Partial<Audit>) => void;
   onDelete: (id: string) => void;
+  onEditPlan?: (auditId: string) => void;
 }
 
 const emptyForm = (): Omit<Audit, "id"> => ({
@@ -32,7 +33,7 @@ const emptyForm = (): Omit<Audit, "id"> => ({
 
 type SortKey = "date" | "note" | "partenaire" | "auditeur" | "typeEvenement";
 
-export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProps) {
+export function AuditTable({ audits, onAdd, onUpdate, onDelete, onEditPlan }: AuditTableProps) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -103,7 +104,10 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
               <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
           )}
-          <button onClick={() => navigate(`/audits/edit/${a.id}?type=${encodeURIComponent(a.typeEvenement)}`)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
+          <button onClick={() => {
+            if (a.statut !== "OK" && onEditPlan) { onEditPlan(a.id); }
+            else { navigate(`/audits/edit/${a.id}?type=${encodeURIComponent(a.typeEvenement)}`); }
+          }} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
             <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
           </button>
           <button onClick={() => setDeleteId(a.id)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors">
@@ -266,7 +270,10 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProp
                           <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
                         </button>
                       )}
-                      <button onClick={() => navigate(`/audits/edit/${a.id}?type=${encodeURIComponent(a.typeEvenement)}`)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
+                      <button onClick={() => {
+                        if (a.statut !== "OK" && onEditPlan) { onEditPlan(a.id); }
+                        else { navigate(`/audits/edit/${a.id}?type=${encodeURIComponent(a.typeEvenement)}`); }
+                      }} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
                         <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
                       </button>
                       <button onClick={() => setDeleteId(a.id)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors">

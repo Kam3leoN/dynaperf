@@ -21,6 +21,7 @@ import {
   faMapLocationDot,
   faClockRotateLeft,
   faGear,
+  faCalendarPlus,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useTheme } from "next-themes";
@@ -203,6 +204,7 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
           <DropdownMenuItem asChild><Link to="/dashboard" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-muted-foreground" />Tableau de bord</Link></DropdownMenuItem>
           <DropdownMenuItem asChild><Link to="/audits" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faClipboardList} className="h-4 w-4 text-muted-foreground" />Tous les audits</Link></DropdownMenuItem>
           <DropdownMenuItem asChild><Link to="/audits/new" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faPlus} className="h-4 w-4 text-muted-foreground" />Nouvel audit</Link></DropdownMenuItem>
+          <DropdownMenuItem asChild><Link to="/audits?plan=1" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faCalendarPlus} className="h-4 w-4 text-amber-500" />Planifier un audit</Link></DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -218,6 +220,7 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
           <DropdownMenuItem asChild><Link to="/activite/dashboard" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-muted-foreground" />Tableau de bord</Link></DropdownMenuItem>
           <DropdownMenuItem asChild><Link to="/activite" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faEye} className="h-4 w-4 text-muted-foreground" />Tous les suivis</Link></DropdownMenuItem>
           <DropdownMenuItem asChild><Link to="/activite/new" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faPlus} className="h-4 w-4 text-muted-foreground" />Nouveau suivi</Link></DropdownMenuItem>
+          <DropdownMenuItem asChild><Link to="/activite?plan=1" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faCalendarPlus} className="h-4 w-4 text-amber-500" />Planifier un suivi</Link></DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 

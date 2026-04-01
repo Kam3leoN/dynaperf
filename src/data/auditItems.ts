@@ -38,7 +38,10 @@ export async function fetchAuditConfig(typeKey: string): Promise<AuditTypeConfig
     .from("audit_types")
     .select("*")
     .eq("key", typeKey)
-    .single();
+    .eq("is_active", true)
+    .order("version", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
   if (typeErr || !typeRow) return null;
 

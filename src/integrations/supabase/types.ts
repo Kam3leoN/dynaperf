@@ -86,7 +86,11 @@ export type Database = {
         Row: {
           audit_id: string
           created_at: string
+          heure_debut_prevue: string | null
+          heure_debut_reelle: string | null
           heure_evenement: string | null
+          heure_fin_prevue: string | null
+          heure_fin_reelle: string | null
           id: string
           items: Json
           nb_adherents: number | null
@@ -106,7 +110,11 @@ export type Database = {
         Insert: {
           audit_id: string
           created_at?: string
+          heure_debut_prevue?: string | null
+          heure_debut_reelle?: string | null
           heure_evenement?: string | null
+          heure_fin_prevue?: string | null
+          heure_fin_reelle?: string | null
           id?: string
           items?: Json
           nb_adherents?: number | null
@@ -126,7 +134,11 @@ export type Database = {
         Update: {
           audit_id?: string
           created_at?: string
+          heure_debut_prevue?: string | null
+          heure_debut_reelle?: string | null
           heure_evenement?: string | null
+          heure_fin_prevue?: string | null
+          heure_fin_reelle?: string | null
           id?: string
           items?: Json
           nb_adherents?: number | null
@@ -221,27 +233,36 @@ export type Database = {
           created_at: string
           icon: string | null
           id: string
+          is_active: boolean
           key: string
           label: string
           updated_at: string
+          version: number
+          version_label: string | null
         }
         Insert: {
           color?: string | null
           created_at?: string
           icon?: string | null
           id?: string
+          is_active?: boolean
           key: string
           label: string
           updated_at?: string
+          version?: number
+          version_label?: string | null
         }
         Update: {
           color?: string | null
           created_at?: string
           icon?: string | null
           id?: string
+          is_active?: boolean
           key?: string
           label?: string
           updated_at?: string
+          version?: number
+          version_label?: string | null
         }
         Relationships: []
       }
@@ -704,10 +725,13 @@ export type Database = {
         Row: {
           categorie: string
           conditions: string
+          config_version: number
+          config_version_label: string | null
           conseils: string
           created_at: string
           id: string
           interets: string
+          is_active: boolean
           numero: number
           sort_order: number
           titre: string
@@ -716,10 +740,13 @@ export type Database = {
         Insert: {
           categorie: string
           conditions?: string
+          config_version?: number
+          config_version_label?: string | null
           conseils?: string
           created_at?: string
           id?: string
           interets?: string
+          is_active?: boolean
           numero: number
           sort_order?: number
           titre: string
@@ -728,10 +755,13 @@ export type Database = {
         Update: {
           categorie?: string
           conditions?: string
+          config_version?: number
+          config_version_label?: string | null
           conseils?: string
           created_at?: string
           id?: string
           interets?: string
+          is_active?: boolean
           numero?: number
           sort_order?: number
           titre?: string
