@@ -396,12 +396,10 @@ export default function AdminAuditGridInline() {
               <Label>Libellé</Label>
               <Input value={typeLabel} onChange={(e) => setTypeLabel(e.target.value)} placeholder="ex: Rencontre Dirigeants Présentiel" />
             </div>
-            {editingType && (
-              <div className="space-y-1.5">
-                <Label>Label de version</Label>
-                <Input value={typeVersionLabel} onChange={(e) => setTypeVersionLabel(e.target.value)} placeholder="ex: V1, v3.0, 2026-Q1…" />
-              </div>
-            )}
+            <div className="space-y-1.5">
+              <Label>Label de version</Label>
+              <Input value={typeVersionLabel} onChange={(e) => setTypeVersionLabel(e.target.value)} placeholder="ex: V1, v3.0, 2026-Q1…" />
+            </div>
           </div>
           <DialogFooter>
             <Button onClick={saveType} disabled={!typeKey.trim() || !typeLabel.trim()} className="gap-1.5">
