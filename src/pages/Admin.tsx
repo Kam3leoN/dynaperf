@@ -1053,7 +1053,12 @@ function UserConfigPanel({
     setSaving(false);
   };
 
-  const visibleFormats = FORMATS.filter(f => !hiddenFormats.has(f.k1));
+  const visibleFormats = FORMATS.filter(f => {
+    const v1 = (primes as any)[f.k1];
+    const v2 = (primes as any)[f.k2];
+    const v3 = (primes as any)[f.k3];
+    return !(v1 === 0 && v2 === 0 && v3 === 0);
+  });
 
   return (
     <div className="border-t border-border p-4 space-y-4 bg-card/50">
