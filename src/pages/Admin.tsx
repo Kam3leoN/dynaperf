@@ -209,7 +209,6 @@ export default function Admin() {
     setEmail(""); setPassword(""); setNewFirstName(""); setNewLastName("");
     setNewRole("lecteur");
     setNewPalier1(""); setNewPalier2(""); setNewPalier3("");
-    setNewPrime1("0"); setNewPrime2("0"); setNewPrime3("0");
     setAvatarFile(null); setAvatarPreview(null);
   };
 
