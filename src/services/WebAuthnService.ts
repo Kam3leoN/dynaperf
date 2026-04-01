@@ -137,7 +137,7 @@ export async function registerWebAuthnCredential(
   const challenge = generateChallenge();
   const userIdBytes = new TextEncoder().encode(userId);
 
-  const publicKeyOptions: PublicKeyCredentialCreationOptions = {
+  const baseOptions: Omit<PublicKeyCredentialCreationOptions, "authenticatorSelection"> = {
     challenge: challenge as BufferSource,
     rp: { name: "DynaPerf", id: getRpId() },
     user: {
@@ -149,19 +149,42 @@ export async function registerWebAuthnCredential(
       { alg: -7, type: "public-key" },
       { alg: -257, type: "public-key" },
     ],
+    timeout: 90000,
+    attestation: "none",
+  };
+
+  const platformFirstOptions: PublicKeyCredentialCreationOptions = {
+    ...baseOptions,
     authenticatorSelection: {
       authenticatorAttachment: "platform",
       userVerification: "required",
       residentKey: "preferred",
     },
-    timeout: 60000,
-    attestation: "none",
+  };
+
+  const fallbackOptions: PublicKeyCredentialCreationOptions = {
+    ...baseOptions,
+    authenticatorSelection: {
+      userVerification: "preferred",
+      residentKey: "preferred",
+    },
   };
 
   try {
-    const credential = (await navigator.credentials.create({
-      publicKey: publicKeyOptions,
-    })) as PublicKeyCredential | null;
+    let credential: PublicKeyCredential | null = null;
+
+    try {
+      credential = (await navigator.credentials.create({
+        publicKey: platformFirstOptions,
+      })) as PublicKeyCredential | null;
+    } catch (firstError: any) {
+      const shouldRetry = ["NotAllowedError", "ConstraintError", "NotSupportedError"].includes(firstError?.name);
+      if (!shouldRetry) throw firstError;
+
+      credential = (await navigator.credentials.create({
+        publicKey: fallbackOptions,
+      })) as PublicKeyCredential | null;
+    }
 
     if (!credential) {
       throw new Error("Aucun credential n'a été créé.");
@@ -178,10 +201,16 @@ export async function registerWebAuthnCredential(
     return { credentialId, publicKey, success: true };
   } catch (error: any) {
     if (error.name === "NotAllowedError") {
-      throw new Error("L'authentification biométrique a été annulée par l'utilisateur.");
+      if (window.top !== window.self) {
+        throw new Error("Windows Hello est bloqué dans la prévisualisation intégrée. Ouvrez l'app dans un onglet direct puis réessayez.");
+      }
+      throw new Error("Validation Windows Hello non confirmée. Vérifiez que la fenêtre est active puis réessayez.");
     }
     if (error.name === "InvalidStateError") {
       throw new Error("Un credential existe déjà pour cet appareil.");
+    }
+    if (error.name === "SecurityError") {
+      throw new Error("Contexte de sécurité invalide pour la biométrie. Utilisez l'URL sécurisée de l'application.");
     }
     throw new Error(`Erreur lors de l'enregistrement biométrique : ${error.message}`);
   }
