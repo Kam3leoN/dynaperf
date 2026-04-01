@@ -60,7 +60,7 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
           Audits Réalisés
         </p>
         <div className="flex items-baseline gap-1 sm:gap-1.5 mt-1.5 sm:mt-2">
-          <span className="text-2xl sm:text-3xl font-bold tabular-nums text-foreground">{totalAudits}</span>
+          <span className="text-2xl sm:text-3xl font-bold tabular-nums text-foreground">{realises}</span>
           {obj > 0 && <span className="text-sm sm:text-base text-muted-foreground tabular-nums">/{obj}</span>}
         </div>
         {obj > 0 && (

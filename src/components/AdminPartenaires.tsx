@@ -377,7 +377,14 @@ export default function AdminPartenaires() {
             <div className="flex-1">
               <label htmlFor={`${isEdit ? "e" : "c"}-ce`} className="text-sm cursor-pointer">Cadres externalisé.e.s</label>
               {form.is_cadre_externalise && (
-                <Input value={form.pole_expertise} onChange={(e) => setForm(f => ({ ...f, pole_expertise: e.target.value }))} className="h-8 text-sm mt-1" placeholder="Pôle d'expertise" />
+                <Select value={form.pole_expertise || ""} onValueChange={(v) => setForm(f => ({ ...f, pole_expertise: v }))}>
+                  <SelectTrigger className="h-8 text-sm mt-1"><SelectValue placeholder="Pôle d'expertise" /></SelectTrigger>
+                  <SelectContent>
+                    {["Direction Générale", "Direction Commercial", "Ressources Humaines", "Finance & Administratif", "Achats & Logistique", "Marketing & Communication", "Informatique & Data", "RGPD", "Qualité"].map(p => (
+                      <SelectItem key={p} value={p}>{p}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               )}
             </div>
           </div>

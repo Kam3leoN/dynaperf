@@ -28,7 +28,7 @@ export function ExcelExport({ audits }: ExcelExportProps) {
       "Type d'événement": a.typeEvenement,
       Note: a.note ?? "",
       "Mois de versement": a.moisVersement,
-      Statut: a.statut === "OK" ? "Noté" : "En attente",
+      Statut: a.statut === "OK" ? "Terminé" : "Planifié",
     }));
 
     const ws = XLSX.utils.json_to_sheet(rows);
