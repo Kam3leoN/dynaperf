@@ -5,7 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGear, faMoon, faSun, faSave, faFingerprint, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faGear, faMoon, faSun, faSave, faFingerprint, faSpinner, faDesktop } from "@fortawesome/free-solid-svg-icons";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { useUserPreferences, type NotifPref } from "@/hooks/useUserPreferences";
