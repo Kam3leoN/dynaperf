@@ -113,6 +113,12 @@ Deno.serve(async (req) => {
           prime_suivi_1: prime_suivi_1 ?? 0,
           prime_suivi_2: prime_suivi_2 ?? 0,
           prime_suivi_3_plus: prime_suivi_3_plus ?? 0,
+          prime_mep_1: prime_mep_1 ?? 0,
+          prime_mep_2: prime_mep_2 ?? 0,
+          prime_mep_3_plus: prime_mep_3_plus ?? 0,
+          prime_evenementiel_1: prime_evenementiel_1 ?? 0,
+          prime_evenementiel_2: prime_evenementiel_2 ?? 0,
+          prime_evenementiel_3_plus: prime_evenementiel_3_plus ?? 0,
           semaines_indisponibles: semaines_indisponibles ?? 10,
         },
         { onConflict: "user_id" }

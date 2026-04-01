@@ -942,6 +942,8 @@ function UserConfigPanel({
     { label: "Club Affaires", k1: "prime_club_1", k2: "prime_club_2", k3: "prime_club_3_plus" },
     { label: "RDV Commercial", k1: "prime_rdv_1", k2: "prime_rdv_2", k3: "prime_rdv_3_plus" },
     { label: "Suivi Activité", k1: "prime_suivi_1", k2: "prime_suivi_2", k3: "prime_suivi_3_plus" },
+    { label: "Mise en place", k1: "prime_mep_1", k2: "prime_mep_2", k3: "prime_mep_3_plus" },
+    { label: "RD Événementielle", k1: "prime_evenementiel_1", k2: "prime_evenementiel_2", k3: "prime_evenementiel_3_plus" },
   ] as const;
 
   const handleSave = async () => {
