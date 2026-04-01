@@ -858,6 +858,9 @@ export type Database = {
           prime_audit_1: number
           prime_audit_2: number
           prime_audit_3_plus: number
+          prime_distanciel_1: number
+          prime_distanciel_2: number
+          prime_distanciel_3_plus: number
           semaines_indisponibles: number
           updated_at: string
           user_id: string
