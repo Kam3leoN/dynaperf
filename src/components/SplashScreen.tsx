@@ -14,7 +14,10 @@ export function SplashScreen({ onFinished }: { onFinished: () => void }) {
   }, []);
 
   return (
-    <AnimatePresence onExitComplete={onFinished}>
+    <AnimatePresence onExitComplete={() => {
+      document.body.style.backgroundColor = "";
+      onFinished();
+    }}>
       {visible && (
         <motion.div
           key="splash"
