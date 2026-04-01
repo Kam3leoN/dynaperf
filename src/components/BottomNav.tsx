@@ -71,24 +71,6 @@ export function BottomNav() {
               );
             }
 
-            if (item.path === "__noop__") {
-              return (
-                <div
-                  key="noop"
-                  className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-2 opacity-40"
-                >
-                  <div className="flex items-center justify-center w-16 h-8 rounded-2xl bg-transparent">
-                    <FontAwesomeIcon
-                      icon={item.icon!}
-                      className="h-5 w-5 text-muted-foreground"
-                    />
-                  </div>
-                  <span className="text-[10px] font-medium text-muted-foreground">
-                    {item.label}
-                  </span>
-                </div>
-              );
-            }
 
             const active = isActive(item.path);
             return (

@@ -87,6 +87,7 @@ export function MobileMoreMenu({ onClose }: Props) {
 
       <MenuGroup title="Outils">
         <MenuItem icon={faBriefcase} label="Business Plan" to="/business-plan" onClick={onClose} />
+        <MenuItem icon={faMoneyBill} label="Primes" to="/primes" onClick={onClose} />
         <MenuItem icon={faClockRotateLeft} label="Historique" to="/historique" onClick={onClose} />
         <MenuItem icon={faBell} label="Notifications" to="/notifications" onClick={onClose} />
         <MenuItem icon={faEnvelope} label="Messages" to="/messages" onClick={onClose} />
