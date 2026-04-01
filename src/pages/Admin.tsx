@@ -178,7 +178,6 @@ export default function Admin() {
   const [editPalier2, setEditPalier2] = useState("");
   const [editPalier3, setEditPalier3] = useState("");
   const [editTitle, setEditTitle] = useState("");
-  const [editTitle, setEditTitle] = useState("");
   const [editSaving, setEditSaving] = useState(false);
 
   // Create dialog
