@@ -48,16 +48,7 @@ export function MyPrimeTracker() {
   useEffect(() => {
     if (!user) return;
     supabase.rpc("get_my_config").then(({ data }: any) => {
-      if (data && data.length > 0) {
-        const d = data[0];
-        setConfig({
-          prime_audit_1: d.prime_audit_1 ?? 0, prime_audit_2: d.prime_audit_2 ?? 0, prime_audit_3_plus: d.prime_audit_3_plus ?? 0,
-          prime_distanciel_1: d.prime_distanciel_1 ?? 0, prime_distanciel_2: d.prime_distanciel_2 ?? 0, prime_distanciel_3_plus: d.prime_distanciel_3_plus ?? 0,
-          prime_club_1: d.prime_club_1 ?? 0, prime_club_2: d.prime_club_2 ?? 0, prime_club_3_plus: d.prime_club_3_plus ?? 0,
-          prime_rdv_1: d.prime_rdv_1 ?? 0, prime_rdv_2: d.prime_rdv_2 ?? 0, prime_rdv_3_plus: d.prime_rdv_3_plus ?? 0,
-          prime_suivi_1: d.prime_suivi_1 ?? 0, prime_suivi_2: d.prime_suivi_2 ?? 0, prime_suivi_3_plus: d.prime_suivi_3_plus ?? 0,
-        });
-      }
+      if (data && data.length > 0) setConfig(parsePrimeConfig(data[0]));
     });
   }, [user]);
 
