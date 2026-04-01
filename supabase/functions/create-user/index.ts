@@ -156,6 +156,7 @@ Deno.serve(async (req) => {
       const { data: allRoles } = await adminClient.from("user_roles").select("*");
       const { data: allProfiles } = await adminClient.from("profiles").select("*");
       const { data: allConfigs } = await adminClient.from("collaborateur_config").select("*");
+      const { data: allCustomPrimes } = await adminClient.from("user_custom_primes").select("*").order("created_at");
 
       const result = users.map((u: any) => {
         const profile = allProfiles?.find((p: any) => p.user_id === u.id);
@@ -167,10 +168,45 @@ Deno.serve(async (req) => {
           title: profile?.title || null,
           roles: allRoles?.filter((r: any) => r.user_id === u.id).map((r: any) => r.role) || [],
           config: allConfigs?.find((c: any) => c.user_id === u.id) || null,
+          customPrimes: allCustomPrimes?.filter((cp: any) => cp.user_id === u.id) || [],
           createdAt: u.created_at,
         };
       });
       return jsonOk({ users: result });
+    }
+
+    // ADD CUSTOM PRIME
+    if (action === "add-custom-prime") {
+      const { userId, label, prime_1, prime_2, prime_3_plus } = body;
+      if (!userId || !label) return jsonError("userId et label requis", 400);
+      const { data, error } = await adminClient.from("user_custom_primes").insert({
+        user_id: userId, label, prime_1: prime_1 ?? 75, prime_2: prime_2 ?? 10, prime_3_plus: prime_3_plus ?? 5,
+      }).select().single();
+      if (error) return jsonError(error.message, 400);
+      return jsonOk({ success: true, customPrime: data });
+    }
+
+    // UPDATE CUSTOM PRIME
+    if (action === "update-custom-prime") {
+      const { primeId, label, prime_1, prime_2, prime_3_plus } = body;
+      if (!primeId) return jsonError("primeId requis", 400);
+      const updates: any = {};
+      if (label !== undefined) updates.label = label;
+      if (prime_1 !== undefined) updates.prime_1 = prime_1;
+      if (prime_2 !== undefined) updates.prime_2 = prime_2;
+      if (prime_3_plus !== undefined) updates.prime_3_plus = prime_3_plus;
+      const { error } = await adminClient.from("user_custom_primes").update(updates).eq("id", primeId);
+      if (error) return jsonError(error.message, 400);
+      return jsonOk({ success: true });
+    }
+
+    // DELETE CUSTOM PRIME
+    if (action === "delete-custom-prime") {
+      const { primeId } = body;
+      if (!primeId) return jsonError("primeId requis", 400);
+      const { error } = await adminClient.from("user_custom_primes").delete().eq("id", primeId);
+      if (error) return jsonError(error.message, 400);
+      return jsonOk({ success: true });
     }
 
     // CREATE USER (default action)

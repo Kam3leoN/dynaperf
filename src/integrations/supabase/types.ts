@@ -823,6 +823,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_custom_primes: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          prime_1: number
+          prime_2: number
+          prime_3_plus: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          prime_1?: number
+          prime_2?: number
+          prime_3_plus?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          prime_1?: number
+          prime_2?: number
+          prime_3_plus?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_preferences: {
         Row: {
           created_at: string
