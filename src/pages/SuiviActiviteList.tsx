@@ -143,6 +143,7 @@ export default function SuiviActiviteList() {
           ))}
         </div>
       )}
+      <PlanActiviteDialog open={planOpen} onOpenChange={setPlanOpen} onCreated={() => load()} />
     </AppLayout>
   );
 }
