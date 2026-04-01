@@ -62,6 +62,7 @@ export default function Primes() {
   const [recapFrom, setRecapFrom] = useState<Date>(() => new Date(new Date().getFullYear(), 0, 1));
   const [recapTo, setRecapTo] = useState<Date>(() => new Date());
   const [config, setConfig] = useState<PrimeConfig>(DEFAULT_PRIME_CONFIG);
+  const [customPrimes, setCustomPrimes] = useState<UserCustomPrime[]>([]);
   const [displayAudits, setDisplayAudits] = useState<AuditRow[]>([]);
   const [yearAudits, setYearAudits] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(true);
