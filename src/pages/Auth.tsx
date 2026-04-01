@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChartLine, faRightToBracket, faFingerprint, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faChartLine, faRightToBracket, faFingerprint, faSpinner, faDesktop } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
