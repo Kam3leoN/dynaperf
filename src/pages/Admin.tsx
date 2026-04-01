@@ -858,24 +858,8 @@ export default function Admin() {
                 </div>
               </div>
 
-              {/* Primes */}
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Primes par palier (€)</label>
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <span className="text-[10px] text-muted-foreground">Prime P1</span>
-                    <Input type="number" min={0} step={0.01} value={editPrime1} onChange={(e) => setEditPrime1(e.target.value)} className="h-9 text-sm" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-muted-foreground">Prime P2</span>
-                    <Input type="number" min={0} step={0.01} value={editPrime2} onChange={(e) => setEditPrime2(e.target.value)} className="h-9 text-sm" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-muted-foreground">Prime P3</span>
-                    <Input type="number" min={0} step={0.01} value={editPrime3} onChange={(e) => setEditPrime3(e.target.value)} className="h-9 text-sm" />
-                  </div>
-                </div>
-              </div>
+              {/* Primes are managed via the expandable config panel */}
+              <p className="text-xs text-muted-foreground italic">Les primes par format sont gérées via le panneau de configuration détaillé.</p>
 
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" size="sm" onClick={() => setEditUser(null)} className="rounded-md">Annuler</Button>
