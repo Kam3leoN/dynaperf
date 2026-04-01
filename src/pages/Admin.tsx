@@ -60,6 +60,12 @@ interface UserConfig {
   prime_suivi_1: number;
   prime_suivi_2: number;
   prime_suivi_3_plus: number;
+  prime_mep_1: number;
+  prime_mep_2: number;
+  prime_mep_3_plus: number;
+  prime_evenementiel_1: number;
+  prime_evenementiel_2: number;
+  prime_evenementiel_3_plus: number;
   semaines_indisponibles: number;
 }
 
