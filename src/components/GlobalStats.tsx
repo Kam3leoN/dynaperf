@@ -154,7 +154,7 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
         <div className="mt-2 space-y-1">
           <Progress value={moyennePct} className="h-2" />
           <p className="text-[10px] text-muted-foreground tabular-nums font-medium">
-            {auditsNotes} audit{auditsNotes > 1 ? "s" : ""} noté{auditsNotes > 1 ? "s" : ""} · tous types
+            sur {realises} terminé{realises > 1 ? "s" : ""} · {auditsNotes} noté{auditsNotes > 1 ? "s" : ""}
           </p>
         </div>
         <p className={`text-[10px] sm:text-xs mt-1.5 flex items-center gap-1 ${moyenneColor}`}>
