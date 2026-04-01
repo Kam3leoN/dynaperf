@@ -75,6 +75,8 @@ export default function Primes() {
     });
     supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle()
       .then(({ data }) => setDisplayName(data?.display_name || user.email?.split("@")[0] || ""));
+    supabase.from("user_custom_primes").select("id, label, prime_1, prime_2, prime_3_plus").eq("user_id", user.id)
+      .then(({ data }) => setCustomPrimes((data ?? []) as UserCustomPrime[]));
   }, [user]);
 
   useEffect(() => {
