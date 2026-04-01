@@ -10,7 +10,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { PrimeConfig, getFormatPrimes, FORMAT_KEYS, parsePrimeConfig, buildRankMap } from "@/lib/primeUtils";
+import { DEFAULT_PRIME_CONFIG, PrimeConfig, getFormatPrimes, parsePrimeConfig, buildRankMap } from "@/lib/primeUtils";
 
 /** Default range: 16th of current month → 15th of next month */
 function getDefaultRange(): { from: Date; to: Date } {
@@ -40,7 +40,7 @@ export function MyPrimeTracker() {
   const defaultRange = useMemo(() => getDefaultRange(), []);
   const [from, setFrom] = useState<Date>(defaultRange.from);
   const [to, setTo] = useState<Date>(defaultRange.to);
-  const [config, setConfig] = useState<PrimeConfig | null>(null);
+  const [config, setConfig] = useState<PrimeConfig>(DEFAULT_PRIME_CONFIG);
   const [rangeAudits, setRangeAudits] = useState<AuditRow[]>([]);
   const [yearAudits, setYearAudits] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,7 +48,7 @@ export function MyPrimeTracker() {
   useEffect(() => {
     if (!user) return;
     supabase.rpc("get_my_config").then(({ data }: any) => {
-      if (data && data.length > 0) setConfig(parsePrimeConfig(data[0]));
+      setConfig(data && data.length > 0 ? parsePrimeConfig(data[0]) : DEFAULT_PRIME_CONFIG);
     });
   }, [user]);
 
@@ -81,7 +81,7 @@ export function MyPrimeTracker() {
   }, [user, from, to]);
 
   const prime = useMemo(() => {
-    if (!config || yearAudits.length === 0) return 0;
+    if (yearAudits.length === 0) return 0;
     const rankMap = buildRankMap(yearAudits);
     const rangeIds = new Set(rangeAudits.map((a) => a.id));
     let total = 0;
@@ -95,8 +95,6 @@ export function MyPrimeTracker() {
     }
     return total;
   }, [config, rangeAudits, yearAudits]);
-
-  if (!config) return null;
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}

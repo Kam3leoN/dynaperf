@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { PrimeConfig, parsePrimeConfig, primeForNthVisit, buildRankMap } from "@/lib/primeUtils";
+import { DEFAULT_PRIME_CONFIG, PrimeConfig, parsePrimeConfig, primeForNthVisit, buildRankMap } from "@/lib/primeUtils";
 
 interface AuditRow {
   id: string;
@@ -59,7 +59,7 @@ export default function Primes() {
   const { user } = useAuth();
   const [recapFrom, setRecapFrom] = useState<Date>(() => new Date(new Date().getFullYear(), 0, 1));
   const [recapTo, setRecapTo] = useState<Date>(() => new Date());
-  const [config, setConfig] = useState<PrimeConfig | null>(null);
+  const [config, setConfig] = useState<PrimeConfig>(DEFAULT_PRIME_CONFIG);
   const [displayAudits, setDisplayAudits] = useState<AuditRow[]>([]);
   const [yearAudits, setYearAudits] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -68,7 +68,7 @@ export default function Primes() {
   useEffect(() => {
     if (!user) return;
     supabase.rpc("get_my_config").then(({ data }: any) => {
-      if (data && data.length > 0) setConfig(parsePrimeConfig(data[0]));
+      setConfig(data && data.length > 0 ? parsePrimeConfig(data[0]) : DEFAULT_PRIME_CONFIG);
     });
     supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle()
       .then(({ data }) => setDisplayName(data?.display_name || user.email?.split("@")[0] || ""));
@@ -103,7 +103,6 @@ export default function Primes() {
   }, [displayAudits]);
 
   const { grandTotal, perAuditPrimes } = useMemo(() => {
-    if (!config) return { grandTotal: 0, perAuditPrimes: new Map<string, number>() };
     const rankMap = buildRankMap(yearAudits);
     const perAudit = new Map<string, number>();
     let total = 0;
