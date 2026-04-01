@@ -33,7 +33,7 @@ const emptyForm = (): Omit<Audit, "id"> => ({
 
 type SortKey = "date" | "note" | "partenaire" | "auditeur" | "typeEvenement";
 
-export function AuditTable({ audits, onAdd, onUpdate, onDelete }: AuditTableProps) {
+export function AuditTable({ audits, onAdd, onUpdate, onDelete, onEditPlan }: AuditTableProps) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
