@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFilePdf } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveAuditPhotoUrls } from "@/lib/storageUtils";
 import { fetchAuditConfig } from "@/data/auditItems";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -299,7 +300,7 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
       });
 
       // ── Photos ──
-      const photoUrls = (detail.photos as string[]) ?? [];
+      const photoUrls = await resolveAuditPhotoUrls((detail.photos as string[]) ?? []);
       if (photoUrls.length > 0) {
         checkPageBreak(20);
         y += 6;
