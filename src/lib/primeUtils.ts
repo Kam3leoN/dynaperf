@@ -132,12 +132,13 @@ export function parsePrimeConfig(d: any): PrimeConfig {
  * for the same partner AND same event type (format key) within the civil year.
  * This means 1 RD + 1 Club at the same partner = each is 1st visit (not cumulative).
  */
-export function buildRankMap(yearAudits: { id: string; partenaire: string; type_evenement: string; date: string }[]): Map<string, number> {
+export function buildRankMap(yearAudits: { id: string; partenaire: string; type_evenement: string; lieu?: string | null; date: string }[]): Map<string, number> {
   const sorted = [...yearAudits].sort((a, b) => a.date.localeCompare(b.date));
-  // Key: "partner|formatKey" → ordered list of audit ids
+  // Key: "partner|formatKey|lieu" → ordered list of audit ids
   const groups = new Map<string, string[]>();
   for (const a of sorted) {
-    const key = `${a.partenaire}|${getFormatKey(a.type_evenement)}`;
+    const lieu = (a.lieu || "").trim().toLowerCase();
+    const key = `${a.partenaire}|${getFormatKey(a.type_evenement)}|${lieu}`;
     if (!groups.has(key)) groups.set(key, []);
     groups.get(key)!.push(a.id);
   }
