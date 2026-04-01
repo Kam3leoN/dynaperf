@@ -127,11 +127,6 @@ export function parsePrimeConfig(d: any): PrimeConfig {
   };
 }
 
-/**
- * Build a rank map: for each audit id, what is its Nth visit rank
- * for the same partner AND same event type (format key) within the civil year.
- * This means 1 RD + 1 Club at the same partner = each is 1st visit (not cumulative).
- */
 /** A custom prime record from user_custom_primes */
 export interface UserCustomPrime {
   id: string;

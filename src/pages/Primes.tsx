@@ -21,6 +21,7 @@ interface AuditRow {
   type_evenement: string;
   lieu: string | null;
   date: string;
+  custom_prime_id: string | null;
 }
 
 function groupByBillingMonth(audits: AuditRow[]): Map<string, AuditRow[]> {
