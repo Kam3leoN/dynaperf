@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChartLine, faRightToBracket, faFingerprint, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faChartLine, faRightToBracket, faFingerprint, faSpinner, faDesktop } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import {
@@ -51,6 +51,8 @@ export default function Auth() {
   const [biometricLoading, setBiometricLoading] = useState(false);
   const autoTriggered = useRef(false);
 
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
   useEffect(() => {
     (async () => {
       const supported = await isWebAuthnSupported();
@@ -64,7 +66,8 @@ export default function Auth() {
         if (storedEmail) setEmail(storedEmail);
       }
 
-      if (available && !autoTriggered.current) {
+      // Auto-trigger on mobile only; on desktop user clicks the button
+      if (available && isMobile && !autoTriggered.current) {
         autoTriggered.current = true;
         setTimeout(() => triggerBiometricLogin(), 300);
       }
@@ -165,8 +168,14 @@ export default function Auth() {
         {biometricAvailable && (
           <>
             <div className="mb-4">
-              <p className="text-base font-semibold text-foreground">Biométrie</p>
-              <p className="text-sm text-muted-foreground">Utilisez la biométrie pour vous connecter</p>
+              <p className="text-base font-semibold text-foreground">
+                {isMobile ? "Biométrie" : "Windows Hello"}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {isMobile
+                  ? "Utilisez la biométrie pour vous connecter"
+                  : "Utilisez Windows Hello (empreinte, visage ou PIN) pour vous connecter"}
+              </p>
             </div>
             <div className="mb-6">
               <Button
@@ -178,9 +187,9 @@ export default function Auth() {
                 {biometricLoading ? (
                   <FontAwesomeIcon icon={faSpinner} className="h-5 w-5 animate-spin text-primary" />
                 ) : (
-                  <FontAwesomeIcon icon={faFingerprint} className="h-5 w-5 text-primary" />
+                  <FontAwesomeIcon icon={isMobile ? faFingerprint : faDesktop} className="h-5 w-5 text-primary" />
                 )}
-                Se connecter avec la biométrie
+                {isMobile ? "Se connecter avec la biométrie" : "Se connecter avec Windows Hello"}
               </Button>
               <div className="flex items-center gap-3 my-4">
                 <div className="flex-1 border-t border-border" />

@@ -185,6 +185,10 @@ export default function Preferences() {
                 </div>
                 <Switch checked={biometricEnabled} onCheckedChange={toggleBiometric} />
               </div>
+              <p className="text-[11px] text-muted-foreground mt-2 px-1 leading-relaxed">
+                <strong>Prérequis sur PC :</strong> connexion HTTPS, fenêtre active au premier plan, 
+                Windows Hello configuré (PIN, empreinte ou reconnaissance faciale), et pop-ups système autorisées.
+              </p>
             </CardContent>
           </Card>
         )}
