@@ -287,6 +287,9 @@ export default function AdminAuditGridInline() {
             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditType(selectedType)}>
               <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3" />
             </Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => duplicateAsNewVersion(selectedType.id)} title="Dupliquer comme nouvelle version">
+              <FontAwesomeIcon icon={faCopy} className="h-3 w-3" />
+            </Button>
             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => deleteType(selectedType.id)}>
               <FontAwesomeIcon icon={faTrashCan} className="h-3 w-3" />
             </Button>
