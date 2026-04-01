@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFilePdf } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
+import { resolveAuditPhotoUrls } from "@/lib/storageUtils";
 import { fetchAuditConfig } from "@/data/auditItems";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
