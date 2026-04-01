@@ -398,9 +398,21 @@ export default function AdminAuditGridInline() {
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => duplicateAsNewVersion(selectedType.id)} title="Dupliquer comme nouvelle version">
             <FontAwesomeIcon icon={faCopy} className="h-3 w-3" />
           </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`h-8 w-8 ${selectedType.is_active ? "text-amber-600" : "text-emerald-600"}`}
+            onClick={() => toggleActive(selectedType.id, selectedType.is_active)}
+            title={selectedType.is_active ? "Archiver" : "Réactiver"}
+          >
+            <FontAwesomeIcon icon={selectedType.is_active ? faBoxArchive : faRotateLeft} className="h-3 w-3" />
+          </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => { deleteType(selectedType.id); }}>
             <FontAwesomeIcon icon={faTrashCan} className="h-3 w-3" />
           </Button>
+          {!selectedType.is_active && (
+            <Badge variant="secondary" className="text-xs">Archivée</Badge>
+          )}
           <Badge variant="outline" className="text-xs tabular-nums ml-auto">
             {totalMaxPts} pts max
           </Badge>
