@@ -338,7 +338,7 @@ export default function SuiviActiviteForm() {
                             ans.status === "nc" && "bg-muted-foreground text-white border-muted-foreground"
                           )}
                         >
-                          <FontAwesomeIcon icon={faMinus} className="mr-1.5 h-3 w-3" /> N/C
+                          <FontAwesomeIcon icon={faMinus} className="mr-1.5 h-3 w-3" /> Non applicable
                         </Button>
                       </div>
 
