@@ -16,7 +16,7 @@ const actions = [
   {
     label: "Suivi d'activité",
     icon: faChartLine,
-    to: "/activite/new",
+    to: "/activite/new/version",
   },
   {
     label: "Business plan",

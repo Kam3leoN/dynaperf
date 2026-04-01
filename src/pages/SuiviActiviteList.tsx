@@ -102,7 +102,7 @@ export default function SuiviActiviteList() {
         <div className="text-center py-16">
           <p className="text-muted-foreground mb-4">Aucun suivi d'activité enregistré.</p>
           <Button asChild variant="outline">
-            <Link to="/activite/new">Créer votre premier suivi</Link>
+            <Link to="/activite/new/version">Créer votre premier suivi</Link>
           </Button>
         </div>
       ) : (
