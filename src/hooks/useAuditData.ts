@@ -160,8 +160,10 @@ export function useAuditData() {
 
   const globalStats = useMemo(() => {
     const notes = notedAudits.map((a) => a.note!);
+    const termines = filtered.filter((a) => a.statut === "OK").length;
     return {
       totalAudits: filtered.length,
+      auditsTermines: termines,
       auditsNotes: notedAudits.length,
       moyenneGlobale: notes.length > 0 ? +(notes.reduce((s, n) => s + n, 0) / notes.length).toFixed(2) : 0,
       enAttente: filtered.filter((a) => a.statut === "NON").length,
