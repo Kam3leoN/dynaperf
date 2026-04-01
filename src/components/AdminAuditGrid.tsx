@@ -95,11 +95,11 @@ export default function AdminAuditGridInline() {
   const saveType = async () => {
     if (!typeKey.trim() || !typeLabel.trim()) return;
     if (editingType) {
-      const { error } = await supabase.from("audit_types").update({ key: typeKey.trim(), label: typeLabel.trim(), version_label: typeVersionLabel.trim() || null }).eq("id", editingType.id);
+      const { error } = await supabase.from("audit_types").update({ key: typeKey.trim(), label: typeLabel.trim(), version_label: typeVersionLabel.trim() || null, color: typeColor.trim() || null }).eq("id", editingType.id);
       if (error) { toast.error("Erreur"); return; }
       toast.success("Type modifié");
     } else {
-      const { data, error } = await supabase.from("audit_types").insert({ key: typeKey.trim(), label: typeLabel.trim(), version_label: typeVersionLabel.trim() || null }).select().single();
+      const { data, error } = await supabase.from("audit_types").insert({ key: typeKey.trim(), label: typeLabel.trim(), version_label: typeVersionLabel.trim() || null, color: typeColor.trim() || null }).select().single();
       if (error) { toast.error("Erreur"); return; }
       toast.success("Type créé");
       if (data) setSelectedTypeId(data.id);
