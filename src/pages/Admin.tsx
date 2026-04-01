@@ -944,10 +944,12 @@ function AvatarWithUpload({ user, onUpload }: { user: ManagedUser; onUpload: (us
 function UserConfigPanel({
   userId,
   config,
+  customPrimes: initialCustomPrimes,
   onSaved,
 }: {
   userId: string;
   config: UserConfig | null;
+  customPrimes: CustomPrime[];
   onSaved: () => void;
 }) {
   const [objectif, setObjectif] = useState(config?.objectif ?? 0);
@@ -956,6 +958,12 @@ function UserConfigPanel({
   const [palier3, setPalier3] = useState<string>(config?.palier_3?.toString() ?? "");
   const [semainesIndispo, setSemainesIndispo] = useState(config?.semaines_indisponibles ?? 10);
   const [saving, setSaving] = useState(false);
+  const [customPrimes, setCustomPrimes] = useState<CustomPrime[]>(initialCustomPrimes);
+  const [addingCustom, setAddingCustom] = useState(false);
+  const [newLabel, setNewLabel] = useState("");
+  const [newP1, setNewP1] = useState(75);
+  const [newP2, setNewP2] = useState(10);
+  const [newP3, setNewP3] = useState(5);
 
   // Per-format primes state
   const [primes, setPrimes] = useState({
@@ -968,6 +976,9 @@ function UserConfigPanel({
     prime_evenementiel_1: config?.prime_evenementiel_1 ?? 75, prime_evenementiel_2: config?.prime_evenementiel_2 ?? 10, prime_evenementiel_3_plus: config?.prime_evenementiel_3_plus ?? 5,
   });
 
+  // Track which standard formats have been "deleted" (zeroed out)
+  const [hiddenFormats, setHiddenFormats] = useState<Set<string>>(new Set());
+
   const updatePrime = (key: string, val: number) => setPrimes(p => ({ ...p, [key]: val }));
 
   const FORMATS = [
@@ -979,6 +990,39 @@ function UserConfigPanel({
     { label: "Mise en place", k1: "prime_mep_1", k2: "prime_mep_2", k3: "prime_mep_3_plus" },
     { label: "RD Événementielle", k1: "prime_evenementiel_1", k2: "prime_evenementiel_2", k3: "prime_evenementiel_3_plus" },
   ] as const;
+
+  const handleDeleteFormat = (k1: string, k2: string, k3: string) => {
+    updatePrime(k1, 0);
+    updatePrime(k2, 0);
+    updatePrime(k3, 0);
+    setHiddenFormats(prev => new Set(prev).add(k1));
+  };
+
+  const handleDeleteCustomPrime = async (primeId: string) => {
+    const res = await supabase.functions.invoke("create-user", {
+      body: { action: "delete-custom-prime", primeId },
+    });
+    if (res.data?.error) toast.error(res.data.error);
+    else {
+      setCustomPrimes(prev => prev.filter(cp => cp.id !== primeId));
+      toast.success("Prime supprimée");
+      onSaved();
+    }
+  };
+
+  const handleAddCustomPrime = async () => {
+    if (!newLabel.trim()) return;
+    const res = await supabase.functions.invoke("create-user", {
+      body: { action: "add-custom-prime", userId, label: newLabel.trim(), prime_1: newP1, prime_2: newP2, prime_3_plus: newP3 },
+    });
+    if (res.data?.error) toast.error(res.data.error);
+    else {
+      toast.success("Prime ajoutée");
+      setNewLabel(""); setNewP1(75); setNewP2(10); setNewP3(5); setAddingCustom(false);
+      onSaved();
+      if (res.data?.customPrime) setCustomPrimes(prev => [...prev, res.data.customPrime]);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -998,6 +1042,8 @@ function UserConfigPanel({
     else { toast.success("Configuration enregistrée"); onSaved(); }
     setSaving(false);
   };
+
+  const visibleFormats = FORMATS.filter(f => !hiddenFormats.has(f.k1));
 
   return (
     <div className="border-t border-border p-4 space-y-4 bg-card/50">
@@ -1030,15 +1076,82 @@ function UserConfigPanel({
       <div>
         <label className="text-xs font-semibold text-foreground block mb-2">Primes par format (€) — 1er / 2e / 3e+</label>
         <div className="space-y-2">
-          {FORMATS.map(({ label, k1, k2, k3 }) => (
+          {visibleFormats.map(({ label, k1, k2, k3 }) => (
             <div key={k1} className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground w-28 shrink-0">{label}</span>
               <Input type="number" min={0} step={1} value={(primes as any)[k1]} onChange={(e) => updatePrime(k1, parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" />
               <Input type="number" min={0} step={1} value={(primes as any)[k2]} onChange={(e) => updatePrime(k2, parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" />
               <Input type="number" min={0} step={1} value={(primes as any)[k3]} onChange={(e) => updatePrime(k3, parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" />
+              <button
+                type="button"
+                onClick={() => handleDeleteFormat(k1, k2, k3)}
+                className="text-destructive/60 hover:text-destructive transition-colors p-1"
+                title="Supprimer cette prime"
+              >
+                <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          ))}
+          {/* Custom primes */}
+          {customPrimes.map((cp) => (
+            <div key={cp.id} className="flex items-center gap-2">
+              <span className="text-xs text-primary font-medium w-28 shrink-0 truncate" title={cp.label}>{cp.label}</span>
+              <Input type="number" min={0} step={1} value={cp.prime_1}
+                onChange={(e) => setCustomPrimes(prev => prev.map(p => p.id === cp.id ? { ...p, prime_1: parseFloat(e.target.value) || 0 } : p))}
+                className="h-8 text-sm w-16" />
+              <Input type="number" min={0} step={1} value={cp.prime_2}
+                onChange={(e) => setCustomPrimes(prev => prev.map(p => p.id === cp.id ? { ...p, prime_2: parseFloat(e.target.value) || 0 } : p))}
+                className="h-8 text-sm w-16" />
+              <Input type="number" min={0} step={1} value={cp.prime_3_plus}
+                onChange={(e) => setCustomPrimes(prev => prev.map(p => p.id === cp.id ? { ...p, prime_3_plus: parseFloat(e.target.value) || 0 } : p))}
+                className="h-8 text-sm w-16" />
+              <button
+                type="button"
+                onClick={() => handleDeleteCustomPrime(cp.id)}
+                className="text-destructive/60 hover:text-destructive transition-colors p-1"
+                title="Supprimer cette prime"
+              >
+                <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" />
+              </button>
             </div>
           ))}
         </div>
+
+        {/* Add custom prime */}
+        {addingCustom ? (
+          <div className="mt-3 p-3 border border-dashed border-border rounded-lg space-y-2">
+            <Input
+              placeholder="Nom de la prime"
+              value={newLabel}
+              onChange={(e) => setNewLabel(e.target.value)}
+              className="h-8 text-sm"
+            />
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-muted-foreground w-28 shrink-0">Montants</span>
+              <Input type="number" min={0} value={newP1} onChange={(e) => setNewP1(parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" placeholder="1er" />
+              <Input type="number" min={0} value={newP2} onChange={(e) => setNewP2(parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" placeholder="2e" />
+              <Input type="number" min={0} value={newP3} onChange={(e) => setNewP3(parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" placeholder="3e+" />
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" className="h-7 text-xs gap-1" onClick={handleAddCustomPrime}>
+                <FontAwesomeIcon icon={faPlus} className="h-3 w-3" /> Ajouter
+              </Button>
+              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setAddingCustom(false)}>
+                Annuler
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-3 h-8 text-xs gap-1.5 border-dashed"
+            onClick={() => setAddingCustom(true)}
+          >
+            <FontAwesomeIcon icon={faPlus} className="h-3 w-3" />
+            Ajouter une prime
+          </Button>
+        )}
       </div>
       <div>
         <label className="text-xs font-semibold text-foreground block mb-2">Temps réaliste (semaines indisponibles)</label>
