@@ -93,7 +93,7 @@ export default function AdminAuditGridInline() {
   const saveType = async () => {
     if (!typeKey.trim() || !typeLabel.trim()) return;
     if (editingType) {
-      const { error } = await supabase.from("audit_types").update({ key: typeKey.trim(), label: typeLabel.trim() }).eq("id", editingType.id);
+      const { error } = await supabase.from("audit_types").update({ key: typeKey.trim(), label: typeLabel.trim(), version_label: typeVersionLabel.trim() || null }).eq("id", editingType.id);
       if (error) { toast.error("Erreur"); return; }
       toast.success("Type modifié");
     } else {
