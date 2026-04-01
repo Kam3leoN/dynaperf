@@ -50,12 +50,9 @@ Deno.serve(async (req) => {
     if (action === "delete") {
       const { userId } = body;
       if (!userId) return jsonError("userId requis", 400);
-
-      // Check if target is super_admin — only super_admin can delete super_admin
       const { data: targetRoles } = await adminClient.from("user_roles").select("role").eq("user_id", userId);
       const targetIsSuperAdmin = targetRoles?.some((r: any) => r.role === "super_admin");
       if (targetIsSuperAdmin && !callerIsSuperAdmin) return jsonError("Seul un super admin peut supprimer un super admin", 403);
-
       await adminClient.from("collaborateur_config").delete().eq("user_id", userId);
       await adminClient.from("user_roles").delete().eq("user_id", userId);
       await adminClient.from("profiles").delete().eq("user_id", userId);
@@ -68,13 +65,10 @@ Deno.serve(async (req) => {
     if (action === "set-role") {
       const { userId, role } = body;
       if (!userId || !role) return jsonError("userId et role requis", 400);
-
-      // Only super_admin can assign/remove super_admin role
       if (role === "super_admin" && !callerIsSuperAdmin) return jsonError("Seul un super admin peut attribuer ce rôle", 403);
       const { data: targetRoles } = await adminClient.from("user_roles").select("role").eq("user_id", userId);
       const targetIsSuperAdmin = targetRoles?.some((r: any) => r.role === "super_admin");
       if (targetIsSuperAdmin && !callerIsSuperAdmin) return jsonError("Seul un super admin peut modifier le rôle d'un super admin", 403);
-
       await adminClient.from("user_roles").delete().eq("user_id", userId);
       if (role !== "none") {
         const { error } = await adminClient.from("user_roles").upsert(
@@ -85,9 +79,15 @@ Deno.serve(async (req) => {
       return jsonOk({ success: true });
     }
 
-    // SAVE CONFIG (objectives + primes)
+    // SAVE CONFIG (objectives + primes per format)
     if (action === "save-config") {
-      const { userId, objectif, palier_1, palier_2, palier_3, prime_audit_1, prime_audit_2, prime_audit_3_plus, semaines_indisponibles } = body;
+      const { userId, objectif, palier_1, palier_2, palier_3,
+        prime_audit_1, prime_audit_2, prime_audit_3_plus,
+        prime_distanciel_1, prime_distanciel_2, prime_distanciel_3_plus,
+        prime_club_1, prime_club_2, prime_club_3_plus,
+        prime_rdv_1, prime_rdv_2, prime_rdv_3_plus,
+        prime_suivi_1, prime_suivi_2, prime_suivi_3_plus,
+        semaines_indisponibles } = body;
       if (!userId) return jsonError("userId requis", 400);
       const { error } = await adminClient.from("collaborateur_config").upsert(
         {
@@ -99,11 +99,45 @@ Deno.serve(async (req) => {
           prime_audit_1: prime_audit_1 ?? 0,
           prime_audit_2: prime_audit_2 ?? 0,
           prime_audit_3_plus: prime_audit_3_plus ?? 0,
+          prime_distanciel_1: prime_distanciel_1 ?? 0,
+          prime_distanciel_2: prime_distanciel_2 ?? 0,
+          prime_distanciel_3_plus: prime_distanciel_3_plus ?? 0,
+          prime_club_1: prime_club_1 ?? 0,
+          prime_club_2: prime_club_2 ?? 0,
+          prime_club_3_plus: prime_club_3_plus ?? 0,
+          prime_rdv_1: prime_rdv_1 ?? 0,
+          prime_rdv_2: prime_rdv_2 ?? 0,
+          prime_rdv_3_plus: prime_rdv_3_plus ?? 0,
+          prime_suivi_1: prime_suivi_1 ?? 0,
+          prime_suivi_2: prime_suivi_2 ?? 0,
+          prime_suivi_3_plus: prime_suivi_3_plus ?? 0,
           semaines_indisponibles: semaines_indisponibles ?? 10,
         },
         { onConflict: "user_id" }
       );
       if (error) return jsonError(error.message, 400);
+      return jsonOk({ success: true });
+    }
+
+    // UPDATE USER (name, email, title)
+    if (action === "update-user") {
+      const { userId, email, displayName, title } = body;
+      if (!userId) return jsonError("userId requis", 400);
+
+      const { data: targetRoles } = await adminClient.from("user_roles").select("role").eq("user_id", userId);
+      const targetIsSuperAdmin = targetRoles?.some((r: any) => r.role === "super_admin");
+      if (targetIsSuperAdmin && !callerIsSuperAdmin) return jsonError("Seul un super admin peut modifier un super admin", 403);
+
+      if (email) {
+        const { error } = await adminClient.auth.admin.updateUserById(userId, { email });
+        if (error) return jsonError(error.message, 400);
+      }
+      if (displayName !== undefined) {
+        await adminClient.from("profiles").update({ display_name: displayName }).eq("user_id", userId);
+      }
+      if (title !== undefined) {
+        await adminClient.from("profiles").update({ title }).eq("user_id", userId);
+      }
       return jsonOk({ success: true });
     }
 
@@ -128,77 +162,33 @@ Deno.serve(async (req) => {
           createdAt: u.created_at,
         };
       });
-
       return jsonOk({ users: result });
     }
 
-    // SAVE AVATAR URL
-    if (action === "save-avatar") {
-      const { userId, avatar_url } = body;
-      if (!userId) return jsonError("userId requis", 400);
-      const { error } = await adminClient.from("profiles").update({ avatar_url }).eq("user_id", userId);
-      if (error) return jsonError(error.message, 400);
-      return jsonOk({ success: true });
-    }
+    // CREATE USER (default action)
+    const { email: newEmail, password: newPassword, displayName, role, config } = body;
+    if (!newEmail || !newPassword) return jsonError("Email et mot de passe requis", 400);
 
-    // UPDATE USER (email, displayName, title)
-    if (action === "update-user") {
-      const { userId, email: newEmail, displayName: newName, title: newTitle } = body;
-      if (!userId) return jsonError("userId requis", 400);
-
-      // Update auth email if changed
-      if (newEmail) {
-        const { error } = await adminClient.auth.admin.updateUserById(userId, { email: newEmail, email_confirm: true });
-        if (error) return jsonError(error.message, 400);
-      }
-
-      // Update profile fields
-      const profileUpdate: Record<string, any> = {};
-      if (newName !== undefined) profileUpdate.display_name = newName;
-      if (newTitle !== undefined) profileUpdate.title = newTitle || null;
-      if (Object.keys(profileUpdate).length > 0) {
-        const { error } = await adminClient.from("profiles").update(profileUpdate).eq("user_id", userId);
-        if (error) return jsonError(error.message, 400);
-      }
-
-      return jsonOk({ success: true });
-    }
-
-    // CREATE USER (default)
-    const { email, password, displayName, role, config } = body;
-    if (!email || !password) return jsonError("Email et mot de passe requis", 400);
-
-    const { data, error } = await adminClient.auth.admin.createUser({
-      email, password, email_confirm: true,
-      user_metadata: { display_name: displayName || email },
+    const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
+      email: newEmail,
+      password: newPassword,
+      email_confirm: true,
+      user_metadata: { display_name: displayName },
     });
-    if (error) return jsonError(error.message, 400);
+    if (createError) return jsonError(createError.message, 400);
 
-    const newUserId = data.user.id;
-
-    // Set role if provided
     if (role && role !== "none") {
-      await adminClient.from("user_roles").upsert(
-        { user_id: newUserId, role },
-        { onConflict: "user_id,role" }
-      );
+      await adminClient.from("user_roles").insert({ user_id: newUser.user.id, role });
     }
-
-    // Save config if provided
     if (config) {
-      await adminClient.from("collaborateur_config").upsert(
-        { user_id: newUserId, ...config },
-        { onConflict: "user_id" }
-      );
+      await adminClient.from("collaborateur_config").upsert({
+        user_id: newUser.user.id,
+        ...config,
+      }, { onConflict: "user_id" });
     }
 
-    // Save avatar_url if provided
-    if (body.avatar_url) {
-      await adminClient.from("profiles").update({ avatar_url: body.avatar_url }).eq("user_id", newUserId);
-    }
-
-    return jsonOk({ user: { id: newUserId, email: data.user.email } });
-  } catch (err) {
-    return jsonError(err.message, 500);
+    return jsonOk({ user: newUser.user });
+  } catch (err: any) {
+    return jsonError(err.message || "Erreur interne", 500);
   }
 });

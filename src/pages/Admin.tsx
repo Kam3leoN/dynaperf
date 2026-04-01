@@ -48,6 +48,18 @@ interface UserConfig {
   prime_audit_1: number;
   prime_audit_2: number;
   prime_audit_3_plus: number;
+  prime_distanciel_1: number;
+  prime_distanciel_2: number;
+  prime_distanciel_3_plus: number;
+  prime_club_1: number;
+  prime_club_2: number;
+  prime_club_3_plus: number;
+  prime_rdv_1: number;
+  prime_rdv_2: number;
+  prime_rdv_3_plus: number;
+  prime_suivi_1: number;
+  prime_suivi_2: number;
+  prime_suivi_3_plus: number;
   semaines_indisponibles: number;
 }
 
@@ -165,9 +177,6 @@ export default function Admin() {
   const [editPalier1, setEditPalier1] = useState("");
   const [editPalier2, setEditPalier2] = useState("");
   const [editPalier3, setEditPalier3] = useState("");
-  const [editPrime1, setEditPrime1] = useState("0");
-  const [editPrime2, setEditPrime2] = useState("0");
-  const [editPrime3, setEditPrime3] = useState("0");
   const [editTitle, setEditTitle] = useState("");
   const [editSaving, setEditSaving] = useState(false);
 
@@ -181,9 +190,6 @@ export default function Admin() {
   const [newPalier1, setNewPalier1] = useState("");
   const [newPalier2, setNewPalier2] = useState("");
   const [newPalier3, setNewPalier3] = useState("");
-  const [newPrime1, setNewPrime1] = useState("0");
-  const [newPrime2, setNewPrime2] = useState("0");
-  const [newPrime3, setNewPrime3] = useState("0");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -203,7 +209,6 @@ export default function Admin() {
     setEmail(""); setPassword(""); setNewFirstName(""); setNewLastName("");
     setNewRole("lecteur");
     setNewPalier1(""); setNewPalier2(""); setNewPalier3("");
-    setNewPrime1("0"); setNewPrime2("0"); setNewPrime3("0");
     setAvatarFile(null); setAvatarPreview(null);
   };
 
@@ -233,9 +238,11 @@ export default function Admin() {
       palier_1: newPalier1 ? parseInt(newPalier1) : null,
       palier_2: newPalier2 ? parseInt(newPalier2) : null,
       palier_3: newPalier3 ? parseInt(newPalier3) : null,
-      prime_audit_1: parseFloat(newPrime1) || 0,
-      prime_audit_2: parseFloat(newPrime2) || 0,
-      prime_audit_3_plus: parseFloat(newPrime3) || 0,
+      prime_audit_1: 75, prime_audit_2: 10, prime_audit_3_plus: 5,
+      prime_distanciel_1: 10, prime_distanciel_2: 5, prime_distanciel_3_plus: 0,
+      prime_club_1: 75, prime_club_2: 10, prime_club_3_plus: 5,
+      prime_rdv_1: 75, prime_rdv_2: 10, prime_rdv_3_plus: 5,
+      prime_suivi_1: 75, prime_suivi_2: 10, prime_suivi_3_plus: 5,
     };
 
     const displayName = `${newFirstName.trim()} ${newLastName.trim().toUpperCase()}`.trim();
@@ -305,9 +312,6 @@ export default function Admin() {
     setEditPalier1(u.config?.palier_1?.toString() ?? "");
     setEditPalier2(u.config?.palier_2?.toString() ?? "");
     setEditPalier3(u.config?.palier_3?.toString() ?? "");
-    setEditPrime1((u.config?.prime_audit_1 ?? 0).toString());
-    setEditPrime2((u.config?.prime_audit_2 ?? 0).toString());
-    setEditPrime3((u.config?.prime_audit_3_plus ?? 0).toString());
     setEditTitle(u.title || "");
   };
 
@@ -338,9 +342,21 @@ export default function Admin() {
         palier_1: editPalier1 ? parseInt(editPalier1) : null,
         palier_2: editPalier2 ? parseInt(editPalier2) : null,
         palier_3: editPalier3 ? parseInt(editPalier3) : null,
-        prime_audit_1: parseFloat(editPrime1) || 0,
-        prime_audit_2: parseFloat(editPrime2) || 0,
-        prime_audit_3_plus: parseFloat(editPrime3) || 0,
+        prime_audit_1: editUser.config?.prime_audit_1 ?? 75,
+        prime_audit_2: editUser.config?.prime_audit_2 ?? 10,
+        prime_audit_3_plus: editUser.config?.prime_audit_3_plus ?? 5,
+        prime_distanciel_1: editUser.config?.prime_distanciel_1 ?? 10,
+        prime_distanciel_2: editUser.config?.prime_distanciel_2 ?? 5,
+        prime_distanciel_3_plus: editUser.config?.prime_distanciel_3_plus ?? 0,
+        prime_club_1: editUser.config?.prime_club_1 ?? 75,
+        prime_club_2: editUser.config?.prime_club_2 ?? 10,
+        prime_club_3_plus: editUser.config?.prime_club_3_plus ?? 5,
+        prime_rdv_1: editUser.config?.prime_rdv_1 ?? 75,
+        prime_rdv_2: editUser.config?.prime_rdv_2 ?? 10,
+        prime_rdv_3_plus: editUser.config?.prime_rdv_3_plus ?? 5,
+        prime_suivi_1: editUser.config?.prime_suivi_1 ?? 75,
+        prime_suivi_2: editUser.config?.prime_suivi_2 ?? 10,
+        prime_suivi_3_plus: editUser.config?.prime_suivi_3_plus ?? 5,
         semaines_indisponibles: editUser.config?.semaines_indisponibles ?? 10,
       },
     });
@@ -518,24 +534,7 @@ export default function Admin() {
                     </div>
                   </div>
 
-                  {/* Primes */}
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Primes par palier (€)</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <span className="text-[10px] text-muted-foreground">Prime palier 1</span>
-                        <Input type="number" min={0} step={0.01} value={newPrime1} onChange={(e) => setNewPrime1(e.target.value)} className="h-9 text-sm" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-muted-foreground">Prime palier 2</span>
-                        <Input type="number" min={0} step={0.01} value={newPrime2} onChange={(e) => setNewPrime2(e.target.value)} className="h-9 text-sm" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-muted-foreground">Prime palier 3</span>
-                        <Input type="number" min={0} step={0.01} value={newPrime3} onChange={(e) => setNewPrime3(e.target.value)} className="h-9 text-sm" />
-                      </div>
-                    </div>
-                  </div>
+                  {/* Primes are set with default values on creation */}
 
                   <div className="flex justify-end gap-2 pt-2">
                     <Button type="button" variant="outline" size="sm" onClick={() => { setCreateOpen(false); resetCreateForm(); }} className="rounded-md">Annuler</Button>
@@ -619,8 +618,8 @@ export default function Admin() {
                           </TableCell>
                           <TableCell className="text-sm tabular-nums text-muted-foreground">
                             {showPrimes
-                              ? (u.config ? `${u.config.prime_audit_1}€ / ${u.config.prime_audit_2}€ / ${u.config.prime_audit_3_plus}€` : "—")
-                              : "••• / ••• / •••"}
+                              ? (u.config ? `RD:${u.config.prime_audit_1}€ Dist:${u.config.prime_distanciel_1}€` : "—")
+                              : "••• / •••"}
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-1">
@@ -747,11 +746,13 @@ export default function Admin() {
                 </div>
               </div>
               <div>
-                <span className="text-xs text-muted-foreground block mb-1">Primes</span>
-                <div className="grid grid-cols-3 gap-2 text-sm">
-                  <span className="bg-secondary px-2 py-1 rounded text-foreground text-center">{viewUser.config?.prime_audit_1 ?? 0}€</span>
-                  <span className="bg-secondary px-2 py-1 rounded text-foreground text-center">{viewUser.config?.prime_audit_2 ?? 0}€</span>
-                  <span className="bg-secondary px-2 py-1 rounded text-foreground text-center">{viewUser.config?.prime_audit_3_plus ?? 0}€</span>
+                <span className="text-xs text-muted-foreground block mb-1">Primes (1er / 2e / 3e+)</span>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between"><span className="text-muted-foreground">RD Présentiel</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_audit_1 ?? 0}€ / {viewUser.config?.prime_audit_2 ?? 0}€ / {viewUser.config?.prime_audit_3_plus ?? 0}€</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">RD Distanciel</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_distanciel_1 ?? 0}€ / {viewUser.config?.prime_distanciel_2 ?? 0}€ / {viewUser.config?.prime_distanciel_3_plus ?? 0}€</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Club Affaires</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_club_1 ?? 0}€ / {viewUser.config?.prime_club_2 ?? 0}€ / {viewUser.config?.prime_club_3_plus ?? 0}€</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">RDV Commercial</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_rdv_1 ?? 0}€ / {viewUser.config?.prime_rdv_2 ?? 0}€ / {viewUser.config?.prime_rdv_3_plus ?? 0}€</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Suivi Activité</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_suivi_1 ?? 0}€ / {viewUser.config?.prime_suivi_2 ?? 0}€ / {viewUser.config?.prime_suivi_3_plus ?? 0}€</span></div>
                 </div>
               </div>
             </div>
@@ -856,24 +857,8 @@ export default function Admin() {
                 </div>
               </div>
 
-              {/* Primes */}
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Primes par palier (€)</label>
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <span className="text-[10px] text-muted-foreground">Prime P1</span>
-                    <Input type="number" min={0} step={0.01} value={editPrime1} onChange={(e) => setEditPrime1(e.target.value)} className="h-9 text-sm" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-muted-foreground">Prime P2</span>
-                    <Input type="number" min={0} step={0.01} value={editPrime2} onChange={(e) => setEditPrime2(e.target.value)} className="h-9 text-sm" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-muted-foreground">Prime P3</span>
-                    <Input type="number" min={0} step={0.01} value={editPrime3} onChange={(e) => setEditPrime3(e.target.value)} className="h-9 text-sm" />
-                  </div>
-                </div>
-              </div>
+              {/* Primes are managed via the expandable config panel */}
+              <p className="text-xs text-muted-foreground italic">Les primes par format sont gérées via le panneau de configuration détaillé.</p>
 
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" size="sm" onClick={() => setEditUser(null)} className="rounded-md">Annuler</Button>
@@ -929,11 +914,27 @@ function UserConfigPanel({
   const [palier1, setPalier1] = useState<string>(config?.palier_1?.toString() ?? "");
   const [palier2, setPalier2] = useState<string>(config?.palier_2?.toString() ?? "");
   const [palier3, setPalier3] = useState<string>(config?.palier_3?.toString() ?? "");
-  const [prime1, setPrime1] = useState(config?.prime_audit_1 ?? 0);
-  const [prime2, setPrime2] = useState(config?.prime_audit_2 ?? 0);
-  const [prime3, setPrime3] = useState(config?.prime_audit_3_plus ?? 0);
   const [semainesIndispo, setSemainesIndispo] = useState(config?.semaines_indisponibles ?? 10);
   const [saving, setSaving] = useState(false);
+
+  // Per-format primes state
+  const [primes, setPrimes] = useState({
+    prime_audit_1: config?.prime_audit_1 ?? 75, prime_audit_2: config?.prime_audit_2 ?? 10, prime_audit_3_plus: config?.prime_audit_3_plus ?? 5,
+    prime_distanciel_1: config?.prime_distanciel_1 ?? 10, prime_distanciel_2: config?.prime_distanciel_2 ?? 5, prime_distanciel_3_plus: config?.prime_distanciel_3_plus ?? 0,
+    prime_club_1: config?.prime_club_1 ?? 75, prime_club_2: config?.prime_club_2 ?? 10, prime_club_3_plus: config?.prime_club_3_plus ?? 5,
+    prime_rdv_1: config?.prime_rdv_1 ?? 75, prime_rdv_2: config?.prime_rdv_2 ?? 10, prime_rdv_3_plus: config?.prime_rdv_3_plus ?? 5,
+    prime_suivi_1: config?.prime_suivi_1 ?? 75, prime_suivi_2: config?.prime_suivi_2 ?? 10, prime_suivi_3_plus: config?.prime_suivi_3_plus ?? 5,
+  });
+
+  const updatePrime = (key: string, val: number) => setPrimes(p => ({ ...p, [key]: val }));
+
+  const FORMATS = [
+    { label: "RD Présentiel", k1: "prime_audit_1", k2: "prime_audit_2", k3: "prime_audit_3_plus" },
+    { label: "RD Distanciel", k1: "prime_distanciel_1", k2: "prime_distanciel_2", k3: "prime_distanciel_3_plus" },
+    { label: "Club Affaires", k1: "prime_club_1", k2: "prime_club_2", k3: "prime_club_3_plus" },
+    { label: "RDV Commercial", k1: "prime_rdv_1", k2: "prime_rdv_2", k3: "prime_rdv_3_plus" },
+    { label: "Suivi Activité", k1: "prime_suivi_1", k2: "prime_suivi_2", k3: "prime_suivi_3_plus" },
+  ] as const;
 
   const handleSave = async () => {
     setSaving(true);
@@ -945,9 +946,7 @@ function UserConfigPanel({
         palier_1: palier1 ? parseInt(palier1) : null,
         palier_2: palier2 ? parseInt(palier2) : null,
         palier_3: palier3 ? parseInt(palier3) : null,
-        prime_audit_1: prime1,
-        prime_audit_2: prime2,
-        prime_audit_3_plus: prime3,
+        ...primes,
         semaines_indisponibles: semainesIndispo,
       },
     });
@@ -985,20 +984,16 @@ function UserConfigPanel({
         </div>
       </div>
       <div>
-        <label className="text-xs font-semibold text-foreground block mb-2">Primes par audit (€)</label>
-        <div className="grid grid-cols-3 gap-2">
-          <div>
-            <span className="text-[10px] text-muted-foreground">1er audit</span>
-            <Input type="number" min={0} step={0.01} value={prime1} onChange={(e) => setPrime1(parseFloat(e.target.value) || 0)} className="h-9 text-sm" />
-          </div>
-          <div>
-            <span className="text-[10px] text-muted-foreground">2e audit</span>
-            <Input type="number" min={0} step={0.01} value={prime2} onChange={(e) => setPrime2(parseFloat(e.target.value) || 0)} className="h-9 text-sm" />
-          </div>
-          <div>
-            <span className="text-[10px] text-muted-foreground">3e et suivants</span>
-            <Input type="number" min={0} step={0.01} value={prime3} onChange={(e) => setPrime3(parseFloat(e.target.value) || 0)} className="h-9 text-sm" />
-          </div>
+        <label className="text-xs font-semibold text-foreground block mb-2">Primes par format (€) — 1er / 2e / 3e+</label>
+        <div className="space-y-2">
+          {FORMATS.map(({ label, k1, k2, k3 }) => (
+            <div key={k1} className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground w-28 shrink-0">{label}</span>
+              <Input type="number" min={0} step={1} value={(primes as any)[k1]} onChange={(e) => updatePrime(k1, parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" />
+              <Input type="number" min={0} step={1} value={(primes as any)[k2]} onChange={(e) => updatePrime(k2, parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" />
+              <Input type="number" min={0} step={1} value={(primes as any)[k3]} onChange={(e) => updatePrime(k3, parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" />
+            </div>
+          ))}
         </div>
       </div>
       <div>
