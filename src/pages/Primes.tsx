@@ -177,6 +177,20 @@ export default function Primes() {
                                 {format(new Date(a.date), "dd/MM/yyyy", { locale: fr })}
                               </span>
                               <span className="text-xs font-semibold text-foreground tabular-nums min-w-[40px] text-right">{auditPrime}€</span>
+                              {(() => {
+                                const rank = perAuditRanks.get(a.id) ?? 1;
+                                const label = rank === 1 ? "1er" : `${rank}e`;
+                                const colorClass = rank === 1
+                                  ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
+                                  : rank === 2
+                                    ? "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400 border-amber-200 dark:border-amber-800"
+                                    : "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-400 border-red-200 dark:border-red-800";
+                                return (
+                                  <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 h-4 font-medium", colorClass)}>
+                                    {label}
+                                  </Badge>
+                                );
+                              })()}
                             </span>
                           </div>
                         );
