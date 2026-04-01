@@ -56,6 +56,7 @@ const Index = () => {
             annee={filters.annee}
             semainesIndisponibles={semainesIndisponibles}
             auditsTermines={globalStats.auditsTermines}
+            auditsPlanifies={globalStats.auditsPlanifies}
           />
           
           <section>
