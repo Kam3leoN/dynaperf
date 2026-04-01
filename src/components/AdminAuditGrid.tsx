@@ -14,8 +14,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faGripVertical, faLayerGroup, faCopy, faBoxArchive, faRotateLeft,
 } from "@fortawesome/free-solid-svg-icons";
+import { getAuditTypeVisual } from "@/lib/auditTypeVisuals";
 
-interface AuditType { id: string; key: string; label: string; version: number; version_label: string | null; is_active: boolean; }
+interface AuditType { id: string; key: string; label: string; version: number; version_label: string | null; is_active: boolean; color: string | null; }
 interface Category { id: string; audit_type_id: string; name: string; sort_order: number; }
 interface ItemConfig {
   id: string; category_id: string; sort_order: number; title: string; description: string;
