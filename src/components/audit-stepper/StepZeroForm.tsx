@@ -222,14 +222,31 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
             </PopoverContent>
           </Popover>
         </div>
-        <div className="space-y-1.5">
-          <Label>Heure de l'événement</Label>
-          <Input
-            type="time"
-            value={data.heureEvenement}
-            onChange={(e) => set("heureEvenement", e.target.value)}
-          />
-        </div>
+        {typeEvenement === "RD Présentiel" ? (
+          <>
+            <div className="space-y-1.5">
+              <Label>Heure début prévue</Label>
+              <Input type="time" value={data.heureDebutPrevue ?? ""} onChange={(e) => set("heureDebutPrevue", e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Heure fin prévue</Label>
+              <Input type="time" value={data.heureFinPrevue ?? ""} onChange={(e) => set("heureFinPrevue", e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Heure début réelle</Label>
+              <Input type="time" value={data.heureDebutReelle ?? ""} onChange={(e) => set("heureDebutReelle", e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Heure fin réelle</Label>
+              <Input type="time" value={data.heureFinReelle ?? ""} onChange={(e) => set("heureFinReelle", e.target.value)} />
+            </div>
+          </>
+        ) : (
+          <div className="space-y-1.5">
+            <Label>Heure de l'événement</Label>
+            <Input type="time" value={data.heureEvenement} onChange={(e) => set("heureEvenement", e.target.value)} />
+          </div>
+        )}
       </div>
 
       {showClubField && (
