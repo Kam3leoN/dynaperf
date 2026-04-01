@@ -930,6 +930,8 @@ function UserConfigPanel({
     prime_club_1: config?.prime_club_1 ?? 75, prime_club_2: config?.prime_club_2 ?? 10, prime_club_3_plus: config?.prime_club_3_plus ?? 5,
     prime_rdv_1: config?.prime_rdv_1 ?? 75, prime_rdv_2: config?.prime_rdv_2 ?? 10, prime_rdv_3_plus: config?.prime_rdv_3_plus ?? 5,
     prime_suivi_1: config?.prime_suivi_1 ?? 75, prime_suivi_2: config?.prime_suivi_2 ?? 10, prime_suivi_3_plus: config?.prime_suivi_3_plus ?? 5,
+    prime_mep_1: config?.prime_mep_1 ?? 75, prime_mep_2: config?.prime_mep_2 ?? 10, prime_mep_3_plus: config?.prime_mep_3_plus ?? 5,
+    prime_evenementiel_1: config?.prime_evenementiel_1 ?? 75, prime_evenementiel_2: config?.prime_evenementiel_2 ?? 10, prime_evenementiel_3_plus: config?.prime_evenementiel_3_plus ?? 5,
   });
 
   const updatePrime = (key: string, val: number) => setPrimes(p => ({ ...p, [key]: val }));
