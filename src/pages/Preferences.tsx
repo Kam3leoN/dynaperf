@@ -87,10 +87,12 @@ export default function Preferences() {
         toast.success("Connexion biométrique activée !");
       }
     } catch (error: any) {
-      if (error.message?.includes("annulée")) {
+      if (error.message?.includes("prévisualisation intégrée")) {
+        toast.error(error.message);
+      } else if (error.message?.includes("non confirmée")) {
+        toast.info("Activation non confirmée. Vérifiez Windows Hello puis réessayez.");
+      } else if (error.message?.includes("annulée")) {
         toast.info("Activation annulée.");
-      } else if (error.name === "NotAllowedError" || error.message?.includes("NotAllowedError")) {
-        toast.error("Biométrie indisponible dans cet environnement. Réessayez depuis l'application installée.");
       } else {
         toast.error(error.message);
       }

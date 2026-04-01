@@ -238,24 +238,42 @@ export async function authenticateWithWebAuthn(): Promise<{
 
   const challenge = generateChallenge();
 
-  const publicKeyOptions: PublicKeyCredentialRequestOptions = {
+  const strictRequest: PublicKeyCredentialRequestOptions = {
     challenge: challenge as BufferSource,
     rpId: getRpId(),
     allowCredentials: [
       {
         id: base64urlToBuffer(storedCredentialId),
         type: "public-key",
-        transports: ["internal"],
+        transports: ["internal", "hybrid", "usb", "ble", "nfc"],
       },
     ],
     userVerification: "required",
     timeout: 60000,
   };
 
+  const fallbackRequest: PublicKeyCredentialRequestOptions = {
+    challenge: challenge as BufferSource,
+    rpId: getRpId(),
+    userVerification: "preferred",
+    timeout: 60000,
+  };
+
   try {
-    const assertion = (await navigator.credentials.get({
-      publicKey: publicKeyOptions,
-    })) as PublicKeyCredential | null;
+    let assertion: PublicKeyCredential | null = null;
+
+    try {
+      assertion = (await navigator.credentials.get({
+        publicKey: strictRequest,
+      })) as PublicKeyCredential | null;
+    } catch (firstError: any) {
+      const shouldRetry = ["NotAllowedError", "ConstraintError"].includes(firstError?.name);
+      if (!shouldRetry) throw firstError;
+
+      assertion = (await navigator.credentials.get({
+        publicKey: fallbackRequest,
+      })) as PublicKeyCredential | null;
+    }
 
     if (!assertion) {
       throw new Error("L'authentification biométrique a échoué.");
@@ -265,7 +283,7 @@ export async function authenticateWithWebAuthn(): Promise<{
     return { success: true, credentialId };
   } catch (error: any) {
     if (error.name === "NotAllowedError") {
-      throw new Error("L'authentification biométrique a été annulée par l'utilisateur.");
+      throw new Error("Authentification biométrique non confirmée.");
     }
     throw new Error(`Erreur lors de l'authentification biométrique : ${error.message}`);
   }
