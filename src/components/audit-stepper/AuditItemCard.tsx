@@ -125,7 +125,7 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
               <Badge
                 className={cn(
                   "text-[10px]",
-                  isMax ? "bg-emerald-600 text-white" : currentScore > 0 ? "bg-amber-500 text-white" : "bg-muted text-muted-foreground"
+                  isMax ? "bg-emerald-600 text-white" : currentScore > 0 ? "bg-amber-500 text-white" : isExplicitZero ? "bg-destructive text-white" : "bg-muted text-muted-foreground"
                 )}
               >
                 {currentScore}/{item.maxPoints} pts
