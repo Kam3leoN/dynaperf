@@ -97,7 +97,7 @@ export default function AdminAuditGridInline() {
       if (error) { toast.error("Erreur"); return; }
       toast.success("Type modifié");
     } else {
-      const { data, error } = await supabase.from("audit_types").insert({ key: typeKey.trim(), label: typeLabel.trim() }).select().single();
+      const { data, error } = await supabase.from("audit_types").insert({ key: typeKey.trim(), label: typeLabel.trim(), version_label: typeVersionLabel.trim() || null }).select().single();
       if (error) { toast.error("Erreur"); return; }
       toast.success("Type créé");
       if (data) setSelectedTypeId(data.id);
