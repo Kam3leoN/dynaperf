@@ -267,7 +267,6 @@ export default function AdminAuditGridInline() {
 
   // Group types by key for 2-level selection
   const uniqueKeys = [...new Set(types.map(t => t.key))];
-  const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   // When a key is selected, show its versions
   const versionsForKey = selectedKey ? types.filter(t => t.key === selectedKey) : [];
