@@ -7,12 +7,17 @@ export function SplashScreen({ onFinished }: { onFinished: () => void }) {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
+    // Reset body background after splash exits
+    document.body.style.backgroundColor = "#ee4540";
     const timer = setTimeout(() => setVisible(false), SPLASH_DURATION);
     return () => clearTimeout(timer);
   }, []);
 
   return (
-    <AnimatePresence onExitComplete={onFinished}>
+    <AnimatePresence onExitComplete={() => {
+      document.body.style.backgroundColor = "";
+      onFinished();
+    }}>
       {visible && (
         <motion.div
           key="splash"

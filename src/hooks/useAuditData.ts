@@ -48,7 +48,7 @@ export function useAuditData() {
     annee: String(new Date().getFullYear()),
   });
 
-  // Load from Supabase
+  // Load from Supabase + realtime
   useEffect(() => {
     const fetchAudits = async () => {
       const { data, error } = await supabase.from("audits").select("*").order("date", { ascending: false });
@@ -61,6 +61,22 @@ export function useAuditData() {
       setLoading(false);
     };
     fetchAudits();
+
+    // Realtime subscription
+    const channel = supabase
+      .channel("audits-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "audits" }, (payload) => {
+        if (payload.eventType === "INSERT") {
+          setAudits((prev) => [dbToAudit(payload.new), ...prev]);
+        } else if (payload.eventType === "UPDATE") {
+          setAudits((prev) => prev.map((a) => a.id === payload.new.id ? dbToAudit(payload.new) : a));
+        } else if (payload.eventType === "DELETE") {
+          setAudits((prev) => prev.filter((a) => a.id !== payload.old.id));
+        }
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
   }, []);
 
   // Extract available years from all audits
@@ -161,12 +177,14 @@ export function useAuditData() {
   const globalStats = useMemo(() => {
     const notes = notedAudits.map((a) => a.note!);
     const termines = filtered.filter((a) => a.statut === "OK").length;
+    const planifies = filtered.filter((a) => a.statut === "NON").length;
     return {
       totalAudits: filtered.length,
       auditsTermines: termines,
+      auditsPlanifies: planifies,
       auditsNotes: notedAudits.length,
       moyenneGlobale: notes.length > 0 ? +(notes.reduce((s, n) => s + n, 0) / notes.length).toFixed(2) : 0,
-      enAttente: filtered.filter((a) => a.statut === "NON").length,
+      enAttente: planifies,
     };
   }, [filtered, notedAudits]);
 
