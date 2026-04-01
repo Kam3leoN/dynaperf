@@ -10,7 +10,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { PrimeConfig, getFormatPrimes, FORMAT_KEYS } from "@/lib/primeUtils";
+import { PrimeConfig, getFormatPrimes, FORMAT_KEYS, parsePrimeConfig, buildRankMap } from "@/lib/primeUtils";
 
 /** Default range: 16th of current month → 15th of next month */
 function getDefaultRange(): { from: Date; to: Date } {
