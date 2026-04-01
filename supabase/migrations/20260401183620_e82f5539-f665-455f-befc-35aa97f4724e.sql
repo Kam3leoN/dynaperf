@@ -1,0 +1,1 @@
+ALTER TABLE public.audits ADD COLUMN custom_prime_id uuid REFERENCES public.user_custom_primes(id) ON DELETE SET NULL;

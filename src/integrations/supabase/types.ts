@@ -270,6 +270,7 @@ export type Database = {
         Row: {
           auditeur: string
           created_at: string
+          custom_prime_id: string | null
           date: string
           id: string
           lieu: string | null
@@ -283,6 +284,7 @@ export type Database = {
         Insert: {
           auditeur: string
           created_at?: string
+          custom_prime_id?: string | null
           date: string
           id?: string
           lieu?: string | null
@@ -296,6 +298,7 @@ export type Database = {
         Update: {
           auditeur?: string
           created_at?: string
+          custom_prime_id?: string | null
           date?: string
           id?: string
           lieu?: string | null
@@ -306,7 +309,15 @@ export type Database = {
           type_evenement?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "audits_custom_prime_id_fkey"
+            columns: ["custom_prime_id"]
+            isOneToOne: false
+            referencedRelation: "user_custom_primes"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       clubs: {
         Row: {

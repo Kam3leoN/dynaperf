@@ -10,7 +10,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { DEFAULT_PRIME_CONFIG, PrimeConfig, getFormatPrimes, parsePrimeConfig, buildRankMap } from "@/lib/primeUtils";
+import { DEFAULT_PRIME_CONFIG, PrimeConfig, getFormatPrimes, parsePrimeConfig, buildRankMap, UserCustomPrime, getPrimeValues } from "@/lib/primeUtils";
 
 /** Default range: 16th of current month → 15th of next month */
 function getDefaultRange(): { from: Date; to: Date } {
@@ -34,6 +34,7 @@ interface AuditRow {
   type_evenement: string;
   lieu: string | null;
   date: string;
+  custom_prime_id: string | null;
 }
 
 export function MyPrimeTracker() {
@@ -42,6 +43,7 @@ export function MyPrimeTracker() {
   const [from, setFrom] = useState<Date>(defaultRange.from);
   const [to, setTo] = useState<Date>(defaultRange.to);
   const [config, setConfig] = useState<PrimeConfig>(DEFAULT_PRIME_CONFIG);
+  const [customPrimes, setCustomPrimes] = useState<UserCustomPrime[]>([]);
   const [rangeAudits, setRangeAudits] = useState<AuditRow[]>([]);
   const [yearAudits, setYearAudits] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,6 +53,8 @@ export function MyPrimeTracker() {
     supabase.rpc("get_my_config").then(({ data }: any) => {
       setConfig(data && data.length > 0 ? parsePrimeConfig(data[0]) : DEFAULT_PRIME_CONFIG);
     });
+    supabase.from("user_custom_primes").select("id, label, prime_1, prime_2, prime_3_plus").eq("user_id", user.id)
+      .then(({ data }) => setCustomPrimes((data ?? []) as UserCustomPrime[]));
   }, [user]);
 
   useEffect(() => {
@@ -67,15 +71,15 @@ export function MyPrimeTracker() {
       .then(({ data: profile }) => {
         const displayName = profile?.display_name || user.email?.split("@")[0] || "";
         Promise.all([
-          supabase.from("audits").select("id, partenaire, type_evenement, lieu, date")
+          supabase.from("audits").select("id, partenaire, type_evenement, lieu, date, custom_prime_id")
             .eq("auditeur", displayName).eq("statut", "OK")
             .gte("date", fromStr).lte("date", toStr).order("date", { ascending: true }),
-          supabase.from("audits").select("id, partenaire, type_evenement, lieu, date")
+          supabase.from("audits").select("id, partenaire, type_evenement, lieu, date, custom_prime_id")
             .eq("auditeur", displayName).eq("statut", "OK")
             .gte("date", yearStart).lte("date", yearEnd).order("date", { ascending: true }),
         ]).then(([rangeRes, yearRes]) => {
-          setRangeAudits(rangeRes.data ?? []);
-          setYearAudits(yearRes.data ?? []);
+          setRangeAudits((rangeRes.data ?? []) as AuditRow[]);
+          setYearAudits((yearRes.data ?? []) as AuditRow[]);
           setLoading(false);
         });
       });
@@ -89,13 +93,13 @@ export function MyPrimeTracker() {
     for (const a of yearAudits) {
       if (!rangeIds.has(a.id)) continue;
       const rank = rankMap.get(a.id) ?? 1;
-      const primes = getFormatPrimes(a.type_evenement, config);
-      if (rank === 1) total += primes[0];
-      else if (rank === 2) total += primes[1];
-      else total += primes[2];
+      const [p1, p2, p3] = getPrimeValues(a, config, customPrimes);
+      if (rank === 1) total += p1;
+      else if (rank === 2) total += p2;
+      else total += p3;
     }
     return total;
-  }, [config, rangeAudits, yearAudits]);
+  }, [config, customPrimes, rangeAudits, yearAudits]);
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}

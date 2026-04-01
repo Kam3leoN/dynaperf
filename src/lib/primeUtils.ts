@@ -127,11 +127,41 @@ export function parsePrimeConfig(d: any): PrimeConfig {
   };
 }
 
-/**
- * Build a rank map: for each audit id, what is its Nth visit rank
- * for the same partner AND same event type (format key) within the civil year.
- * This means 1 RD + 1 Club at the same partner = each is 1st visit (not cumulative).
- */
+/** A custom prime record from user_custom_primes */
+export interface UserCustomPrime {
+  id: string;
+  label: string;
+  prime_1: number;
+  prime_2: number;
+  prime_3_plus: number;
+}
+
+/** Get prime values for an audit, using custom_prime_id if available */
+export function getPrimeValues(
+  audit: { custom_prime_id?: string | null; type_evenement: string },
+  config: PrimeConfig,
+  customPrimes: UserCustomPrime[] = [],
+): [number, number, number] {
+  if (audit.custom_prime_id) {
+    const cp = customPrimes.find((p) => p.id === audit.custom_prime_id);
+    if (cp) return [cp.prime_1, cp.prime_2, cp.prime_3_plus];
+  }
+  return getFormatPrimes(audit.type_evenement, config);
+}
+
+/** Calculate prime for the Nth visit, with optional custom prime override */
+export function primeForNthVisitWithCustom(
+  nth: number,
+  audit: { custom_prime_id?: string | null; type_evenement: string },
+  config: PrimeConfig,
+  customPrimes: UserCustomPrime[] = [],
+): number {
+  const [p1, p2, p3] = getPrimeValues(audit, config, customPrimes);
+  if (nth === 1) return p1;
+  if (nth === 2) return p2;
+  return p3;
+}
+
 export function buildRankMap(yearAudits: { id: string; partenaire: string; type_evenement: string; lieu?: string | null; date: string }[]): Map<string, number> {
   const sorted = [...yearAudits].sort((a, b) => a.date.localeCompare(b.date));
   // Key: "partner|formatKey|lieu" → ordered list of audit ids

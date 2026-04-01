@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { DEFAULT_PRIME_CONFIG, PrimeConfig, parsePrimeConfig, primeForNthVisit, buildRankMap } from "@/lib/primeUtils";
+import { DEFAULT_PRIME_CONFIG, PrimeConfig, parsePrimeConfig, primeForNthVisitWithCustom, buildRankMap, UserCustomPrime } from "@/lib/primeUtils";
 import { Badge } from "@/components/ui/badge";
 
 interface AuditRow {
@@ -21,6 +21,7 @@ interface AuditRow {
   type_evenement: string;
   lieu: string | null;
   date: string;
+  custom_prime_id: string | null;
 }
 
 function groupByBillingMonth(audits: AuditRow[]): Map<string, AuditRow[]> {
@@ -61,6 +62,7 @@ export default function Primes() {
   const [recapFrom, setRecapFrom] = useState<Date>(() => new Date(new Date().getFullYear(), 0, 1));
   const [recapTo, setRecapTo] = useState<Date>(() => new Date());
   const [config, setConfig] = useState<PrimeConfig>(DEFAULT_PRIME_CONFIG);
+  const [customPrimes, setCustomPrimes] = useState<UserCustomPrime[]>([]);
   const [displayAudits, setDisplayAudits] = useState<AuditRow[]>([]);
   const [yearAudits, setYearAudits] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,6 +75,8 @@ export default function Primes() {
     });
     supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle()
       .then(({ data }) => setDisplayName(data?.display_name || user.email?.split("@")[0] || ""));
+    supabase.from("user_custom_primes").select("id, label, prime_1, prime_2, prime_3_plus").eq("user_id", user.id)
+      .then(({ data }) => setCustomPrimes((data ?? []) as UserCustomPrime[]));
   }, [user]);
 
   useEffect(() => {
@@ -84,16 +88,16 @@ export default function Primes() {
     const maxYear = recapTo.getFullYear();
 
     Promise.all([
-      supabase.from("audits").select("id, partenaire, type_evenement, lieu, date")
+      supabase.from("audits").select("id, partenaire, type_evenement, lieu, date, custom_prime_id")
         .eq("auditeur", displayName).eq("statut", "OK")
         .gte("date", fromStr).lte("date", toStr).order("date", { ascending: false }),
-      supabase.from("audits").select("id, partenaire, type_evenement, lieu, date")
+      supabase.from("audits").select("id, partenaire, type_evenement, lieu, date, custom_prime_id")
         .eq("auditeur", displayName).eq("statut", "OK")
         .gte("date", `${minYear}-01-01`).lte("date", `${maxYear}-12-31`)
         .order("date", { ascending: true }),
     ]).then(([displayRes, yearRes]) => {
-      setDisplayAudits(displayRes.data ?? []);
-      setYearAudits(yearRes.data ?? []);
+      setDisplayAudits((displayRes.data ?? []) as AuditRow[]);
+      setYearAudits((yearRes.data ?? []) as AuditRow[]);
       setLoading(false);
     });
   }, [user, displayName, recapFrom, recapTo]);
@@ -110,13 +114,13 @@ export default function Primes() {
     let total = 0;
     for (const a of displayAudits) {
       const rank = rankMap.get(a.id) ?? 1;
-      const p = primeForNthVisit(rank, a.type_evenement, config);
+      const p = primeForNthVisitWithCustom(rank, a, config, customPrimes);
       perAudit.set(a.id, p);
       perRank.set(a.id, rank);
       total += p;
     }
     return { grandTotal: total, perAuditPrimes: perAudit, perAuditRanks: perRank };
-  }, [displayAudits, yearAudits, config]);
+  }, [displayAudits, yearAudits, config, customPrimes]);
 
   return (
     <AppLayout>
