@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { DEFAULT_PRIME_CONFIG, PrimeConfig, parsePrimeConfig, primeForNthVisit, buildRankMap } from "@/lib/primeUtils";
+import { DEFAULT_PRIME_CONFIG, PrimeConfig, parsePrimeConfig, primeForNthVisitWithCustom, buildRankMap, UserCustomPrime } from "@/lib/primeUtils";
 import { Badge } from "@/components/ui/badge";
 
 interface AuditRow {
