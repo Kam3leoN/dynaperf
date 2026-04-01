@@ -523,6 +523,18 @@ export default function AdminAuditGridInline() {
               <Label>Label de version</Label>
               <Input value={typeVersionLabel} onChange={(e) => setTypeVersionLabel(e.target.value)} placeholder="ex: V1, v3.0, 2026-Q1…" />
             </div>
+            <div className="space-y-1.5">
+              <Label>Couleur</Label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={typeColor || "#6b7280"}
+                  onChange={(e) => setTypeColor(e.target.value)}
+                  className="w-10 h-10 rounded-lg border border-border cursor-pointer"
+                />
+                <Input value={typeColor} onChange={(e) => setTypeColor(e.target.value)} placeholder="#ee4540" className="flex-1" />
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button onClick={saveType} disabled={!typeKey.trim() || !typeLabel.trim()} className="gap-1.5">
