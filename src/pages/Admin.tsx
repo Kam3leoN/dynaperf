@@ -399,6 +399,9 @@ export default function Admin() {
             </div>
           </div>
           <div className="flex gap-1 shrink-0">
+            <button onClick={() => setExpandedUser(isExpanded ? null : u.id)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title={isExpanded ? "Masquer la configuration" : "Configurer les primes"}>
+              <FontAwesomeIcon icon={isExpanded ? faChevronUp : faChevronDown} className="h-3.5 w-3.5 text-muted-foreground" />
+            </button>
             <button onClick={() => setViewUser(u)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Voir">
               <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
             </button>
@@ -557,6 +560,10 @@ export default function Admin() {
           </div>
         </div>
 
+        <p className="text-xs text-muted-foreground mb-3">
+          Utilise la flèche dans <span className="font-medium text-foreground">Actions</span> pour ouvrir la configuration détaillée des primes.
+        </p>
+
         {usersLoading ? (
           <p className="text-sm text-muted-foreground py-8 text-center">Chargement…</p>
         ) : (
@@ -629,6 +636,13 @@ export default function Admin() {
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-1">
+                              <button
+                                onClick={() => setExpandedUser(isExpanded ? null : u.id)}
+                                className="p-1.5 rounded-sm hover:bg-secondary transition-colors"
+                                title={isExpanded ? "Masquer la configuration" : "Configurer les primes"}
+                              >
+                                <FontAwesomeIcon icon={isExpanded ? faChevronUp : faChevronDown} className="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
                               <button
                                 onClick={() => setViewUser(u)}
                                 className="p-1.5 rounded-sm hover:bg-secondary transition-colors"

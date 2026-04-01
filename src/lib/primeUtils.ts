@@ -24,6 +24,30 @@ export interface PrimeConfig {
   prime_evenementiel_3_plus: number;
 }
 
+export const DEFAULT_PRIME_CONFIG: PrimeConfig = {
+  prime_audit_1: 75,
+  prime_audit_2: 10,
+  prime_audit_3_plus: 5,
+  prime_distanciel_1: 10,
+  prime_distanciel_2: 5,
+  prime_distanciel_3_plus: 0,
+  prime_club_1: 75,
+  prime_club_2: 10,
+  prime_club_3_plus: 5,
+  prime_rdv_1: 75,
+  prime_rdv_2: 10,
+  prime_rdv_3_plus: 5,
+  prime_suivi_1: 75,
+  prime_suivi_2: 10,
+  prime_suivi_3_plus: 5,
+  prime_mep_1: 75,
+  prime_mep_2: 10,
+  prime_mep_3_plus: 5,
+  prime_evenementiel_1: 75,
+  prime_evenementiel_2: 10,
+  prime_evenementiel_3_plus: 5,
+};
+
 /** Format keys used in the admin UI */
 export const FORMAT_KEYS = [
   { key: "audit", label: "RD Présentiel" },
@@ -73,14 +97,33 @@ export function primeForNthVisit(nth: number, typeEvenement: string, config: Pri
 
 /** Parse config from get_my_config RPC result */
 export function parsePrimeConfig(d: any): PrimeConfig {
+  const toAmount = (value: unknown, fallback: number) => {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
+
   return {
-    prime_audit_1: d.prime_audit_1 ?? 0, prime_audit_2: d.prime_audit_2 ?? 0, prime_audit_3_plus: d.prime_audit_3_plus ?? 0,
-    prime_distanciel_1: d.prime_distanciel_1 ?? 0, prime_distanciel_2: d.prime_distanciel_2 ?? 0, prime_distanciel_3_plus: d.prime_distanciel_3_plus ?? 0,
-    prime_club_1: d.prime_club_1 ?? 0, prime_club_2: d.prime_club_2 ?? 0, prime_club_3_plus: d.prime_club_3_plus ?? 0,
-    prime_rdv_1: d.prime_rdv_1 ?? 0, prime_rdv_2: d.prime_rdv_2 ?? 0, prime_rdv_3_plus: d.prime_rdv_3_plus ?? 0,
-    prime_suivi_1: d.prime_suivi_1 ?? 0, prime_suivi_2: d.prime_suivi_2 ?? 0, prime_suivi_3_plus: d.prime_suivi_3_plus ?? 0,
-    prime_mep_1: d.prime_mep_1 ?? 0, prime_mep_2: d.prime_mep_2 ?? 0, prime_mep_3_plus: d.prime_mep_3_plus ?? 0,
-    prime_evenementiel_1: d.prime_evenementiel_1 ?? 0, prime_evenementiel_2: d.prime_evenementiel_2 ?? 0, prime_evenementiel_3_plus: d.prime_evenementiel_3_plus ?? 0,
+    prime_audit_1: toAmount(d?.prime_audit_1, DEFAULT_PRIME_CONFIG.prime_audit_1),
+    prime_audit_2: toAmount(d?.prime_audit_2, DEFAULT_PRIME_CONFIG.prime_audit_2),
+    prime_audit_3_plus: toAmount(d?.prime_audit_3_plus, DEFAULT_PRIME_CONFIG.prime_audit_3_plus),
+    prime_distanciel_1: toAmount(d?.prime_distanciel_1, DEFAULT_PRIME_CONFIG.prime_distanciel_1),
+    prime_distanciel_2: toAmount(d?.prime_distanciel_2, DEFAULT_PRIME_CONFIG.prime_distanciel_2),
+    prime_distanciel_3_plus: toAmount(d?.prime_distanciel_3_plus, DEFAULT_PRIME_CONFIG.prime_distanciel_3_plus),
+    prime_club_1: toAmount(d?.prime_club_1, DEFAULT_PRIME_CONFIG.prime_club_1),
+    prime_club_2: toAmount(d?.prime_club_2, DEFAULT_PRIME_CONFIG.prime_club_2),
+    prime_club_3_plus: toAmount(d?.prime_club_3_plus, DEFAULT_PRIME_CONFIG.prime_club_3_plus),
+    prime_rdv_1: toAmount(d?.prime_rdv_1, DEFAULT_PRIME_CONFIG.prime_rdv_1),
+    prime_rdv_2: toAmount(d?.prime_rdv_2, DEFAULT_PRIME_CONFIG.prime_rdv_2),
+    prime_rdv_3_plus: toAmount(d?.prime_rdv_3_plus, DEFAULT_PRIME_CONFIG.prime_rdv_3_plus),
+    prime_suivi_1: toAmount(d?.prime_suivi_1, DEFAULT_PRIME_CONFIG.prime_suivi_1),
+    prime_suivi_2: toAmount(d?.prime_suivi_2, DEFAULT_PRIME_CONFIG.prime_suivi_2),
+    prime_suivi_3_plus: toAmount(d?.prime_suivi_3_plus, DEFAULT_PRIME_CONFIG.prime_suivi_3_plus),
+    prime_mep_1: toAmount(d?.prime_mep_1, DEFAULT_PRIME_CONFIG.prime_mep_1),
+    prime_mep_2: toAmount(d?.prime_mep_2, DEFAULT_PRIME_CONFIG.prime_mep_2),
+    prime_mep_3_plus: toAmount(d?.prime_mep_3_plus, DEFAULT_PRIME_CONFIG.prime_mep_3_plus),
+    prime_evenementiel_1: toAmount(d?.prime_evenementiel_1, DEFAULT_PRIME_CONFIG.prime_evenementiel_1),
+    prime_evenementiel_2: toAmount(d?.prime_evenementiel_2, DEFAULT_PRIME_CONFIG.prime_evenementiel_2),
+    prime_evenementiel_3_plus: toAmount(d?.prime_evenementiel_3_plus, DEFAULT_PRIME_CONFIG.prime_evenementiel_3_plus),
   };
 }
 
