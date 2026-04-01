@@ -10,6 +10,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { PrimeConfig, getFormatPrimes, FORMAT_KEYS } from "@/lib/primeUtils";
 
 /** Default range: 16th of current month → 15th of next month */
 function getDefaultRange(): { from: Date; to: Date } {
@@ -27,35 +28,11 @@ function getDefaultRange(): { from: Date; to: Date } {
   };
 }
 
-interface PrimeConfig {
-  prime_audit_1: number;
-  prime_audit_2: number;
-  prime_audit_3_plus: number;
-  prime_distanciel_1: number;
-  prime_distanciel_2: number;
-  prime_distanciel_3_plus: number;
-}
-
 interface AuditRow {
   id: string;
   partenaire: string;
   type_evenement: string;
   date: string;
-}
-
-function isDistanciel(type: string): boolean {
-  return type.toLowerCase().includes("distanciel");
-}
-
-function primeForNthVisit(nth: number, distanciel: boolean, config: PrimeConfig): number {
-  if (distanciel) {
-    if (nth === 1) return config.prime_distanciel_1;
-    if (nth === 2) return config.prime_distanciel_2;
-    return config.prime_distanciel_3_plus;
-  }
-  if (nth === 1) return config.prime_audit_1;
-  if (nth === 2) return config.prime_audit_2;
-  return config.prime_audit_3_plus;
 }
 
 export function MyPrimeTracker() {
@@ -72,13 +49,13 @@ export function MyPrimeTracker() {
     if (!user) return;
     supabase.rpc("get_my_config").then(({ data }: any) => {
       if (data && data.length > 0) {
+        const d = data[0];
         setConfig({
-          prime_audit_1: data[0].prime_audit_1 ?? 0,
-          prime_audit_2: data[0].prime_audit_2 ?? 0,
-          prime_audit_3_plus: data[0].prime_audit_3_plus ?? 0,
-          prime_distanciel_1: data[0].prime_distanciel_1 ?? 0,
-          prime_distanciel_2: data[0].prime_distanciel_2 ?? 0,
-          prime_distanciel_3_plus: data[0].prime_distanciel_3_plus ?? 0,
+          prime_audit_1: d.prime_audit_1 ?? 0, prime_audit_2: d.prime_audit_2 ?? 0, prime_audit_3_plus: d.prime_audit_3_plus ?? 0,
+          prime_distanciel_1: d.prime_distanciel_1 ?? 0, prime_distanciel_2: d.prime_distanciel_2 ?? 0, prime_distanciel_3_plus: d.prime_distanciel_3_plus ?? 0,
+          prime_club_1: d.prime_club_1 ?? 0, prime_club_2: d.prime_club_2 ?? 0, prime_club_3_plus: d.prime_club_3_plus ?? 0,
+          prime_rdv_1: d.prime_rdv_1 ?? 0, prime_rdv_2: d.prime_rdv_2 ?? 0, prime_rdv_3_plus: d.prime_rdv_3_plus ?? 0,
+          prime_suivi_1: d.prime_suivi_1 ?? 0, prime_suivi_2: d.prime_suivi_2 ?? 0, prime_suivi_3_plus: d.prime_suivi_3_plus ?? 0,
         });
       }
     });
@@ -87,7 +64,6 @@ export function MyPrimeTracker() {
   useEffect(() => {
     if (!user) return;
     setLoading(true);
-
     const fromStr = format(from, "yyyy-MM-dd");
     const toStr = format(to, "yyyy-MM-dd");
     const minYear = from.getFullYear();
@@ -95,31 +71,16 @@ export function MyPrimeTracker() {
     const yearStart = `${minYear}-01-01`;
     const yearEnd = `${maxYear}-12-31`;
 
-    supabase
-      .from("profiles")
-      .select("display_name")
-      .eq("user_id", user.id)
-      .maybeSingle()
+    supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle()
       .then(({ data: profile }) => {
         const displayName = profile?.display_name || user.email?.split("@")[0] || "";
-
         Promise.all([
-          supabase
-            .from("audits")
-            .select("id, partenaire, type_evenement, date")
-            .eq("auditeur", displayName)
-            .eq("statut", "OK")
-            .gte("date", fromStr)
-            .lte("date", toStr)
-            .order("date", { ascending: true }),
-          supabase
-            .from("audits")
-            .select("id, partenaire, type_evenement, date")
-            .eq("auditeur", displayName)
-            .eq("statut", "OK")
-            .gte("date", yearStart)
-            .lte("date", yearEnd)
-            .order("date", { ascending: true }),
+          supabase.from("audits").select("id, partenaire, type_evenement, date")
+            .eq("auditeur", displayName).eq("statut", "OK")
+            .gte("date", fromStr).lte("date", toStr).order("date", { ascending: true }),
+          supabase.from("audits").select("id, partenaire, type_evenement, date")
+            .eq("auditeur", displayName).eq("statut", "OK")
+            .gte("date", yearStart).lte("date", yearEnd).order("date", { ascending: true }),
         ]).then(([rangeRes, yearRes]) => {
           setRangeAudits(rangeRes.data ?? []);
           setYearAudits(yearRes.data ?? []);
@@ -128,11 +89,8 @@ export function MyPrimeTracker() {
       });
   }, [user, from, to]);
 
-  // Calculate prime per partenaire per civil year
   const prime = useMemo(() => {
     if (!config || yearAudits.length === 0) return 0;
-
-    // Build visit order per partner for the full year
     const partnerVisits = new Map<string, AuditRow[]>();
     for (const a of yearAudits) {
       if (!partnerVisits.has(a.partenaire)) partnerVisits.set(a.partenaire, []);
@@ -142,14 +100,15 @@ export function MyPrimeTracker() {
     for (const [, visits] of partnerVisits) {
       visits.forEach((v, i) => rankMap.set(v.id, i + 1));
     }
-
-    // Sum only audits in the display range
     const rangeIds = new Set(rangeAudits.map((a) => a.id));
     let total = 0;
     for (const a of yearAudits) {
       if (!rangeIds.has(a.id)) continue;
       const rank = rankMap.get(a.id) ?? 1;
-      total += primeForNthVisit(rank, isDistanciel(a.type_evenement), config);
+      const primes = getFormatPrimes(a.type_evenement, config);
+      if (rank === 1) total += primes[0];
+      else if (rank === 2) total += primes[1];
+      else total += primes[2];
     }
     return total;
   }, [config, rangeAudits, yearAudits]);
@@ -157,30 +116,23 @@ export function MyPrimeTracker() {
   if (!config) return null;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="w-full rounded-2xl border border-border/60 bg-card p-4 shadow-soft"
-    >
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+      className="w-full rounded-2xl border border-border/60 bg-card p-4 shadow-soft">
       <div className="flex items-center gap-2 mb-3">
         <FontAwesomeIcon icon={faCoins} className="h-4 w-4 text-amber-500" />
         <h3 className="text-sm font-semibold text-foreground">Ma prime</h3>
       </div>
-
       <div className="flex items-center gap-2 flex-wrap mb-3">
         <DatePicker label="Du" date={from} onChange={setFrom} />
         <DatePicker label="Au" date={to} onChange={setTo} />
       </div>
-
       <div className="flex items-center justify-between rounded-xl bg-muted/50 p-3">
         <div className="text-xs text-muted-foreground">
           <span className="font-medium text-foreground">{rangeAudits.length}</span> audit{rangeAudits.length > 1 ? "s" : ""} réalisé{rangeAudits.length > 1 ? "s" : ""}
         </div>
-        <div className="flex items-center gap-1.5">
-          <span className="text-lg font-bold text-foreground tabular-nums">
-            {loading ? "…" : `${prime.toLocaleString("fr-FR")} €`}
-          </span>
-        </div>
+        <span className="text-lg font-bold text-foreground tabular-nums">
+          {loading ? "…" : `${prime.toLocaleString("fr-FR")} €`}
+        </span>
       </div>
     </motion.div>
   );
@@ -188,23 +140,18 @@ export function MyPrimeTracker() {
 
 function DatePicker({ label, date, onChange }: { label: string; date: Date; onChange: (d: Date) => void }) {
   const [open, setOpen] = useState(false);
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm" className={cn("gap-1.5 text-xs h-8 justify-start font-normal", !date && "text-muted-foreground")}>
+        <Button variant="outline" size="sm" className={cn("gap-1.5 text-xs h-8 justify-start font-normal")}>
           <FontAwesomeIcon icon={faCalendar} className="h-3 w-3" />
           {label} {format(date, "dd/MM/yyyy")}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
-        <Calendar
-          mode="single"
-          selected={date}
+        <Calendar mode="single" selected={date}
           onSelect={(d) => { if (d) { onChange(d); setOpen(false); } }}
-          locale={fr}
-          initialFocus
-        />
+          locale={fr} initialFocus />
       </PopoverContent>
     </Popover>
   );
