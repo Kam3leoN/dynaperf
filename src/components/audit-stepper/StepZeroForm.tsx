@@ -23,6 +23,10 @@ export interface StepZeroData {
   typeLieu: string;
   dateEvenement: Date | undefined;
   heureEvenement: string;
+  heureDebutPrevue?: string;
+  heureFinPrevue?: string;
+  heureDebutReelle?: string;
+  heureFinReelle?: string;
   nomClub?: string;
   qualiteLieu?: number;
   nbAdherents?: number;
