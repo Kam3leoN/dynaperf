@@ -19,10 +19,10 @@ export interface CollaborateurObjectif {
 }
 
 export const collaborateursObjectifs: CollaborateurObjectif[] = [
-  { nom: "Cédric", objectif: 110, palier1: 110, palier2: 150, palier3: 175 },
-  { nom: "Geoffroy", objectif: 38, palier1: 38, palier2: 0, palier3: 0 },
-  { nom: "Tiphaine", objectif: 1, palier1: 1, palier2: 0, palier3: 0 },
-  { nom: "Catherine", objectif: 1, palier1: 1, palier2: 0, palier3: 0 },
+  { nom: "Cédric MALZAT", objectif: 110, palier1: 110, palier2: 150, palier3: 175 },
+  { nom: "Geoffroy L'HONNEN", objectif: 38, palier1: 38, palier2: 0, palier3: 0 },
+  { nom: "Tiphaine LEMAITRE", objectif: 1, palier1: 1, palier2: 0, palier3: 0 },
+  { nom: "Catherine PASSE", objectif: 1, palier1: 1, palier2: 0, palier3: 0 },
 ];
 
 let nextId = 100;
