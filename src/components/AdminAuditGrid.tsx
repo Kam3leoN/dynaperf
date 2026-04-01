@@ -12,7 +12,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faGripVertical, faLayerGroup, faCopy,
+  faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faGripVertical, faLayerGroup, faCopy, faBoxArchive, faRotateLeft,
 } from "@fortawesome/free-solid-svg-icons";
 
 interface AuditType { id: string; key: string; label: string; version: number; version_label: string | null; is_active: boolean; }
@@ -56,7 +56,6 @@ export default function AdminAuditGridInline() {
   const loadTypes = useCallback(async () => {
     const { data } = await supabase.from("audit_types").select("id, key, label, version, version_label, is_active").order("key").order("version", { ascending: false });
     setTypes(data || []);
-    if (data && data.length > 0 && !selectedTypeId) setSelectedTypeId(data[0].id);
     setLoading(false);
   }, [selectedTypeId]);
 
@@ -163,6 +162,13 @@ export default function AdminAuditGridInline() {
     loadTypes();
   };
 
+
+  const toggleActive = async (typeId: string, currentActive: boolean) => {
+    const { error } = await supabase.from("audit_types").update({ is_active: !currentActive }).eq("id", typeId);
+    if (error) { toast.error("Erreur"); return; }
+    toast.success(currentActive ? "Grille archivée" : "Grille réactivée");
+    loadTypes();
+  };
 
   const openNewCat = () => { setEditingCat(null); setCatName(""); setCatDialogOpen(true); };
   const openEditCat = (cat: Category) => { setEditingCat(cat); setCatName(cat.name); setCatDialogOpen(true); };
@@ -336,24 +342,41 @@ export default function AdminAuditGridInline() {
           {selectedKey && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {versionsForKey.map((v) => (
-                <button
+                <div
                   key={v.id}
-                  onClick={() => setSelectedTypeId(v.id)}
-                  className="flex flex-col items-start gap-2 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5 active:scale-[0.98] text-left"
+                  className={`flex flex-col items-start gap-2 rounded-xl border bg-card p-4 shadow-sm transition-all text-left ${v.is_active ? "border-border" : "border-border/50 opacity-60"}`}
                 >
                   <div className="flex items-center gap-2 w-full">
-                    <FontAwesomeIcon icon={faLayerGroup} className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-semibold text-foreground">
-                      {v.version_label || `V${v.version}`}
-                    </span>
+                    <button onClick={() => setSelectedTypeId(v.id)} className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80 transition-opacity">
+                      <FontAwesomeIcon icon={faLayerGroup} className="h-4 w-4 text-primary" />
+                      <span className="text-sm font-semibold text-foreground truncate">
+                        {v.version_label || `V${v.version}`}
+                      </span>
+                    </button>
                     {v.is_active ? (
-                      <Badge className="ml-auto text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-0">Active</Badge>
+                      <Badge className="text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-0">Active</Badge>
                     ) : (
-                      <Badge variant="secondary" className="ml-auto text-[10px]">Archivée</Badge>
+                      <Badge variant="secondary" className="text-[10px]">Archivée</Badge>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">{v.label}</p>
-                </button>
+                  <div className="flex items-center gap-1 w-full pt-1 border-t border-border/50">
+                    <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs flex-1" onClick={() => setSelectedTypeId(v.id)}>
+                      <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3" />
+                      Éditer
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={`h-7 gap-1 text-xs ${v.is_active ? "text-amber-600" : "text-emerald-600"}`}
+                      onClick={(e) => { e.stopPropagation(); toggleActive(v.id, v.is_active); }}
+                      title={v.is_active ? "Archiver" : "Réactiver"}
+                    >
+                      <FontAwesomeIcon icon={v.is_active ? faBoxArchive : faRotateLeft} className="h-3 w-3" />
+                      {v.is_active ? "Archiver" : "Activer"}
+                    </Button>
+                  </div>
+                </div>
               ))}
             </div>
           )}
@@ -375,9 +398,21 @@ export default function AdminAuditGridInline() {
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => duplicateAsNewVersion(selectedType.id)} title="Dupliquer comme nouvelle version">
             <FontAwesomeIcon icon={faCopy} className="h-3 w-3" />
           </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className={`h-8 w-8 ${selectedType.is_active ? "text-amber-600" : "text-emerald-600"}`}
+            onClick={() => toggleActive(selectedType.id, selectedType.is_active)}
+            title={selectedType.is_active ? "Archiver" : "Réactiver"}
+          >
+            <FontAwesomeIcon icon={selectedType.is_active ? faBoxArchive : faRotateLeft} className="h-3 w-3" />
+          </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => { deleteType(selectedType.id); }}>
             <FontAwesomeIcon icon={faTrashCan} className="h-3 w-3" />
           </Button>
+          {!selectedType.is_active && (
+            <Badge variant="secondary" className="text-xs">Archivée</Badge>
+          )}
           <Badge variant="outline" className="text-xs tabular-nums ml-auto">
             {totalMaxPts} pts max
           </Badge>
