@@ -31,8 +31,14 @@ function getRpId(): string {
 export async function isWebAuthnSupported(): Promise<boolean> {
   try {
     if (!window.PublicKeyCredential) return false;
-    const available = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-    return available;
+    // Check platform authenticator (fingerprint, Face ID, Windows Hello)
+    const platform = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+    if (platform) return true;
+    // Fallback: on desktop, conditional mediation (passkeys via browser/OS) may still work
+    if (typeof PublicKeyCredential.isConditionalMediationAvailable === "function") {
+      return await PublicKeyCredential.isConditionalMediationAvailable();
+    }
+    return false;
   } catch {
     return false;
   }
