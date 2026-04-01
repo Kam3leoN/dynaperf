@@ -704,7 +704,7 @@ export default function Admin() {
                         Fermer
                       </button>
                     </div>
-                    <UserConfigPanel userId={u.id} config={u.config} onSaved={loadUsers} />
+                    <UserConfigPanel userId={u.id} config={u.config} customPrimes={u.customPrimes ?? []} onSaved={loadUsers} />
                   </div>
                 );
               })()}
