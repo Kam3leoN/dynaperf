@@ -300,7 +300,7 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
       });
 
       // ── Photos ──
-      const photoUrls = (detail.photos as string[]) ?? [];
+      const photoUrls = await resolveAuditPhotoUrls((detail.photos as string[]) ?? []);
       if (photoUrls.length > 0) {
         checkPageBreak(20);
         y += 6;
