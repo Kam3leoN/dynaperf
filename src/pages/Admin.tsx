@@ -773,11 +773,13 @@ export default function Admin() {
                 </div>
               </div>
               <div>
-                <span className="text-xs text-muted-foreground block mb-1">Primes</span>
-                <div className="grid grid-cols-3 gap-2 text-sm">
-                  <span className="bg-secondary px-2 py-1 rounded text-foreground text-center">{viewUser.config?.prime_audit_1 ?? 0}€</span>
-                  <span className="bg-secondary px-2 py-1 rounded text-foreground text-center">{viewUser.config?.prime_audit_2 ?? 0}€</span>
-                  <span className="bg-secondary px-2 py-1 rounded text-foreground text-center">{viewUser.config?.prime_audit_3_plus ?? 0}€</span>
+                <span className="text-xs text-muted-foreground block mb-1">Primes (1er / 2e / 3e+)</span>
+                <div className="space-y-1 text-xs">
+                  <div className="flex justify-between"><span className="text-muted-foreground">RD Présentiel</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_audit_1 ?? 0}€ / {viewUser.config?.prime_audit_2 ?? 0}€ / {viewUser.config?.prime_audit_3_plus ?? 0}€</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">RD Distanciel</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_distanciel_1 ?? 0}€ / {viewUser.config?.prime_distanciel_2 ?? 0}€ / {viewUser.config?.prime_distanciel_3_plus ?? 0}€</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Club Affaires</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_club_1 ?? 0}€ / {viewUser.config?.prime_club_2 ?? 0}€ / {viewUser.config?.prime_club_3_plus ?? 0}€</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">RDV Commercial</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_rdv_1 ?? 0}€ / {viewUser.config?.prime_rdv_2 ?? 0}€ / {viewUser.config?.prime_rdv_3_plus ?? 0}€</span></div>
+                  <div className="flex justify-between"><span className="text-muted-foreground">Suivi Activité</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_suivi_1 ?? 0}€ / {viewUser.config?.prime_suivi_2 ?? 0}€ / {viewUser.config?.prime_suivi_3_plus ?? 0}€</span></div>
                 </div>
               </div>
             </div>
