@@ -5,7 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faGear, faMoon, faSun, faSave, faFingerprint, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faGear, faMoon, faSun, faSave, faFingerprint, faSpinner, faDesktop } from "@fortawesome/free-solid-svg-icons";
 import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import { useUserPreferences, type NotifPref } from "@/hooks/useUserPreferences";
@@ -163,31 +163,43 @@ export default function Preferences() {
           </CardContent>
         </Card>
 
-        {/* Biométrie */}
+        {/* Biométrie — deux switches séparés */}
         {webauthnSupported && !biometricLoading && (
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <FontAwesomeIcon icon={faFingerprint} className="h-4 w-4 text-primary" />
-                Connexion biométrique
+                Connexion rapide
               </CardTitle>
               <CardDescription>
-                Utilisez votre empreinte digitale ou Face ID pour vous connecter rapidement.
+                Activez la méthode de votre choix pour vous connecter sans mot de passe.
               </CardDescription>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-1">
+              {/* Switch Biométrie (mobile) */}
               <div className="flex items-center justify-between rounded-md px-1 py-3">
                 <div className="flex items-center gap-3">
                   <FontAwesomeIcon icon={faFingerprint} className="h-4 w-4 text-muted-foreground" />
-                  <Label className="text-sm cursor-default">
-                    {biometricEnabled ? "Biométrie activée" : "Activer la biométrie"}
-                  </Label>
+                  <div>
+                    <Label className="text-sm cursor-default">Biométrie</Label>
+                    <p className="text-[10px] text-muted-foreground">Empreinte digitale / Face ID (smartphone)</p>
+                  </div>
+                </div>
+                <Switch checked={biometricEnabled} onCheckedChange={toggleBiometric} />
+              </div>
+              {/* Switch Windows Hello (desktop) */}
+              <div className="flex items-center justify-between rounded-md px-1 py-3">
+                <div className="flex items-center gap-3">
+                  <FontAwesomeIcon icon={faDesktop} className="h-4 w-4 text-muted-foreground" />
+                  <div>
+                    <Label className="text-sm cursor-default">Windows Hello</Label>
+                    <p className="text-[10px] text-muted-foreground">PIN, empreinte ou reconnaissance faciale (PC)</p>
+                  </div>
                 </div>
                 <Switch checked={biometricEnabled} onCheckedChange={toggleBiometric} />
               </div>
               <p className="text-[11px] text-muted-foreground mt-2 px-1 leading-relaxed">
-                <strong>Prérequis sur PC :</strong> connexion HTTPS, fenêtre active au premier plan, 
-                Windows Hello configuré (PIN, empreinte ou reconnaissance faciale), et pop-ups système autorisées.
+                <strong>Prérequis PC :</strong> connexion HTTPS, fenêtre active, Windows Hello configuré, pop-ups système autorisées.
               </p>
             </CardContent>
           </Card>

@@ -23,12 +23,16 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
   const obj = objectifTotal ?? 0;
   const realises = auditsTermines ?? totalAudits;
   const pctRealises = obj > 0 ? Math.min(100, (realises / obj) * 100) : 0;
-  const restant = Math.max(0, obj - realises);
+
+  // Planifiés en % de l'objectif
+  const pctPlanifies = obj > 0 ? Math.min(100, (auditsPlanifies / obj) * 100) : 0;
+
+  // Restant = objectif - réalisés - planifiés (ce qui reste à programmer)
+  const restant = Math.max(0, obj - realises - auditsPlanifies);
   const pctRestant = obj > 0 ? (restant / obj) * 100 : 0;
 
-  // Projection: planifiés couvrent une partie du restant
-  const restantApresPlanif = Math.max(0, restant - auditsPlanifies);
-  const pctPlanifiesCouverture = restant > 0 ? Math.min(100, (auditsPlanifies / restant) * 100) : 0;
+  // Ce qui reste à programmer après les planifiés
+  const restantApresPlanif = restant;
 
   // Calculate remaining days until Dec 31 of selected year
   const selectedYear = annee && annee !== "Tous" ? parseInt(annee) : new Date().getFullYear();
@@ -91,13 +95,13 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
         </p>
         <div className="flex items-baseline gap-1 sm:gap-1.5 mt-1.5 sm:mt-2">
           <span className="text-2xl sm:text-3xl font-bold tabular-nums text-amber-600 dark:text-amber-400">{auditsPlanifies}</span>
-          <span className="text-xs sm:text-sm text-muted-foreground">à venir</span>
+          {obj > 0 && <span className="text-sm sm:text-base text-muted-foreground tabular-nums">/{obj}</span>}
         </div>
-        {restant > 0 && (
+        {obj > 0 && (
           <div className="mt-2 space-y-1">
-            <Progress value={pctPlanifiesCouverture} className="h-2" />
+            <Progress value={pctPlanifies} className="h-2" />
             <p className="text-[10px] text-muted-foreground tabular-nums font-medium">
-              {pctPlanifiesCouverture.toFixed(0)}% du restant couvert
+              {pctPlanifies.toFixed(0)}% de l'objectif
             </p>
           </div>
         )}
@@ -150,7 +154,7 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
         <div className="mt-2 space-y-1">
           <Progress value={moyennePct} className="h-2" />
           <p className="text-[10px] text-muted-foreground tabular-nums font-medium">
-            {auditsNotes} audit{auditsNotes > 1 ? "s" : ""} noté{auditsNotes > 1 ? "s" : ""} · tous types
+            sur {realises} terminé{realises > 1 ? "s" : ""} · {auditsNotes} noté{auditsNotes > 1 ? "s" : ""}
           </p>
         </div>
         <p className={`text-[10px] sm:text-xs mt-1.5 flex items-center gap-1 ${moyenneColor}`}>
