@@ -156,8 +156,7 @@ export default function AuditForm() {
         .from("audit-photos")
         .upload(path, file, { contentType: file.type });
       if (!error) {
-        const { data } = supabase.storage.from("audit-photos").getPublicUrl(path);
-        urls.push(data.publicUrl);
+        urls.push(path);
       }
     }
     return urls;
