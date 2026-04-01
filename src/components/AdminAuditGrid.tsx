@@ -14,8 +14,9 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faGripVertical, faLayerGroup, faCopy, faBoxArchive, faRotateLeft,
 } from "@fortawesome/free-solid-svg-icons";
+import { getAuditTypeVisual } from "@/lib/auditTypeVisuals";
 
-interface AuditType { id: string; key: string; label: string; version: number; version_label: string | null; is_active: boolean; }
+interface AuditType { id: string; key: string; label: string; version: number; version_label: string | null; is_active: boolean; color: string | null; }
 interface Category { id: string; audit_type_id: string; name: string; sort_order: number; }
 interface ItemConfig {
   id: string; category_id: string; sort_order: number; title: string; description: string;
@@ -37,6 +38,7 @@ export default function AdminAuditGridInline() {
   const [typeKey, setTypeKey] = useState("");
   const [typeLabel, setTypeLabel] = useState("");
   const [typeVersionLabel, setTypeVersionLabel] = useState("");
+  const [typeColor, setTypeColor] = useState("");
 
   // Category dialog
   const [catDialogOpen, setCatDialogOpen] = useState(false);
@@ -54,7 +56,7 @@ export default function AdminAuditGridInline() {
 
   // Load types
   const loadTypes = useCallback(async () => {
-    const { data } = await supabase.from("audit_types").select("id, key, label, version, version_label, is_active").order("key").order("version", { ascending: false });
+    const { data } = await supabase.from("audit_types").select("id, key, label, version, version_label, is_active, color").order("key").order("version", { ascending: false });
     setTypes(data || []);
     setLoading(false);
   }, [selectedTypeId]);
@@ -87,17 +89,17 @@ export default function AdminAuditGridInline() {
   useEffect(() => { loadData(); }, [loadData]);
 
   // === Type CRUD ===
-  const openNewType = () => { setEditingType(null); setTypeKey(""); setTypeLabel(""); setTypeVersionLabel(""); setTypeDialogOpen(true); };
-  const openEditType = (t: AuditType) => { setEditingType(t); setTypeKey(t.key); setTypeLabel(t.label); setTypeVersionLabel(t.version_label || ""); setTypeDialogOpen(true); };
+  const openNewType = () => { setEditingType(null); setTypeKey(""); setTypeLabel(""); setTypeVersionLabel(""); setTypeColor(""); setTypeDialogOpen(true); };
+  const openEditType = (t: AuditType) => { setEditingType(t); setTypeKey(t.key); setTypeLabel(t.label); setTypeVersionLabel(t.version_label || ""); setTypeColor(t.color || ""); setTypeDialogOpen(true); };
 
   const saveType = async () => {
     if (!typeKey.trim() || !typeLabel.trim()) return;
     if (editingType) {
-      const { error } = await supabase.from("audit_types").update({ key: typeKey.trim(), label: typeLabel.trim(), version_label: typeVersionLabel.trim() || null }).eq("id", editingType.id);
+      const { error } = await supabase.from("audit_types").update({ key: typeKey.trim(), label: typeLabel.trim(), version_label: typeVersionLabel.trim() || null, color: typeColor.trim() || null }).eq("id", editingType.id);
       if (error) { toast.error("Erreur"); return; }
       toast.success("Type modifié");
     } else {
-      const { data, error } = await supabase.from("audit_types").insert({ key: typeKey.trim(), label: typeLabel.trim(), version_label: typeVersionLabel.trim() || null }).select().single();
+      const { data, error } = await supabase.from("audit_types").insert({ key: typeKey.trim(), label: typeLabel.trim(), version_label: typeVersionLabel.trim() || null, color: typeColor.trim() || null }).select().single();
       if (error) { toast.error("Erreur"); return; }
       toast.success("Type créé");
       if (data) setSelectedTypeId(data.id);
@@ -316,21 +318,30 @@ export default function AdminAuditGridInline() {
               {uniqueKeys.map((key) => {
                 const firstType = types.find(t => t.key === key);
                 const versionCount = types.filter(t => t.key === key).length;
+                const visual = getAuditTypeVisual(key, firstType?.color);
                 return (
                   <button
                     key={key}
-                    onClick={() => {
-                      const versions = types.filter(t => t.key === key);
-                      if (versions.length === 1) {
-                        setSelectedKey(key);
-                        setSelectedTypeId(versions[0].id);
-                      } else {
-                        setSelectedKey(key);
-                      }
-                    }}
-                    className="flex flex-col items-center gap-2 rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5 active:scale-[0.98]"
+                    onClick={() => setSelectedKey(key)}
+                    className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-transparent hover:-translate-y-1 active:scale-[0.97]"
                   >
-                    <FontAwesomeIcon icon={faLayerGroup} className="h-5 w-5 text-primary" />
+                    <div
+                      className="flex items-center justify-center w-14 h-14 rounded-full"
+                      style={{ backgroundColor: `${visual.color}18` }}
+                    >
+                      {visual.icon ? (
+                        <div
+                          className="h-7 w-7"
+                          style={{
+                            backgroundColor: visual.color,
+                            mask: `url(${visual.icon}) no-repeat center / contain`,
+                            WebkitMask: `url(${visual.icon}) no-repeat center / contain`,
+                          }}
+                        />
+                      ) : (
+                        <FontAwesomeIcon icon={faLayerGroup} className="h-5 w-5" style={{ color: visual.color }} />
+                      )}
+                    </div>
                     <span className="text-sm font-semibold text-foreground text-center">{firstType?.label || key}</span>
                     <Badge variant="secondary" className="text-[10px]">{versionCount} version{versionCount > 1 ? "s" : ""}</Badge>
                   </button>
@@ -511,6 +522,18 @@ export default function AdminAuditGridInline() {
             <div className="space-y-1.5">
               <Label>Label de version</Label>
               <Input value={typeVersionLabel} onChange={(e) => setTypeVersionLabel(e.target.value)} placeholder="ex: V1, v3.0, 2026-Q1…" />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Couleur</Label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={typeColor || "#6b7280"}
+                  onChange={(e) => setTypeColor(e.target.value)}
+                  className="w-10 h-10 rounded-lg border border-border cursor-pointer"
+                />
+                <Input value={typeColor} onChange={(e) => setTypeColor(e.target.value)} placeholder="#ee4540" className="flex-1" />
+              </div>
             </div>
           </div>
           <DialogFooter>
