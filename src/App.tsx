@@ -15,6 +15,7 @@ import Welcome from "./pages/Welcome";
 import Auth from "./pages/Auth";
 import Registre from "./pages/Registre";
 import NewAudit from "./pages/NewAudit";
+import AuditVersionSelect from "./pages/AuditVersionSelect";
 import AuditForm from "./pages/AuditForm";
 import Admin from "./pages/Admin";
 import AdminAuditGrid from "./pages/AdminAuditGrid";
