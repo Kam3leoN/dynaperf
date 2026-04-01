@@ -1,0 +1,1 @@
+UPDATE public.audits SET note = 6.3 WHERE id = '0409f0a4-a065-4008-ac43-b4fab244368f';
