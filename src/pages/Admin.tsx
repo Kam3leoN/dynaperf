@@ -69,6 +69,15 @@ interface UserConfig {
   semaines_indisponibles: number;
 }
 
+interface CustomPrime {
+  id: string;
+  user_id: string;
+  label: string;
+  prime_1: number;
+  prime_2: number;
+  prime_3_plus: number;
+}
+
 interface ManagedUser {
   id: string;
   email: string;
@@ -77,6 +86,7 @@ interface ManagedUser {
   title: string | null;
   roles: string[];
   config: UserConfig | null;
+  customPrimes: CustomPrime[];
   createdAt: string;
 }
 
