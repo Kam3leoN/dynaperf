@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
+import { auditTypeIcons } from "@/lib/auditTypeVisuals";
 
 import iconRDPresentiel from "@/assets/rencontre-presentiel.svg";
 import iconRDDistanciel from "@/assets/rencontre-distanciel.svg";
