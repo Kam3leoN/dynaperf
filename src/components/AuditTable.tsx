@@ -17,6 +17,7 @@ interface AuditTableProps {
   onAdd: (audit: Omit<Audit, "id">) => void;
   onUpdate: (id: string, data: Partial<Audit>) => void;
   onDelete: (id: string) => void;
+  onEditPlan?: (auditId: string) => void;
 }
 
 const emptyForm = (): Omit<Audit, "id"> => ({
