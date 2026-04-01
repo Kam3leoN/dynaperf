@@ -43,6 +43,7 @@ export function MyPrimeTracker() {
   const [from, setFrom] = useState<Date>(defaultRange.from);
   const [to, setTo] = useState<Date>(defaultRange.to);
   const [config, setConfig] = useState<PrimeConfig>(DEFAULT_PRIME_CONFIG);
+  const [customPrimes, setCustomPrimes] = useState<UserCustomPrime[]>([]);
   const [rangeAudits, setRangeAudits] = useState<AuditRow[]>([]);
   const [yearAudits, setYearAudits] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(true);
