@@ -47,13 +47,16 @@ export default function AuditForm() {
   const [editLoaded, setEditLoaded] = useState(false);
   const itemsSectionRef = useRef<HTMLDivElement>(null);
 
-  // Load config
+  // Load config - prefer typeId if provided, fallback to typeKey
   useEffect(() => {
-    fetchAuditConfig(typeEvenement).then((c) => {
+    const loadConfig = typeId
+      ? fetchAuditConfigById(typeId)
+      : fetchAuditConfig(typeEvenement);
+    loadConfig.then((c) => {
       setConfig(c);
       setConfigLoading(false);
     });
-  }, [typeEvenement]);
+  }, [typeEvenement, typeId]);
 
   // Load existing audit data for edit mode
   useEffect(() => {
