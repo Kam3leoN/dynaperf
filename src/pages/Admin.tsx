@@ -448,7 +448,7 @@ export default function Admin() {
           )}
         </div>
         {isExpanded && (
-          <UserConfigPanel userId={u.id} config={u.config} onSaved={loadUsers} />
+          <UserConfigPanel userId={u.id} config={u.config} customPrimes={u.customPrimes ?? []} onSaved={loadUsers} />
         )}
       </motion.div>
     );
