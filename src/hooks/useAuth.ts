@@ -78,7 +78,8 @@ export function useAuth() {
   const context = useContext(AuthContext);
 
   if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
+    // During HMR or initial mount race, return safe defaults instead of throwing
+    return { user: null, loading: true, signOut: async () => {} } as AuthContextValue;
   }
 
   return context;
