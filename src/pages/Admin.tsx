@@ -976,9 +976,6 @@ function UserConfigPanel({
     prime_evenementiel_1: config?.prime_evenementiel_1 ?? 75, prime_evenementiel_2: config?.prime_evenementiel_2 ?? 10, prime_evenementiel_3_plus: config?.prime_evenementiel_3_plus ?? 5,
   });
 
-  // Track which standard formats have been "deleted" (zeroed out)
-  const [hiddenFormats, setHiddenFormats] = useState<Set<string>>(new Set());
-
   const updatePrime = (key: string, val: number) => setPrimes(p => ({ ...p, [key]: val }));
 
   const FORMATS = [
@@ -991,11 +988,24 @@ function UserConfigPanel({
     { label: "RD Événementielle", k1: "prime_evenementiel_1", k2: "prime_evenementiel_2", k3: "prime_evenementiel_3_plus" },
   ] as const;
 
-  const handleDeleteFormat = (k1: string, k2: string, k3: string) => {
-    updatePrime(k1, 0);
-    updatePrime(k2, 0);
-    updatePrime(k3, 0);
-    setHiddenFormats(prev => new Set(prev).add(k1));
+  const handleDeleteFormat = async (k1: string, k2: string, k3: string) => {
+    const zeroed = { ...primes, [k1]: 0, [k2]: 0, [k3]: 0 };
+    setPrimes(zeroed);
+    // Save immediately so deletion persists
+    const res = await supabase.functions.invoke("create-user", {
+      body: {
+        action: "save-config",
+        userId,
+        objectif,
+        palier_1: palier1 ? parseInt(palier1) : null,
+        palier_2: palier2 ? parseInt(palier2) : null,
+        palier_3: palier3 ? parseInt(palier3) : null,
+        ...zeroed,
+        semaines_indisponibles: semainesIndispo,
+      },
+    });
+    if (res.data?.error) toast.error(res.data.error);
+    else { toast.success("Prime supprimée"); onSaved(); }
   };
 
   const handleDeleteCustomPrime = async (primeId: string) => {
@@ -1043,7 +1053,12 @@ function UserConfigPanel({
     setSaving(false);
   };
 
-  const visibleFormats = FORMATS.filter(f => !hiddenFormats.has(f.k1));
+  const visibleFormats = FORMATS.filter(f => {
+    const v1 = (primes as any)[f.k1];
+    const v2 = (primes as any)[f.k2];
+    const v3 = (primes as any)[f.k3];
+    return !(v1 === 0 && v2 === 0 && v3 === 0);
+  });
 
   return (
     <div className="border-t border-border p-4 space-y-4 bg-card/50">
