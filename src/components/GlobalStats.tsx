@@ -15,7 +15,7 @@ interface GlobalStatsProps {
   semainesIndisponibles?: number;
 }
 
-export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttente, objectifTotal, annee, semainesIndisponibles = 10 }: GlobalStatsProps) {
+export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttente, objectifTotal, annee, semainesIndisponibles = 10, auditsTermines }: GlobalStatsProps) {
   const [modeRealiste, setModeRealiste] = useState(false);
 
   const obj = objectifTotal ?? 0;
