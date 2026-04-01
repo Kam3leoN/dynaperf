@@ -29,6 +29,7 @@ export default function AdminAuditGridInline() {
   const [categories, setCategories] = useState<Category[]>([]);
   const [items, setItems] = useState<ItemConfig[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
 
   // Type CRUD dialog
   const [typeDialogOpen, setTypeDialogOpen] = useState(false);
