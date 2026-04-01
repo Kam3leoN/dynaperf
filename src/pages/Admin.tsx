@@ -540,20 +540,7 @@ export default function Admin() {
                     </div>
                   </div>
 
-                  {/* Primes */}
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Primes par palier (€)</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <span className="text-[10px] text-muted-foreground">Prime palier 1</span>
-                        <Input type="number" min={0} step={0.01} value={newPrime1} onChange={(e) => setNewPrime1(e.target.value)} className="h-9 text-sm" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-muted-foreground">Prime palier 2</span>
-                        <Input type="number" min={0} step={0.01} value={newPrime2} onChange={(e) => setNewPrime2(e.target.value)} className="h-9 text-sm" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-muted-foreground">Prime palier 3</span>
+                  {/* Primes are set via the config panel after creation */}
                         <Input type="number" min={0} step={0.01} value={newPrime3} onChange={(e) => setNewPrime3(e.target.value)} className="h-9 text-sm" />
                       </div>
                     </div>
