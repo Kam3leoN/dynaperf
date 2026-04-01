@@ -163,6 +163,13 @@ export default function AdminAuditGridInline() {
   };
 
 
+  const toggleActive = async (typeId: string, currentActive: boolean) => {
+    const { error } = await supabase.from("audit_types").update({ is_active: !currentActive }).eq("id", typeId);
+    if (error) { toast.error("Erreur"); return; }
+    toast.success(currentActive ? "Grille archivée" : "Grille réactivée");
+    loadTypes();
+  };
+
   const openNewCat = () => { setEditingCat(null); setCatName(""); setCatDialogOpen(true); };
   const openEditCat = (cat: Category) => { setEditingCat(cat); setCatName(cat.name); setCatDialogOpen(true); };
 
