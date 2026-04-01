@@ -102,17 +102,19 @@ export default function Primes() {
     return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]));
   }, [displayAudits]);
 
-  const { grandTotal, perAuditPrimes } = useMemo(() => {
+  const { grandTotal, perAuditPrimes, perAuditRanks } = useMemo(() => {
     const rankMap = buildRankMap(yearAudits);
     const perAudit = new Map<string, number>();
+    const perRank = new Map<string, number>();
     let total = 0;
     for (const a of displayAudits) {
       const rank = rankMap.get(a.id) ?? 1;
       const p = primeForNthVisit(rank, a.type_evenement, config);
       perAudit.set(a.id, p);
+      perRank.set(a.id, rank);
       total += p;
     }
-    return { grandTotal: total, perAuditPrimes: perAudit };
+    return { grandTotal: total, perAuditPrimes: perAudit, perAuditRanks: perRank };
   }, [displayAudits, yearAudits, config]);
 
   return (
