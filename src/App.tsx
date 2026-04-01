@@ -90,6 +90,7 @@ const App = () => {
                 <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                 <Route path="/audits" element={<ProtectedRoute><Registre /></ProtectedRoute>} />
                 <Route path="/audits/new" element={<ProtectedRoute><NewAudit /></ProtectedRoute>} />
+                <Route path="/audits/new/version" element={<ProtectedRoute><AuditVersionSelect /></ProtectedRoute>} />
                 <Route path="/audits/new/form" element={<ProtectedRoute><AuditForm /></ProtectedRoute>} />
                 <Route path="/audits/edit/:auditId" element={<ProtectedRoute><AuditForm /></ProtectedRoute>} />
                 <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
