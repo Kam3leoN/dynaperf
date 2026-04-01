@@ -280,7 +280,7 @@ export default function SuiviActiviteForm() {
                                   : "bg-muted text-muted-foreground"
                               )}
                             >
-                              {ans.status === "fait" ? "Fait" : ans.status === "pas_fait" ? "Pas fait" : ans.status === "nc" ? "N/C" : "—"}
+                              {ans.status === "fait" ? "Fait" : ans.status === "pas_fait" ? "Pas fait" : ans.status === "nc" ? "Non applicable" : "—"}
                             </Badge>
                           </div>
                           <h3 className="text-sm sm:text-base font-semibold text-foreground leading-tight">{item.titre}</h3>
@@ -338,7 +338,7 @@ export default function SuiviActiviteForm() {
                             ans.status === "nc" && "bg-muted-foreground text-white border-muted-foreground"
                           )}
                         >
-                          <FontAwesomeIcon icon={faMinus} className="mr-1.5 h-3 w-3" /> N/C
+                          <FontAwesomeIcon icon={faMinus} className="mr-1.5 h-3 w-3" /> Non applicable
                         </Button>
                       </div>
 

@@ -13,14 +13,16 @@ interface GlobalStatsProps {
   objectifNotes?: number;
   annee?: string;
   semainesIndisponibles?: number;
+  auditsTermines?: number;
 }
 
-export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttente, objectifTotal, annee, semainesIndisponibles = 10 }: GlobalStatsProps) {
+export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttente, objectifTotal, annee, semainesIndisponibles = 10, auditsTermines }: GlobalStatsProps) {
   const [modeRealiste, setModeRealiste] = useState(false);
 
   const obj = objectifTotal ?? 0;
-  const pctRealises = obj > 0 ? Math.min(100, (totalAudits / obj) * 100) : 0;
-  const restant = Math.max(0, obj - totalAudits);
+  const realises = auditsTermines ?? totalAudits;
+  const pctRealises = obj > 0 ? Math.min(100, (realises / obj) * 100) : 0;
+  const restant = Math.max(0, obj - realises);
   const pctRestant = obj > 0 ? (restant / obj) * 100 : 0;
 
   // Calculate remaining days until Dec 31 of selected year
@@ -58,7 +60,7 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
           Audits Réalisés
         </p>
         <div className="flex items-baseline gap-1 sm:gap-1.5 mt-1.5 sm:mt-2">
-          <span className="text-2xl sm:text-3xl font-bold tabular-nums text-foreground">{totalAudits}</span>
+          <span className="text-2xl sm:text-3xl font-bold tabular-nums text-foreground">{realises}</span>
           {obj > 0 && <span className="text-sm sm:text-base text-muted-foreground tabular-nums">/{obj}</span>}
         </div>
         {obj > 0 && (

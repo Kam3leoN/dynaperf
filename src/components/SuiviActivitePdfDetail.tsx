@@ -156,7 +156,7 @@ export function SuiviActivitePdfDetail({ suiviId }: Props) {
           doc.text("Pas fait ✗", contentW + margin - 3, y - (titleLines.length > 1 ? (Math.min(titleLines.length - 1, 2)) * 3.5 : 0), { align: "right" });
         } else if (isNc) {
           doc.setTextColor(130, 130, 130);
-          doc.text("N/C", contentW + margin - 3, y - (titleLines.length > 1 ? (Math.min(titleLines.length - 1, 2)) * 3.5 : 0), { align: "right" });
+          doc.text("Non applicable", contentW + margin - 3, y - (titleLines.length > 1 ? (Math.min(titleLines.length - 1, 2)) * 3.5 : 0), { align: "right" });
         } else {
           doc.setTextColor(180, 180, 180);
           doc.text("—", contentW + margin - 3, y - (titleLines.length > 1 ? (Math.min(titleLines.length - 1, 2)) * 3.5 : 0), { align: "right" });

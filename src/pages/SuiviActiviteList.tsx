@@ -6,9 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faTrash, faEye } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faTrash, faEye, faCalendarPlus } from "@fortawesome/free-solid-svg-icons";
 import { SuiviActiviteExportExcel, SuiviActiviteExportPDF } from "@/components/SuiviActiviteExport";
 import { SuiviActivitePdfDetail } from "@/components/SuiviActivitePdfDetail";
+import { PlanActiviteDialog } from "@/components/PlanActiviteDialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -39,6 +40,7 @@ interface SuiviRow {
 export default function SuiviActiviteList() {
   const [suivis, setSuivis] = useState<SuiviRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [planOpen, setPlanOpen] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -72,6 +74,10 @@ export default function SuiviActiviteList() {
         <div className="flex items-center gap-2 flex-wrap">
           <SuiviActiviteExportExcel suivis={suivis} />
           <SuiviActiviteExportPDF suivis={suivis} />
+          <Button variant="outline" className="gap-2" onClick={() => setPlanOpen(true)}>
+            <FontAwesomeIcon icon={faCalendarPlus} className="h-3.5 w-3.5 text-amber-500" />
+            Planifier
+          </Button>
           <Button asChild className="gap-2">
             <Link to="/activite/new">
               <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
@@ -137,6 +143,7 @@ export default function SuiviActiviteList() {
           ))}
         </div>
       )}
+      <PlanActiviteDialog open={planOpen} onOpenChange={setPlanOpen} onCreated={() => load()} />
     </AppLayout>
   );
 }
