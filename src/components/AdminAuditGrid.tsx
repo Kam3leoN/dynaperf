@@ -276,7 +276,9 @@ export default function AdminAuditGridInline() {
           <SelectTrigger className="w-64"><SelectValue placeholder="Sélectionner un type" /></SelectTrigger>
           <SelectContent>
             {types.map((t) => (
-              <SelectItem key={t.id} value={t.id}>{t.label || t.key}</SelectItem>
+              <SelectItem key={t.id} value={t.id}>
+                {t.label || t.key}{t.version_label ? ` (${t.version_label})` : ""}{!t.is_active ? " — archivé" : ""}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
