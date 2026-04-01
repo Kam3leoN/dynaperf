@@ -35,6 +35,7 @@ export default function AdminAuditGridInline() {
   const [editingType, setEditingType] = useState<AuditType | null>(null);
   const [typeKey, setTypeKey] = useState("");
   const [typeLabel, setTypeLabel] = useState("");
+  const [typeVersionLabel, setTypeVersionLabel] = useState("");
 
   // Category dialog
   const [catDialogOpen, setCatDialogOpen] = useState(false);
