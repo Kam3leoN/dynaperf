@@ -13,6 +13,7 @@ interface GlobalStatsProps {
   objectifNotes?: number;
   annee?: string;
   semainesIndisponibles?: number;
+  auditsTermines?: number;
 }
 
 export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttente, objectifTotal, annee, semainesIndisponibles = 10, auditsTermines }: GlobalStatsProps) {
