@@ -120,7 +120,7 @@ export default function Primes() {
       total += p;
     }
     return { grandTotal: total, perAuditPrimes: perAudit, perAuditRanks: perRank };
-  }, [displayAudits, yearAudits, config]);
+  }, [displayAudits, yearAudits, config, customPrimes]);
 
   return (
     <AppLayout>

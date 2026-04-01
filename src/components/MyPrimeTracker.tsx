@@ -34,6 +34,7 @@ interface AuditRow {
   type_evenement: string;
   lieu: string | null;
   date: string;
+  custom_prime_id: string | null;
 }
 
 export function MyPrimeTracker() {
