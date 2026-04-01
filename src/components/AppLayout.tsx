@@ -105,7 +105,7 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
     return () => { supabase.removeChannel(channel); };
   }, [user]);
 
-  const isAuditSection = ["/dashboard", "/audits", "/audits/new", "/audits/new/form"].includes(location.pathname);
+  const isAuditSection = ["/dashboard", "/audits", "/audits/new", "/audits/new/version", "/audits/new/form"].includes(location.pathname);
   const isActiviteSection = ["/activite", "/activite/new", "/activite/new/version", "/activite/dashboard"].includes(location.pathname);
   const isReseauSection = ["/reseau", "/reseau/partenaires", "/reseau/clubs", "/reseau/secteurs"].includes(location.pathname);
 
