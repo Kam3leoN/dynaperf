@@ -114,7 +114,7 @@ export default function Primes() {
     let total = 0;
     for (const a of displayAudits) {
       const rank = rankMap.get(a.id) ?? 1;
-      const p = primeForNthVisit(rank, a.type_evenement, config);
+      const p = primeForNthVisitWithCustom(rank, a, config, customPrimes);
       perAudit.set(a.id, p);
       perRank.set(a.id, rank);
       total += p;
