@@ -160,7 +160,7 @@ export default function SuiviActiviteDetail() {
                                 : "bg-muted text-muted-foreground"
                             )}
                           >
-                            {isFait ? "Fait" : isPasFait ? "Pas fait" : isNc ? "N/C" : "—"}
+                            {isFait ? "Fait" : isPasFait ? "Pas fait" : isNc ? "Non applicable" : "—"}
                           </Badge>
                         </div>
                         <h3 className="text-sm sm:text-base font-semibold text-foreground leading-tight">{item.titre}</h3>
