@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
-import { PrimeConfig, parsePrimeConfig, primeForNthVisit } from "@/lib/primeUtils";
+import { PrimeConfig, parsePrimeConfig, primeForNthVisit, buildRankMap } from "@/lib/primeUtils";
 
 interface AuditRow {
   id: string;
