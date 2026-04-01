@@ -245,9 +245,11 @@ export default function Admin() {
       palier_1: newPalier1 ? parseInt(newPalier1) : null,
       palier_2: newPalier2 ? parseInt(newPalier2) : null,
       palier_3: newPalier3 ? parseInt(newPalier3) : null,
-      prime_audit_1: parseFloat(newPrime1) || 0,
-      prime_audit_2: parseFloat(newPrime2) || 0,
-      prime_audit_3_plus: parseFloat(newPrime3) || 0,
+      prime_audit_1: 75, prime_audit_2: 10, prime_audit_3_plus: 5,
+      prime_distanciel_1: 10, prime_distanciel_2: 5, prime_distanciel_3_plus: 0,
+      prime_club_1: 75, prime_club_2: 10, prime_club_3_plus: 5,
+      prime_rdv_1: 75, prime_rdv_2: 10, prime_rdv_3_plus: 5,
+      prime_suivi_1: 75, prime_suivi_2: 10, prime_suivi_3_plus: 5,
     };
 
     const displayName = `${newFirstName.trim()} ${newLastName.trim().toUpperCase()}`.trim();
