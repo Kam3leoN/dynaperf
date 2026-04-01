@@ -22,6 +22,7 @@ import {
   faClockRotateLeft,
   faGear,
   faCalendarPlus,
+  faMoneyBill,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useTheme } from "next-themes";
