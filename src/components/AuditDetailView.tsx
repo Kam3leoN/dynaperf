@@ -56,12 +56,14 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
     Promise.all([
       supabase.from("audit_details").select("*").eq("audit_id", auditId).single(),
       fetchAuditConfig(typeEvenement),
-    ]).then(([{ data: detailRow }, cfg]) => {
+    ]).then(async ([{ data: detailRow }, cfg]) => {
       if (detailRow) {
+        const rawPhotos = (detailRow.photos as string[]) ?? [];
+        const resolvedPhotos = await resolveAuditPhotoUrls(rawPhotos);
         setDetail({
           ...detailRow,
           items: (detailRow.items as any) ?? {},
-          photos: (detailRow.photos as string[]) ?? [],
+          photos: resolvedPhotos,
         });
       }
       setConfig(cfg);
