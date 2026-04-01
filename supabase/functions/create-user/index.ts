@@ -87,6 +87,8 @@ Deno.serve(async (req) => {
         prime_club_1, prime_club_2, prime_club_3_plus,
         prime_rdv_1, prime_rdv_2, prime_rdv_3_plus,
         prime_suivi_1, prime_suivi_2, prime_suivi_3_plus,
+        prime_mep_1, prime_mep_2, prime_mep_3_plus,
+        prime_evenementiel_1, prime_evenementiel_2, prime_evenementiel_3_plus,
         semaines_indisponibles } = body;
       if (!userId) return jsonError("userId requis", 400);
       const { error } = await adminClient.from("collaborateur_config").upsert(
