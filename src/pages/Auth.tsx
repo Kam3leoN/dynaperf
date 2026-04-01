@@ -51,6 +51,8 @@ export default function Auth() {
   const [biometricLoading, setBiometricLoading] = useState(false);
   const autoTriggered = useRef(false);
 
+  const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
   useEffect(() => {
     (async () => {
       const supported = await isWebAuthnSupported();
@@ -64,7 +66,8 @@ export default function Auth() {
         if (storedEmail) setEmail(storedEmail);
       }
 
-      if (available && !autoTriggered.current) {
+      // Auto-trigger on mobile only; on desktop user clicks the button
+      if (available && isMobile && !autoTriggered.current) {
         autoTriggered.current = true;
         setTimeout(() => triggerBiometricLogin(), 300);
       }
