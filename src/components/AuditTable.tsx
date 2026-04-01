@@ -270,7 +270,10 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete, onEditPlan }: Au
                           <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
                         </button>
                       )}
-                      <button onClick={() => navigate(`/audits/edit/${a.id}?type=${encodeURIComponent(a.typeEvenement)}`)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
+                      <button onClick={() => {
+                        if (a.statut !== "OK" && onEditPlan) { onEditPlan(a.id); }
+                        else { navigate(`/audits/edit/${a.id}?type=${encodeURIComponent(a.typeEvenement)}`); }
+                      }} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
                         <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
                       </button>
                       <button onClick={() => setDeleteId(a.id)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors">

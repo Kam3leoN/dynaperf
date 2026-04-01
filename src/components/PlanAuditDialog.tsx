@@ -15,11 +15,12 @@ interface PlanAuditDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: () => void;
+  editAuditId?: string;
 }
 
-const TYPES_AUDIT = ["Club Affaires", "RD Présentiel", "RD Distanciel", "RDV Commercial"];
+const TYPES_AUDIT = ["Club Affaires", "RD Présentiel", "RD Distanciel", "RDV Commercial", "Mise en Place", "RD Événementiel"];
 
-export function PlanAuditDialog({ open, onOpenChange, onCreated }: PlanAuditDialogProps) {
+export function PlanAuditDialog({ open, onOpenChange, onCreated, editAuditId }: PlanAuditDialogProps) {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [partenaire, setPartenaire] = useState("");
   const [referent, setReferent] = useState("");
@@ -27,9 +28,12 @@ export function PlanAuditDialog({ open, onOpenChange, onCreated }: PlanAuditDial
   const [auditeur, setAuditeur] = useState("");
   const [typeEvenement, setTypeEvenement] = useState("Club Affaires");
   const [saving, setSaving] = useState(false);
+  const [loadingEdit, setLoadingEdit] = useState(false);
 
   const [partenaires, setPartenaires] = useState<{ prenom: string; nom: string }[]>([]);
   const [auditeurs, setAuditeurs] = useState<string[]>([]);
+
+  const isEdit = !!editAuditId;
 
   useEffect(() => {
     if (!open) return;
@@ -41,6 +45,26 @@ export function PlanAuditDialog({ open, onOpenChange, onCreated }: PlanAuditDial
       setAuditeurs((profiles ?? []).map(p => p.display_name).filter((n): n is string => !!n).sort());
     });
   }, [open]);
+
+  // Load existing audit data for edit
+  useEffect(() => {
+    if (!open || !editAuditId) return;
+    setLoadingEdit(true);
+    supabase.from("audits").select("*").eq("id", editAuditId).single().then(({ data }) => {
+      if (data) {
+        setDate(data.date);
+        setPartenaire(data.partenaire);
+        setLieu(data.lieu || "");
+        setAuditeur(data.auditeur);
+        setTypeEvenement(data.type_evenement);
+        // Load referent from audit_details
+        supabase.from("audit_details").select("partenaire_referent").eq("audit_id", editAuditId).single().then(({ data: detail }) => {
+          setReferent(detail?.partenaire_referent || "");
+        });
+      }
+      setLoadingEdit(false);
+    });
+  }, [open, editAuditId]);
 
   const reset = () => {
     setDate(new Date().toISOString().slice(0, 10));
@@ -61,7 +85,7 @@ export function PlanAuditDialog({ open, onOpenChange, onCreated }: PlanAuditDial
     const mois = new Date(date).toLocaleString("fr-FR", { month: "long" });
     const moisCap = mois.charAt(0).toUpperCase() + mois.slice(1);
 
-    const { error } = await supabase.from("audits").insert({
+    const payload = {
       date,
       partenaire: partenaire.trim(),
       lieu: lieu.trim(),
@@ -69,17 +93,31 @@ export function PlanAuditDialog({ open, onOpenChange, onCreated }: PlanAuditDial
       type_evenement: typeEvenement,
       note: null,
       mois_versement: moisCap,
-      statut: "NON",
-    });
+      statut: "NON" as const,
+    };
 
-    if (error) {
-      toast.error("Erreur lors de la planification");
-      console.error(error);
+    if (isEdit && editAuditId) {
+      const { error } = await supabase.from("audits").update(payload).eq("id", editAuditId);
+      if (error) {
+        toast.error("Erreur lors de la modification");
+        console.error(error);
+      } else {
+        toast.success("Planification modifiée");
+        reset();
+        onOpenChange(false);
+        onCreated();
+      }
     } else {
-      toast.success("Audit planifié avec succès");
-      reset();
-      onOpenChange(false);
-      onCreated();
+      const { error } = await supabase.from("audits").insert(payload);
+      if (error) {
+        toast.error("Erreur lors de la planification");
+        console.error(error);
+      } else {
+        toast.success("Audit planifié avec succès");
+        reset();
+        onOpenChange(false);
+        onCreated();
+      }
     }
     setSaving(false);
   };
@@ -92,55 +130,61 @@ export function PlanAuditDialog({ open, onOpenChange, onCreated }: PlanAuditDial
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FontAwesomeIcon icon={faCalendarPlus} className="h-4 w-4 text-amber-500" />
-            Planifier un audit
+            {isEdit ? "Modifier la planification" : "Planifier un audit"}
           </DialogTitle>
         </DialogHeader>
-        <div className="grid gap-3 py-3">
-          <div>
-            <Label className="text-xs">Date prévue *</Label>
-            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-9 text-sm" />
-          </div>
-          <div>
-            <Label className="text-xs">Partenaire (Prénom NOM) *</Label>
-            <AutocompleteInput value={partenaire} onChange={setPartenaire} suggestions={partSuggestions} placeholder="ex: Émilie BLAISE" />
-          </div>
-          <div>
-            <Label className="text-xs">Partenaire Référent (Prénom NOM)</Label>
-            <AutocompleteInput value={referent} onChange={setReferent} suggestions={partSuggestions} placeholder="ex: Marie DUPONT" />
-          </div>
-          <div>
-            <Label className="text-xs">Ville (Lieu)</Label>
-            <CityAutocomplete value={lieu} onChange={setLieu} />
-          </div>
-          <div>
-            <Label className="text-xs">Auditeur</Label>
-            {auditeurs.length > 0 ? (
-              <Select value={auditeur} onValueChange={setAuditeur}>
-                <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
-                <SelectContent>
-                  {auditeurs.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            ) : (
-              <Input value={auditeur} onChange={e => setAuditeur(e.target.value)} className="h-9 text-sm" placeholder="Auditeur" />
-            )}
-          </div>
-          <div>
-            <Label className="text-xs">Type d'événement</Label>
-            <Select value={typeEvenement} onValueChange={setTypeEvenement}>
-              <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {TYPES_AUDIT.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Annuler</Button>
-          <Button size="sm" onClick={handleSave} disabled={saving}>
-            {saving ? "Planification…" : "Planifier"}
-          </Button>
-        </div>
+        {loadingEdit ? (
+          <p className="text-sm text-muted-foreground animate-pulse py-4 text-center">Chargement…</p>
+        ) : (
+          <>
+            <div className="grid gap-3 py-3">
+              <div>
+                <Label className="text-xs">Date prévue *</Label>
+                <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-9 text-sm" />
+              </div>
+              <div>
+                <Label className="text-xs">Partenaire (Prénom NOM) *</Label>
+                <AutocompleteInput value={partenaire} onChange={setPartenaire} suggestions={partSuggestions} placeholder="ex: Émilie BLAISE" />
+              </div>
+              <div>
+                <Label className="text-xs">Partenaire Référent (Prénom NOM)</Label>
+                <AutocompleteInput value={referent} onChange={setReferent} suggestions={partSuggestions} placeholder="ex: Marie DUPONT" />
+              </div>
+              <div>
+                <Label className="text-xs">Ville (Lieu)</Label>
+                <CityAutocomplete value={lieu} onChange={setLieu} />
+              </div>
+              <div>
+                <Label className="text-xs">Auditeur</Label>
+                {auditeurs.length > 0 ? (
+                  <Select value={auditeur} onValueChange={setAuditeur}>
+                    <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
+                    <SelectContent>
+                      {auditeurs.map(a => <SelectItem key={a} value={a}>{a}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input value={auditeur} onChange={e => setAuditeur(e.target.value)} className="h-9 text-sm" placeholder="Auditeur" />
+                )}
+              </div>
+              <div>
+                <Label className="text-xs">Type d'événement</Label>
+                <Select value={typeEvenement} onValueChange={setTypeEvenement}>
+                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {TYPES_AUDIT.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Annuler</Button>
+              <Button size="sm" onClick={handleSave} disabled={saving}>
+                {saving ? "Enregistrement…" : isEdit ? "Modifier" : "Planifier"}
+              </Button>
+            </div>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
