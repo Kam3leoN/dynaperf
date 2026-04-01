@@ -71,15 +71,15 @@ export function MyPrimeTracker() {
       .then(({ data: profile }) => {
         const displayName = profile?.display_name || user.email?.split("@")[0] || "";
         Promise.all([
-          supabase.from("audits").select("id, partenaire, type_evenement, lieu, date")
+          supabase.from("audits").select("id, partenaire, type_evenement, lieu, date, custom_prime_id")
             .eq("auditeur", displayName).eq("statut", "OK")
             .gte("date", fromStr).lte("date", toStr).order("date", { ascending: true }),
-          supabase.from("audits").select("id, partenaire, type_evenement, lieu, date")
+          supabase.from("audits").select("id, partenaire, type_evenement, lieu, date, custom_prime_id")
             .eq("auditeur", displayName).eq("statut", "OK")
             .gte("date", yearStart).lte("date", yearEnd).order("date", { ascending: true }),
         ]).then(([rangeRes, yearRes]) => {
-          setRangeAudits(rangeRes.data ?? []);
-          setYearAudits(yearRes.data ?? []);
+          setRangeAudits((rangeRes.data ?? []) as AuditRow[]);
+          setYearAudits((yearRes.data ?? []) as AuditRow[]);
           setLoading(false);
         });
       });
