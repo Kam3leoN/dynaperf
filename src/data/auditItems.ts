@@ -31,7 +31,7 @@ export interface AuditTypeConfig {
   maxPoints: number;
 }
 
-/** Fetch the full config (categories + items) for a given audit type key */
+/** Fetch the full config (categories + items) for a given audit type key (latest active) */
 export async function fetchAuditConfig(typeKey: string): Promise<AuditTypeConfig | null> {
   // 1. Get type
   const { data: typeRow, error: typeErr } = await supabase
