@@ -668,7 +668,7 @@ export default function Drive() {
                           {docCount > 0 && <Badge variant="outline" className="text-[10px]">{docCount} doc.</Badge>}
                         </div>
                         {isAdmin && (
-                          <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="absolute top-1.5 right-1.5 flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                             <button className="h-6 w-6 rounded-full bg-muted flex items-center justify-center hover:bg-accent" onClick={(e) => { e.stopPropagation(); openEditCat(cat); }}>
                               <FontAwesomeIcon icon={faPen} className="h-2.5 w-2.5 text-muted-foreground" />
                             </button>
