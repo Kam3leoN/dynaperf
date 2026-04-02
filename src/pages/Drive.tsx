@@ -29,9 +29,11 @@ import {
   faSearch, faChevronRight, faArrowLeft, faDownload,
   faFilePdf, faFileImage, faFileExcel, faFileWord,
   faGrip, faList, faImage, faXmark, faArrowsUpDownLeftRight,
+  faCompress, faExpand,
 } from "@fortawesome/free-solid-svg-icons";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { auditTypeIcons } from "@/lib/auditTypeVisuals";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 Mo
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 Mo
