@@ -48,7 +48,7 @@ interface YearData {
   cumulBenefice: number;
 }
 
-export default function BusinessPlan() {
+export default function BusinessPlan({ embedded }: { embedded?: boolean }) {
   
   
   
@@ -224,9 +224,8 @@ export default function BusinessPlan() {
     }
   }, [projections, nbAnnees, nbAvantagesAnN, nbClubs, membresParClub, croissanceAnnuelle, tauxResiliation, prixAvantages, prixClub, commAvantagesEffective, commClubPct, redevanceMensuelle, droitsEntree, oneShotRDParAn, prixOneShotRD, commOneShotRDPct, oneShotAvantagesParAn, prixOneShotAvantages, commOneShotAvantagesPct, tauxParrainage, primeParrainage, tauxConversionFilleul, packPerformance, vehiculeFloque]);
 
-  return (
-    <AppLayout>
-      <div className="space-y-6">
+  const content = (
+    <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
           <div>
@@ -631,8 +630,11 @@ export default function BusinessPlan() {
           </div>
         </div>
       </div>
-    </AppLayout>
+    </div>
   );
+
+  if (embedded) return content;
+  return <AppLayout>{content}</AppLayout>;
 }
 
 function TableRow({ label, data, money, bold, highlight, negative }: {

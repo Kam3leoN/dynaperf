@@ -108,7 +108,7 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
 
   const isAuditSection = ["/dashboard", "/audits", "/audits/new", "/audits/new/version", "/audits/new/form"].includes(location.pathname);
   const isActiviteSection = ["/activite", "/activite/new", "/activite/new/version", "/activite/dashboard"].includes(location.pathname);
-  const isReseauSection = ["/reseau", "/reseau/partenaires", "/reseau/clubs", "/reseau/secteurs"].includes(location.pathname);
+  const isReseauSection = ["/reseau", "/reseau/partenaires", "/reseau/clubs", "/reseau/secteurs", "/business-plan"].includes(location.pathname);
 
   const handleForgotPassword = async () => {
     if (!user?.email) return;
@@ -237,11 +237,12 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
           <DropdownMenuItem asChild><Link to="/reseau/partenaires" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faUsers} className="h-4 w-4 text-muted-foreground" />Partenaires</Link></DropdownMenuItem>
           <DropdownMenuItem asChild><Link to="/reseau/clubs" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faBriefcase} className="h-4 w-4 text-muted-foreground" />Clubs d'affaires</Link></DropdownMenuItem>
           <DropdownMenuItem asChild><Link to="/reseau/secteurs" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faMapLocationDot} className="h-4 w-4 text-muted-foreground" />Secteurs / Zones</Link></DropdownMenuItem>
+          <DropdownMenuItem asChild><Link to="/business-plan" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-muted-foreground" />Business Plan</Link></DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <NavLink to="/business-plan" className={() => navPill(location.pathname === "/business-plan")}>
-        <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" /><span>Business Plan</span>
+      <NavLink to="/drive" className={() => navPill(location.pathname === "/drive")}>
+        <FontAwesomeIcon icon={faClipboardList} className="h-4 w-4" /><span>Drive</span>
       </NavLink>
 
       <NavLink to="/primes" className={() => navPill(location.pathname === "/primes")}>

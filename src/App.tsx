@@ -20,6 +20,7 @@ import AuditForm from "./pages/AuditForm";
 import Admin from "./pages/Admin";
 import AdminAuditGrid from "./pages/AdminAuditGrid";
 import BusinessPlan from "./pages/BusinessPlan";
+import Drive from "./pages/Drive";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import SuiviActiviteList from "./pages/SuiviActiviteList";
@@ -97,6 +98,7 @@ const App = () => {
                 <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
                 <Route path="/admin/audit-grid" element={<AdminRoute><AdminAuditGrid /></AdminRoute>} />
                 <Route path="/business-plan" element={<ProtectedRoute><BusinessPlan /></ProtectedRoute>} />
+                <Route path="/drive" element={<ProtectedRoute><Drive /></ProtectedRoute>} />
                 <Route path="/activite/dashboard" element={<ProtectedRoute><SuiviActiviteDashboard /></ProtectedRoute>} />
                 <Route path="/activite/:id" element={<ProtectedRoute><SuiviActiviteDetail /></ProtectedRoute>} />
                 <Route path="/activite" element={<ProtectedRoute><SuiviActiviteList /></ProtectedRoute>} />

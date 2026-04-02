@@ -46,7 +46,8 @@ function getAutoValue(item: AuditItemDef, stepZeroData?: StepZeroData): number |
 
 function computeScore(item: AuditItemDef, boolVal: boolean | null, numVal: string, checklist: boolean[], autoValue?: number): number {
   const isNoShowAuto = item.autoField === "nbNoShow";
-  if (isNoShowAuto) return (autoValue ?? 0) > 0 ? item.maxPoints : 0;
+  // 0 no-shows = validated (max points), any positive number = not validated (0 points)
+  if (isNoShowAuto) return (autoValue ?? 0) === 0 ? item.maxPoints : 0;
   if (item.inputType === "boolean") return boolVal === true ? item.maxPoints : 0;
   if (item.inputType === "number") {
     const n = parseInt(numVal) || 0;
@@ -66,7 +67,7 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
   const noShowNotEntered = isNoShowAuto && autoValue === undefined;
 
   const [boolVal, setBoolVal] = useState<boolean | null>(() => {
-    if (isNoShowAuto) return autoValue !== undefined ? autoValue > 0 : null;
+    if (isNoShowAuto) return autoValue !== undefined ? autoValue === 0 : null;
     return answer ? answer.score > 0 : null;
   });
   const [numVal, setNumVal] = useState<string>(() => {
@@ -77,7 +78,7 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
   // Sync boolVal & numVal when autoValue changes (e.g. step 0 data updated)
   useEffect(() => {
     if (isNoShowAuto) {
-      setBoolVal(autoValue !== undefined ? autoValue > 0 : null);
+      setBoolVal(autoValue !== undefined ? autoValue === 0 : null);
     } else if (isAutoFilled) {
       setNumVal(String(autoValue ?? 0));
     }
@@ -181,7 +182,7 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
                 </Button>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                {(autoValue ?? 0) > 0 ? `${autoValue} no-show — validé.` : "Aucun no-show — non validé."}
+                {(autoValue ?? 0) === 0 ? "Aucun no-show — validé." : `${autoValue} no-show — non validé.`}
               </p>
             </div>
           )}
