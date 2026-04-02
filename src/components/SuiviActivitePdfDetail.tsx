@@ -10,6 +10,7 @@ import {
   formatDateFr,
   formatNow,
   infoFieldHtml,
+  signaturesHtml,
 } from "@/lib/printPdf";
 
 interface Props {
@@ -141,6 +142,14 @@ export function SuiviActivitePdfDetail({ suiviId }: Props) {
         html += `<div class="section-title" style="margin-top:16px;">Observations générales</div>`;
         html += `<div class="observations-block">${escapeHtml(suivi.observations)}</div>`;
       }
+
+      // ── Signatures ──
+      html += signaturesHtml(
+        suivi.suivi_par,
+        (suivi as any).signature_auditeur,
+        suivi.agence,
+        (suivi as any).signature_audite,
+      );
 
       // ── Footer ──
       html += `<div class="report-footer">

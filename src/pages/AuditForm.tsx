@@ -44,6 +44,8 @@ export default function AuditForm() {
   const [answers, setAnswers] = useState<Record<string, ItemAnswer>>({});
   const [photos, setPhotos] = useState<File[]>([]);
   const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
+  const [signatureAuditeur, setSignatureAuditeur] = useState<string | null>(null);
+  const [signatureAudite, setSignatureAudite] = useState<string | null>(null);
   const [editLoaded, setEditLoaded] = useState(false);
   const itemsSectionRef = useRef<HTMLDivElement>(null);
 
@@ -108,6 +110,8 @@ export default function AuditForm() {
         if (detail?.photos) {
           setExistingPhotos(detail.photos as string[]);
         }
+        if ((detail as any)?.signature_auditeur) setSignatureAuditeur((detail as any).signature_auditeur);
+        if ((detail as any)?.signature_audite) setSignatureAudite((detail as any).signature_audite);
       }
       setEditLoaded(true);
     };
@@ -266,7 +270,9 @@ export default function AuditForm() {
       total_points: totalPoints,
       note_sur_10: noteSur10,
       photos: photoUrls,
-    };
+      signature_auditeur: signatureAuditeur,
+      signature_audite: signatureAudite,
+    } as any;
 
     if (isEditMode) {
       // Update or upsert detail
@@ -435,6 +441,12 @@ export default function AuditForm() {
             onSubmit={handleFinish}
             onBack={handlePhotosBack}
             uploading={false}
+            auditeurName={stepZeroData?.auditeur || ""}
+            partenaireName={stepZeroData?.partenaireAudite || ""}
+            signatureAuditeur={signatureAuditeur}
+            onSignatureAuditeurChange={setSignatureAuditeur}
+            signatureAudite={signatureAudite}
+            onSignatureAuditeChange={setSignatureAudite}
           />
         )}
 

@@ -103,6 +103,8 @@ export type Database = {
           partenaire_referent: string | null
           photos: string[] | null
           qualite_lieu: number | null
+          signature_audite: string | null
+          signature_auditeur: string | null
           total_points: number | null
           type_lieu: string | null
           updated_at: string
@@ -127,6 +129,8 @@ export type Database = {
           partenaire_referent?: string | null
           photos?: string[] | null
           qualite_lieu?: number | null
+          signature_audite?: string | null
+          signature_auditeur?: string | null
           total_points?: number | null
           type_lieu?: string | null
           updated_at?: string
@@ -151,6 +155,8 @@ export type Database = {
           partenaire_referent?: string | null
           photos?: string[] | null
           qualite_lieu?: number | null
+          signature_audite?: string | null
+          signature_auditeur?: string | null
           total_points?: number | null
           type_lieu?: string | null
           updated_at?: string
@@ -749,6 +755,8 @@ export type Database = {
           nb_contrats_depuis_dernier: number | null
           nb_contrats_total: number | null
           observations: string | null
+          signature_audite: string | null
+          signature_auditeur: string | null
           suivi_par: string
           total_items: number | null
           total_items_valides: number | null
@@ -764,6 +772,8 @@ export type Database = {
           nb_contrats_depuis_dernier?: number | null
           nb_contrats_total?: number | null
           observations?: string | null
+          signature_audite?: string | null
+          signature_auditeur?: string | null
           suivi_par?: string
           total_items?: number | null
           total_items_valides?: number | null
@@ -779,6 +789,8 @@ export type Database = {
           nb_contrats_depuis_dernier?: number | null
           nb_contrats_total?: number | null
           observations?: string | null
+          signature_audite?: string | null
+          signature_auditeur?: string | null
           suivi_par?: string
           total_items?: number | null
           total_items_valides?: number | null

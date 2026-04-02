@@ -288,6 +288,39 @@ body {
   aspect-ratio: 16/10;
 }
 
+/* ── Signatures ── */
+.signatures-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 12px;
+  page-break-inside: avoid;
+}
+.signature-block {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  text-align: center;
+}
+.signature-block .sig-label {
+  font-size: 8px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+.signature-block .sig-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.signature-block img {
+  max-width: 100%;
+  height: 60px;
+  object-fit: contain;
+}
+
 /* ── Footer ── */
 .report-footer {
   margin-top: 20px;
@@ -442,4 +475,32 @@ export function statFieldHtml(label: string, value: number | string): string {
     <div class="stat-value">${escapeHtml(String(value))}</div>
     <div class="stat-label">${escapeHtml(label)}</div>
   </div>`;
+}
+
+/** Build signatures HTML block */
+export function signaturesHtml(
+  auditeurName: string | null,
+  auditeurSig: string | null,
+  auditeName: string | null,
+  auditeSig: string | null,
+): string {
+  if (!auditeurSig && !auditeSig) return "";
+  let html = `<div class="section-title" style="margin-top:16px;">✍️ Signatures</div>`;
+  html += `<div class="signatures-grid">`;
+  // Auditeur
+  html += `<div class="signature-block">`;
+  html += `<div class="sig-label">Auditeur</div>`;
+  html += `<div class="sig-name">${escapeHtml(auditeurName || "—")}</div>`;
+  if (auditeurSig) html += `<img src="${auditeurSig}" alt="Signature auditeur" />`;
+  else html += `<div style="height:60px;display:flex;align-items:center;justify-content:center;color:var(--text-light);font-size:9px;">Non signé</div>`;
+  html += `</div>`;
+  // Audité
+  html += `<div class="signature-block">`;
+  html += `<div class="sig-label">Partenaire audité</div>`;
+  html += `<div class="sig-name">${escapeHtml(auditeName || "—")}</div>`;
+  if (auditeSig) html += `<img src="${auditeSig}" alt="Signature audité" />`;
+  else html += `<div style="height:60px;display:flex;align-items:center;justify-content:center;color:var(--text-light);font-size:9px;">Non signé</div>`;
+  html += `</div>`;
+  html += `</div>`;
+  return html;
 }
