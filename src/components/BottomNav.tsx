@@ -28,7 +28,7 @@ export function BottomNav() {
     if (path === "/") return location.pathname === "/";
     if (path === "/hub") return location.pathname === "/hub";
     if (path === "/preferences") return location.pathname === "/preferences";
-    if (path === "/primes") return location.pathname === "/primes";
+    if (path === "/drive") return location.pathname === "/drive";
     return false;
   };
 
