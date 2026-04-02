@@ -487,7 +487,7 @@ export default function Drive() {
           </div>
         )}
         {isAdmin && (
-          <div className="absolute top-1.5 left-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute top-1.5 left-1.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             <div className="h-6 w-6 rounded-full bg-card/90 flex items-center justify-center shadow-sm cursor-grab" title="Glisser pour déplacer">
               <FontAwesomeIcon icon={faArrowsUpDownLeftRight} className="h-2.5 w-2.5 text-muted-foreground" />
             </div>
