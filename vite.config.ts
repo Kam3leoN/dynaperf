@@ -26,11 +26,13 @@ export default defineConfig(({ mode }) => {
       mode === "development" && componentTagger(),
       VitePWA({
         registerType: "autoUpdate",
-        includeAssets: ["pwaDynaperf.svg", "pwa-192x192.png", "pwa-512x512.png"],
+        includeAssets: ["pwaDynaperf.svg", "pwa-192x192.png", "pwa-512x512.png", "placeholder.svg"],
         workbox: {
           navigateFallbackDenylist: [/^\/~oauth/],
           globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
           maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+          skipWaiting: true,
+          clientsClaim: true,
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
@@ -47,6 +49,23 @@ export default defineConfig(({ mode }) => {
               options: {
                 cacheName: "map-tiles-cache",
                 expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 7 },
+              },
+            },
+            {
+              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+              handler: "CacheFirst",
+              options: {
+                cacheName: "google-fonts-stylesheets",
+                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+              },
+            },
+            {
+              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+              handler: "CacheFirst",
+              options: {
+                cacheName: "google-fonts-webfonts",
+                expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
+                cacheableResponse: { statuses: [0, 200] },
               },
             },
           ],
