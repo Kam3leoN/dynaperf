@@ -32,7 +32,7 @@ export function ScoresByTypeChart({ data, index }: ScoresByTypeChartProps) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.06, duration: 0.3 }}
-      className="bg-card rounded-lg shadow-soft p-5"
+      className="bg-card rounded-2xl shadow-soft border border-border/60 p-5"
     >
       <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
         {data.type}

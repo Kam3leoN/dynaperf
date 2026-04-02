@@ -144,7 +144,7 @@ export default function AdminSecteurs() {
   );
 
   return (
-    <div className="bg-card rounded-lg shadow-soft p-4 sm:p-5">
+    <div className="bg-card rounded-2xl shadow-soft border border-border/60 p-4 sm:p-5">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h3 className="text-sm font-semibold text-foreground">Gestion des secteurs</h3>
         <div className="flex gap-2">

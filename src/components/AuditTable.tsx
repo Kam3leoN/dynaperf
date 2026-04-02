@@ -132,7 +132,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete, onEditPlan }: Au
   );
 
   return (
-    <div className="bg-card rounded-lg shadow-soft p-4 sm:p-5">
+    <div className="bg-card rounded-2xl shadow-soft border border-border/60 p-4 sm:p-5">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h3 className="text-sm font-semibold text-foreground">Audits</h3>
         <div className="flex items-center gap-2 sm:gap-3 flex-1 sm:flex-none justify-end">

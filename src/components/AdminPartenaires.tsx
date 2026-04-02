@@ -419,7 +419,7 @@ export default function AdminPartenaires() {
   );
 
   return (
-    <div className="bg-card rounded-lg shadow-soft p-4 sm:p-5">
+    <div className="bg-card rounded-2xl shadow-soft border border-border/60 p-4 sm:p-5">
       {/* Gender balance bar */}
       <div className="flex items-center gap-3 mb-3 flex-wrap">
         <div className="flex items-center gap-1.5 bg-blue-500/10 rounded-md px-2.5 py-1">

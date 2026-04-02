@@ -24,7 +24,7 @@ export function PartenaireLeaderboard({ data }: PartenaireLeaderboardProps) {
     .slice(0, 10);
 
   return (
-    <div className="bg-card rounded-lg shadow-soft p-5">
+    <div className="bg-card rounded-2xl shadow-soft border border-border/60 p-5">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h3 className="text-sm font-semibold text-foreground">🏆 Top 10 partenaires par note moyenne</h3>
         <Select value={selectedType} onValueChange={setSelectedType}>

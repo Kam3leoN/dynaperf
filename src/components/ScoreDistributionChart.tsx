@@ -6,7 +6,7 @@ interface ScoreDistributionChartProps {
 
 export function ScoreDistributionChart({ data }: ScoreDistributionChartProps) {
   return (
-    <div className="bg-card rounded-lg shadow-soft p-5">
+    <div className="bg-card rounded-2xl shadow-soft border border-border/60 p-5">
       <h3 className="text-sm font-semibold text-foreground mb-4">Distribution des notes</h3>
       <div className="h-[240px]">
         <ResponsiveContainer width="100%" height="100%">

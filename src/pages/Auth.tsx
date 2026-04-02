@@ -155,7 +155,7 @@ export default function Auth() {
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
-      <div className="bg-card rounded-lg shadow-soft p-8 w-full max-w-md">
+      <div className="bg-card rounded-2xl shadow-soft border border-border/60 p-8 w-full max-w-md">
         {/* Header — Logo + DynaPerf */}
         <div className="flex items-center gap-3 mb-6">
           <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
