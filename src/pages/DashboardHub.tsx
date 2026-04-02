@@ -12,21 +12,21 @@ const cards = [
 export default function DashboardHub() {
   return (
     <AppLayout>
-      <section className="max-w-2xl mx-auto space-y-6">
-        <h1 className="text-xl sm:text-2xl font-bold text-foreground">Tableaux de bord</h1>
+      <section className="max-w-2xl mx-auto space-y-7">
+        <h1 className="m3-headline-medium text-foreground font-display">Tableaux de bord</h1>
         <div className="grid-action">
           {cards.map((c) => (
             <Link
               key={c.to}
               to={c.to}
-              className="group flex flex-col items-center gap-3 rounded-2xl bg-card border border-border/60 p-5 shadow-soft transition-all hover:shadow-hover hover:-translate-y-0.5 active:scale-[0.97]"
+              className="group flex flex-col items-center gap-4 rounded-3xl bg-card border border-border/30 p-6 shadow-soft transition-all hover:shadow-hover hover:-translate-y-0.5 active:scale-[0.97]"
             >
-              <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/10 text-primary transition-transform group-hover:scale-110">
-                <FontAwesomeIcon icon={c.icon} className="h-5 w-5" />
+              <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 text-primary transition-transform group-hover:scale-110">
+                <FontAwesomeIcon icon={c.icon} className="h-6 w-6" />
               </div>
               <div className="text-center">
-                <span className="text-sm font-medium text-foreground">{c.label}</span>
-                <p className="text-xs text-muted-foreground mt-0.5">{c.desc}</p>
+                <span className="m3-title-medium text-foreground">{c.label}</span>
+                <p className="m3-body-medium text-muted-foreground mt-1">{c.desc}</p>
               </div>
             </Link>
           ))}

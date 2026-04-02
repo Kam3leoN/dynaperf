@@ -296,8 +296,8 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
   return (
     <div className="min-h-screen bg-background">
       {/* Top app bar */}
-      <header className="sticky top-0 z-40 bg-card/80 backdrop-blur-xl border-b border-border/60 px-4 lg:px-6">
-        <div className="max-w-[1440px] mx-auto flex items-center justify-between h-16">
+      <header className="sticky top-0 z-40 bg-card/85 backdrop-blur-2xl border-b border-border/30 px-4 lg:px-6">
+        <div className="max-w-[1440px] mx-auto flex items-center justify-between h-16 lg:h-[4.25rem]">
           <div className="flex items-center gap-5">
             <Link to="/" className="shrink-0">
               <img
@@ -353,7 +353,7 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
       )}
 
       {/* Main content */}
-      <main className="max-w-[1440px] mx-auto px-4 lg:px-6 py-4 lg:py-6 space-y-4 lg:space-y-6 pb-24 lg:pb-6">
+      <main className="max-w-[1440px] mx-auto px-4 lg:px-6 py-5 lg:py-6 space-y-5 lg:space-y-6 pb-28 lg:pb-6">
         {children}
       </main>
 

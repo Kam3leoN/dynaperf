@@ -151,17 +151,17 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-screen bg-secondary/30 flex items-center justify-center px-4">
+    <div className="min-h-[100dvh] bg-background flex items-center justify-center px-5">
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
-      <div className="bg-card rounded-2xl shadow-soft border border-border/60 p-8 w-full max-w-md">
+      <div className="bg-card rounded-3xl shadow-elevated border border-border/30 p-7 sm:p-8 w-full max-w-md">
         {/* Header — Logo + DynaPerf */}
         <div className="flex items-center gap-3 mb-6">
-          <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
+          <div className="w-10 h-10 bg-primary rounded-2xl flex items-center justify-center shadow-soft">
             <FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-primary-foreground" />
           </div>
-          <h1 className="text-lg font-bold text-foreground tracking-tight">DynaPerf</h1>
+          <h1 className="text-xl font-bold text-foreground tracking-tight font-display">DynaPerf</h1>
         </div>
 
         {/* Biometric section — 4 lines only */}
@@ -182,7 +182,7 @@ export default function Auth() {
                 variant="outline"
                 onClick={triggerBiometricLogin}
                 disabled={biometricLoading}
-                className="w-full gap-3 h-14 text-base border-primary/30 hover:border-primary/60 hover:bg-primary/5"
+                className="w-full gap-3 h-14 text-base rounded-2xl border-primary/20 hover:border-primary/40 hover:bg-primary/5"
               >
                 {biometricLoading ? (
                   <FontAwesomeIcon icon={faSpinner} className="h-5 w-5 animate-spin text-primary" />
@@ -200,27 +200,27 @@ export default function Auth() {
           </>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4" autoComplete="off">
+        <form onSubmit={handleSubmit} className="space-y-5" autoComplete="off">
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Email</label>
+            <label className="m3-label-medium text-muted-foreground mb-1.5 block">Email</label>
             <Input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="email@exemple.com"
-              className="h-10 text-sm"
+              className="h-12 text-sm"
               required
               maxLength={255}
               autoComplete="email"
             />
           </div>
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Mot de passe</label>
+            <label className="m3-label-medium text-muted-foreground mb-1.5 block">Mot de passe</label>
             <PasswordInput
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="h-10 text-sm"
+              className="h-12 text-sm"
               required
               minLength={6}
               maxLength={128}
@@ -228,7 +228,7 @@ export default function Auth() {
             />
           </div>
 
-          <button type="button" onClick={handleForgotPassword} className="text-xs text-primary hover:underline">
+          <button type="button" onClick={handleForgotPassword} className="text-xs text-primary hover:underline font-medium">
             Mot de passe oublié ?
           </button>
 
