@@ -60,12 +60,12 @@ export default function NewAudit() {
           <h2 className="text-xl font-semibold text-foreground">Nouvel audit</h2>
           <p className="text-muted-foreground text-sm mt-1">Sélectionnez le type d'événement</p>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-5 max-w-3xl mx-auto">
+        <div className="grid-action max-w-3xl mx-auto">
           {auditTypes.map((type) => (
             <button
               key={type.key}
               onClick={() => navigate(`/audits/new/version?type=${encodeURIComponent(type.key)}`)}
-              className="group flex flex-col items-center gap-4 rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-transparent hover:-translate-y-1 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              className="group flex flex-col items-center gap-4 rounded-2xl border border-border/60 bg-card p-6 shadow-soft transition-all hover:shadow-hover hover:-translate-y-1 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               style={{ "--card-accent": type.color } as React.CSSProperties}
             >
               <div

@@ -56,13 +56,13 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
   const moyennePct = Math.min(100, (moyenneGlobale / 10) * 100);
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+    <div className="grid-stats gap-3 sm:gap-4">
       {/* Card 1: Audits Réalisés */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0, duration: 0.3 }}
-        className="bg-card rounded-lg p-3 sm:p-5 shadow-soft"
+        className="bg-card rounded-2xl p-3 sm:p-5 shadow-soft border border-border/60"
       >
         <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider leading-tight flex items-center gap-1.5">
           <FontAwesomeIcon icon={faCheckCircle} className="h-3 w-3 text-emerald-500" />
