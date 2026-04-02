@@ -434,6 +434,32 @@ export function openPrintWindow(title: string, bodyHtml: string): void {
   };
 }
 
+/**
+ * Convert a remote image URL to a base64 data URL so it renders
+ * correctly inside the detached print window (avoids CORS issues
+ * with signed Supabase storage URLs).
+ */
+export async function urlToDataUrl(url: string): Promise<string> {
+  try {
+    const res = await fetch(url);
+    const blob = await res.blob();
+    return await new Promise<string>((resolve) => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+  } catch {
+    return url; // fallback to original URL
+  }
+}
+
+/**
+ * Convert an array of remote URLs to base64 data URLs in parallel.
+ */
+export async function urlsToDataUrls(urls: string[]): Promise<string[]> {
+  return Promise.all(urls.map(urlToDataUrl));
+}
+
 export function escapeHtml(str: string): string {
   return str
     .replace(/&/g, "&amp;")

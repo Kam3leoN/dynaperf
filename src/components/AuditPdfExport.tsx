@@ -13,6 +13,7 @@ import {
   infoFieldHtml,
   statFieldHtml,
   signaturesHtml,
+  urlsToDataUrls,
 } from "@/lib/printPdf";
 
 interface AuditPdfExportProps {
@@ -45,8 +46,9 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
         cat.items.map((item) => ({ ...item, categoryName: cat.name }))
       );
 
-      // Resolve photos
-      const photoUrls = await resolveAuditPhotoUrls((detail.photos as string[]) ?? []);
+      // Resolve photos then convert to data URLs for print window
+      const rawPhotoUrls = await resolveAuditPhotoUrls((detail.photos as string[]) ?? []);
+      const photoUrls = await urlsToDataUrls(rawPhotoUrls);
 
       // Build HTML
       let html = "";
@@ -200,7 +202,7 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
         html += `<div class="section-title" style="margin-top:16px;">📷 Photos (${photoUrls.length})</div>`;
         html += `<div class="photos-grid">`;
         for (const url of photoUrls) {
-          html += `<img src="${escapeHtml(url)}" alt="Photo audit" crossorigin="anonymous" />`;
+          html += `<img src="${url}" alt="Photo audit" />`;
         }
         html += `</div>`;
       }
