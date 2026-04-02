@@ -521,6 +521,7 @@ export type Database = {
           parent_id: string | null
           sort_order: number
           updated_at: string
+          updated_by: string | null
         }
         Insert: {
           created_at?: string
@@ -529,6 +530,7 @@ export type Database = {
           parent_id?: string | null
           sort_order?: number
           updated_at?: string
+          updated_by?: string | null
         }
         Update: {
           created_at?: string
@@ -537,6 +539,7 @@ export type Database = {
           parent_id?: string | null
           sort_order?: number
           updated_at?: string
+          updated_by?: string | null
         }
         Relationships: [
           {
@@ -557,9 +560,11 @@ export type Database = {
           file_size: number | null
           file_url: string
           id: string
+          image_url: string | null
           mime_type: string | null
           title: string
           updated_at: string
+          updated_by: string | null
           uploaded_by: string | null
         }
         Insert: {
@@ -570,9 +575,11 @@ export type Database = {
           file_size?: number | null
           file_url: string
           id?: string
+          image_url?: string | null
           mime_type?: string | null
           title: string
           updated_at?: string
+          updated_by?: string | null
           uploaded_by?: string | null
         }
         Update: {
@@ -583,9 +590,11 @@ export type Database = {
           file_size?: number | null
           file_url?: string
           id?: string
+          image_url?: string | null
           mime_type?: string | null
           title?: string
           updated_at?: string
+          updated_by?: string | null
           uploaded_by?: string | null
         }
         Relationships: [
