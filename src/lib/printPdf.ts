@@ -476,3 +476,31 @@ export function statFieldHtml(label: string, value: number | string): string {
     <div class="stat-label">${escapeHtml(label)}</div>
   </div>`;
 }
+
+/** Build signatures HTML block */
+export function signaturesHtml(
+  auditeurName: string | null,
+  auditeurSig: string | null,
+  auditeName: string | null,
+  auditeSig: string | null,
+): string {
+  if (!auditeurSig && !auditeSig) return "";
+  let html = `<div class="section-title" style="margin-top:16px;">✍️ Signatures</div>`;
+  html += `<div class="signatures-grid">`;
+  // Auditeur
+  html += `<div class="signature-block">`;
+  html += `<div class="sig-label">Auditeur</div>`;
+  html += `<div class="sig-name">${escapeHtml(auditeurName || "—")}</div>`;
+  if (auditeurSig) html += `<img src="${auditeurSig}" alt="Signature auditeur" />`;
+  else html += `<div style="height:60px;display:flex;align-items:center;justify-content:center;color:var(--text-light);font-size:9px;">Non signé</div>`;
+  html += `</div>`;
+  // Audité
+  html += `<div class="signature-block">`;
+  html += `<div class="sig-label">Partenaire audité</div>`;
+  html += `<div class="sig-name">${escapeHtml(auditeName || "—")}</div>`;
+  if (auditeSig) html += `<img src="${auditeSig}" alt="Signature audité" />`;
+  else html += `<div style="height:60px;display:flex;align-items:center;justify-content:center;color:var(--text-light);font-size:9px;">Non signé</div>`;
+  html += `</div>`;
+  html += `</div>`;
+  return html;
+}
