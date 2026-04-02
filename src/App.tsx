@@ -20,6 +20,7 @@ import AuditForm from "./pages/AuditForm";
 import Admin from "./pages/Admin";
 import AdminAuditGrid from "./pages/AdminAuditGrid";
 import BusinessPlan from "./pages/BusinessPlan";
+import Drive from "./pages/Drive";
 import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 import SuiviActiviteList from "./pages/SuiviActiviteList";
