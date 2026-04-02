@@ -94,8 +94,8 @@ export function OnlineAvatars() {
           </Tooltip>
         ))}
         {overflow > 0 && (
-          <Avatar className="h-8 w-8 border-2 border-card shrink-0">
-            <AvatarFallback className="text-[10px] font-semibold bg-muted text-muted-foreground">
+          <Avatar className="h-[72px] w-[72px] border-2 border-card shrink-0">
+            <AvatarFallback className="text-base font-semibold bg-muted text-muted-foreground">
               +{overflow}
             </AvatarFallback>
           </Avatar>
