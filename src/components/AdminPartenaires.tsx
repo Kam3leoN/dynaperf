@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import { useAdmin } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -99,6 +100,7 @@ const emptyForm = {
 };
 
 export default function AdminPartenaires() {
+  const { isAdmin } = useAdmin();
   const [partenaires, setPartenaires] = useState<Partenaire[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -453,13 +455,14 @@ export default function AdminPartenaires() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-48 sm:w-[260px] h-9 text-sm rounded-md"
           />
-          <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) resetForm(); }}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5 shrink-0">
-                <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
-                <span className="hidden sm:inline">Ajouter</span>
-              </Button>
-            </DialogTrigger>
+          {isAdmin && (
+            <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) resetForm(); }}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5 shrink-0">
+                  <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
+                  <span className="hidden sm:inline">Ajouter</span>
+                </Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Nouveau partenaire</DialogTitle>
@@ -476,6 +479,7 @@ export default function AdminPartenaires() {
               </form>
             </DialogContent>
           </Dialog>
+          )}
         </div>
       </div>
 
@@ -557,12 +561,16 @@ export default function AdminPartenaires() {
                           <button onClick={() => setViewP(p)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Voir">
                             <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
                           </button>
-                          <button onClick={() => openEditDialog(p)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
-                            <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
-                          </button>
-                          <button onClick={() => handleDelete(p)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors" title="Supprimer">
-                            <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
-                          </button>
+                          {isAdmin && (
+                            <>
+                              <button onClick={() => openEditDialog(p)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
+                                <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
+                              <button onClick={() => handleDelete(p)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors" title="Supprimer">
+                                <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
+                              </button>
+                            </>
+                          )}
                         </div>
                       </TableCell>
                     </motion.tr>
@@ -590,8 +598,12 @@ export default function AdminPartenaires() {
                     </div>
                     <div className="flex gap-1 shrink-0">
                       <button onClick={() => setViewP(p)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors"><FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" /></button>
-                      <button onClick={() => openEditDialog(p)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors"><FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" /></button>
-                      <button onClick={() => handleDelete(p)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors"><FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" /></button>
+                      {isAdmin && (
+                        <>
+                          <button onClick={() => openEditDialog(p)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors"><FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" /></button>
+                          <button onClick={() => handleDelete(p)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors"><FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" /></button>
+                        </>
+                      )}
                     </div>
                   </div>
                   <RoleChips p={p} />

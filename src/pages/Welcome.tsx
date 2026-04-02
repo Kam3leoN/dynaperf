@@ -53,7 +53,7 @@ export default function Welcome() {
   return (
     <AppLayout>
       <section className="min-h-[calc(100vh-12rem)] flex flex-col items-center justify-center px-4 py-8">
-        <div className="text-center max-w-md w-full flex-1 flex flex-col items-center justify-center gap-6">
+        <div className="text-center max-w-2xl w-full flex-1 flex flex-col items-center justify-center gap-6">
           <OnlineAvatars />
 
           <div>

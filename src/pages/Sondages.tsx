@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -56,6 +57,7 @@ interface SondageVote {
 
 export default function Sondages() {
   const { user } = useAuth();
+  const { isAdmin } = useAdmin(user);
   const [sondages, setSondages] = useState<Sondage[]>([]);
   const [options, setOptions] = useState<Record<string, SondageOption[]>>({});
   const [votes, setVotes] = useState<SondageVote[]>([]);
@@ -204,10 +206,12 @@ export default function Sondages() {
             <h1 className="text-xl font-semibold text-foreground">Sondages</h1>
             <p className="text-sm text-muted-foreground">Créez et participez aux sondages</p>
           </div>
-          <Button onClick={openNew} className="gap-2">
-            <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
-            Nouveau
-          </Button>
+          {isAdmin && (
+            <Button onClick={openNew} className="gap-2">
+              <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
+              Nouveau
+            </Button>
+          )}
         </div>
 
         {loading ? (
@@ -248,7 +252,7 @@ export default function Sondages() {
                           {s.ends_at && ` · Expire le ${format(new Date(s.ends_at), "dd MMM yyyy HH:mm", { locale: fr })}`}
                         </p>
                       </div>
-                      {isMine && (
+                      {(isMine || isAdmin) && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
