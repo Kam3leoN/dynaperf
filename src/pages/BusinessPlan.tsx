@@ -50,7 +50,7 @@ interface YearData {
 
 export default function BusinessPlan() {
   
-  const [exporting, setExporting] = useState(false);
+  
   
   // --- Inputs ---
   const [nbAvantagesAnN, setNbAvantagesAnN] = useState(30);
