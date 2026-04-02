@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBars,
   faChartLine,
-  faMoneyBill,
+  faFolder,
   faGear,
 } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/lib/utils";
