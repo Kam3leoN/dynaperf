@@ -479,6 +479,7 @@ export default function AdminPartenaires() {
               </form>
             </DialogContent>
           </Dialog>
+          )}
         </div>
       </div>
 
