@@ -629,7 +629,6 @@ export default function BusinessPlan({ embedded }: { embedded?: boolean }) {
             </Tabs>
           </div>
         </div>
-      </div>
     </div>
   );
 
