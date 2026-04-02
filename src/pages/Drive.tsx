@@ -143,6 +143,14 @@ export default function Drive() {
   const [draggingDocId, setDraggingDocId] = useState<string | null>(null);
   const [dragOverCatId, setDragOverCatId] = useState<string | null>(null);
 
+  // Auto-open upload dialog if ?upload=1
+  useEffect(() => {
+    if (searchParams.get("upload") === "1" && isAdmin && currentCatId) {
+      openUploadDialog();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentCatId]);
+
   const fetchAll = async () => {
     setLoading(true);
     const [{ data: cats }, { data: docs }, { data: profs }] = await Promise.all([
