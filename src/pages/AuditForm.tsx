@@ -270,7 +270,9 @@ export default function AuditForm() {
       total_points: totalPoints,
       note_sur_10: noteSur10,
       photos: photoUrls,
-    };
+      signature_auditeur: signatureAuditeur,
+      signature_audite: signatureAudite,
+    } as any;
 
     if (isEditMode) {
       // Update or upsert detail
