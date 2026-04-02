@@ -50,6 +50,8 @@ export default function SuiviActiviteForm() {
   const [dateEntretien, setDateEntretien] = useState<Date | undefined>();
   const [nbContratsTotal, setNbContratsTotal] = useState("");
   const [nbContratsDernier, setNbContratsDernier] = useState("");
+  const [signatureAuditeur, setSignatureAuditeur] = useState<string | null>(null);
+  const [signatureAudite, setSignatureAudite] = useState<string | null>(null);
 
   // Answers per item
   const [answers, setAnswers] = useState<Record<string, ItemAnswer>>({});
