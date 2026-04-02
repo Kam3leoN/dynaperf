@@ -252,7 +252,7 @@ export default function Sondages() {
                           {s.ends_at && ` · Expire le ${format(new Date(s.ends_at), "dd MMM yyyy HH:mm", { locale: fr })}`}
                         </p>
                       </div>
-                      {isMine && (
+                      {(isMine || isAdmin) && (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">

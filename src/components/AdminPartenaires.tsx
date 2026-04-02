@@ -599,8 +599,12 @@ export default function AdminPartenaires() {
                     </div>
                     <div className="flex gap-1 shrink-0">
                       <button onClick={() => setViewP(p)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors"><FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" /></button>
-                      <button onClick={() => openEditDialog(p)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors"><FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" /></button>
-                      <button onClick={() => handleDelete(p)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors"><FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" /></button>
+                      {isAdmin && (
+                        <>
+                          <button onClick={() => openEditDialog(p)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors"><FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" /></button>
+                          <button onClick={() => handleDelete(p)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors"><FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" /></button>
+                        </>
+                      )}
                     </div>
                   </div>
                   <RoleChips p={p} />
