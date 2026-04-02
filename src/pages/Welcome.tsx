@@ -1,39 +1,19 @@
-import { Link } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useState } from "react";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faClipboardList, faChartLine, faBriefcase, faUserTie } from "@fortawesome/free-solid-svg-icons";
 import { AppLayout } from "@/components/AppLayout";
 import { OnlineAvatars } from "@/components/OnlineAvatars";
-
-
-const actions = [
-  {
-    label: "Créer un Audit",
-    icon: faClipboardList,
-    to: "/audits/new",
-  },
-  {
-    label: "Suivi d'activité",
-    icon: faChartLine,
-    to: "/activite/new/version",
-  },
-  {
-    label: "Business plan",
-    icon: faBriefcase,
-    to: "/business-plan",
-  },
-  {
-    label: "Candidature",
-    icon: faUserTie,
-    to: "#",
-  },
-];
+import { GamificationWidget } from "@/components/GamificationWidget";
+import { useGamification } from "@/hooks/useGamification";
+import { BadgeReward } from "@/components/BadgeReward";
+import { QRCodeSVG } from "qrcode.react";
+import DynaLight from "@/assets/DynaPerf_light.svg";
+import DynaDark from "@/assets/DynaPerf_dark.svg";
 
 export default function Welcome() {
   const { user } = useAuth();
   const [firstName, setFirstName] = useState<string | null>(null);
+  const { streaks, earnedBadges, allBadges, newBadge, dismissBadge } = useGamification();
 
   useEffect(() => {
     if (!user) return;
@@ -50,8 +30,15 @@ export default function Welcome() {
 
   const greeting = firstName ?? user?.email?.split("@")[0] ?? "Utilisateur";
 
+  // Dynamic URL: published in prod, preview in dev
+  const appUrl = import.meta.env.PROD
+    ? "https://dynaperf.lovable.app"
+    : window.location.origin;
+
   return (
     <AppLayout>
+      <BadgeReward badge={newBadge} onDismiss={dismissBadge} />
+
       <section className="min-h-[calc(100vh-12rem)] flex flex-col items-center justify-center px-4 py-8">
         <div className="text-center max-w-2xl w-full flex-1 flex flex-col items-center justify-center gap-6">
           <OnlineAvatars />
@@ -61,28 +48,43 @@ export default function Welcome() {
               Bonjour {greeting} <span className="inline-block animate-bounce">😉</span>
             </h1>
             <p className="text-muted-foreground text-base mt-1.5">
-              Que souhaites-tu faire aujourd'hui ?
+              Bienvenue sur DynaPerf
             </p>
           </div>
 
-          {/* Action cards — unified M3 style */}
-          <div className="grid-action w-full">
-            {actions.map((action) => (
-              <Link
-                key={action.label}
-                to={action.to}
-                className="group flex flex-col items-center gap-3 rounded-2xl bg-card border border-border/60 p-5 shadow-soft transition-all hover:shadow-hover hover:-translate-y-0.5 active:scale-[0.97]"
-              >
-                <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/10 text-primary transition-transform group-hover:scale-110">
-                  <FontAwesomeIcon icon={action.icon} className="h-5 w-5" />
-                </div>
-                <span className="text-sm font-medium text-foreground text-center leading-snug">
-                  {action.label}
-                </span>
-              </Link>
-            ))}
+          {/* QR Code for mobile install */}
+          <div className="flex flex-col items-center gap-3 p-5 rounded-2xl bg-card border border-border/60 shadow-soft">
+            <p className="text-sm font-medium text-foreground">📱 Installe l'app sur ton smartphone</p>
+            <div className="bg-white p-3 rounded-xl">
+              <QRCodeSVG
+                value={appUrl}
+                size={160}
+                level="M"
+                imageSettings={{
+                  src: DynaLight,
+                  x: undefined,
+                  y: undefined,
+                  height: 28,
+                  width: 28,
+                  excavate: true,
+                }}
+              />
+            </div>
+            <p className="text-xs text-muted-foreground max-w-[250px]">
+              Scanne ce QR code avec ton téléphone, puis ajoute l'app à ton écran d'accueil
+            </p>
           </div>
 
+          {/* Gamification widget */}
+          {streaks && (
+            <div className="w-full max-w-sm p-4 rounded-2xl bg-card border border-border/60 shadow-soft">
+              <GamificationWidget
+                streaks={streaks}
+                earnedBadges={earnedBadges}
+                allBadges={allBadges}
+              />
+            </div>
+          )}
         </div>
 
         {/* Version chip */}

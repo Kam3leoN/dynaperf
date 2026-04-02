@@ -1,4 +1,5 @@
 import { useState, useEffect, lazy, Suspense } from "react";
+import { AiAssistant } from "@/components/AiAssistant";
 import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -358,6 +359,9 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
 
       {/* Bottom navigation (mobile only) */}
       {isMobile && <BottomNav />}
+
+      {/* AI Assistant FAB */}
+      <AiAssistant />
     </div>
   );
 }
