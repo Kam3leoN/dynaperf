@@ -30,24 +30,16 @@ export function SplashScreen({ onFinished }: { onFinished: () => void }) {
           <motion.img
             src={logoLight}
             alt="DynaPerf"
-            className="w-24 h-24 mb-6"
+            className="w-[80%] sm:w-[60%] lg:w-[40%] max-w-md mb-6"
             initial={{ opacity: 0, scale: 0.7 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
           />
-          <motion.h1
-            className="text-3xl font-bold text-white tracking-tight"
-            initial={{ opacity: 0, y: 16 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
-          >
-            DynaPerf
-          </motion.h1>
           <motion.p
-            className="text-white/80 text-sm mt-2 font-medium"
+            className="text-white/80 text-base sm:text-lg mt-2 font-medium"
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.6 }}
+            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: 0.4 }}
           >
             Performance &amp; Excellence
           </motion.p>
