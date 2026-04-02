@@ -29,10 +29,7 @@ export default function Welcome() {
 
   const greeting = firstName ?? user?.email?.split("@")[0] ?? "Utilisateur";
 
-  // Dynamic URL: published in prod, preview in dev
-  const appUrl = import.meta.env.PROD
-    ? "https://dynaperf.lovable.app"
-    : window.location.origin;
+  const appUrl = "https://kam3leon.github.io/dynaperf/";
 
   return (
     <AppLayout>
