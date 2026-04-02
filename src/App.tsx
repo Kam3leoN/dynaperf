@@ -98,6 +98,7 @@ const App = () => {
                 <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
                 <Route path="/admin/audit-grid" element={<AdminRoute><AdminAuditGrid /></AdminRoute>} />
                 <Route path="/business-plan" element={<ProtectedRoute><BusinessPlan /></ProtectedRoute>} />
+                <Route path="/drive" element={<ProtectedRoute><Drive /></ProtectedRoute>} />
                 <Route path="/activite/dashboard" element={<ProtectedRoute><SuiviActiviteDashboard /></ProtectedRoute>} />
                 <Route path="/activite/:id" element={<ProtectedRoute><SuiviActiviteDetail /></ProtectedRoute>} />
                 <Route path="/activite" element={<ProtectedRoute><SuiviActiviteList /></ProtectedRoute>} />
