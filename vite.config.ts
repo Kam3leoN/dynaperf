@@ -111,83 +111,83 @@ export default defineConfig(({ mode }) => {
   const isGitHubPagesBuild =
     process.env.GITHUB_ACTIONS === "true" && process.env.GITHUB_PAGES === "true";
   const basePath = isGitHubPagesBuild ? "/dynaperf/" : "/";
-  const pwaPlugin = isGitHubPagesBuild
-    ? null
-    : VitePWA({
-        registerType: "autoUpdate",
-        includeAssets: ["pwaDynaperf.svg", "pwa-192x192.png", "pwa-512x512.png", "placeholder.svg"],
-        workbox: {
-          navigateFallbackDenylist: [/^\/~oauth/],
-          globPatterns: ["**/*.{js,css,html,ico,png,svg,woff,woff2}"],
-          maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
-          skipWaiting: true,
-          clientsClaim: true,
-          runtimeCaching: [
-            {
-              urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
-              handler: "NetworkFirst",
-              options: {
-                cacheName: "supabase-api-cache",
-                expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 },
-                networkTimeoutSeconds: 5,
-              },
-            },
-            {
-              urlPattern: /^https:\/\/basemaps\.cartocdn\.com\/.*/i,
-              handler: "CacheFirst",
-              options: {
-                cacheName: "map-tiles-cache",
-                expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 7 },
-              },
-            },
-            {
-              urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
-              handler: "CacheFirst",
-              options: {
-                cacheName: "google-fonts-stylesheets",
-                expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
-              },
-            },
-            {
-              urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
-              handler: "CacheFirst",
-              options: {
-                cacheName: "google-fonts-webfonts",
-                expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
-                cacheableResponse: { statuses: [0, 200] },
-              },
-            },
-          ],
+  const pwaPlugin = VitePWA({
+    registerType: "autoUpdate",
+    includeAssets: ["pwaDynaperf.svg", "pwa-192x192.png", "pwa-512x512.png", "placeholder.svg"],
+    workbox: {
+      // CRITICAL: no navigateFallback on GitHub Pages to avoid caching stale HTML
+      ...(isGitHubPagesBuild ? {} : { navigateFallbackDenylist: [/^\/~oauth/] }),
+      ...(isGitHubPagesBuild ? { navigateFallback: null } : {}),
+      globPatterns: ["**/*.{js,css,ico,png,svg,woff,woff2}"],
+      maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+      skipWaiting: true,
+      clientsClaim: true,
+      runtimeCaching: [
+        {
+          urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/.*/i,
+          handler: "NetworkFirst",
+          options: {
+            cacheName: "supabase-api-cache",
+            expiration: { maxEntries: 50, maxAgeSeconds: 60 * 60 },
+            networkTimeoutSeconds: 5,
+          },
         },
-        manifest: {
-          name: "DynaPerf — Monitoring audits partenaires",
-          short_name: "DynaPerf",
-          description: "Tableau de bord de suivi des audits partenaires agences",
-          theme_color: "#0E222C",
-          background_color: "#ffffff",
-          display: "standalone",
-          scope: basePath,
-          start_url: basePath,
-          icons: [
-            {
-              src: "pwa-192x192.png",
-              sizes: "192x192",
-              type: "image/png",
-            },
-            {
-              src: "pwa-512x512.png",
-              sizes: "512x512",
-              type: "image/png",
-            },
-            {
-              src: "pwa-512x512.png",
-              sizes: "512x512",
-              type: "image/png",
-              purpose: "any maskable",
-            },
-          ],
+        {
+          urlPattern: /^https:\/\/basemaps\.cartocdn\.com\/.*/i,
+          handler: "CacheFirst",
+          options: {
+            cacheName: "map-tiles-cache",
+            expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 7 },
+          },
         },
-      });
+        {
+          urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+          handler: "CacheFirst",
+          options: {
+            cacheName: "google-fonts-stylesheets",
+            expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 },
+          },
+        },
+        {
+          urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+          handler: "CacheFirst",
+          options: {
+            cacheName: "google-fonts-webfonts",
+            expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
+            cacheableResponse: { statuses: [0, 200] },
+          },
+        },
+      ],
+    },
+    manifest: {
+      name: "DynaPerf — Monitoring audits partenaires",
+      short_name: "DynaPerf",
+      description: "Tableau de bord de suivi des audits partenaires agences",
+      theme_color: "#0E222C",
+      background_color: "#ffffff",
+      display: "standalone",
+      scope: basePath,
+      start_url: basePath,
+      icons: [
+        {
+          src: "pwa-192x192.png",
+          sizes: "192x192",
+          type: "image/png",
+        },
+        {
+          src: "pwa-512x512.png",
+          sizes: "512x512",
+          type: "image/png",
+        },
+        {
+          src: "pwa-512x512.png",
+          sizes: "512x512",
+          type: "image/png",
+          purpose: "any maskable",
+        },
+      ],
+    },
+  });
   const githubPagesCleanupPlugin = createGitHubPagesServiceWorkerCleanupPlugin(isGitHubPagesBuild, basePath);
 
   return {
@@ -204,7 +204,7 @@ export default defineConfig(({ mode }) => {
         overlay: false,
       },
     },
-    plugins: [react(), mode === "development" && componentTagger(), pwaPlugin, githubPagesCleanupPlugin].filter(Boolean),
+    plugins: [react(), mode === "development" && componentTagger(), pwaPlugin, isGitHubPagesBuild && githubPagesCleanupPlugin].filter(Boolean),
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
