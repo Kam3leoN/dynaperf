@@ -1,0 +1,1 @@
+ALTER TABLE public.drive_categories ADD COLUMN IF NOT EXISTS icon_url TEXT;
