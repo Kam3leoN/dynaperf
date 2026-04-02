@@ -4,6 +4,22 @@ import "./index.css";
 
 declare const __GITHUB_PAGES_BUILD__: boolean;
 
+const RESPONSIVE_VIEWPORT = "width=device-width, initial-scale=1, maximum-scale=5.0, viewport-fit=cover";
+
+function ensureResponsiveViewport() {
+  let viewportMeta = document.querySelector('meta[name="viewport"]');
+
+  if (!viewportMeta) {
+    viewportMeta = document.createElement("meta");
+    viewportMeta.setAttribute("name", "viewport");
+    document.head.prepend(viewportMeta);
+  }
+
+  if (viewportMeta.getAttribute("content") !== RESPONSIVE_VIEWPORT) {
+    viewportMeta.setAttribute("content", RESPONSIVE_VIEWPORT);
+  }
+}
+
 const isInIframe = (() => {
   try {
     return window.self !== window.top;
@@ -34,6 +50,8 @@ async function cleanupCaches() {
     await Promise.all(keys.map((k) => caches.delete(k)));
   }
 }
+
+ensureResponsiveViewport();
 
 cleanupCaches().finally(() => {
   createRoot(document.getElementById("root")!).render(<App />);
