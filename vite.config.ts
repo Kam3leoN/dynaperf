@@ -6,25 +6,11 @@ import { VitePWA } from "vite-plugin-pwa";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
+  const isGitHubPagesBuild = process.env.GITHUB_PAGES === "true";
   const basePath = mode === "development" ? "/" : "/dynaperf/";
-
-  return {
-    define: {
-      __BUILD_DATE__: JSON.stringify(new Date().toISOString()),
-      __APP_VERSION__: JSON.stringify(process.env.npm_package_version || "1.0.0"),
-    },
-    base: basePath,
-    server: {
-      host: "::",
-      port: 8080,
-      hmr: {
-        overlay: false,
-      },
-    },
-    plugins: [
-      react(),
-      mode === "development" && componentTagger(),
-      VitePWA({
+  const pwaPlugin = isGitHubPagesBuild
+    ? null
+    : VitePWA({
         registerType: "autoUpdate",
         includeAssets: ["pwaDynaperf.svg", "pwa-192x192.png", "pwa-512x512.png", "placeholder.svg"],
         workbox: {
@@ -98,8 +84,23 @@ export default defineConfig(({ mode }) => {
             },
           ],
         },
-      }),
-    ].filter(Boolean),
+      });
+
+  return {
+    define: {
+      __BUILD_DATE__: JSON.stringify(new Date().toISOString()),
+      __APP_VERSION__: JSON.stringify(process.env.npm_package_version || "1.0.0"),
+      __GITHUB_PAGES_BUILD__: JSON.stringify(isGitHubPagesBuild),
+    },
+    base: basePath,
+    server: {
+      host: "::",
+      port: 8080,
+      hmr: {
+        overlay: false,
+      },
+    },
+    plugins: [react(), mode === "development" && componentTagger(), pwaPlugin].filter(Boolean),
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),

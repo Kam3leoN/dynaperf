@@ -38,6 +38,7 @@ jobs:
         # On ajoute CI=false pour que les warnings ne soient pas considérés comme des erreurs
         run: CI=false npm run build
         env:
+          GITHUB_PAGES: "true"
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
 
