@@ -9,9 +9,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChartLine, faEuroSign, faUsers, faHandshake, faCar, faRocket, faBriefcase, faArrowTrendUp, faGift, faBolt, faFilePdf, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faChartLine, faEuroSign, faUsers, faHandshake, faCar, faRocket, faBriefcase, faArrowTrendUp, faGift, faBolt, faFilePdf } from "@fortawesome/free-solid-svg-icons";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, AreaChart } from "recharts";
 import { toast } from "sonner";
+import { exportBusinessPlanPdf } from "@/lib/businessPlanPdf";
 
 interface YearData {
   year: number;
@@ -49,7 +50,7 @@ interface YearData {
 
 export default function BusinessPlan() {
   
-  const [exporting, setExporting] = useState(false);
+  
   
   // --- Inputs ---
   const [nbAvantagesAnN, setNbAvantagesAnN] = useState(30);
@@ -188,230 +189,40 @@ export default function BusinessPlan() {
   const lastYear = projections[projections.length - 1];
   const firstYear = projections[0];
 
-  const handleExportPDF = useCallback(async () => {
+  const handleExportPDF = useCallback(() => {
     if (projections.length === 0) return;
-    setExporting(true);
     try {
-      const { jsPDF } = await import("jspdf");
-      const doc = new jsPDF("p", "mm", "a4");
-      const W = 210;
-      const mg = 15;
-      const cw = W - mg * 2;
-      let y = 15;
-
-      const addLine = (x: number, y1: number, x2: number, y2: number, color = [200, 200, 200]) => {
-        doc.setDrawColor(color[0], color[1], color[2]);
-        doc.setLineWidth(0.3);
-        doc.line(x, y1, x2, y2);
-      };
-
-      // === HEADER ===
-      doc.setFillColor(14, 34, 44);
-      doc.rect(0, 0, W, 32, "F");
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(18);
-      doc.setFont("helvetica", "bold");
-      doc.text("DynaPerf — Business Plan Partenaire", mg, 15);
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      doc.text(`Simulation sur ${nbAnnees} ans — Généré le ${new Date().toLocaleDateString("fr-FR")}`, mg, 23);
-      doc.setFontSize(8);
-      doc.text("Document confidentiel — Usage interne Dynabuy", mg, 28);
-      y = 40;
-
-      // === KPI BOXES ===
-      const kpis = [
-        { label: "Revenus An 1", value: fmt(firstYear?.totalCommissions ?? 0), color: [226, 0, 26] },
-        { label: `Revenus An ${nbAnnees}`, value: fmt(lastYear?.totalCommissions ?? 0), color: [226, 0, 26] },
-        { label: `Bénéfice net An ${nbAnnees}`, value: fmt(lastYear?.beneficeNet ?? 0), color: [34, 139, 34] },
-        { label: `Cumul sur ${nbAnnees} ans`, value: fmt(lastYear?.cumulBenefice ?? 0), color: [34, 139, 34] },
-      ];
-      const boxW = (cw - 9) / 4;
-      kpis.forEach((kpi, i) => {
-        const bx = mg + i * (boxW + 3);
-        doc.setFillColor(245, 245, 248);
-        doc.roundedRect(bx, y, boxW, 20, 2, 2, "F");
-        doc.setFontSize(7);
-        doc.setTextColor(120, 120, 120);
-        doc.text(kpi.label.toUpperCase(), bx + 3, y + 7);
-        doc.setFontSize(12);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(kpi.color[0], kpi.color[1], kpi.color[2]);
-        doc.text(kpi.value, bx + 3, y + 16);
-        doc.setFont("helvetica", "normal");
+      exportBusinessPlanPdf(projections, {
+        nbAnnees,
+        nbAvantagesAnN,
+        nbClubs,
+        membresParClub,
+        croissanceAnnuelle,
+        tauxResiliation,
+        prixAvantages,
+        prixClub,
+        commAvantagesEffective,
+        commClubPct,
+        redevanceMensuelle,
+        droitsEntree,
+        oneShotRDParAn,
+        prixOneShotRD,
+        commOneShotRDPct,
+        oneShotAvantagesParAn,
+        prixOneShotAvantages,
+        commOneShotAvantagesPct,
+        tauxParrainage,
+        primeParrainage,
+        tauxConversionFilleul,
+        packPerformance,
+        vehiculeFloque,
       });
-      y += 26;
-
-      // === PARAMÈTRES ===
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(14, 34, 44);
-      doc.text("Paramètres de simulation", mg, y);
-      y += 5;
-      addLine(mg, y, mg + cw, y);
-      y += 4;
-
-      doc.setFontSize(8);
-      doc.setFont("helvetica", "normal");
-      doc.setTextColor(60, 60, 60);
-      const params = [
-        [`Contrats Avantages/an: ${nbAvantagesAnN}`, `Prix Avantages: ${fmt(prixAvantages)}`, `Comm: ${commAvantagesEffective}%`],
-        [`Clubs: ${nbClubs} x ${membresParClub} membres (fixe)`, `Prix Club: ${fmt(prixClub)}`, `Comm: ${commClubPct}%`],
-        [`Croissance Avantages: +${croissanceAnnuelle}%/an`, `Taux resiliation: ${tauxResiliation}%`, `Redevance: ${fmt(redevanceMensuelle)}/mois`],
-        [`One-shot RD: ${oneShotRDParAn}/an x ${fmt(prixOneShotRD)}`, `One-shot Avantages: ${oneShotAvantagesParAn}/an x ${fmt(prixOneShotAvantages)}`, `Parrainage: ${tauxParrainage}% -> ${tauxConversionFilleul}% conv.`],
-      ];
-      params.forEach(row => {
-        row.forEach((text, i) => {
-          doc.text(text, mg + i * (cw / 3), y);
-        });
-        y += 5;
-      });
-      y += 3;
-
-      // === TABLEAU ===
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(14, 34, 44);
-      doc.text("Projection financiere detaillee", mg, y);
-      y += 5;
-      addLine(mg, y, mg + cw, y, [14, 34, 44]);
-      y += 4;
-
-      const cols = projections.length;
-      const labelW = 42;
-      const colW = (cw - labelW) / cols;
-
-      // Table header
-      doc.setFillColor(14, 34, 44);
-      doc.rect(mg, y - 3, cw, 6, "F");
-      doc.setFontSize(7);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(255, 255, 255);
-      projections.forEach((p, i) => {
-        doc.text(p.label, mg + labelW + i * colW + colW / 2, y, { align: "center" });
-      });
-      y += 5;
-
-      const fmtN = (n: number) => new Intl.NumberFormat("fr-FR").format(n);
-
-      const addTableRow = (label: string, values: number[], isMoney = false, isBold = false, bgColor?: number[]) => {
-        if (bgColor) {
-          doc.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
-          doc.rect(mg, y - 3, cw, 5, "F");
-        }
-        doc.setFontSize(7);
-        doc.setFont("helvetica", isBold ? "bold" : "normal");
-        doc.setTextColor(isBold ? 14 : 80, isBold ? 34 : 80, isBold ? 44 : 80);
-        doc.text(label, mg + 1, y);
-        values.forEach((v, i) => {
-          const text = isMoney ? fmt(v) : fmtN(v);
-          doc.text(text, mg + labelW + i * colW + colW - 1, y, { align: "right" });
-        });
-        y += 5;
-      };
-
-      const addSectionHeader = (label: string, color: number[]) => {
-        doc.setFillColor(color[0], color[1], color[2]);
-        doc.rect(mg, y - 3, cw, 5, "F");
-        doc.setFontSize(7);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(255, 255, 255);
-        doc.text(label, mg + 2, y);
-        y += 5;
-      };
-
-      addSectionHeader("DYNABUY AVANTAGES (ABONNEMENT)", [226, 0, 26]);
-      addTableRow("Nouveaux contrats", projections.map(p => p.newAvantages));
-      addTableRow("Contrats reconduits", projections.map(p => p.renewedAvantages));
-      addTableRow("Total actifs", projections.map(p => p.totalAvantages), false, true);
-      addTableRow("CA genere", projections.map(p => p.caAvantages), true);
-      addTableRow(`Commission (${commAvantagesEffective}%)`, projections.map(p => p.commAvantages), true, true);
-
-      addSectionHeader("CLUBS D'AFFAIRES (ABONNEMENT)", [255, 189, 35]);
-      addTableRow("Membres actifs (fixe)", projections.map(p => p.totalClubMembers), false, true);
-      addTableRow("CA genere", projections.map(p => p.caClubs), true);
-      addTableRow(`Commission (${commClubPct}%)`, projections.map(p => p.commClubs), true, true);
-
-      addSectionHeader("VENTES ONE-SHOT", [180, 120, 20]);
-      addTableRow("RD a vie (ventes)", projections.map(p => p.oneShotRD));
-      addTableRow("Commission RD", projections.map(p => p.commOneShotRD), true, true);
-      addTableRow("Avantages a vie (ventes)", projections.map(p => p.oneShotAvantages));
-      addTableRow("Commission Avantages", projections.map(p => p.commOneShotAvantages), true, true);
-
-      addSectionHeader("PARRAINAGE / FILLEULS", [128, 0, 200]);
-      addTableRow("Filleuls convertis", projections.map(p => p.filleuls));
-      addTableRow("Primes parrainage", projections.map(p => p.commFilleuls), true, true);
-
-      y += 2;
-      addLine(mg, y - 3, mg + cw, y - 3, [14, 34, 44]);
-      addSectionHeader("SYNTHESE", [14, 34, 44]);
-      addTableRow("Total commissions", projections.map(p => p.totalCommissions), true, true, [240, 248, 240]);
-      addTableRow("Charges annuelles", projections.map(p => -(p.redevanceAnnuelle + p.droitsEntree)), true);
-      addTableRow("BENEFICE NET", projections.map(p => p.beneficeNet), true, true, [220, 245, 220]);
-      addTableRow("CUMUL BENEFICE", projections.map(p => p.cumulBenefice), true, true, [200, 235, 200]);
-
-      // === LEGAL DISCLAIMER BANNER ===
-      y += 6;
-      doc.setFillColor(255, 240, 240);
-      doc.roundedRect(mg, y - 3, cw, 14, 2, 2, "F");
-      doc.setDrawColor(226, 0, 26);
-      doc.setLineWidth(0.5);
-      doc.roundedRect(mg, y - 3, cw, 14, 2, 2, "S");
-      doc.setFontSize(7);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(180, 0, 0);
-      doc.text("AVERTISSEMENT LEGAL", mg + 3, y + 2);
-      doc.setFont("helvetica", "normal");
-      doc.setFontSize(6);
-      doc.setTextColor(100, 0, 0);
-      const disclaimerText = "Ce document constitue une simulation a caractere strictement indicatif et previsionnel. Il ne saurait en aucun cas etre considere comme un engagement contractuel, une promesse de revenus ou une garantie de resultats de la part de Dynabuy SAS. Les chiffres presentes reposent sur des hypotheses variables et ne prennent pas en compte l'ensemble des facteurs economiques, commerciaux et conjoncturels susceptibles d'impacter les resultats reels.";
-      const disclaimerLines = doc.splitTextToSize(disclaimerText, cw - 6);
-      doc.text(disclaimerLines.join("\n"), mg + 3, y + 6);
-      y += 16;
-
-      // === FOOTER ===
-      y = 280;
-      addLine(mg, y, mg + cw, y);
-      doc.setFontSize(7);
-      doc.setFont("helvetica", "italic");
-      doc.setTextColor(150, 150, 150);
-      doc.text("Ce document est une simulation indicative et ne constitue pas un engagement contractuel.", mg, y + 4);
-      doc.text("DynaPerf — Dynabuy " + new Date().getFullYear(), W - mg, y + 4, { align: "right" });
-
-      // === WATERMARK "CONFIDENTIEL" on every page ===
-      const totalPages = doc.getNumberOfPages();
-      for (let p = 1; p <= totalPages; p++) {
-        doc.setPage(p);
-        doc.saveGraphicsState();
-        doc.setGState(new (doc as any).GState({ opacity: 0.06 }));
-        doc.setFontSize(72);
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(150, 150, 150);
-        // Rotate text diagonally
-        const cx = W / 2;
-        const cy = 297 / 2;
-        const angle = -35;
-        const rad = (angle * Math.PI) / 180;
-        const cos = Math.cos(rad);
-        const sin = Math.sin(rad);
-        // Use internal transform for rotation
-        (doc.internal as any).write(
-          `q ${cos.toFixed(4)} ${sin.toFixed(4)} ${(-sin).toFixed(4)} ${cos.toFixed(4)} ${(cx * 2.835).toFixed(2)} ${((297 - cy) * 2.835).toFixed(2)} cm`
-        );
-        doc.text("CONFIDENTIEL", 0, 0, { align: "center", baseline: "middle" });
-        (doc.internal as any).write("Q");
-        doc.restoreGraphicsState();
-      }
-
-      doc.save(`Business_Plan_Dynabuy_${new Date().toISOString().slice(0, 10)}.pdf`);
-      toast.success("PDF exporte avec succes !");
+      toast.success("PDF ouvert avec succès !");
     } catch (err) {
       console.error("PDF export error:", err);
       toast.error("Erreur lors de l'export PDF");
-    } finally {
-      setExporting(false);
     }
-  }, [projections, nbAnnees, firstYear, lastYear, nbAvantagesAnN, prixAvantages, commAvantagesEffective, nbClubs, membresParClub, prixClub, commClubPct, croissanceAnnuelle, tauxResiliation, redevanceMensuelle, oneShotRDParAn, prixOneShotRD, commOneShotRDPct, oneShotAvantagesParAn, prixOneShotAvantages, commOneShotAvantagesPct, tauxParrainage, tauxConversionFilleul, fmt]);
+  }, [projections, nbAnnees, nbAvantagesAnN, nbClubs, membresParClub, croissanceAnnuelle, tauxResiliation, prixAvantages, prixClub, commAvantagesEffective, commClubPct, redevanceMensuelle, droitsEntree, oneShotRDParAn, prixOneShotRD, commOneShotRDPct, oneShotAvantagesParAn, prixOneShotAvantages, commOneShotAvantagesPct, tauxParrainage, primeParrainage, tauxConversionFilleul, packPerformance, vehiculeFloque]);
 
   return (
     <AppLayout>
@@ -432,11 +243,10 @@ export default function BusinessPlan() {
               variant="outline"
               size="sm"
               onClick={handleExportPDF}
-              disabled={exporting}
               className="gap-1.5"
             >
-              <FontAwesomeIcon icon={exporting ? faSpinner : faFilePdf} className={`h-3.5 w-3.5 ${exporting ? "animate-spin" : ""}`} />
-              {exporting ? "Export..." : "Exporter PDF"}
+              <FontAwesomeIcon icon={faFilePdf} className="h-3.5 w-3.5" />
+              Exporter PDF
             </Button>
             <Badge variant="outline" className="text-xs w-fit">Projection sur {nbAnnees} ans</Badge>
           </div>
