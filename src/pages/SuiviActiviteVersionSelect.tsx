@@ -74,7 +74,7 @@ export default function SuiviActiviteVersionSelect() {
             <button
               key={v.config_version}
               onClick={() => navigate(`/activite/new?version=${v.config_version}`)}
-              className="group flex flex-col items-start gap-2 rounded-xl border border-border bg-card p-5 shadow-sm transition-all hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5 active:scale-[0.98] text-left"
+              className="group flex flex-col items-start gap-2 rounded-2xl border border-border/60 bg-card p-5 shadow-soft transition-all hover:shadow-md hover:border-primary/40 hover:-translate-y-0.5 active:scale-[0.98] text-left"
             >
               <div className="flex items-center gap-2 w-full">
                 <FontAwesomeIcon icon={faLayerGroup} className="h-4 w-4 text-primary" />

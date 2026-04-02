@@ -14,7 +14,7 @@ interface CollaborateurTrackerProps {
 
 export function CollaborateurTracker({ data }: CollaborateurTrackerProps) {
   return (
-    <div className="bg-card rounded-lg shadow-soft p-4 sm:p-5">
+    <div className="bg-card rounded-2xl shadow-soft border border-border/60 p-4 sm:p-5">
       <h3 className="text-sm font-semibold text-foreground mb-3 sm:mb-4">Progression collaborateurs</h3>
       <div className="space-y-3 sm:space-y-4">
         {data.map((c, i) => {

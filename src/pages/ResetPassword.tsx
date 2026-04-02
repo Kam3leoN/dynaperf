@@ -34,7 +34,7 @@ export default function ResetPassword() {
 
   return (
     <div className="min-h-screen bg-secondary/30 flex items-center justify-center px-4">
-      <div className="bg-card rounded-lg shadow-soft p-8 w-full max-w-md">
+      <div className="bg-card rounded-2xl shadow-soft border border-border/60 p-8 w-full max-w-md">
         <div className="flex items-center gap-3 mb-6">
           <div className="w-8 h-8 bg-primary rounded-md flex items-center justify-center">
             <FontAwesomeIcon icon={faWaveSquare} className="h-4 w-4 text-primary-foreground" />

@@ -185,7 +185,7 @@ export default function Primes() {
                 const monthPrime = audits.reduce((sum, a) => sum + (perAuditPrimes.get(a.id) ?? 0), 0);
                 return (
                   <motion.div key={monthKey} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
-                    className="rounded-xl border border-border/40 overflow-hidden">
+                    className="rounded-2xl border border-border/60 overflow-hidden">
                     <div className="flex items-center justify-between bg-muted/50 px-3 py-2">
                       <span className="text-xs font-semibold text-foreground capitalize">{monthLabel}</span>
                       <div className="flex items-center gap-3">

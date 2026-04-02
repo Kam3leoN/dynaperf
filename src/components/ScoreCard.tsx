@@ -18,7 +18,7 @@ export function ScoreCard({ type, avg, min, max, count, index }: ScoreCardProps)
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.06, duration: 0.3 }}
-      className="bg-card p-5 rounded-lg shadow-soft"
+      className="bg-card p-5 rounded-2xl shadow-soft border border-border/60"
     >
       <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
         {type}

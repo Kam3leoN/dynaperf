@@ -63,7 +63,7 @@ export function PodiumCards({ data }: PodiumCardsProps) {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
-            className="bg-card rounded-lg shadow-soft p-4"
+            className="bg-card rounded-2xl shadow-soft border border-border/60 p-4"
           >
             <h4 className="text-xs font-semibold text-foreground mb-4 text-center truncate">
               {type}

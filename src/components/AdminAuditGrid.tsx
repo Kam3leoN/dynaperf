@@ -323,7 +323,7 @@ export default function AdminAuditGridInline() {
                   <button
                     key={key}
                     onClick={() => setSelectedKey(key)}
-                    className="flex flex-col items-center gap-3 rounded-xl border border-border bg-card p-6 shadow-sm transition-all hover:shadow-md hover:border-transparent hover:-translate-y-1 active:scale-[0.97]"
+                    className="flex flex-col items-center gap-3 rounded-2xl border border-border/60 bg-card p-6 shadow-soft transition-all hover:shadow-md hover:border-transparent hover:-translate-y-1 active:scale-[0.97]"
                   >
                     <div
                       className="flex items-center justify-center w-14 h-14 rounded-full"
@@ -355,7 +355,7 @@ export default function AdminAuditGridInline() {
               {versionsForKey.map((v) => (
                 <div
                   key={v.id}
-                  className={`flex flex-col items-start gap-2 rounded-xl border bg-card p-4 shadow-sm transition-all text-left ${v.is_active ? "border-border" : "border-border/50 opacity-60"}`}
+                  className={`flex flex-col items-start gap-2 rounded-2xl border border-border/60 bg-card p-4 shadow-soft transition-all text-left ${v.is_active ? "border-border" : "border-border/50 opacity-60"}`}
                 >
                   <div className="flex items-center gap-2 w-full">
                     <button onClick={() => setSelectedTypeId(v.id)} className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80 transition-opacity">

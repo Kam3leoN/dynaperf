@@ -263,7 +263,7 @@ export default function Secteurs() {
   return (
     <AppLayout>
       <div className="space-y-4">
-        <div className="bg-card rounded-lg shadow-soft p-4">
+        <div className="bg-card rounded-2xl shadow-soft border border-border/60 p-4">
           <h2 className="text-sm font-semibold text-foreground mb-3">Carte du réseau</h2>
           <div className="flex flex-wrap gap-3 mb-4">
             <div className="w-full sm:w-auto">
@@ -341,7 +341,7 @@ export default function Secteurs() {
           </div>
         </div>
 
-        <div className="bg-card rounded-lg shadow-soft overflow-hidden" style={{ height: "calc(100vh - 320px)", minHeight: 400 }}>
+        <div className="bg-card rounded-2xl shadow-soft border border-border/60 overflow-hidden" style={{ height: "calc(100vh - 320px)", minHeight: 400 }}>
           {loading ? (
             <div className="flex items-center justify-center h-full text-sm text-muted-foreground">Chargement de la carte…</div>
           ) : (

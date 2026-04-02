@@ -69,12 +69,12 @@ export default function Welcome() {
           </div>
 
           {/* Action cards — M3 tonal surface style */}
-          <div className="grid grid-cols-2 gap-3 w-full">
+          <div className="grid-action w-full">
             {actions.map((action) => (
               <Link
                 key={action.label}
                 to={action.to}
-                className="group flex flex-col items-center gap-2.5 rounded-3xl bg-card border border-border/60 p-5 shadow-soft transition-all hover:shadow-hover hover:-translate-y-0.5 active:scale-[0.97]"
+                className="group flex flex-col items-center gap-2.5 rounded-2xl bg-card border border-border/60 p-5 shadow-soft transition-all hover:shadow-hover hover:-translate-y-0.5 active:scale-[0.97]"
               >
                 <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/10 text-primary transition-transform group-hover:scale-110">
                   <FontAwesomeIcon icon={action.icon} className="h-5 w-5" />
