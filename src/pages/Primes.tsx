@@ -69,6 +69,7 @@ export default function Primes() {
   const [yearAudits, setYearAudits] = useState<AuditRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [displayName, setDisplayName] = useState("");
+  const [viewMode, setViewMode] = useState<"compact" | "extended">("extended");
 
   useEffect(() => {
     if (!user) return;
