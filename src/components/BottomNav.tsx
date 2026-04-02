@@ -42,7 +42,7 @@ export function BottomNav() {
                 <button
                   key="fab"
                   onClick={() => navigate("/")}
-                  className="relative -top-3 flex items-center justify-center w-14 h-14 rounded-2xl shadow-lg active:scale-95 transition-transform"
+                  className="relative -top-3 flex items-center justify-center w-[60px] h-[60px] rounded-2xl shadow-lg active:scale-95 transition-transform"
                   style={{ backgroundColor: "#212121" }}
                   aria-label="Accueil"
                 >
