@@ -113,6 +113,7 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
   const isAuditSection = ["/dashboard", "/audits", "/audits/new", "/audits/new/version", "/audits/new/form"].includes(location.pathname);
   const isActiviteSection = ["/activite", "/activite/new", "/activite/new/version", "/activite/dashboard"].includes(location.pathname);
   const isReseauSection = ["/reseau", "/reseau/partenaires", "/reseau/clubs", "/reseau/secteurs", "/business-plan"].includes(location.pathname);
+  const isCommunauteSection = ["/messages", "/sondages"].includes(location.pathname);
 
   const handleForgotPassword = async () => {
     if (!user?.email) return;
