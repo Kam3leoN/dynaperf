@@ -7,8 +7,7 @@ import { GamificationWidget } from "@/components/GamificationWidget";
 import { useGamification } from "@/hooks/useGamification";
 import { BadgeReward } from "@/components/BadgeReward";
 import { QRCodeSVG } from "qrcode.react";
-import DynaLight from "@/assets/DynaPerf_light.svg";
-import DynaDark from "@/assets/DynaPerf_dark.svg";
+import PwaIcon from "/pwaDynaperf.svg";
 
 export default function Welcome() {
   const { user } = useAuth();
