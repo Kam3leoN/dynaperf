@@ -571,7 +571,6 @@ export default function AdminPartenaires() {
                               </button>
                             </>
                           )}
-                          </button>
                         </div>
                       </TableCell>
                     </motion.tr>
