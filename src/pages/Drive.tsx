@@ -647,7 +647,7 @@ export default function Drive() {
                   return (
                     <Card
                       key={cat.id}
-                      className={`group cursor-pointer hover:shadow-md transition-all hover:-translate-y-0.5 ${isDragOver ? "ring-2 ring-primary bg-primary/5" : ""}`}
+                      className={`group cursor-pointer transition-all hover:shadow-hover hover:-translate-y-0.5 ${isDragOver ? "ring-2 ring-primary bg-primary/5" : ""}`}
                       onClick={() => setCurrentCatId(cat.id)}
                       onDragOver={(e) => handleCatDragOver(e, cat.id)}
                       onDragLeave={handleCatDragLeave}
