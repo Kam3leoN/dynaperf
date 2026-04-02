@@ -568,11 +568,14 @@ export default function Drive() {
             {searchResults.cats.map((cat) => (
               <Card key={cat.id} className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => { setCurrentCatId(cat.id); setSearch(""); }}>
                 <CardContent className="p-3 flex items-center gap-3">
-                  {cat.icon_url ? (
-                    <img src={cat.icon_url} alt="" className="h-6 w-6 rounded object-cover" />
-                  ) : (
-                    <FontAwesomeIcon icon={faFolder} className="h-5 w-5 text-primary" />
-                  )}
+                  {(() => {
+                    const iconSrc = getFolderIcon(cat);
+                    return iconSrc ? (
+                      <img src={iconSrc} alt="" className="h-6 w-6 rounded object-contain" />
+                    ) : (
+                      <FontAwesomeIcon icon={faFolder} className="h-5 w-5 text-primary" />
+                    );
+                  })()}
                   <div>
                     <p className="text-sm font-medium">{cat.name}</p>
                     <p className="text-xs text-muted-foreground">{getCatPath(cat.id)}</p>
