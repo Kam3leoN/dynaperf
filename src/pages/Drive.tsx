@@ -454,7 +454,7 @@ export default function Drive() {
   // Card view for documents
   const DocCard = ({ doc }: { doc: DriveDocument }) => (
     <Card
-      className={`group cursor-pointer hover:shadow-md transition-all hover:-translate-y-0.5 overflow-hidden relative ${draggingDocId === doc.id ? "opacity-50" : ""}`}
+      className={`group cursor-pointer transition-all hover:shadow-hover hover:-translate-y-0.5 overflow-hidden relative ${draggingDocId === doc.id ? "opacity-50" : ""}`}
       onClick={() => downloadDoc(doc)}
       draggable={isAdmin}
       onDragStart={(e) => handleDocDragStart(e, doc.id)}
