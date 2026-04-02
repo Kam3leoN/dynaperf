@@ -245,10 +245,6 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
         <FontAwesomeIcon icon={faClipboardList} className="h-4 w-4" /><span>Drive</span>
       </NavLink>
 
-      <NavLink to="/primes" className={() => navPill(location.pathname === "/primes")}>
-        <FontAwesomeIcon icon={faMoneyBill} className="h-4 w-4" /><span>Primes</span>
-      </NavLink>
-
       <NavLink to="/historique" className={() => navPill(location.pathname === "/historique")}>
         <FontAwesomeIcon icon={faClockRotateLeft} className="h-4 w-4" /><span>Historique</span>
       </NavLink>
