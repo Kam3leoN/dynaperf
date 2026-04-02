@@ -113,6 +113,7 @@ const App = () => {
                 <Route path="/reseau/secteurs" element={<ProtectedRoute><Secteurs /></ProtectedRoute>} />
                 <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
                 <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+                <Route path="/sondages" element={<ProtectedRoute><Sondages /></ProtectedRoute>} />
                 <Route path="/historique" element={<ProtectedRoute><ActivityLog /></ProtectedRoute>} />
                 <Route path="/preferences" element={<ProtectedRoute><Preferences /></ProtectedRoute>} />
                 <Route path="/hub" element={<ProtectedRoute><DashboardHub /></ProtectedRoute>} />
