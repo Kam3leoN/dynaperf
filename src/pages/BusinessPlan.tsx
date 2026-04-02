@@ -48,7 +48,7 @@ interface YearData {
   cumulBenefice: number;
 }
 
-export default function BusinessPlan() {
+export default function BusinessPlan({ embedded }: { embedded?: boolean }) {
   
   
   
