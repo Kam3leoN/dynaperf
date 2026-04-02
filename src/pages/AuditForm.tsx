@@ -110,6 +110,8 @@ export default function AuditForm() {
         if (detail?.photos) {
           setExistingPhotos(detail.photos as string[]);
         }
+        if ((detail as any)?.signature_auditeur) setSignatureAuditeur((detail as any).signature_auditeur);
+        if ((detail as any)?.signature_audite) setSignatureAudite((detail as any).signature_audite);
       }
       setEditLoaded(true);
     };
