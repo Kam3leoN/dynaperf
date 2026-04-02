@@ -60,7 +60,7 @@ export default function Welcome() {
                 size={160}
                 level="M"
                 imageSettings={{
-                  src: DynaLight,
+                  src: PwaIcon,
                   x: undefined,
                   y: undefined,
                   height: 28,
