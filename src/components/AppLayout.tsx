@@ -359,6 +359,9 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
 
       {/* Bottom navigation (mobile only) */}
       {isMobile && <BottomNav />}
+
+      {/* AI Assistant FAB */}
+      <AiAssistant />
     </div>
   );
 }
