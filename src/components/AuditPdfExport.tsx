@@ -202,7 +202,7 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
         html += `<div class="section-title" style="margin-top:16px;">📷 Photos (${photoUrls.length})</div>`;
         html += `<div class="photos-grid">`;
         for (const url of photoUrls) {
-          html += `<img src="${escapeHtml(url)}" alt="Photo audit" crossorigin="anonymous" />`;
+          html += `<img src="${url}" alt="Photo audit" />`;
         }
         html += `</div>`;
       }
