@@ -44,6 +44,8 @@ export default function AuditForm() {
   const [answers, setAnswers] = useState<Record<string, ItemAnswer>>({});
   const [photos, setPhotos] = useState<File[]>([]);
   const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
+  const [signatureAuditeur, setSignatureAuditeur] = useState<string | null>(null);
+  const [signatureAudite, setSignatureAudite] = useState<string | null>(null);
   const [editLoaded, setEditLoaded] = useState(false);
   const itemsSectionRef = useRef<HTMLDivElement>(null);
 
