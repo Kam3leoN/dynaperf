@@ -10,6 +10,7 @@ import {
   formatDateFr,
   formatNow,
   infoFieldHtml,
+  signaturesHtml,
 } from "@/lib/printPdf";
 
 interface Props {
