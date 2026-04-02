@@ -367,6 +367,30 @@ export default function SuiviActiviteForm() {
             </div>
           ))}
 
+          {/* ── Signatures ── */}
+          <div className="space-y-2 pt-4 border-t border-border">
+            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider border-b border-border pb-2">
+              Signatures
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              Signatures numériques de l'accompagnateur et du partenaire.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <SignaturePad
+                label="Signature de l'accompagnateur"
+                signerName={suiviPar}
+                value={signatureAuditeur}
+                onChange={setSignatureAuditeur}
+              />
+              <SignaturePad
+                label="Signature du partenaire"
+                signerName={partenaire}
+                value={signatureAudite}
+                onChange={setSignatureAudite}
+              />
+            </div>
+          </div>
+
           {/* Save button */}
           <div className="pt-4 border-t border-border">
             <Button
