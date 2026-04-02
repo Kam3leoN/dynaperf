@@ -4,7 +4,7 @@ import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
-function createGitHubPagesServiceWorkerCleanupPlugin(enabled: boolean): Plugin | null {
+function createGitHubPagesServiceWorkerCleanupPlugin(enabled: boolean, basePath: string): Plugin | null {
   if (!enabled) return null;
 
   const serviceWorkerCleanupSource = `self.addEventListener("install", () => self.skipWaiting());
@@ -31,19 +31,65 @@ self.addEventListener("fetch", () => {});
   const registerCleanupSource = `if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     const registrations = await navigator.serviceWorker.getRegistrations();
-    await Promise.all(registrations.map((registration) => registration.unregister()));
+    const cacheNames = "caches" in window ? await caches.keys() : [];
+
+    if (!registrations.length && !cacheNames.length) {
+      return;
+    }
+
+    try {
+      await navigator.serviceWorker.register("${basePath}sw.js", { scope: "${basePath}" });
+    } catch {
+      // noop
+    }
 
     if ("caches" in window) {
-      const cacheNames = await caches.keys();
       await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
     }
   });
 }
 `;
 
+  const inlineCleanupSource = `(function () {
+  if (!window.location.hostname.endsWith("github.io")) {
+    return;
+  }
+
+  const cleanupKey = "dynaperf-github-cleanup-v4";
+
+  window.addEventListener("load", async () => {
+    try {
+      const registrations = "serviceWorker" in navigator
+        ? await navigator.serviceWorker.getRegistrations()
+        : [];
+      const cacheNames = "caches" in window ? await caches.keys() : [];
+
+      if (!registrations.length && !cacheNames.length) {
+        return;
+      }
+
+      await Promise.all(registrations.map((registration) => registration.unregister()));
+      await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+
+      if (sessionStorage.getItem(cleanupKey) !== "done") {
+        sessionStorage.setItem(cleanupKey, "done");
+        window.location.reload();
+      }
+    } catch {
+      // noop
+    }
+  }, { once: true });
+})();`;
+
   return {
     name: "github-pages-service-worker-cleanup",
     apply: "build",
+    transformIndexHtml(html) {
+      return html.replace(
+        "</head>",
+        `    <script>${inlineCleanupSource}</script>\n    <script src="${basePath}registerSW.js"></script>\n  </head>`
+      );
+    },
     generateBundle() {
       this.emitFile({
         type: "asset",
@@ -142,7 +188,7 @@ export default defineConfig(({ mode }) => {
           ],
         },
       });
-  const githubPagesCleanupPlugin = createGitHubPagesServiceWorkerCleanupPlugin(isGitHubPagesBuild);
+  const githubPagesCleanupPlugin = createGitHubPagesServiceWorkerCleanupPlugin(isGitHubPagesBuild, basePath);
 
   return {
     define: {
