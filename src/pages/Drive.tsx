@@ -690,7 +690,7 @@ export default function Drive() {
                 </p>
 
                 {viewMode === "cards" ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  <div className={`grid gap-3 ${density === "compact" ? "grid-cols-3 sm:grid-cols-4 md:grid-cols-6" : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4"}`}>
                     {currentDocs.map((doc) => (
                       <div key={doc.id} className="relative">
                         <DocCard doc={doc} />
