@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextarea } from "@/components/ui/rich-textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -220,12 +220,13 @@ export default function Messages() {
 
           {/* Sticky input at bottom */}
           <div className="px-3 py-2.5 border-t border-border bg-card flex items-end gap-2 shrink-0">
-            <Textarea
+            <RichTextarea
               value={newMsg}
-              onChange={e => setNewMsg(e.target.value)}
+              onChange={setNewMsg}
               placeholder="Écrivez un message…"
-              className="flex-1 min-h-[40px] max-h-[120px] resize-none text-sm rounded-xl bg-secondary border-none focus-visible:ring-1 focus-visible:ring-primary/30"
-              onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+              rows={1}
+              minimal
+              className="flex-1"
             />
             <Button
               size="icon"
@@ -393,12 +394,13 @@ export default function Messages() {
                   </div>
 
                   <div className="px-3 py-2.5 border-t border-border bg-card flex items-end gap-2">
-                    <Textarea
+                    <RichTextarea
                       value={newMsg}
-                      onChange={e => setNewMsg(e.target.value)}
+                      onChange={setNewMsg}
                       placeholder="Écrivez un message…"
-                      className="flex-1 min-h-[40px] max-h-[120px] resize-none text-sm rounded-xl bg-secondary border-none focus-visible:ring-1 focus-visible:ring-primary/30"
-                      onKeyDown={e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); } }}
+                      rows={1}
+                      minimal
+                      className="flex-1"
                     />
                     <Button
                       size="icon"

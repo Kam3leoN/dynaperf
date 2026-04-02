@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -27,10 +27,14 @@ import {
   faFolder, faFolderOpen, faPlus, faPen, faTrash, faFile, faUpload,
   faSearch, faChevronRight, faArrowLeft, faDownload,
   faFilePdf, faFileImage, faFileExcel, faFileWord,
-  faTableCells, faGrip, faList,
+  faGrip, faList, faImage, faXmark, faArrowsUpDownLeftRight,
 } from "@fortawesome/free-solid-svg-icons";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+
+const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 Mo
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 Mo
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/svg+xml"];
 
 interface Category {
   id: string;
@@ -39,6 +43,7 @@ interface Category {
   sort_order: number;
   updated_at: string;
   updated_by: string | null;
+  icon_url: string | null;
 }
 
 interface DriveDocument {
@@ -99,6 +104,8 @@ export default function Drive() {
   const [editingCat, setEditingCat] = useState<Category | null>(null);
   const [catName, setCatName] = useState("");
   const [catParentId, setCatParentId] = useState<string | null>(null);
+  const [catIconFile, setCatIconFile] = useState<File | null>(null);
+  const [catIconPreview, setCatIconPreview] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ type: "cat" | "doc"; id: string; name: string } | null>(null);
 
   // Upload / Edit doc
@@ -109,6 +116,10 @@ export default function Drive() {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [uploadImage, setUploadImage] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // Drag-drop for moving documents
+  const [draggingDocId, setDraggingDocId] = useState<string | null>(null);
+  const [dragOverCatId, setDragOverCatId] = useState<string | null>(null);
 
   const fetchAll = async () => {
     setLoading(true);
@@ -153,19 +164,65 @@ export default function Drive() {
   }, [search, documents, categories]);
 
   // Category CRUD
-  const openNewCat = () => { setEditingCat(null); setCatName(""); setCatParentId(currentCatId); setCatDialogOpen(true); };
-  const openEditCat = (cat: Category) => { setEditingCat(cat); setCatName(cat.name); setCatParentId(cat.parent_id); setCatDialogOpen(true); };
+  const openNewCat = () => {
+    setEditingCat(null);
+    setCatName("");
+    setCatParentId(currentCatId);
+    setCatIconFile(null);
+    setCatIconPreview(null);
+    setCatDialogOpen(true);
+  };
+  const openEditCat = (cat: Category) => {
+    setEditingCat(cat);
+    setCatName(cat.name);
+    setCatParentId(cat.parent_id);
+    setCatIconFile(null);
+    setCatIconPreview(cat.icon_url);
+    setCatDialogOpen(true);
+  };
+
   const saveCat = async () => {
     if (!catName.trim()) return;
+    let iconUrl = editingCat?.icon_url || null;
+
+    // Upload icon if provided
+    if (catIconFile) {
+      if (catIconFile.size > MAX_IMAGE_SIZE) {
+        toast.error(`L'icône ne doit pas dépasser ${formatSize(MAX_IMAGE_SIZE)}`);
+        return;
+      }
+      const ext = catIconFile.name.split(".").pop();
+      const path = `icons/${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage.from("drive-files").upload(path, catIconFile);
+      if (upErr) { toast.error("Erreur upload icône"); return; }
+      const { data: urlData } = supabase.storage.from("drive-files").getPublicUrl(path);
+      iconUrl = urlData.publicUrl;
+    }
+
     if (editingCat) {
-      await supabase.from("drive_categories").update({ name: catName.trim(), parent_id: catParentId, updated_by: user?.id ?? null }).eq("id", editingCat.id);
+      await supabase.from("drive_categories").update({
+        name: catName.trim(),
+        parent_id: catParentId,
+        icon_url: iconUrl,
+        updated_by: user?.id ?? null,
+      }).eq("id", editingCat.id);
       toast.success("Catégorie modifiée");
     } else {
-      await supabase.from("drive_categories").insert({ name: catName.trim(), parent_id: catParentId, updated_by: user?.id ?? null });
+      await supabase.from("drive_categories").insert({
+        name: catName.trim(),
+        parent_id: catParentId,
+        icon_url: iconUrl,
+        updated_by: user?.id ?? null,
+      });
       toast.success("Catégorie créée");
     }
     setCatDialogOpen(false);
     fetchAll();
+  };
+
+  const removeCatIcon = () => {
+    setCatIconFile(null);
+    setCatIconPreview(null);
   };
 
   const handleDelete = async () => {
@@ -203,9 +260,22 @@ export default function Drive() {
     setUploadOpen(true);
   };
 
+  const validateFile = (file: File, maxSize: number, label: string): boolean => {
+    if (file.size > maxSize) {
+      toast.error(`${label} ne doit pas dépasser ${formatSize(maxSize)}`);
+      return false;
+    }
+    return true;
+  };
+
   const handleUpload = async () => {
     if (!editingDoc && !uploadFile) return;
     if (!editingDoc && !currentCatId) return;
+
+    // Validate sizes
+    if (uploadFile && !validateFile(uploadFile, MAX_FILE_SIZE, "Le fichier")) return;
+    if (uploadImage && !validateFile(uploadImage, MAX_IMAGE_SIZE, "L'image")) return;
+
     setUploading(true);
     try {
       let fileUrl = editingDoc?.file_url || "";
@@ -214,7 +284,6 @@ export default function Drive() {
       let mimeType = editingDoc?.mime_type || "";
       let imageUrl = editingDoc?.image_url || null;
 
-      // Upload file if new
       if (uploadFile) {
         const ext = uploadFile.name.split(".").pop();
         const path = `${currentCatId || editingDoc?.category_id}/${Date.now()}.${ext}`;
@@ -227,7 +296,6 @@ export default function Drive() {
         mimeType = uploadFile.type;
       }
 
-      // Upload image if provided
       if (uploadImage) {
         const imgExt = uploadImage.name.split(".").pop();
         const imgPath = `${currentCatId || editingDoc?.category_id}/img_${Date.now()}.${imgExt}`;
@@ -300,11 +368,54 @@ export default function Drive() {
     return profiles[userId] || null;
   };
 
+  // Drag-drop: move document to another category
+  const handleDocDragStart = useCallback((e: React.DragEvent, docId: string) => {
+    e.dataTransfer.effectAllowed = "move";
+    setDraggingDocId(docId);
+  }, []);
+
+  const handleCatDragOver = useCallback((e: React.DragEvent, catId: string) => {
+    if (!draggingDocId) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setDragOverCatId(catId);
+  }, [draggingDocId]);
+
+  const handleCatDragLeave = useCallback(() => {
+    setDragOverCatId(null);
+  }, []);
+
+  const handleCatDrop = useCallback(async (e: React.DragEvent, targetCatId: string) => {
+    e.preventDefault();
+    setDragOverCatId(null);
+    if (!draggingDocId || !isAdmin) return;
+
+    const doc = documents.find((d) => d.id === draggingDocId);
+    if (!doc || doc.category_id === targetCatId) {
+      setDraggingDocId(null);
+      return;
+    }
+
+    await supabase.from("drive_documents").update({
+      category_id: targetCatId,
+      updated_by: user?.id ?? null,
+    }).eq("id", draggingDocId);
+
+    toast.success(`Document déplacé vers ${categories.find((c) => c.id === targetCatId)?.name || "dossier"}`);
+    setDraggingDocId(null);
+    fetchAll();
+  }, [draggingDocId, documents, categories, isAdmin, user]);
+
+  const handleDragEnd = useCallback(() => {
+    setDraggingDocId(null);
+    setDragOverCatId(null);
+  }, []);
+
   const ModifiedInfo = ({ updatedAt, updatedBy }: { updatedAt: string; updatedBy: string | null }) => {
     const name = getModifierName(updatedBy);
     return (
       <p className="text-[10px] text-muted-foreground">
-        Dernière modification {formatModifiedDate(updatedAt)}
+        Modifié {formatModifiedDate(updatedAt)}
         {name && <> par <span className="font-medium">{name}</span></>}
       </p>
     );
@@ -312,7 +423,13 @@ export default function Drive() {
 
   // Card view for documents
   const DocCard = ({ doc }: { doc: DriveDocument }) => (
-    <Card className="group cursor-pointer hover:shadow-md transition-all hover:-translate-y-0.5 overflow-hidden" onClick={() => downloadDoc(doc)}>
+    <Card
+      className={`group cursor-pointer hover:shadow-md transition-all hover:-translate-y-0.5 overflow-hidden relative ${draggingDocId === doc.id ? "opacity-50" : ""}`}
+      onClick={() => downloadDoc(doc)}
+      draggable={isAdmin}
+      onDragStart={(e) => handleDocDragStart(e, doc.id)}
+      onDragEnd={handleDragEnd}
+    >
       <CardContent className="p-0">
         {doc.image_url ? (
           <div className="aspect-[4/3] bg-muted overflow-hidden">
@@ -326,6 +443,7 @@ export default function Drive() {
         <div className="p-3 space-y-1">
           <p className="text-sm font-semibold text-center leading-tight line-clamp-2">{doc.title}</p>
           {doc.description && <p className="text-xs text-muted-foreground text-center line-clamp-2">{doc.description}</p>}
+          {doc.file_size ? <p className="text-[10px] text-muted-foreground text-center">{formatSize(doc.file_size)}</p> : null}
           <ModifiedInfo updatedAt={doc.updated_at} updatedBy={doc.updated_by} />
         </div>
         {isAdmin && (
@@ -336,6 +454,13 @@ export default function Drive() {
             <button className="h-6 w-6 rounded-full bg-card/90 flex items-center justify-center hover:bg-destructive/20 shadow-sm" onClick={(e) => { e.stopPropagation(); setDeleteTarget({ type: "doc", id: doc.id, name: doc.title }); }}>
               <FontAwesomeIcon icon={faTrash} className="h-2.5 w-2.5 text-destructive" />
             </button>
+          </div>
+        )}
+        {isAdmin && (
+          <div className="absolute top-1.5 left-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="h-6 w-6 rounded-full bg-card/90 flex items-center justify-center shadow-sm cursor-grab" title="Glisser pour déplacer">
+              <FontAwesomeIcon icon={faArrowsUpDownLeftRight} className="h-2.5 w-2.5 text-muted-foreground" />
+            </div>
           </div>
         )}
       </CardContent>
@@ -366,8 +491,15 @@ export default function Drive() {
               <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input placeholder="Rechercher…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-10" />
             </div>
+            {/* Quick upload button */}
+            {isAdmin && currentCatId && (
+              <Button size="sm" variant="default" className="gap-1.5 h-10 shrink-0" onClick={() => openUploadDialog()}>
+                <FontAwesomeIcon icon={faUpload} className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Uploader</span>
+              </Button>
+            )}
             {/* View mode toggle */}
-            <div className="flex border border-border rounded-lg overflow-hidden">
+            <div className="flex border border-border rounded-lg overflow-hidden shrink-0">
               <button className={`h-10 w-10 flex items-center justify-center transition-colors ${viewMode === "cards" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary"}`} onClick={() => setViewMode("cards")} title="Vue cartes">
                 <FontAwesomeIcon icon={faGrip} className="h-4 w-4" />
               </button>
@@ -377,6 +509,11 @@ export default function Drive() {
             </div>
           </div>
         </div>
+
+        {/* File size info */}
+        <p className="text-[10px] text-muted-foreground">
+          Fichiers : max {formatSize(MAX_FILE_SIZE)} • Images : max {formatSize(MAX_IMAGE_SIZE)} (JPG, PNG, WebP, SVG)
+        </p>
 
         {/* Search results */}
         {searchResults ? (
@@ -390,7 +527,11 @@ export default function Drive() {
             {searchResults.cats.map((cat) => (
               <Card key={cat.id} className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => { setCurrentCatId(cat.id); setSearch(""); }}>
                 <CardContent className="p-3 flex items-center gap-3">
-                  <FontAwesomeIcon icon={faFolder} className="h-5 w-5 text-primary" />
+                  {cat.icon_url ? (
+                    <img src={cat.icon_url} alt="" className="h-6 w-6 rounded object-cover" />
+                  ) : (
+                    <FontAwesomeIcon icon={faFolder} className="h-5 w-5 text-primary" />
+                  )}
                   <div>
                     <p className="text-sm font-medium">{cat.name}</p>
                     <p className="text-xs text-muted-foreground">{getCatPath(cat.id)}</p>
@@ -458,10 +599,22 @@ export default function Drive() {
                 {childCategories.map((cat) => {
                   const subCount = categories.filter((c) => c.parent_id === cat.id).length;
                   const docCount = documents.filter((d) => d.category_id === cat.id).length;
+                  const isDragOver = dragOverCatId === cat.id;
                   return (
-                    <Card key={cat.id} className="group cursor-pointer hover:shadow-md transition-all hover:-translate-y-0.5" onClick={() => setCurrentCatId(cat.id)}>
+                    <Card
+                      key={cat.id}
+                      className={`group cursor-pointer hover:shadow-md transition-all hover:-translate-y-0.5 ${isDragOver ? "ring-2 ring-primary bg-primary/5" : ""}`}
+                      onClick={() => setCurrentCatId(cat.id)}
+                      onDragOver={(e) => handleCatDragOver(e, cat.id)}
+                      onDragLeave={handleCatDragLeave}
+                      onDrop={(e) => handleCatDrop(e, cat.id)}
+                    >
                       <CardContent className="p-4 flex flex-col items-center gap-2 relative">
-                        <FontAwesomeIcon icon={faFolderOpen} className="h-8 w-8 text-primary/80" />
+                        {cat.icon_url ? (
+                          <img src={cat.icon_url} alt={cat.name} className="h-10 w-10 rounded-lg object-cover" />
+                        ) : (
+                          <FontAwesomeIcon icon={faFolderOpen} className="h-8 w-8 text-primary/80" />
+                        )}
                         <p className="text-sm font-semibold text-center leading-tight">{cat.name}</p>
                         <div className="flex gap-1.5">
                           {subCount > 0 && <Badge variant="secondary" className="text-[10px]">{subCount} sous-cat.</Badge>}
@@ -487,7 +640,10 @@ export default function Drive() {
             {/* Documents */}
             {currentDocs.length > 0 && (
               <div>
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Documents</p>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                  Documents
+                  {isAdmin && draggingDocId && <span className="text-primary ml-2">— Glissez sur un dossier pour déplacer</span>}
+                </p>
 
                 {viewMode === "cards" ? (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
@@ -511,7 +667,14 @@ export default function Drive() {
                       </TableHeader>
                       <TableBody>
                         {currentDocs.map((doc) => (
-                          <TableRow key={doc.id} className="cursor-pointer hover:bg-accent/50" onClick={() => downloadDoc(doc)}>
+                          <TableRow
+                            key={doc.id}
+                            className={`cursor-pointer hover:bg-accent/50 ${draggingDocId === doc.id ? "opacity-50" : ""}`}
+                            onClick={() => downloadDoc(doc)}
+                            draggable={isAdmin}
+                            onDragStart={(e) => handleDocDragStart(e, doc.id)}
+                            onDragEnd={handleDragEnd}
+                          >
                             <TableCell>
                               {doc.image_url ? (
                                 <img src={doc.image_url} alt="" className="h-8 w-8 rounded object-cover" />
@@ -589,6 +752,34 @@ export default function Drive() {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label className="text-xs">Icône du dossier (optionnel — max {formatSize(MAX_IMAGE_SIZE)})</Label>
+              {catIconPreview ? (
+                <div className="flex items-center gap-3 mt-1">
+                  <img src={catIconFile ? URL.createObjectURL(catIconFile) : catIconPreview} alt="Icône" className="h-12 w-12 rounded-lg object-cover border border-border" />
+                  <Button variant="ghost" size="sm" className="gap-1 text-destructive" onClick={removeCatIcon}>
+                    <FontAwesomeIcon icon={faXmark} className="h-3 w-3" /> Retirer
+                  </Button>
+                </div>
+              ) : (
+                <Input
+                  type="file"
+                  accept="image/*"
+                  className="mt-1"
+                  onChange={(e) => {
+                    const f = e.target.files?.[0];
+                    if (f) {
+                      if (f.size > MAX_IMAGE_SIZE) {
+                        toast.error(`L'icône ne doit pas dépasser ${formatSize(MAX_IMAGE_SIZE)}`);
+                        return;
+                      }
+                      setCatIconFile(f);
+                      setCatIconPreview(URL.createObjectURL(f));
+                    }
+                  }}
+                />
+              )}
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCatDialogOpen(false)}>Annuler</Button>
@@ -613,12 +804,26 @@ export default function Drive() {
               <Input value={uploadDescription} onChange={(e) => setUploadDescription(e.target.value)} placeholder="Description courte" />
             </div>
             <div>
-              <Label className="text-xs">{editingDoc ? "Remplacer le fichier (optionnel)" : "Fichier"}</Label>
-              <Input type="file" onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)} />
+              <Label className="text-xs">{editingDoc ? "Remplacer le fichier (optionnel)" : "Fichier"} — max {formatSize(MAX_FILE_SIZE)}</Label>
+              <Input type="file" onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f && f.size > MAX_FILE_SIZE) {
+                  toast.error(`Le fichier ne doit pas dépasser ${formatSize(MAX_FILE_SIZE)}`);
+                  return;
+                }
+                setUploadFile(f ?? null);
+              }} />
             </div>
             <div>
-              <Label className="text-xs">Image de prévisualisation (optionnelle)</Label>
-              <Input type="file" accept="image/*" onChange={(e) => setUploadImage(e.target.files?.[0] ?? null)} />
+              <Label className="text-xs">Image de prévisualisation (optionnelle — max {formatSize(MAX_IMAGE_SIZE)})</Label>
+              <Input type="file" accept="image/*" onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f && f.size > MAX_IMAGE_SIZE) {
+                  toast.error(`L'image ne doit pas dépasser ${formatSize(MAX_IMAGE_SIZE)}`);
+                  return;
+                }
+                setUploadImage(f ?? null);
+              }} />
               {(uploadImage || editingDoc?.image_url) && (
                 <div className="mt-2">
                   <img

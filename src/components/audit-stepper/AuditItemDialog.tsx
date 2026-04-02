@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextarea } from "@/components/ui/rich-textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
@@ -295,12 +295,12 @@ export function AuditItemDialog({
             <Label className="text-xs text-muted-foreground">
               Commentaire (optionnel)
             </Label>
-            <Textarea
+            <RichTextarea
               value={comment}
-              onChange={(e) => setComment(e.target.value)}
+              onChange={setComment}
               placeholder="Ajouter un commentaire..."
               rows={2}
-              className="text-sm"
+              minimal
             />
           </div>
         </div>

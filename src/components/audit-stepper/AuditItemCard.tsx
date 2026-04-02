@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextarea } from "@/components/ui/rich-textarea";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
@@ -232,7 +232,7 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
 
           <div className="space-y-1.5">
             <Label className="text-[11px] sm:text-xs text-muted-foreground">Commentaire (optionnel)</Label>
-            <Textarea value={comment} onChange={e => setComment(e.target.value)} placeholder="Ajouter un commentaire..." rows={2} className="text-sm min-h-[72px] resize-y" />
+            <RichTextarea value={comment} onChange={setComment} placeholder="Ajouter un commentaire..." rows={2} minimal className="text-sm" />
           </div>
         </div>
       </CardContent>
