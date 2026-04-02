@@ -77,25 +77,25 @@ export function BottomNav() {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-2"
+                className="flex flex-col items-center justify-center gap-0.5 min-w-[60px] py-2"
               >
                 <div
                   className={cn(
-                    "flex items-center justify-center w-16 h-8 rounded-2xl transition-colors",
+                    "flex items-center justify-center w-16 h-9 rounded-2xl transition-colors",
                     active ? "bg-primary/12" : "bg-transparent"
                   )}
                 >
                   <FontAwesomeIcon
                     icon={item.icon!}
                     className={cn(
-                      "h-5 w-5 transition-colors",
+                      "h-[22px] w-[22px] transition-colors",
                       active ? "text-primary" : "text-muted-foreground"
                     )}
                   />
                 </div>
                 <span
                   className={cn(
-                    "text-[10px] font-medium transition-colors",
+                    "text-[11px] font-medium transition-colors",
                     active ? "text-primary" : "text-muted-foreground"
                   )}
                 >

@@ -313,7 +313,7 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
             )}
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-2">
             {filters && setFilters && (
               <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full" onClick={() => setFiltersOpen(true)} title="Filtres">
                 <FontAwesomeIcon icon={faSliders} className="h-[18px] w-[18px]" />
