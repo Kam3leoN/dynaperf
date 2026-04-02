@@ -353,7 +353,7 @@ export default function AuditForm() {
   return (
     <AppLayout>
       {/* Sticky progress bar */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-2.5 -mx-4 mb-6">
+      <div className="sticky top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-2.5 -mx-4 lg:-mx-6 mb-6">
         <div className="max-w-4xl mx-auto">
           <div className="flex items-center gap-3 mb-1.5">
             <Badge variant="outline" className="text-xs">

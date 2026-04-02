@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faBars,
   faChartLine,
-  faMoneyBill,
+  faFolder,
   faGear,
 } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/lib/utils";
@@ -15,7 +15,7 @@ const navItems = [
   { icon: faBars, label: "Menu", path: "__menu__" },
   { icon: faChartLine, label: "Dashboard", path: "/hub" },
   { icon: null, label: "", path: "/", isFab: true },
-  { icon: faMoneyBill, label: "Primes", path: "/primes" },
+  { icon: faFolder, label: "Drive", path: "/drive" },
   { icon: faGear, label: "Réglages", path: "/preferences" },
 ];
 
@@ -28,7 +28,7 @@ export function BottomNav() {
     if (path === "/") return location.pathname === "/";
     if (path === "/hub") return location.pathname === "/hub";
     if (path === "/preferences") return location.pathname === "/preferences";
-    if (path === "/primes") return location.pathname === "/primes";
+    if (path === "/drive") return location.pathname === "/drive";
     return false;
   };
 

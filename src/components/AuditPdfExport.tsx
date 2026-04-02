@@ -54,9 +54,10 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
       let html = "";
 
       // ── Header ──
+      const heureEvent = detail.heure_evenement ? ` — à : ${escapeHtml(detail.heure_evenement)}` : "";
       html += `<div class="report-header">
-        <h1>Rapport d'audit</h1>
-        <div class="subtitle">${escapeHtml(typeEvenement)} — ${formatDateFr(date)}</div>
+        <h1>Rapport d'Audit (${escapeHtml(typeEvenement)})</h1>
+        <div class="subtitle">le : ${formatDateFr(date)}${heureEvent}</div>
         <div class="subtitle">Généré le ${formatNow()}</div>
       </div>`;
 

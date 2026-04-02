@@ -23,6 +23,7 @@ import {
   faGear,
   faCalendarPlus,
   faMoneyBill,
+  faFolder,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useTheme } from "next-themes";
@@ -177,6 +178,12 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
           Mot de passe oublié
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
+          <Link to="/primes" className="flex items-center gap-2.5 cursor-pointer">
+            <FontAwesomeIcon icon={faMoneyBill} className="h-4 w-4 text-muted-foreground" />
+            Mes primes
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild>
           <Link to="/preferences" className="flex items-center gap-2.5 cursor-pointer">
             <FontAwesomeIcon icon={faGear} className="h-4 w-4 text-muted-foreground" />
             Préférences
@@ -242,11 +249,7 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
       </DropdownMenu>
 
       <NavLink to="/drive" className={() => navPill(location.pathname === "/drive")}>
-        <FontAwesomeIcon icon={faClipboardList} className="h-4 w-4" /><span>Drive</span>
-      </NavLink>
-
-      <NavLink to="/primes" className={() => navPill(location.pathname === "/primes")}>
-        <FontAwesomeIcon icon={faMoneyBill} className="h-4 w-4" /><span>Primes</span>
+        <FontAwesomeIcon icon={faFolder} className="h-4 w-4" /><span>Drive</span>
       </NavLink>
 
       <NavLink to="/historique" className={() => navPill(location.pathname === "/historique")}>
