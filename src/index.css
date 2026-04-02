@@ -227,3 +227,30 @@
 ::-webkit-scrollbar-thumb:hover {
   background: hsl(var(--muted-foreground) / 0.4);
 }
+
+/* ═══════════════════════════════════════════════
+   Device-adaptive utilities (via deviceClasses.ts)
+   ═══════════════════════════════════════════════ */
+
+/* High-DPI: slightly tighter spacing on very dense screens */
+html.dpi-3x,
+html.dpi-4x {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Samsung Browser: fix occasional font-boosting */
+html.browser-samsung {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* iOS Safari: safe area & momentum scroll */
+html.os-ios {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* PWA standalone: hide browser-specific chrome affordances */
+html.pwa-standalone .browser-only {
+  display: none;
+}
