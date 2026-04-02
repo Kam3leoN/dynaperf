@@ -90,10 +90,28 @@ function formatModifiedDate(dateStr: string) {
 }
 
 type ViewMode = "cards" | "table";
+type Density = "compact" | "comfortable";
+
+// Map known folder names to audit type SVG icons
+const FOLDER_NAME_TO_TYPE: Record<string, string> = {
+  "Rencontre Dirigeants Présentiels": "RD Présentiel",
+  "Rencontre Dirigeants Distanciels": "RD Distanciel",
+  "Clubs d'Affaires": "Club Affaires",
+  "Rendez-Vous Commerciaux": "RDV Commercial",
+  "Mise en Place": "Mise en Place",
+  "Événementiel": "RD Événementiel",
+};
+
+function getFolderIcon(cat: { name: string; icon_url: string | null }): string | null {
+  if (cat.icon_url) return cat.icon_url;
+  const typeKey = FOLDER_NAME_TO_TYPE[cat.name] || cat.name;
+  return auditTypeIcons[typeKey]?.icon || null;
+}
 
 export default function Drive() {
   const { user } = useAuth();
   const { isAdmin } = useAdmin(user);
+  const [searchParams] = useSearchParams();
   const [categories, setCategories] = useState<Category[]>([]);
   const [documents, setDocuments] = useState<DriveDocument[]>([]);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
@@ -101,6 +119,7 @@ export default function Drive() {
   const [currentCatId, setCurrentCatId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("cards");
+  const [density, setDensity] = useState<Density>("comfortable");
 
   // Dialog states
   const [catDialogOpen, setCatDialogOpen] = useState(false);
