@@ -14,6 +14,8 @@ import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
 import { DEFAULT_PRIME_CONFIG, PrimeConfig, parsePrimeConfig, primeForNthVisitWithCustom, buildRankMap, UserCustomPrime } from "@/lib/primeUtils";
 import { Badge } from "@/components/ui/badge";
+import iconCompact from "@/assets/icon-compact.svg";
+import iconExtended from "@/assets/icon-extended.svg";
 
 interface AuditRow {
   id: string;
