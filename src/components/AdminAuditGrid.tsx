@@ -616,7 +616,7 @@ export default function AdminAuditGridInline() {
             </div>
             <div className="space-y-1.5">
               <Label>Comment y parvenir ?</Label>
-              <Textarea value={itemForm.comment_y_parvenir} onChange={(e) => setItemForm({ ...itemForm, comment_y_parvenir: e.target.value })} rows={2} placeholder="Conseils pour atteindre ce critère…" />
+              <RichTextarea value={itemForm.comment_y_parvenir} onChange={(val) => setItemForm({ ...itemForm, comment_y_parvenir: val })} rows={2} placeholder="Conseils pour atteindre ce critère…" />
             </div>
             {itemForm.input_type === "checklist" && (
               <div className="space-y-1.5">
