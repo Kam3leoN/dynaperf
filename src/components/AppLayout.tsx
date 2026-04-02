@@ -266,6 +266,20 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
         </DropdownMenuContent>
       </DropdownMenu>
 
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className={navPill(isCommunauteSection)}>
+            <FontAwesomeIcon icon={faComments} className="h-4 w-4" />
+            <span>Communauté</span>
+            <FontAwesomeIcon icon={faChevronDown} className="h-2.5 w-2.5 opacity-50" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-56 rounded-2xl">
+          <DropdownMenuItem asChild><Link to="/messages" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faEnvelope} className="h-4 w-4 text-muted-foreground" />Messagerie</Link></DropdownMenuItem>
+          <DropdownMenuItem asChild><Link to="/sondages" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faSquarePollVertical} className="h-4 w-4 text-muted-foreground" />Sondages</Link></DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
       <NavLink to="/historique" className={() => navPill(location.pathname === "/historique")}>
         <FontAwesomeIcon icon={faClockRotateLeft} className="h-4 w-4" /><span>Historique</span>
       </NavLink>
