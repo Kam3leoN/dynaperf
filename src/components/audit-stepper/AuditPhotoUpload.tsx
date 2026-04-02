@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCloudArrowUp, faCamera, faXmark, faChevronLeft } from "@fortawesome/free-solid-svg-icons";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { SignaturePad } from "@/components/ui/signature-pad";
 
 interface Props {
   photos: File[];
@@ -10,9 +11,20 @@ interface Props {
   onSubmit: () => void;
   onBack: () => void;
   uploading: boolean;
+  auditeurName: string;
+  partenaireName: string;
+  signatureAuditeur: string | null;
+  onSignatureAuditeurChange: (v: string | null) => void;
+  signatureAudite: string | null;
+  onSignatureAuditeChange: (v: string | null) => void;
 }
 
-export function AuditPhotoUpload({ photos, onChange, onSubmit, onBack, uploading }: Props) {
+export function AuditPhotoUpload({
+  photos, onChange, onSubmit, onBack, uploading,
+  auditeurName, partenaireName,
+  signatureAuditeur, onSignatureAuditeurChange,
+  signatureAudite, onSignatureAuditeChange,
+}: Props) {
   const isMobile = useIsMobile();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -123,6 +135,29 @@ export function AuditPhotoUpload({ photos, onChange, onSubmit, onBack, uploading
       <p className="text-xs text-muted-foreground">
         {photos.length} photo{photos.length !== 1 ? "s" : ""} sélectionnée{photos.length !== 1 ? "s" : ""}
       </p>
+
+      {/* ── Signatures ── */}
+      <div className="space-y-2 pt-4 border-t border-border">
+        <h2 className="text-lg font-semibold text-foreground">Signatures</h2>
+        <p className="text-sm text-muted-foreground">
+          Signatures numériques de l'auditeur et du partenaire audité.
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <SignaturePad
+          label="Signature de l'auditeur"
+          signerName={auditeurName}
+          value={signatureAuditeur}
+          onChange={onSignatureAuditeurChange}
+        />
+        <SignaturePad
+          label="Signature du partenaire audité"
+          signerName={partenaireName}
+          value={signatureAudite}
+          onChange={onSignatureAuditeChange}
+        />
+      </div>
 
       {/* Actions */}
       <div className="flex gap-3 pt-2">
