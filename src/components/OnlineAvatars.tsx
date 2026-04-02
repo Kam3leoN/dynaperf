@@ -77,15 +77,15 @@ export function OnlineAvatars() {
           <Tooltip key={p.user_id}>
             <TooltipTrigger asChild>
               <div className="relative">
-                <Avatar className="h-8 w-8 border-2 border-card shrink-0">
+                <Avatar className="h-[72px] w-[72px] border-2 border-card shrink-0">
                   {p.avatar_url ? (
                     <AvatarImage src={p.avatar_url} alt={p.display_name || ""} />
                   ) : null}
-                  <AvatarFallback className="text-[10px] font-semibold bg-primary/10 text-primary">
+                  <AvatarFallback className="text-base font-semibold bg-primary/10 text-primary">
                     {getInitials(p.display_name)}
                   </AvatarFallback>
                 </Avatar>
-                <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-card" />
+                <span className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-card" />
               </div>
             </TooltipTrigger>
             <TooltipContent side="bottom" className="text-xs">
