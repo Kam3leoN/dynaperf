@@ -249,7 +249,7 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
       </DropdownMenu>
 
       <NavLink to="/drive" className={() => navPill(location.pathname === "/drive")}>
-        <FontAwesomeIcon icon={faClipboardList} className="h-4 w-4" /><span>Drive</span>
+        <FontAwesomeIcon icon={faFolder} className="h-4 w-4" /><span>Drive</span>
       </NavLink>
 
       <NavLink to="/historique" className={() => navPill(location.pathname === "/historique")}>
