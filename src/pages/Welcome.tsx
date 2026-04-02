@@ -40,10 +40,10 @@ export default function Welcome() {
           <OnlineAvatars />
 
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground">
+            <h1 className="text-[1.625rem] sm:text-3xl font-bold text-foreground">
               Bonjour {greeting} <span className="inline-block animate-bounce">😉</span>
             </h1>
-            <p className="text-muted-foreground text-base mt-1.5">
+            <p className="text-muted-foreground text-[1.0625rem] mt-1.5">
               Bienvenue sur DynaPerf
             </p>
           </div>

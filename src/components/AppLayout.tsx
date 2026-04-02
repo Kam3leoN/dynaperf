@@ -303,7 +303,7 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
               <img
                 src={resolvedTheme === "dark" ? logoDark : logoLight}
                 alt="DynaPerf"
-                className="h-7 lg:h-8"
+                className="h-8 lg:h-8"
               />
             </Link>
             {!isMobile && (
