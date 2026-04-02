@@ -12,6 +12,7 @@ import {
   formatNow,
   infoFieldHtml,
   statFieldHtml,
+  signaturesHtml,
 } from "@/lib/printPdf";
 
 interface AuditPdfExportProps {
