@@ -1,8 +1,64 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
+
+function createGitHubPagesServiceWorkerCleanupPlugin(enabled: boolean): Plugin | null {
+  if (!enabled) return null;
+
+  const serviceWorkerCleanupSource = `self.addEventListener("install", () => self.skipWaiting());
+
+self.addEventListener("activate", (event) => {
+  event.waitUntil((async () => {
+    const cacheNames = await caches.keys();
+    await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+
+    await self.registration.unregister();
+
+    const clientsList = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    await Promise.all(
+      clientsList.map((client) =>
+        "navigate" in client ? client.navigate(client.url) : Promise.resolve(undefined)
+      )
+    );
+  })());
+});
+
+self.addEventListener("fetch", () => {});
+`;
+
+  const registerCleanupSource = `if ("serviceWorker" in navigator) {
+  window.addEventListener("load", async () => {
+    const registrations = await navigator.serviceWorker.getRegistrations();
+    await Promise.all(registrations.map((registration) => registration.unregister()));
+
+    if ("caches" in window) {
+      const cacheNames = await caches.keys();
+      await Promise.all(cacheNames.map((cacheName) => caches.delete(cacheName)));
+    }
+  });
+}
+`;
+
+  return {
+    name: "github-pages-service-worker-cleanup",
+    apply: "build",
+    generateBundle() {
+      this.emitFile({
+        type: "asset",
+        fileName: "sw.js",
+        source: serviceWorkerCleanupSource,
+      });
+
+      this.emitFile({
+        type: "asset",
+        fileName: "registerSW.js",
+        source: registerCleanupSource,
+      });
+    },
+  };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
@@ -86,6 +142,7 @@ export default defineConfig(({ mode }) => {
           ],
         },
       });
+  const githubPagesCleanupPlugin = createGitHubPagesServiceWorkerCleanupPlugin(isGitHubPagesBuild);
 
   return {
     define: {
@@ -101,7 +158,7 @@ export default defineConfig(({ mode }) => {
         overlay: false,
       },
     },
-    plugins: [react(), mode === "development" && componentTagger(), pwaPlugin].filter(Boolean),
+    plugins: [react(), mode === "development" && componentTagger(), pwaPlugin, githubPagesCleanupPlugin].filter(Boolean),
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
