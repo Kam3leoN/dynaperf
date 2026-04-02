@@ -56,6 +56,7 @@ interface SondageVote {
 
 export default function Sondages() {
   const { user } = useAuth();
+  const { isAdmin } = useAdmin(user);
   const [sondages, setSondages] = useState<Sondage[]>([]);
   const [options, setOptions] = useState<Record<string, SondageOption[]>>({});
   const [votes, setVotes] = useState<SondageVote[]>([]);

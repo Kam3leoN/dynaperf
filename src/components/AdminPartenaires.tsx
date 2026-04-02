@@ -455,13 +455,14 @@ export default function AdminPartenaires() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-48 sm:w-[260px] h-9 text-sm rounded-md"
           />
-          <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) resetForm(); }}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5 shrink-0">
-                <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
-                <span className="hidden sm:inline">Ajouter</span>
-              </Button>
-            </DialogTrigger>
+          {isAdmin && (
+            <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) resetForm(); }}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5 shrink-0">
+                  <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
+                  <span className="hidden sm:inline">Ajouter</span>
+                </Button>
+              </DialogTrigger>
             <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>Nouveau partenaire</DialogTitle>
