@@ -25,6 +25,8 @@ import {
   faMoneyBill,
   faFolder,
   faUpload,
+  faComments,
+  faSquarePollVertical,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useTheme } from "next-themes";
