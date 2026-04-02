@@ -140,10 +140,10 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
     }`;
 
   const iconBadge = (icon: typeof faBell, to: string, count: number, title: string) => (
-    <Link to={to} className="relative h-10 w-10 rounded-full flex items-center justify-center hover:bg-secondary/60 transition-colors" title={title}>
-      <FontAwesomeIcon icon={icon} className="h-[18px] w-[18px] text-foreground/60" />
+    <Link to={to} className="relative h-11 w-11 rounded-full flex items-center justify-center hover:bg-secondary/60 transition-colors" title={title}>
+      <FontAwesomeIcon icon={icon} className="h-5 w-5 text-foreground/60" />
       {count > 0 && (
-        <span className="absolute top-0.5 right-0.5 min-w-[18px] h-[18px] rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1">
+        <span className="absolute top-0 right-0 min-w-[20px] h-[20px] rounded-full bg-destructive text-destructive-foreground text-[11px] font-bold flex items-center justify-center px-1">
           {count > 99 ? "99+" : count}
         </span>
       )}
