@@ -182,7 +182,7 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
                 </Button>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                {(autoValue ?? 0) > 0 ? `${autoValue} no-show — validé.` : "Aucun no-show — non validé."}
+                {(autoValue ?? 0) === 0 ? "Aucun no-show — validé." : `${autoValue} no-show — non validé.`}
               </p>
             </div>
           )}

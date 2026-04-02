@@ -118,8 +118,10 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
           const score = answer?.score ?? 0;
           const isMax = score === item.maxPoints;
           const hasScore = score > 0;
-          const borderClass = isMax ? "border-emerald" : hasScore ? "border-amber" : "border-muted";
-          const badgeClass = isMax ? "badge-emerald" : hasScore ? "badge-amber" : "badge-muted";
+          const isTouched = answer !== undefined;
+          const isExplicitZero = isTouched && score === 0;
+          const borderClass = isMax ? "border-emerald" : hasScore ? "border-amber" : isExplicitZero ? "border-red" : "border-muted";
+          const badgeClass = isMax ? "badge-emerald" : hasScore ? "badge-amber" : isExplicitZero ? "badge-red" : "badge-muted";
 
           html += `<div class="item-card ${borderClass} avoid-break">`;
           html += `<div class="item-card-inner">`;
