@@ -140,8 +140,8 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
     }`;
 
   const iconBadge = (icon: typeof faBell, to: string, count: number, title: string) => (
-    <Link to={to} className="relative h-11 w-11 rounded-full flex items-center justify-center hover:bg-secondary/60 transition-colors" title={title}>
-      <FontAwesomeIcon icon={icon} className="h-5 w-5 text-foreground/60" />
+    <Link to={to} className="relative h-12 w-12 rounded-full flex items-center justify-center hover:bg-secondary/60 transition-colors" title={title}>
+      <FontAwesomeIcon icon={icon} className="h-[22px] w-[22px] text-foreground/60" />
       {count > 0 && (
         <span className="absolute top-0 right-0 min-w-[20px] h-[20px] rounded-full bg-destructive text-destructive-foreground text-[11px] font-bold flex items-center justify-center px-1">
           {count > 99 ? "99+" : count}
@@ -153,7 +153,7 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
   const profileButton = () => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="h-11 w-11 rounded-full overflow-hidden border-2 border-border hover:border-primary/40 transition-all flex items-center justify-center shrink-0" title="Profil">
+        <button className="h-12 w-12 rounded-full overflow-hidden border-2 border-border hover:border-primary/40 transition-all flex items-center justify-center shrink-0" title="Profil">
           {avatarUrl ? (
             <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
           ) : (
@@ -303,7 +303,7 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
               <img
                 src={resolvedTheme === "dark" ? logoDark : logoLight}
                 alt="DynaPerf"
-                className="h-8 lg:h-8"
+                className="h-9 lg:h-8"
               />
             </Link>
             {!isMobile && (
