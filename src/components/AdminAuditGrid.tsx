@@ -604,7 +604,7 @@ export default function AdminAuditGridInline() {
             </div>
             <div className="space-y-1.5">
               <Label>Conditions de validation</Label>
-              <Textarea value={itemForm.condition} onChange={(e) => setItemForm({ ...itemForm, condition: e.target.value })} rows={2} />
+              <RichTextarea value={itemForm.condition} onChange={(val) => setItemForm({ ...itemForm, condition: val })} rows={2} />
             </div>
             <div className="space-y-1.5">
               <Label>Règles de scoring (optionnel)</Label>
