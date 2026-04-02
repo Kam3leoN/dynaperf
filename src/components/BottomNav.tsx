@@ -56,15 +56,15 @@ export function BottomNav() {
                 <button
                   key="menu"
                   onClick={() => setMenuOpen(true)}
-                  className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-2"
+                  className="flex flex-col items-center justify-center gap-0.5 min-w-[60px] py-2"
                 >
-                  <div className="flex items-center justify-center w-16 h-8 rounded-2xl bg-transparent">
+                  <div className="flex items-center justify-center w-16 h-9 rounded-2xl bg-transparent">
                     <FontAwesomeIcon
                       icon={item.icon!}
-                      className="h-5 w-5 text-muted-foreground"
+                      className="h-[22px] w-[22px] text-muted-foreground"
                     />
                   </div>
-                  <span className="text-[10px] font-medium text-muted-foreground">
+                  <span className="text-[11px] font-medium text-muted-foreground">
                     {item.label}
                   </span>
                 </button>
