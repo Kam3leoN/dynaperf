@@ -240,8 +240,8 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <NavLink to="/business-plan" className={() => navPill(location.pathname === "/business-plan")}>
-        <FontAwesomeIcon icon={faChartLine} className="h-4 w-4" /><span>Business Plan</span>
+      <NavLink to="/drive" className={() => navPill(location.pathname === "/drive")}>
+        <FontAwesomeIcon icon={faClipboardList} className="h-4 w-4" /><span>Drive</span>
       </NavLink>
 
       <NavLink to="/primes" className={() => navPill(location.pathname === "/primes")}>
