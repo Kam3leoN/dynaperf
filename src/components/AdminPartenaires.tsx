@@ -100,6 +100,7 @@ const emptyForm = {
 };
 
 export default function AdminPartenaires() {
+  const { isAdmin } = useAdmin();
   const [partenaires, setPartenaires] = useState<Partenaire[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
