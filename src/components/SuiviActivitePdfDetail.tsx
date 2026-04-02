@@ -3,9 +3,14 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFilePdf } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
 import { fetchSuiviItemsConfig } from "@/data/suiviActiviteItems";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
 import { toast } from "sonner";
+import {
+  openPrintWindow,
+  escapeHtml,
+  formatDateFr,
+  formatNow,
+  infoFieldHtml,
+} from "@/lib/printPdf";
 
 interface Props {
   suiviId: string;
@@ -13,7 +18,7 @@ interface Props {
 
 export function SuiviActivitePdfDetail({ suiviId }: Props) {
   const handleExport = async () => {
-    toast.info("Génération du PDF en cours…");
+    toast.info("Préparation du rapport…");
 
     try {
       const [{ data: suivi }, configItems] = await Promise.all([
@@ -27,227 +32,127 @@ export function SuiviActivitePdfDetail({ suiviId }: Props) {
       }
 
       const items = (suivi.items as Record<string, { status: string; observation?: string }>) ?? {};
+      const rate = suivi.total_items ? Math.round(((suivi.total_items_valides ?? 0) / suivi.total_items) * 100) : 0;
 
-      const { default: jsPDF } = await import("jspdf");
-      const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pageW = doc.internal.pageSize.getWidth();
-      const pageH = doc.internal.pageSize.getHeight();
-      const margin = 15;
-      const contentW = pageW - margin * 2;
-      let y = margin;
-
-      const checkPageBreak = (needed: number) => {
-        if (y + needed > pageH - margin) {
-          doc.addPage();
-          y = margin;
-        }
-      };
+      let html = "";
 
       // ── Header ──
-      doc.setFillColor(14, 34, 44);
-      doc.rect(0, 0, pageW, 38, "F");
-      doc.setTextColor(255, 255, 255);
-      doc.setFontSize(18);
-      doc.setFont("helvetica", "bold");
-      doc.text("Rapport de suivi d'activité", margin, 16);
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      doc.text(`${format(new Date(suivi.date), "dd MMMM yyyy", { locale: fr })}`, margin, 24);
-      doc.text(`Généré le ${format(new Date(), "dd MMMM yyyy à HH:mm", { locale: fr })}`, margin, 31);
-      y = 46;
+      html += `<div class="report-header">
+        <h1>Rapport de suivi d'activité</h1>
+        <div class="subtitle">${formatDateFr(suivi.date)}</div>
+        <div class="subtitle">Généré le ${formatNow()}</div>
+      </div>`;
 
-      // ── Infos ──
-      doc.setTextColor(14, 34, 44);
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text("Informations générales", margin, y);
-      y += 7;
+      // ── Informations générales ──
+      html += `<div class="section-title">Informations générales</div>`;
+      html += `<div class="info-grid">`;
+      html += infoFieldHtml("Partenaire accompagné", suivi.agence);
+      html += infoFieldHtml("Partenaire référent", suivi.agence_referente);
+      html += infoFieldHtml("Suivi réalisé par", suivi.suivi_par);
+      html += infoFieldHtml("Date", formatDateFr(suivi.date));
+      html += infoFieldHtml("Contrats total (année)", String(suivi.nb_contrats_total ?? 0));
+      html += infoFieldHtml("Contrats depuis dernier", String(suivi.nb_contrats_depuis_dernier ?? 0));
+      html += infoFieldHtml("Score global", `${suivi.total_items_valides ?? 0}/${suivi.total_items ?? 0} validés`);
+      html += infoFieldHtml("Taux de réussite", `${rate}%`);
+      html += `</div>`;
 
-      doc.setFontSize(9);
-      const rate = suivi.total_items ? Math.round(((suivi.total_items_valides ?? 0) / suivi.total_items) * 100) : 0;
-      const infoRows: [string, string][] = [
-        ["Partenaire accompagné", suivi.agence || "—"],
-        ["Partenaire référent", suivi.agence_referente || "—"],
-        ["Suivi réalisé par", suivi.suivi_par || "—"],
-        ["Date", format(new Date(suivi.date), "dd MMMM yyyy", { locale: fr })],
-        ["Contrats total (année)", String(suivi.nb_contrats_total ?? 0)],
-        ["Contrats depuis dernier", String(suivi.nb_contrats_depuis_dernier ?? 0)],
-        ["Score global", `${suivi.total_items_valides ?? 0}/${suivi.total_items ?? 0} validés`],
-        ["Taux de réussite", `${rate}%`],
-      ];
-
-      infoRows.forEach(([label, value], idx) => {
-        checkPageBreak(7);
-        if (idx % 2 === 0) {
-          doc.setFillColor(245, 247, 250);
-          doc.rect(margin, y - 4, contentW, 7, "F");
-        }
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(60, 60, 60);
-        doc.text(label, margin + 2, y);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(30, 30, 30);
-        doc.text(value, margin + 65, y);
-        y += 7;
-      });
-
-      y += 6;
+      // ── Score badge ──
+      const rateClass = rate >= 75 ? "badge-emerald" : rate >= 50 ? "badge-amber" : "badge-red";
+      html += `<div style="margin-top:10px;display:flex;gap:6px;">`;
+      html += `<span class="badge ${rateClass}" style="font-size:11px;padding:4px 12px;">${rate}% de réussite</span>`;
+      html += `</div>`;
 
       // ── Items par catégorie ──
       let currentCat = "";
-      configItems.forEach((item) => {
+      for (const item of configItems) {
         const answer = items[item.id];
         const status = answer?.status ?? null;
         const observation = answer?.observation ?? "";
         const isFait = status === "fait";
         const isPasFait = status === "pas_fait";
         const isNc = status === "nc";
-        const hasConditions = !!item.conditions;
-        const hasInterets = !!item.interets;
-        const hasConseils = !!item.conseils;
 
         // Category header
         if (item.categorie !== currentCat) {
           currentCat = item.categorie;
-          checkPageBreak(16);
-          y += 4;
-          doc.setFillColor(14, 34, 44);
-          doc.rect(margin, y - 4, contentW, 8, "F");
-          doc.setTextColor(255, 255, 255);
-          doc.setFontSize(10);
-          doc.setFont("helvetica", "bold");
-          doc.text(currentCat.toUpperCase(), margin + 3, y + 1);
-          y += 10;
+          html += `<div class="cat-header">${escapeHtml(currentCat)}</div>`;
         }
 
-        // Title + status
-        checkPageBreak(10);
+        const borderClass = isFait ? "border-emerald" : isPasFait ? "border-red" : "border-muted";
+        const statusHtml = isFait
+          ? `<span class="status-badge status-fait">✓ Fait</span>`
+          : isPasFait
+            ? `<span class="status-badge status-pas-fait">✗ Pas fait</span>`
+            : isNc
+              ? `<span class="status-badge status-nc">N/A</span>`
+              : `<span class="status-badge" style="background:#f1f5f9;color:var(--text-light);">—</span>`;
 
-        // Color indicator
-        if (isFait) doc.setFillColor(34, 197, 94);
-        else if (isPasFait) doc.setFillColor(239, 68, 68);
-        else if (isNc) doc.setFillColor(160, 160, 160);
-        else doc.setFillColor(220, 220, 220);
-        doc.rect(margin, y - 4, 2, 7, "F");
+        html += `<div class="item-card ${borderClass} avoid-break">`;
+        html += `<div class="item-card-inner">`;
 
-        doc.setFontSize(8);
-        doc.setFont("helvetica", "normal");
-        doc.setTextColor(140, 140, 140);
-        doc.text(`${item.numero}.`, margin + 4, y);
-
-        doc.setFont("helvetica", "bold");
-        doc.setTextColor(30, 30, 30);
-        const titleLines = doc.splitTextToSize(item.titre, contentW - 45);
-        doc.text(titleLines[0], margin + 12, y);
-        if (titleLines.length > 1) {
-          y += 3.5;
-          doc.setFont("helvetica", "normal");
-          doc.text(titleLines.slice(1, 3).join("\n"), margin + 12, y);
-          y += (Math.min(titleLines.length - 1, 2)) * 3.5;
-        }
-
-        // Status
-        doc.setFont("helvetica", "bold");
-        if (isFait) {
-          doc.setTextColor(34, 130, 60);
-          doc.text("Fait ✓", contentW + margin - 3, y - (titleLines.length > 1 ? (Math.min(titleLines.length - 1, 2)) * 3.5 : 0), { align: "right" });
-        } else if (isPasFait) {
-          doc.setTextColor(220, 60, 60);
-          doc.text("Pas fait ✗", contentW + margin - 3, y - (titleLines.length > 1 ? (Math.min(titleLines.length - 1, 2)) * 3.5 : 0), { align: "right" });
-        } else if (isNc) {
-          doc.setTextColor(130, 130, 130);
-          doc.text("Non applicable", contentW + margin - 3, y - (titleLines.length > 1 ? (Math.min(titleLines.length - 1, 2)) * 3.5 : 0), { align: "right" });
-        } else {
-          doc.setTextColor(180, 180, 180);
-          doc.text("—", contentW + margin - 3, y - (titleLines.length > 1 ? (Math.min(titleLines.length - 1, 2)) * 3.5 : 0), { align: "right" });
-        }
-
-        y += 5;
+        // Header
+        html += `<div class="item-header">`;
+        html += `<div style="flex:1;">`;
+        html += `<div style="display:flex;align-items:center;gap:6px;margin-bottom:2px;">`;
+        html += `<span class="item-number">${item.numero}.</span>`;
+        html += `<span class="item-title" style="margin:0;">${escapeHtml(item.titre)}</span>`;
+        html += `</div>`;
+        html += `</div>`;
+        html += `<div style="flex-shrink:0;">${statusHtml}</div>`;
+        html += `</div>`;
 
         // Conditions
-        if (hasConditions) {
-          const condLines = doc.splitTextToSize(`Conditions : ${item.conditions}`, contentW - 20);
-          const cl = condLines.slice(0, 3);
-          checkPageBreak(cl.length * 3.5 + 1);
-          doc.setFontSize(6.5);
-          doc.setFont("helvetica", "italic");
-          doc.setTextColor(120, 120, 120);
-          doc.text(cl.join("\n"), margin + 12, y);
-          y += cl.length * 3.5;
+        if (item.conditions) {
+          html += `<div class="detail-block">`;
+          html += `<span class="detail-label">Conditions</span>`;
+          html += escapeHtml(item.conditions);
+          html += `</div>`;
         }
 
         // Intérêts
-        if (hasInterets) {
-          const intLines = doc.splitTextToSize(`Intérêts : ${item.interets}`, contentW - 20);
-          const il = intLines.slice(0, 2);
-          checkPageBreak(il.length * 3.5 + 1);
-          doc.setFontSize(6.5);
-          doc.setFont("helvetica", "italic");
-          doc.setTextColor(100, 100, 160);
-          doc.text(il.join("\n"), margin + 12, y);
-          y += il.length * 3.5;
+        if (item.interets) {
+          html += `<div class="detail-block interet">`;
+          html += `<span class="detail-label">Intérêts</span>`;
+          html += escapeHtml(item.interets);
+          html += `</div>`;
         }
 
         // Conseils
-        if (hasConseils) {
-          const consLines = doc.splitTextToSize(`Conseils : ${item.conseils}`, contentW - 20);
-          const csl = consLines.slice(0, 2);
-          checkPageBreak(csl.length * 3.5 + 1);
-          doc.setFontSize(6.5);
-          doc.setFont("helvetica", "italic");
-          doc.setTextColor(80, 140, 80);
-          doc.text(csl.join("\n"), margin + 12, y);
-          y += csl.length * 3.5;
+        if (item.conseils) {
+          html += `<div class="detail-block comment-parvenir">`;
+          html += `<span class="detail-label">Conseils</span>`;
+          html += escapeHtml(item.conseils);
+          html += `</div>`;
         }
 
         // Observation
         if (observation) {
-          checkPageBreak(6);
-          doc.setFontSize(7);
-          doc.setFont("helvetica", "italic");
-          doc.setTextColor(100, 100, 100);
-          const obsLines = doc.splitTextToSize(`→ ${observation}`, contentW - 20);
-          doc.text(obsLines.slice(0, 2).join("\n"), margin + 12, y);
-          y += Math.min(obsLines.length, 2) * 4;
+          html += `<div class="item-comment">`;
+          html += `<span class="comment-label">Observation</span>`;
+          html += escapeHtml(observation);
+          html += `</div>`;
         }
 
-        y += 2;
-      });
+        html += `</div></div>`;
+      }
 
       // ── Observations globales ──
       if (suivi.observations) {
-        checkPageBreak(20);
-        y += 6;
-        doc.setFillColor(14, 34, 44);
-        doc.rect(margin, y - 4, contentW, 8, "F");
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(10);
-        doc.setFont("helvetica", "bold");
-        doc.text("OBSERVATIONS", margin + 3, y + 1);
-        y += 12;
-        doc.setTextColor(30, 30, 30);
-        doc.setFontSize(8);
-        doc.setFont("helvetica", "normal");
-        const obsLines = doc.splitTextToSize(suivi.observations, contentW - 4);
-        doc.text(obsLines, margin + 2, y);
-        y += obsLines.length * 4;
+        html += `<div class="section-title" style="margin-top:16px;">Observations générales</div>`;
+        html += `<div class="observations-block">${escapeHtml(suivi.observations)}</div>`;
       }
 
-      // ── Footer on all pages ──
-      const totalPages = doc.getNumberOfPages();
-      for (let i = 1; i <= totalPages; i++) {
-        doc.setPage(i);
-        doc.setFontSize(7);
-        doc.setTextColor(160, 160, 160);
-        doc.text("DynaPerf — Suivi d'activité", margin, pageH - 8);
-        doc.text(`Page ${i}/${totalPages}`, pageW - margin, pageH - 8, { align: "right" });
-      }
+      // ── Footer ──
+      html += `<div class="report-footer">
+        <span>DynaPerf — Suivi d'activité</span>
+        <span>${formatDateFr(suivi.date)} • ${escapeHtml(suivi.agence)}</span>
+      </div>`;
 
-      doc.save(`suivi_${suivi.agence.replace(/\s+/g, "_")}_${suivi.date}.pdf`);
-      toast.success("PDF téléchargé !");
+      openPrintWindow(`Suivi — ${suivi.agence} — ${formatDateFr(suivi.date)}`, html);
+      toast.success("Rapport prêt !");
     } catch (err) {
       console.error(err);
-      toast.error("Erreur lors de la génération du PDF");
+      toast.error("Erreur lors de la génération du rapport");
     }
   };
 
