@@ -193,7 +193,7 @@ export default function Primes() {
                         <span className="text-sm font-bold text-foreground tabular-nums">{monthPrime.toLocaleString("fr-FR")} €</span>
                       </div>
                     </div>
-                    <div className="divide-y divide-border/30 px-3">
+                    <div className={cn("divide-y divide-border/30 px-3", viewMode === "compact" && "text-xs")}>
                       {audits.map((a) => {
                         const auditPrime = perAuditPrimes.get(a.id) ?? 0;
                         const rank = perAuditRanks.get(a.id) ?? 1;
@@ -203,6 +203,30 @@ export default function Primes() {
                           : rank === 2
                             ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
                             : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
+
+                        if (viewMode === "compact") {
+                          return (
+                            <div key={a.id} className="py-2 flex items-center justify-between gap-2">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-foreground truncate">{a.partenaire}</span>
+                                  <span className="text-muted-foreground shrink-0">{format(new Date(a.date), "dd/MM", { locale: fr })}</span>
+                                </div>
+                                <div className="flex items-center gap-1.5 text-muted-foreground">
+                                  <span className="truncate">{a.lieu || "—"}</span>
+                                  <span className="px-1 py-px rounded-sm bg-secondary text-[10px] font-medium shrink-0">{a.type_evenement}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-2 shrink-0">
+                                <span className="font-bold tabular-nums text-foreground">{auditPrime}€</span>
+                                <Badge variant="outline" className={cn("text-[10px] px-1.5 py-0 rounded-sm font-medium border-0", rankColorClass)}>
+                                  {rankLabel}
+                                </Badge>
+                              </div>
+                            </div>
+                          );
+                        }
+
                         return (
                           <div key={a.id} className="py-3 space-y-1.5">
                             <p className="text-sm font-semibold text-foreground">{a.partenaire}</p>
