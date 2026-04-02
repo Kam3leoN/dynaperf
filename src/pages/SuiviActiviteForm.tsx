@@ -136,7 +136,9 @@ export default function SuiviActiviteForm() {
       items: itemsJson,
       total_items_valides: valides,
       total_items: totalItems,
-    });
+      signature_auditeur: signatureAuditeur,
+      signature_audite: signatureAudite,
+    } as any);
 
     if (error) {
       toast.error("Erreur lors de l'enregistrement");
