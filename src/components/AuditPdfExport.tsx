@@ -46,8 +46,9 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
         cat.items.map((item) => ({ ...item, categoryName: cat.name }))
       );
 
-      // Resolve photos
-      const photoUrls = await resolveAuditPhotoUrls((detail.photos as string[]) ?? []);
+      // Resolve photos then convert to data URLs for print window
+      const rawPhotoUrls = await resolveAuditPhotoUrls((detail.photos as string[]) ?? []);
+      const photoUrls = await urlsToDataUrls(rawPhotoUrls);
 
       // Build HTML
       let html = "";
