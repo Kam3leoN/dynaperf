@@ -10,68 +10,55 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faFolder,
-  faFolderOpen,
-  faPlus,
-  faPen,
-  faTrash,
-  faFile,
-  faUpload,
-  faSearch,
-  faChevronRight,
-  faArrowLeft,
-  faDownload,
-  faFilePdf,
-  faFileImage,
-  faFileExcel,
-  faFileWord,
+  faFolder, faFolderOpen, faPlus, faPen, faTrash, faFile, faUpload,
+  faSearch, faChevronRight, faArrowLeft, faDownload,
+  faFilePdf, faFileImage, faFileExcel, faFileWord,
+  faTableCells, faGrip, faList,
 } from "@fortawesome/free-solid-svg-icons";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 interface Category {
   id: string;
   name: string;
   parent_id: string | null;
   sort_order: number;
+  updated_at: string;
+  updated_by: string | null;
 }
 
-interface Document {
+interface DriveDocument {
   id: string;
   category_id: string;
   title: string;
-  description: string;
+  description: string | null;
   file_url: string;
   file_name: string;
-  file_size: number;
-  mime_type: string;
+  file_size: number | null;
+  mime_type: string | null;
+  image_url: string | null;
   created_at: string;
+  updated_at: string;
+  updated_by: string | null;
+  uploaded_by: string | null;
 }
 
-function fileIcon(mime: string) {
+function fileIcon(mime: string | null) {
+  if (!mime) return faFile;
   if (mime.includes("pdf")) return faFilePdf;
   if (mime.includes("image")) return faFileImage;
   if (mime.includes("sheet") || mime.includes("excel") || mime.includes("csv")) return faFileExcel;
@@ -79,20 +66,33 @@ function fileIcon(mime: string) {
   return faFile;
 }
 
-function formatSize(bytes: number) {
+function formatSize(bytes: number | null) {
+  if (!bytes) return "";
   if (bytes < 1024) return `${bytes} o`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} Ko`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
 }
 
+function formatModifiedDate(dateStr: string) {
+  try {
+    return format(new Date(dateStr), "dd MMM yyyy 'à' HH:mm", { locale: fr });
+  } catch {
+    return dateStr;
+  }
+}
+
+type ViewMode = "cards" | "table";
+
 export default function Drive() {
   const { user } = useAuth();
   const { isAdmin } = useAdmin(user);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [documents, setDocuments] = useState<Document[]>([]);
+  const [documents, setDocuments] = useState<DriveDocument[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [currentCatId, setCurrentCatId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [viewMode, setViewMode] = useState<ViewMode>("cards");
 
   // Dialog states
   const [catDialogOpen, setCatDialogOpen] = useState(false);
@@ -101,26 +101,32 @@ export default function Drive() {
   const [catParentId, setCatParentId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ type: "cat" | "doc"; id: string; name: string } | null>(null);
 
-  // Upload
+  // Upload / Edit doc
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [editingDoc, setEditingDoc] = useState<DriveDocument | null>(null);
   const [uploadTitle, setUploadTitle] = useState("");
+  const [uploadDescription, setUploadDescription] = useState("");
   const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadImage, setUploadImage] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
 
   const fetchAll = async () => {
     setLoading(true);
-    const [{ data: cats }, { data: docs }] = await Promise.all([
+    const [{ data: cats }, { data: docs }, { data: profs }] = await Promise.all([
       supabase.from("drive_categories").select("*").order("sort_order"),
       supabase.from("drive_documents").select("*").order("created_at", { ascending: false }),
+      supabase.from("profiles").select("user_id, display_name"),
     ]);
     setCategories((cats as Category[]) ?? []);
-    setDocuments((docs as Document[]) ?? []);
+    setDocuments((docs as DriveDocument[]) ?? []);
+    const profileMap: Record<string, string> = {};
+    (profs ?? []).forEach((p: any) => { if (p.user_id && p.display_name) profileMap[p.user_id] = p.display_name; });
+    setProfiles(profileMap);
     setLoading(false);
   };
 
   useEffect(() => { fetchAll(); }, []);
 
-  // Navigation breadcrumb
   const breadcrumb = useMemo(() => {
     const trail: Category[] = [];
     let id = currentCatId;
@@ -133,11 +139,9 @@ export default function Drive() {
     return trail;
   }, [currentCatId, categories]);
 
-  // Filtered view
   const childCategories = categories.filter((c) => c.parent_id === currentCatId);
   const currentDocs = documents.filter((d) => d.category_id === currentCatId);
 
-  // Search results
   const searchResults = useMemo(() => {
     if (!search.trim()) return null;
     const q = search.toLowerCase();
@@ -149,25 +153,15 @@ export default function Drive() {
   }, [search, documents, categories]);
 
   // Category CRUD
-  const openNewCat = () => {
-    setEditingCat(null);
-    setCatName("");
-    setCatParentId(currentCatId);
-    setCatDialogOpen(true);
-  };
-  const openEditCat = (cat: Category) => {
-    setEditingCat(cat);
-    setCatName(cat.name);
-    setCatParentId(cat.parent_id);
-    setCatDialogOpen(true);
-  };
+  const openNewCat = () => { setEditingCat(null); setCatName(""); setCatParentId(currentCatId); setCatDialogOpen(true); };
+  const openEditCat = (cat: Category) => { setEditingCat(cat); setCatName(cat.name); setCatParentId(cat.parent_id); setCatDialogOpen(true); };
   const saveCat = async () => {
     if (!catName.trim()) return;
     if (editingCat) {
-      await supabase.from("drive_categories").update({ name: catName.trim(), parent_id: catParentId }).eq("id", editingCat.id);
+      await supabase.from("drive_categories").update({ name: catName.trim(), parent_id: catParentId, updated_by: user?.id ?? null }).eq("id", editingCat.id);
       toast.success("Catégorie modifiée");
     } else {
-      await supabase.from("drive_categories").insert({ name: catName.trim(), parent_id: catParentId });
+      await supabase.from("drive_categories").insert({ name: catName.trim(), parent_id: catParentId, updated_by: user?.id ?? null });
       toast.success("Catégorie créée");
     }
     setCatDialogOpen(false);
@@ -193,29 +187,84 @@ export default function Drive() {
     fetchAll();
   };
 
-  // Upload
+  // Upload / Edit
+  const openUploadDialog = (doc?: DriveDocument) => {
+    if (doc) {
+      setEditingDoc(doc);
+      setUploadTitle(doc.title);
+      setUploadDescription(doc.description || "");
+    } else {
+      setEditingDoc(null);
+      setUploadTitle("");
+      setUploadDescription("");
+    }
+    setUploadFile(null);
+    setUploadImage(null);
+    setUploadOpen(true);
+  };
+
   const handleUpload = async () => {
-    if (!uploadFile || !currentCatId) return;
+    if (!editingDoc && !uploadFile) return;
+    if (!editingDoc && !currentCatId) return;
     setUploading(true);
     try {
-      const ext = uploadFile.name.split(".").pop();
-      const path = `${currentCatId}/${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from("drive-files").upload(path, uploadFile);
-      if (upErr) throw upErr;
-      const { data: urlData } = supabase.storage.from("drive-files").getPublicUrl(path);
-      await supabase.from("drive_documents").insert({
-        category_id: currentCatId,
-        title: uploadTitle.trim() || uploadFile.name,
-        file_url: urlData.publicUrl,
-        file_name: uploadFile.name,
-        file_size: uploadFile.size,
-        mime_type: uploadFile.type,
-        uploaded_by: user?.id,
-      });
-      toast.success("Document ajouté !");
+      let fileUrl = editingDoc?.file_url || "";
+      let fileName = editingDoc?.file_name || "";
+      let fileSize = editingDoc?.file_size || 0;
+      let mimeType = editingDoc?.mime_type || "";
+      let imageUrl = editingDoc?.image_url || null;
+
+      // Upload file if new
+      if (uploadFile) {
+        const ext = uploadFile.name.split(".").pop();
+        const path = `${currentCatId || editingDoc?.category_id}/${Date.now()}.${ext}`;
+        const { error: upErr } = await supabase.storage.from("drive-files").upload(path, uploadFile);
+        if (upErr) throw upErr;
+        const { data: urlData } = supabase.storage.from("drive-files").getPublicUrl(path);
+        fileUrl = urlData.publicUrl;
+        fileName = uploadFile.name;
+        fileSize = uploadFile.size;
+        mimeType = uploadFile.type;
+      }
+
+      // Upload image if provided
+      if (uploadImage) {
+        const imgExt = uploadImage.name.split(".").pop();
+        const imgPath = `${currentCatId || editingDoc?.category_id}/img_${Date.now()}.${imgExt}`;
+        const { error: imgErr } = await supabase.storage.from("drive-files").upload(imgPath, uploadImage);
+        if (imgErr) throw imgErr;
+        const { data: imgUrlData } = supabase.storage.from("drive-files").getPublicUrl(imgPath);
+        imageUrl = imgUrlData.publicUrl;
+      }
+
+      if (editingDoc) {
+        await supabase.from("drive_documents").update({
+          title: uploadTitle.trim() || fileName,
+          description: uploadDescription.trim() || null,
+          file_url: fileUrl,
+          file_name: fileName,
+          file_size: fileSize,
+          mime_type: mimeType,
+          image_url: imageUrl,
+          updated_by: user?.id ?? null,
+        }).eq("id", editingDoc.id);
+        toast.success("Document modifié !");
+      } else {
+        await supabase.from("drive_documents").insert({
+          category_id: currentCatId!,
+          title: uploadTitle.trim() || fileName,
+          description: uploadDescription.trim() || null,
+          file_url: fileUrl,
+          file_name: fileName,
+          file_size: fileSize,
+          mime_type: mimeType,
+          image_url: imageUrl,
+          uploaded_by: user?.id,
+          updated_by: user?.id ?? null,
+        });
+        toast.success("Document ajouté !");
+      }
       setUploadOpen(false);
-      setUploadFile(null);
-      setUploadTitle("");
       fetchAll();
     } catch (err: any) {
       toast.error(err.message || "Erreur d'upload");
@@ -224,16 +273,14 @@ export default function Drive() {
     }
   };
 
-  const downloadDoc = async (doc: Document) => {
+  const downloadDoc = async (doc: DriveDocument) => {
     try {
       const path = new URL(doc.file_url).pathname.split("/drive-files/")[1];
       if (!path) { window.open(doc.file_url, "_blank"); return; }
       const { data, error } = await supabase.storage.from("drive-files").createSignedUrl(decodeURIComponent(path), 60);
       if (error || !data?.signedUrl) { window.open(doc.file_url, "_blank"); return; }
       window.open(data.signedUrl, "_blank");
-    } catch {
-      window.open(doc.file_url, "_blank");
-    }
+    } catch { window.open(doc.file_url, "_blank"); }
   };
 
   const getCatPath = (catId: string): string => {
@@ -247,6 +294,53 @@ export default function Drive() {
     }
     return parts.join(" / ");
   };
+
+  const getModifierName = (userId: string | null) => {
+    if (!userId) return null;
+    return profiles[userId] || null;
+  };
+
+  const ModifiedInfo = ({ updatedAt, updatedBy }: { updatedAt: string; updatedBy: string | null }) => {
+    const name = getModifierName(updatedBy);
+    return (
+      <p className="text-[10px] text-muted-foreground">
+        Dernière modification {formatModifiedDate(updatedAt)}
+        {name && <> par <span className="font-medium">{name}</span></>}
+      </p>
+    );
+  };
+
+  // Card view for documents
+  const DocCard = ({ doc }: { doc: DriveDocument }) => (
+    <Card className="group cursor-pointer hover:shadow-md transition-all hover:-translate-y-0.5 overflow-hidden" onClick={() => downloadDoc(doc)}>
+      <CardContent className="p-0">
+        {doc.image_url ? (
+          <div className="aspect-[4/3] bg-muted overflow-hidden">
+            <img src={doc.image_url} alt={doc.title} className="w-full h-full object-cover" />
+          </div>
+        ) : (
+          <div className="aspect-[4/3] bg-muted/50 flex items-center justify-center">
+            <FontAwesomeIcon icon={fileIcon(doc.mime_type)} className="h-10 w-10 text-muted-foreground/40" />
+          </div>
+        )}
+        <div className="p-3 space-y-1">
+          <p className="text-sm font-semibold text-center leading-tight line-clamp-2">{doc.title}</p>
+          {doc.description && <p className="text-xs text-muted-foreground text-center line-clamp-2">{doc.description}</p>}
+          <ModifiedInfo updatedAt={doc.updated_at} updatedBy={doc.updated_by} />
+        </div>
+        {isAdmin && (
+          <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button className="h-6 w-6 rounded-full bg-card/90 flex items-center justify-center hover:bg-accent shadow-sm" onClick={(e) => { e.stopPropagation(); openUploadDialog(doc); }}>
+              <FontAwesomeIcon icon={faPen} className="h-2.5 w-2.5 text-muted-foreground" />
+            </button>
+            <button className="h-6 w-6 rounded-full bg-card/90 flex items-center justify-center hover:bg-destructive/20 shadow-sm" onClick={(e) => { e.stopPropagation(); setDeleteTarget({ type: "doc", id: doc.id, name: doc.title }); }}>
+              <FontAwesomeIcon icon={faTrash} className="h-2.5 w-2.5 text-destructive" />
+            </button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 
   if (loading) {
     return (
@@ -267,14 +361,20 @@ export default function Drive() {
             <FontAwesomeIcon icon={faFolder} className="text-primary" />
             Drive
           </h1>
-          <div className="relative max-w-xs w-full">
-            <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher un document…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 h-10"
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative max-w-xs w-full">
+              <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+              <Input placeholder="Rechercher…" value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 h-10" />
+            </div>
+            {/* View mode toggle */}
+            <div className="flex border border-border rounded-lg overflow-hidden">
+              <button className={`h-10 w-10 flex items-center justify-center transition-colors ${viewMode === "cards" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary"}`} onClick={() => setViewMode("cards")} title="Vue cartes">
+                <FontAwesomeIcon icon={faGrip} className="h-4 w-4" />
+              </button>
+              <button className={`h-10 w-10 flex items-center justify-center transition-colors ${viewMode === "table" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary"}`} onClick={() => setViewMode("table")} title="Vue tableau">
+                <FontAwesomeIcon icon={faList} className="h-4 w-4" />
+              </button>
+            </div>
           </div>
         </div>
 
@@ -301,7 +401,11 @@ export default function Drive() {
             {searchResults.docs.map((doc) => (
               <Card key={doc.id} className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => downloadDoc(doc)}>
                 <CardContent className="p-3 flex items-center gap-3">
-                  <FontAwesomeIcon icon={fileIcon(doc.mime_type)} className="h-5 w-5 text-muted-foreground" />
+                  {doc.image_url ? (
+                    <img src={doc.image_url} alt="" className="h-10 w-10 rounded object-cover flex-shrink-0" />
+                  ) : (
+                    <FontAwesomeIcon icon={fileIcon(doc.mime_type)} className="h-5 w-5 text-muted-foreground" />
+                  )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{doc.title}</p>
                     <p className="text-xs text-muted-foreground">{getCatPath(doc.category_id)} • {formatSize(doc.file_size)}</p>
@@ -314,15 +418,11 @@ export default function Drive() {
           <>
             {/* Breadcrumb */}
             <div className="flex items-center gap-1.5 flex-wrap text-sm">
-              <button className="text-primary hover:underline font-medium" onClick={() => setCurrentCatId(null)}>
-                Drive
-              </button>
+              <button className="text-primary hover:underline font-medium" onClick={() => setCurrentCatId(null)}>Drive</button>
               {breadcrumb.map((cat) => (
                 <span key={cat.id} className="flex items-center gap-1.5">
                   <FontAwesomeIcon icon={faChevronRight} className="h-2.5 w-2.5 text-muted-foreground" />
-                  <button className="text-primary hover:underline font-medium" onClick={() => setCurrentCatId(cat.id)}>
-                    {cat.name}
-                  </button>
+                  <button className="text-primary hover:underline font-medium" onClick={() => setCurrentCatId(cat.id)}>{cat.name}</button>
                 </span>
               ))}
             </div>
@@ -345,7 +445,7 @@ export default function Drive() {
                   {currentCatId ? "Sous-catégorie" : "Catégorie"}
                 </Button>
                 {currentCatId && (
-                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => { setUploadTitle(""); setUploadFile(null); setUploadOpen(true); }}>
+                  <Button size="sm" variant="outline" className="gap-1.5" onClick={() => openUploadDialog()}>
                     <FontAwesomeIcon icon={faUpload} className="h-3 w-3" /> Ajouter un document
                   </Button>
                 )}
@@ -384,31 +484,72 @@ export default function Drive() {
               </div>
             )}
 
-            {/* Documents list */}
+            {/* Documents */}
             {currentDocs.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Documents</p>
-                {currentDocs.map((doc) => (
-                  <Card key={doc.id} className="group">
-                    <CardContent className="p-3 flex items-center gap-3">
-                      <FontAwesomeIcon icon={fileIcon(doc.mime_type)} className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">{doc.title}</p>
-                        <p className="text-xs text-muted-foreground">{doc.file_name} • {formatSize(doc.file_size)}</p>
+              <div>
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Documents</p>
+
+                {viewMode === "cards" ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                    {currentDocs.map((doc) => (
+                      <div key={doc.id} className="relative">
+                        <DocCard doc={doc} />
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => downloadDoc(doc)}>
-                          <FontAwesomeIcon icon={faDownload} className="h-3.5 w-3.5" />
-                        </Button>
-                        {isAdmin && (
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => setDeleteTarget({ type: "doc", id: doc.id, name: doc.title })}>
-                            <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
-                          </Button>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                    ))}
+                  </div>
+                ) : (
+                  <div className="border border-border rounded-lg overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-10"></TableHead>
+                          <TableHead>Titre</TableHead>
+                          <TableHead className="hidden sm:table-cell">Taille</TableHead>
+                          <TableHead className="hidden md:table-cell">Modifié</TableHead>
+                          <TableHead className="w-20"></TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {currentDocs.map((doc) => (
+                          <TableRow key={doc.id} className="cursor-pointer hover:bg-accent/50" onClick={() => downloadDoc(doc)}>
+                            <TableCell>
+                              {doc.image_url ? (
+                                <img src={doc.image_url} alt="" className="h-8 w-8 rounded object-cover" />
+                              ) : (
+                                <FontAwesomeIcon icon={fileIcon(doc.mime_type)} className="h-4 w-4 text-muted-foreground" />
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <p className="text-sm font-medium">{doc.title}</p>
+                              <p className="text-xs text-muted-foreground">{doc.file_name}</p>
+                            </TableCell>
+                            <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">{formatSize(doc.file_size)}</TableCell>
+                            <TableCell className="hidden md:table-cell">
+                              <ModifiedInfo updatedAt={doc.updated_at} updatedBy={doc.updated_by} />
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); downloadDoc(doc); }}>
+                                  <FontAwesomeIcon icon={faDownload} className="h-3 w-3" />
+                                </Button>
+                                {isAdmin && (
+                                  <>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); openUploadDialog(doc); }}>
+                                      <FontAwesomeIcon icon={faPen} className="h-3 w-3" />
+                                    </Button>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={(e) => { e.stopPropagation(); setDeleteTarget({ type: "doc", id: doc.id, name: doc.title }); }}>
+                                      <FontAwesomeIcon icon={faTrash} className="h-3 w-3" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
               </div>
             )}
 
@@ -456,26 +597,43 @@ export default function Drive() {
         </DialogContent>
       </Dialog>
 
-      {/* Upload dialog */}
+      {/* Upload / Edit document dialog */}
       <Dialog open={uploadOpen} onOpenChange={setUploadOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Ajouter un document</DialogTitle>
+            <DialogTitle>{editingDoc ? "Modifier le document" : "Ajouter un document"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <Label className="text-xs">Titre (optionnel)</Label>
+              <Label className="text-xs">Titre</Label>
               <Input value={uploadTitle} onChange={(e) => setUploadTitle(e.target.value)} placeholder="Titre du document" />
             </div>
             <div>
-              <Label className="text-xs">Fichier</Label>
+              <Label className="text-xs">Description (optionnelle)</Label>
+              <Input value={uploadDescription} onChange={(e) => setUploadDescription(e.target.value)} placeholder="Description courte" />
+            </div>
+            <div>
+              <Label className="text-xs">{editingDoc ? "Remplacer le fichier (optionnel)" : "Fichier"}</Label>
               <Input type="file" onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)} />
+            </div>
+            <div>
+              <Label className="text-xs">Image de prévisualisation (optionnelle)</Label>
+              <Input type="file" accept="image/*" onChange={(e) => setUploadImage(e.target.files?.[0] ?? null)} />
+              {(uploadImage || editingDoc?.image_url) && (
+                <div className="mt-2">
+                  <img
+                    src={uploadImage ? URL.createObjectURL(uploadImage) : editingDoc?.image_url || ""}
+                    alt="Preview"
+                    className="h-20 rounded border border-border object-cover"
+                  />
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setUploadOpen(false)}>Annuler</Button>
-            <Button onClick={handleUpload} disabled={!uploadFile || uploading}>
-              {uploading ? "Envoi…" : "Envoyer"}
+            <Button onClick={handleUpload} disabled={(!editingDoc && !uploadFile) || uploading}>
+              {uploading ? "Envoi…" : editingDoc ? "Enregistrer" : "Envoyer"}
             </Button>
           </DialogFooter>
         </DialogContent>
