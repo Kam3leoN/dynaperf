@@ -1,6 +1,7 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
+import { applyDeviceClasses, listenDeviceChanges } from "./lib/deviceClasses";
 
 declare const __GITHUB_PAGES_BUILD__: boolean;
 
@@ -75,6 +76,8 @@ async function cleanupCaches() {
 }
 
 ensureResponsiveViewport();
+applyDeviceClasses();
+listenDeviceChanges();
 normalizeGitHubPagesMobileScale();
 
 window.addEventListener("resize", normalizeGitHubPagesMobileScale);
