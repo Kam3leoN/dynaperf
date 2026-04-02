@@ -167,7 +167,7 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.16, duration: 0.3 }}
-        className="bg-card rounded-lg p-3 sm:p-5 shadow-soft cursor-pointer select-none col-span-2 lg:col-span-1"
+        className="bg-card rounded-2xl p-3 sm:p-5 shadow-soft border border-border/60 cursor-pointer select-none col-span-2 lg:col-span-1"
         onClick={() => setModeRealiste((prev) => !prev)}
         title="Cliquez pour basculer entre estimation brute et réaliste (-10 semaines)"
       >
