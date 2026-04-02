@@ -46,7 +46,7 @@ export function BottomNav() {
                   style={{ backgroundColor: "#212121" }}
                   aria-label="Accueil"
                 >
-                  <img src="/pwaDynaperf.svg" alt="DynaPerf" className="h-8 w-8" />
+                  <img src="/pwaDynaperf.svg" alt="DynaPerf" className="h-9 w-9" />
                 </button>
               );
             }
