@@ -87,7 +87,7 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.04, duration: 0.3 }}
-        className="bg-card rounded-lg p-3 sm:p-5 shadow-soft"
+        className="bg-card rounded-2xl p-3 sm:p-5 shadow-soft border border-border/60"
       >
         <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider leading-tight flex items-center gap-1.5">
           <FontAwesomeIcon icon={faCalendarCheck} className="h-3 w-3 text-amber-500" />
