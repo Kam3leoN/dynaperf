@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from "react";
+import { useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -28,9 +29,11 @@ import {
   faSearch, faChevronRight, faArrowLeft, faDownload,
   faFilePdf, faFileImage, faFileExcel, faFileWord,
   faGrip, faList, faImage, faXmark, faArrowsUpDownLeftRight,
+  faCompress, faExpand,
 } from "@fortawesome/free-solid-svg-icons";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { auditTypeIcons } from "@/lib/auditTypeVisuals";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50 Mo
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024; // 5 Mo
@@ -87,10 +90,28 @@ function formatModifiedDate(dateStr: string) {
 }
 
 type ViewMode = "cards" | "table";
+type Density = "compact" | "comfortable";
+
+// Map known folder names to audit type SVG icons
+const FOLDER_NAME_TO_TYPE: Record<string, string> = {
+  "Rencontre Dirigeants Présentiels": "RD Présentiel",
+  "Rencontre Dirigeants Distanciels": "RD Distanciel",
+  "Clubs d'Affaires": "Club Affaires",
+  "Rendez-Vous Commerciaux": "RDV Commercial",
+  "Mise en Place": "Mise en Place",
+  "Événementiel": "RD Événementiel",
+};
+
+function getFolderIcon(cat: { name: string; icon_url: string | null }): string | null {
+  if (cat.icon_url) return cat.icon_url;
+  const typeKey = FOLDER_NAME_TO_TYPE[cat.name] || cat.name;
+  return auditTypeIcons[typeKey]?.icon || null;
+}
 
 export default function Drive() {
   const { user } = useAuth();
   const { isAdmin } = useAdmin(user);
+  const [searchParams] = useSearchParams();
   const [categories, setCategories] = useState<Category[]>([]);
   const [documents, setDocuments] = useState<DriveDocument[]>([]);
   const [profiles, setProfiles] = useState<Record<string, string>>({});
@@ -98,6 +119,7 @@ export default function Drive() {
   const [currentCatId, setCurrentCatId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("cards");
+  const [density, setDensity] = useState<Density>("comfortable");
 
   // Dialog states
   const [catDialogOpen, setCatDialogOpen] = useState(false);
@@ -120,6 +142,14 @@ export default function Drive() {
   // Drag-drop for moving documents
   const [draggingDocId, setDraggingDocId] = useState<string | null>(null);
   const [dragOverCatId, setDragOverCatId] = useState<string | null>(null);
+
+  // Auto-open upload dialog if ?upload=1
+  useEffect(() => {
+    if (searchParams.get("upload") === "1" && isAdmin && currentCatId) {
+      openUploadDialog();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentCatId]);
 
   const fetchAll = async () => {
     setLoading(true);
@@ -507,6 +537,17 @@ export default function Drive() {
                 <FontAwesomeIcon icon={faList} className="h-4 w-4" />
               </button>
             </div>
+            {/* Density toggle */}
+            {viewMode === "cards" && (
+              <div className="flex border border-border rounded-lg overflow-hidden shrink-0">
+                <button className={`h-10 w-10 flex items-center justify-center transition-colors ${density === "compact" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary"}`} onClick={() => setDensity("compact")} title="Compact">
+                  <FontAwesomeIcon icon={faCompress} className="h-4 w-4" />
+                </button>
+                <button className={`h-10 w-10 flex items-center justify-center transition-colors ${density === "comfortable" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary"}`} onClick={() => setDensity("comfortable")} title="Aéré">
+                  <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -527,11 +568,14 @@ export default function Drive() {
             {searchResults.cats.map((cat) => (
               <Card key={cat.id} className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => { setCurrentCatId(cat.id); setSearch(""); }}>
                 <CardContent className="p-3 flex items-center gap-3">
-                  {cat.icon_url ? (
-                    <img src={cat.icon_url} alt="" className="h-6 w-6 rounded object-cover" />
-                  ) : (
-                    <FontAwesomeIcon icon={faFolder} className="h-5 w-5 text-primary" />
-                  )}
+                  {(() => {
+                    const iconSrc = getFolderIcon(cat);
+                    return iconSrc ? (
+                      <img src={iconSrc} alt="" className="h-6 w-6 rounded object-contain" />
+                    ) : (
+                      <FontAwesomeIcon icon={faFolder} className="h-5 w-5 text-primary" />
+                    );
+                  })()}
                   <div>
                     <p className="text-sm font-medium">{cat.name}</p>
                     <p className="text-xs text-muted-foreground">{getCatPath(cat.id)}</p>
@@ -595,7 +639,7 @@ export default function Drive() {
 
             {/* Categories grid */}
             {childCategories.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <div className={`grid gap-3 ${density === "compact" ? "grid-cols-3 sm:grid-cols-4 md:grid-cols-6" : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4"}`}>
                 {childCategories.map((cat) => {
                   const subCount = categories.filter((c) => c.parent_id === cat.id).length;
                   const docCount = documents.filter((d) => d.category_id === cat.id).length;
@@ -610,11 +654,14 @@ export default function Drive() {
                       onDrop={(e) => handleCatDrop(e, cat.id)}
                     >
                       <CardContent className="p-4 flex flex-col items-center gap-2 relative">
-                        {cat.icon_url ? (
-                          <img src={cat.icon_url} alt={cat.name} className="h-10 w-10 rounded-lg object-cover" />
-                        ) : (
-                          <FontAwesomeIcon icon={faFolderOpen} className="h-8 w-8 text-primary/80" />
-                        )}
+                        {(() => {
+                          const iconSrc = getFolderIcon(cat);
+                          return iconSrc ? (
+                            <img src={iconSrc} alt={cat.name} className="h-10 w-10 rounded-lg object-contain" />
+                          ) : (
+                            <FontAwesomeIcon icon={faFolderOpen} className="h-8 w-8 text-primary/80" />
+                          );
+                        })()}
                         <p className="text-sm font-semibold text-center leading-tight">{cat.name}</p>
                         <div className="flex gap-1.5">
                           {subCount > 0 && <Badge variant="secondary" className="text-[10px]">{subCount} sous-cat.</Badge>}
@@ -646,7 +693,7 @@ export default function Drive() {
                 </p>
 
                 {viewMode === "cards" ? (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  <div className={`grid gap-3 ${density === "compact" ? "grid-cols-3 sm:grid-cols-4 md:grid-cols-6" : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4"}`}>
                     {currentDocs.map((doc) => (
                       <div key={doc.id} className="relative">
                         <DocCard doc={doc} />

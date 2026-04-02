@@ -24,6 +24,7 @@ import {
   faCalendarPlus,
   faMoneyBill,
   faFolder,
+  faUpload,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useTheme } from "next-themes";
@@ -248,9 +249,19 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
         </DropdownMenuContent>
       </DropdownMenu>
 
-      <NavLink to="/drive" className={() => navPill(location.pathname === "/drive")}>
-        <FontAwesomeIcon icon={faFolder} className="h-4 w-4" /><span>Drive</span>
-      </NavLink>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className={navPill(location.pathname === "/drive")}>
+            <FontAwesomeIcon icon={faFolder} className="h-4 w-4" />
+            <span>Drive</span>
+            <FontAwesomeIcon icon={faChevronDown} className="h-2.5 w-2.5 opacity-50" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-56 rounded-2xl">
+          <DropdownMenuItem asChild><Link to="/drive" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faFolder} className="h-4 w-4 text-muted-foreground" />Tous les dossiers</Link></DropdownMenuItem>
+          {isAdmin && <DropdownMenuItem asChild><Link to="/drive?upload=1" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faUpload} className="h-4 w-4 text-muted-foreground" />Ajouter un fichier</Link></DropdownMenuItem>}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <NavLink to="/historique" className={() => navPill(location.pathname === "/historique")}>
         <FontAwesomeIcon icon={faClockRotateLeft} className="h-4 w-4" /><span>Historique</span>
