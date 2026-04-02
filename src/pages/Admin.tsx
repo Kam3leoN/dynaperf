@@ -406,7 +406,7 @@ export default function Admin() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="bg-card border border-border rounded-lg p-3 space-y-2"
+        className="bg-card border border-border/60 rounded-2xl p-3 shadow-soft space-y-2"
       >
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-2 min-w-0">

@@ -49,7 +49,7 @@ export function MyObjectives() {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="bg-card rounded-lg p-4 sm:p-5 shadow-soft"
+      className="bg-card rounded-2xl border border-border/60 p-4 sm:p-5 shadow-soft"
     >
       <div className="flex items-center gap-2 mb-3">
         <FontAwesomeIcon icon={faBullseye} className="h-4 w-4 text-primary" />

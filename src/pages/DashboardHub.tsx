@@ -19,13 +19,13 @@ export default function DashboardHub() {
             <Link
               key={c.to}
               to={c.to}
-              className="group flex flex-col items-center gap-3 rounded-2xl bg-card border border-border/60 p-6 shadow-soft transition-all hover:shadow-hover hover:-translate-y-0.5 active:scale-[0.97]"
+              className="group flex flex-col items-center gap-3 rounded-2xl bg-card border border-border/60 p-5 shadow-soft transition-all hover:shadow-hover hover:-translate-y-0.5 active:scale-[0.97]"
             >
-              <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-primary/10 text-primary transition-transform group-hover:scale-110">
-                <FontAwesomeIcon icon={c.icon} className="h-6 w-6" />
+              <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/10 text-primary transition-transform group-hover:scale-110">
+                <FontAwesomeIcon icon={c.icon} className="h-5 w-5" />
               </div>
               <div className="text-center">
-                <span className="text-sm font-semibold text-foreground">{c.label}</span>
+                <span className="text-sm font-medium text-foreground">{c.label}</span>
                 <p className="text-xs text-muted-foreground mt-0.5">{c.desc}</p>
               </div>
             </Link>

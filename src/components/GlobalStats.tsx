@@ -56,7 +56,7 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
   const moyennePct = Math.min(100, (moyenneGlobale / 10) * 100);
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
       {/* Card 1: Audits Réalisés */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
