@@ -608,7 +608,7 @@ export default function AdminAuditGridInline() {
             </div>
             <div className="space-y-1.5">
               <Label>Règles de scoring (optionnel)</Label>
-              <Textarea value={itemForm.scoring_rules} onChange={(e) => setItemForm({ ...itemForm, scoring_rules: e.target.value })} rows={2} />
+              <RichTextarea value={itemForm.scoring_rules} onChange={(val) => setItemForm({ ...itemForm, scoring_rules: val })} rows={2} />
             </div>
             <div className="space-y-1.5">
               <Label>Quel intérêt ?</Label>
