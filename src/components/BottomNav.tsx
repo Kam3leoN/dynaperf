@@ -35,7 +35,7 @@ export function BottomNav() {
   return (
     <>
       <nav className="fixed bottom-0 inset-x-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border safe-area-bottom lg:hidden">
-        <div className="flex items-end justify-around px-2 pt-1 pb-1">
+        <div className="flex items-end justify-around px-2 pt-1.5 pb-1.5">
           {navItems.map((item, idx) => {
             if (item.isFab) {
               return (
