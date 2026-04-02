@@ -13,6 +13,7 @@ import { fetchAuditConfig, AuditTypeConfig } from "@/data/auditItems";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck, faXmark, faLock, faCircleInfo, faImage } from "@fortawesome/free-solid-svg-icons";
 import { AuditPdfExport } from "@/components/AuditPdfExport";
+import { ReportSignatures } from "@/components/ReportSignatures";
 import { cn } from "@/lib/utils";
 
 interface AuditDetailViewProps {
@@ -42,6 +43,8 @@ interface DetailData {
   nb_participants: number | null;
   nb_rdv_pris: number | null;
   photos: string[] | null;
+  signature_auditeur: string | null;
+  signature_audite: string | null;
 }
 
 export function AuditDetailView({ auditId, typeEvenement, open, onClose, partenaire, date, lieu, auditeur, note }: AuditDetailViewProps) {
@@ -315,6 +318,21 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
                 </div>
               </div>
             )}
+
+            <ReportSignatures
+              signers={[
+                {
+                  label: "Auditeur",
+                  name: auditeur,
+                  signature: detail.signature_auditeur,
+                },
+                {
+                  label: "Partenaire audité",
+                  name: partenaire,
+                  signature: detail.signature_audite,
+                },
+              ]}
+            />
           </div>
         )}
       </DialogContent>
