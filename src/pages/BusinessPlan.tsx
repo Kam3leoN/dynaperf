@@ -243,11 +243,10 @@ export default function BusinessPlan() {
               variant="outline"
               size="sm"
               onClick={handleExportPDF}
-              disabled={exporting}
               className="gap-1.5"
             >
-              <FontAwesomeIcon icon={exporting ? faSpinner : faFilePdf} className={`h-3.5 w-3.5 ${exporting ? "animate-spin" : ""}`} />
-              {exporting ? "Export..." : "Exporter PDF"}
+              <FontAwesomeIcon icon={faFilePdf} className="h-3.5 w-3.5" />
+              Exporter PDF
             </Button>
             <Badge variant="outline" className="text-xs w-fit">Projection sur {nbAnnees} ans</Badge>
           </div>
