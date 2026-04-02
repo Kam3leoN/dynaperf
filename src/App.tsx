@@ -36,6 +36,7 @@ import Clubs from "./pages/Clubs";
 import Secteurs from "./pages/Secteurs";
 import Notifications from "./pages/Notifications";
 import Messages from "./pages/Messages";
+import Sondages from "./pages/Sondages";
 import ActivityLog from "./pages/ActivityLog";
 import Preferences from "./pages/Preferences";
 import DashboardHub from "./pages/DashboardHub";
