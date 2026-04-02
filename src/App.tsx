@@ -36,6 +36,7 @@ import Clubs from "./pages/Clubs";
 import Secteurs from "./pages/Secteurs";
 import Notifications from "./pages/Notifications";
 import Messages from "./pages/Messages";
+import Sondages from "./pages/Sondages";
 import ActivityLog from "./pages/ActivityLog";
 import Preferences from "./pages/Preferences";
 import DashboardHub from "./pages/DashboardHub";
@@ -112,6 +113,7 @@ const App = () => {
                 <Route path="/reseau/secteurs" element={<ProtectedRoute><Secteurs /></ProtectedRoute>} />
                 <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
                 <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
+                <Route path="/sondages" element={<ProtectedRoute><Sondages /></ProtectedRoute>} />
                 <Route path="/historique" element={<ProtectedRoute><ActivityLog /></ProtectedRoute>} />
                 <Route path="/preferences" element={<ProtectedRoute><Preferences /></ProtectedRoute>} />
                 <Route path="/hub" element={<ProtectedRoute><DashboardHub /></ProtectedRoute>} />

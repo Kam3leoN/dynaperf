@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { AuditFormBuilder } from "@/components/AuditFormBuilder";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RichTextarea } from "@/components/ui/rich-textarea";
@@ -498,6 +499,11 @@ export default function AdminAuditGridInline() {
             <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
             Ajouter une catégorie
           </Button>
+
+          {/* Form Builder for custom fields */}
+          <div className="border-t border-border pt-4 mt-4">
+            <AuditFormBuilder auditTypeKey={selectedType?.key || ""} />
+          </div>
         </div>
       )}
 

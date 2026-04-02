@@ -25,6 +25,8 @@ import {
   faMoneyBill,
   faFolder,
   faUpload,
+  faComments,
+  faSquarePollVertical,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useTheme } from "next-themes";
@@ -111,6 +113,7 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
   const isAuditSection = ["/dashboard", "/audits", "/audits/new", "/audits/new/version", "/audits/new/form"].includes(location.pathname);
   const isActiviteSection = ["/activite", "/activite/new", "/activite/new/version", "/activite/dashboard"].includes(location.pathname);
   const isReseauSection = ["/reseau", "/reseau/partenaires", "/reseau/clubs", "/reseau/secteurs", "/business-plan"].includes(location.pathname);
+  const isCommunauteSection = ["/messages", "/sondages"].includes(location.pathname);
 
   const handleForgotPassword = async () => {
     if (!user?.email) return;
@@ -260,6 +263,20 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
         <DropdownMenuContent align="start" className="w-56 rounded-2xl">
           <DropdownMenuItem asChild><Link to="/drive" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faFolder} className="h-4 w-4 text-muted-foreground" />Tous les dossiers</Link></DropdownMenuItem>
           {isAdmin && <DropdownMenuItem asChild><Link to="/drive?upload=1" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faUpload} className="h-4 w-4 text-muted-foreground" />Ajouter un fichier</Link></DropdownMenuItem>}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button className={navPill(isCommunauteSection)}>
+            <FontAwesomeIcon icon={faComments} className="h-4 w-4" />
+            <span>Communauté</span>
+            <FontAwesomeIcon icon={faChevronDown} className="h-2.5 w-2.5 opacity-50" />
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-56 rounded-2xl">
+          <DropdownMenuItem asChild><Link to="/messages" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faEnvelope} className="h-4 w-4 text-muted-foreground" />Messagerie</Link></DropdownMenuItem>
+          <DropdownMenuItem asChild><Link to="/sondages" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faSquarePollVertical} className="h-4 w-4 text-muted-foreground" />Sondages</Link></DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 

@@ -18,6 +18,7 @@ import {
   faBell,
   faCalendarPlus,
   faUpload,
+  faSquarePollVertical,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/hooks/useAuth";
@@ -86,12 +87,16 @@ export function MobileMoreMenu({ onClose }: Props) {
         <MenuItem icon={faBriefcase} label="Business Plan" to="/business-plan" onClick={onClose} />
       </MenuGroup>
 
+      <MenuGroup title="Communauté">
+        <MenuItem icon={faEnvelope} label="Messages" to="/messages" onClick={onClose} />
+        <MenuItem icon={faSquarePollVertical} label="Sondages" to="/sondages" onClick={onClose} />
+      </MenuGroup>
+
       <MenuGroup title="Outils">
         <MenuItem icon={faClipboardList} label="Drive" to="/drive" onClick={onClose} />
         <MenuItem icon={faUpload} label="Uploader" to="/drive" onClick={onClose} />
         <MenuItem icon={faClockRotateLeft} label="Historique" to="/historique" onClick={onClose} />
         <MenuItem icon={faBell} label="Notifications" to="/notifications" onClick={onClose} />
-        <MenuItem icon={faEnvelope} label="Messages" to="/messages" onClick={onClose} />
         {isAdmin && <MenuItem icon={faUserShield} label="Admin" to="/admin" onClick={onClose} />}
       </MenuGroup>
 

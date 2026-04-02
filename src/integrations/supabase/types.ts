@@ -233,6 +233,42 @@ export type Database = {
           },
         ]
       }
+      audit_type_custom_fields: {
+        Row: {
+          audit_type_key: string
+          created_at: string
+          field_label: string
+          field_options: Json | null
+          field_type: string
+          id: string
+          is_required: boolean
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          audit_type_key: string
+          created_at?: string
+          field_label: string
+          field_options?: Json | null
+          field_type?: string
+          id?: string
+          is_required?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          audit_type_key?: string
+          created_at?: string
+          field_label?: string
+          field_options?: Json | null
+          field_type?: string
+          id?: string
+          is_required?: boolean
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_types: {
         Row: {
           color: string | null
@@ -904,6 +940,113 @@ export type Database = {
           departements?: string[]
           id?: string
           nom?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sondage_options: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          sondage_id: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          sondage_id: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          sondage_id?: string
+          sort_order?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sondage_options_sondage_id_fkey"
+            columns: ["sondage_id"]
+            isOneToOne: false
+            referencedRelation: "sondages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sondage_votes: {
+        Row: {
+          created_at: string
+          id: string
+          option_id: string
+          sondage_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          option_id: string
+          sondage_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          option_id?: string
+          sondage_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sondage_votes_option_id_fkey"
+            columns: ["option_id"]
+            isOneToOne: false
+            referencedRelation: "sondage_options"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sondage_votes_sondage_id_fkey"
+            columns: ["sondage_id"]
+            isOneToOne: false
+            referencedRelation: "sondages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sondages: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string
+          ends_at: string | null
+          id: string
+          is_active: boolean
+          is_multiple_choice: boolean
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          is_multiple_choice?: boolean
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string
+          ends_at?: string | null
+          id?: string
+          is_active?: boolean
+          is_multiple_choice?: boolean
+          title?: string
           updated_at?: string
         }
         Relationships: []
