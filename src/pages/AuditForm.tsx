@@ -441,6 +441,12 @@ export default function AuditForm() {
             onSubmit={handleFinish}
             onBack={handlePhotosBack}
             uploading={false}
+            auditeurName={stepZeroData?.auditeur || ""}
+            partenaireName={stepZeroData?.partenaireAudite || ""}
+            signatureAuditeur={signatureAuditeur}
+            onSignatureAuditeurChange={setSignatureAuditeur}
+            signatureAudite={signatureAudite}
+            onSignatureAuditeChange={setSignatureAudite}
           />
         )}
 
