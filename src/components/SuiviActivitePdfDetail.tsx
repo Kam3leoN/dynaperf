@@ -143,6 +143,14 @@ export function SuiviActivitePdfDetail({ suiviId }: Props) {
         html += `<div class="observations-block">${escapeHtml(suivi.observations)}</div>`;
       }
 
+      // ── Signatures ──
+      html += signaturesHtml(
+        suivi.suivi_par,
+        (suivi as any).signature_auditeur,
+        suivi.agence,
+        (suivi as any).signature_audite,
+      );
+
       // ── Footer ──
       html += `<div class="report-footer">
         <span>DynaPerf — Suivi d'activité</span>

@@ -205,6 +205,14 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
         html += `</div>`;
       }
 
+      // ── Signatures ──
+      html += signaturesHtml(
+        auditeur,
+        (detail as any).signature_auditeur,
+        partenaire,
+        (detail as any).signature_audite,
+      );
+
       // ── Footer ──
       html += `<div class="report-footer">
         <span>DynaPerf — Rapport d'audit</span>
