@@ -288,6 +288,39 @@ body {
   aspect-ratio: 16/10;
 }
 
+/* ── Signatures ── */
+.signatures-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 12px;
+  page-break-inside: avoid;
+}
+.signature-block {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  text-align: center;
+}
+.signature-block .sig-label {
+  font-size: 8px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+.signature-block .sig-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+.signature-block img {
+  max-width: 100%;
+  height: 60px;
+  object-fit: contain;
+}
+
 /* ── Footer ── */
 .report-footer {
   margin-top: 20px;
