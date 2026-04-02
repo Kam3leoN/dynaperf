@@ -13,6 +13,7 @@ import {
   infoFieldHtml,
   statFieldHtml,
   signaturesHtml,
+  urlsToDataUrls,
 } from "@/lib/printPdf";
 
 interface AuditPdfExportProps {
