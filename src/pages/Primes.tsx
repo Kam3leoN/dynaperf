@@ -132,9 +132,33 @@ export default function Primes() {
         <MyPrimeTracker />
 
         <div className="rounded-2xl border border-border/60 bg-card p-4 shadow-soft space-y-4">
-          <div className="flex items-center gap-2">
-            <FontAwesomeIcon icon={faCoins} className="h-4 w-4 text-amber-500" />
-            <h3 className="text-sm font-semibold text-foreground">Récapitulatif par mois</h3>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FontAwesomeIcon icon={faCoins} className="h-4 w-4 text-amber-500" />
+              <h3 className="text-sm font-semibold text-foreground">Récapitulatif par mois</h3>
+            </div>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setViewMode("compact")}
+                className={cn(
+                  "p-1.5 rounded-md transition-colors",
+                  viewMode === "compact" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+                title="Vue compacte"
+              >
+                <img src={iconCompact} alt="" className="h-4 w-4 dark:invert" />
+              </button>
+              <button
+                onClick={() => setViewMode("extended")}
+                className={cn(
+                  "p-1.5 rounded-md transition-colors",
+                  viewMode === "extended" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                )}
+                title="Vue étendue"
+              >
+                <img src={iconExtended} alt="" className="h-4 w-4 dark:invert" />
+              </button>
+            </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
             <DatePicker label="Du" date={recapFrom} onChange={setRecapFrom} />
