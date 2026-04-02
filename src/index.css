@@ -143,20 +143,6 @@
     font-size: 16px;
   }
 
-  /* Boost base font on small high-DPI phones (< 400px CSS width) */
-  @media screen and (max-width: 480px) {
-    html {
-      font-size: 18px;
-    }
-  }
-
-  /* Extra boost for very high-DPI screens (Pixel 9 Pro, Galaxy S series) */
-  @media screen and (max-width: 480px) and (min-resolution: 2.5dppx) {
-    html {
-      font-size: 19px;
-    }
-  }
-
   body {
     @apply bg-background text-foreground font-sans antialiased;
     -webkit-tap-highlight-color: transparent;
