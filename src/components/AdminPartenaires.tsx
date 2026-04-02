@@ -561,11 +561,16 @@ export default function AdminPartenaires() {
                           <button onClick={() => setViewP(p)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Voir">
                             <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
                           </button>
-                          <button onClick={() => openEditDialog(p)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
-                            <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
-                          </button>
-                          <button onClick={() => handleDelete(p)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors" title="Supprimer">
-                            <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
+                          {isAdmin && (
+                            <>
+                              <button onClick={() => openEditDialog(p)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
+                                <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
+                              </button>
+                              <button onClick={() => handleDelete(p)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors" title="Supprimer">
+                                <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
+                              </button>
+                            </>
+                          )}
                           </button>
                         </div>
                       </TableCell>
