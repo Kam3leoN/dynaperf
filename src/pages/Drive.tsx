@@ -636,7 +636,7 @@ export default function Drive() {
 
             {/* Categories grid */}
             {childCategories.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              <div className={`grid gap-3 ${density === "compact" ? "grid-cols-3 sm:grid-cols-4 md:grid-cols-6" : "grid-cols-2 sm:grid-cols-3 md:grid-cols-4"}`}>
                 {childCategories.map((cat) => {
                   const subCount = categories.filter((c) => c.parent_id === cat.id).length;
                   const docCount = documents.filter((d) => d.category_id === cat.id).length;
