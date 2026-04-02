@@ -352,12 +352,12 @@ export default function SuiviActiviteForm() {
                       {/* Observation */}
                       <div className="space-y-1.5">
                         <Label className="text-[11px] sm:text-xs text-muted-foreground">Observation de l'agence (optionnel)</Label>
-                        <Textarea
+                        <RichTextarea
                           value={ans.observation ?? ""}
-                          onChange={(e) => setAnswer(item.id, { observation: e.target.value })}
+                          onChange={(val) => setAnswer(item.id, { observation: val })}
                           placeholder="Ajouter une observation..."
                           rows={2}
-                          className="text-sm min-h-[72px] resize-y"
+                          minimal
                         />
                       </div>
                     </CardContent>

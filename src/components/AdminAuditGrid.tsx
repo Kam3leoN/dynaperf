@@ -621,11 +621,11 @@ export default function AdminAuditGridInline() {
             {itemForm.input_type === "checklist" && (
               <div className="space-y-1.5">
                 <Label>Éléments de la checklist (1 par ligne)</Label>
-                <Textarea
+                <RichTextarea
                   value={itemForm.checklist_items}
-                  onChange={(e) => setItemForm({ ...itemForm, checklist_items: e.target.value })}
+                  onChange={(val) => setItemForm({ ...itemForm, checklist_items: val })}
                   rows={6}
-                  placeholder="Ordinateur, micro, sono...&#10;La présentation officielle (PPT)&#10;Le logiciel Dynamatch"
+                  placeholder={"Ordinateur, micro, sono...\nLa présentation officielle (PPT)\nLe logiciel Dynamatch"}
                 />
               </div>
             )}
