@@ -67,7 +67,7 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
   const noShowNotEntered = isNoShowAuto && autoValue === undefined;
 
   const [boolVal, setBoolVal] = useState<boolean | null>(() => {
-    if (isNoShowAuto) return autoValue !== undefined ? autoValue > 0 : null;
+    if (isNoShowAuto) return autoValue !== undefined ? autoValue === 0 : null;
     return answer ? answer.score > 0 : null;
   });
   const [numVal, setNumVal] = useState<string>(() => {
