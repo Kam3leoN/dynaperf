@@ -653,16 +653,20 @@ export default function Drive() {
                       onDragLeave={handleCatDragLeave}
                       onDrop={(e) => handleCatDrop(e, cat.id)}
                     >
-                      <CardContent className="p-4 flex flex-col items-center gap-2 relative">
+                      <CardContent className="p-5 flex flex-col items-center gap-3 relative">
                         {(() => {
                           const iconSrc = getFolderIcon(cat);
                           return iconSrc ? (
-                            <img src={iconSrc} alt={cat.name} className="h-10 w-10 rounded-lg object-contain" />
+                            <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/10">
+                              <img src={iconSrc} alt={cat.name} className="h-7 w-7 object-contain" />
+                            </div>
                           ) : (
-                            <FontAwesomeIcon icon={faFolderOpen} className="h-8 w-8 text-primary/80" />
+                            <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/10">
+                              <FontAwesomeIcon icon={faFolderOpen} className="h-5 w-5 text-primary" />
+                            </div>
                           );
                         })()}
-                        <p className="text-sm font-semibold text-center leading-tight">{cat.name}</p>
+                        <p className="text-sm font-medium text-foreground text-center leading-snug">{cat.name}</p>
                         <div className="flex gap-1.5">
                           {subCount > 0 && <Badge variant="secondary" className="text-[10px]">{subCount} sous-cat.</Badge>}
                           {docCount > 0 && <Badge variant="outline" className="text-[10px]">{docCount} doc.</Badge>}
