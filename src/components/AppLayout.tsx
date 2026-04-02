@@ -153,7 +153,7 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
   const profileButton = () => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="h-10 w-10 rounded-full overflow-hidden border-2 border-border hover:border-primary/40 transition-all flex items-center justify-center shrink-0" title="Profil">
+        <button className="h-11 w-11 rounded-full overflow-hidden border-2 border-border hover:border-primary/40 transition-all flex items-center justify-center shrink-0" title="Profil">
           {avatarUrl ? (
             <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
           ) : (
