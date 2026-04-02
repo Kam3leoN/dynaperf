@@ -23,6 +23,7 @@ import {
   faGear,
   faCalendarPlus,
   faMoneyBill,
+  faFolder,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useTheme } from "next-themes";
