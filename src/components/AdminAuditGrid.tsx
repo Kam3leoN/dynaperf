@@ -583,7 +583,7 @@ export default function AdminAuditGridInline() {
             </div>
             <div className="space-y-1.5">
               <Label>Description</Label>
-              <Textarea value={itemForm.description} onChange={(e) => setItemForm({ ...itemForm, description: e.target.value })} rows={3} />
+              <RichTextarea value={itemForm.description} onChange={(val) => setItemForm({ ...itemForm, description: val })} rows={3} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-1.5">
