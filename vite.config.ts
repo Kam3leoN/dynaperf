@@ -7,7 +7,7 @@ import { VitePWA } from "vite-plugin-pwa";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const isGitHubPagesBuild = process.env.GITHUB_PAGES === "true";
-  const basePath = mode === "development" ? "/" : "/dynaperf/";
+  const basePath = isGitHubPagesBuild ? "/dynaperf/" : "/";
   const pwaPlugin = isGitHubPagesBuild
     ? null
     : VitePWA({
