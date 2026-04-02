@@ -35,18 +35,18 @@ export function BottomNav() {
   return (
     <>
       <nav className="fixed bottom-0 inset-x-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border safe-area-bottom lg:hidden">
-        <div className="flex items-end justify-around px-2 pt-1 pb-1">
+        <div className="flex items-end justify-around px-2 pt-1.5 pb-1.5">
           {navItems.map((item, idx) => {
             if (item.isFab) {
               return (
                 <button
                   key="fab"
                   onClick={() => navigate("/")}
-                  className="relative -top-3 flex items-center justify-center w-14 h-14 rounded-2xl shadow-lg active:scale-95 transition-transform"
+                  className="relative -top-3 flex items-center justify-center w-[60px] h-[60px] rounded-2xl shadow-lg active:scale-95 transition-transform"
                   style={{ backgroundColor: "#212121" }}
                   aria-label="Accueil"
                 >
-                  <img src="/pwaDynaperf.svg" alt="DynaPerf" className="h-8 w-8" />
+                  <img src="/pwaDynaperf.svg" alt="DynaPerf" className="h-9 w-9" />
                 </button>
               );
             }
@@ -56,15 +56,15 @@ export function BottomNav() {
                 <button
                   key="menu"
                   onClick={() => setMenuOpen(true)}
-                  className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-2"
+                  className="flex flex-col items-center justify-center gap-0.5 min-w-[60px] py-2"
                 >
-                  <div className="flex items-center justify-center w-16 h-8 rounded-2xl bg-transparent">
+                  <div className="flex items-center justify-center w-16 h-9 rounded-2xl bg-transparent">
                     <FontAwesomeIcon
                       icon={item.icon!}
-                      className="h-5 w-5 text-muted-foreground"
+                      className="h-[22px] w-[22px] text-muted-foreground"
                     />
                   </div>
-                  <span className="text-[10px] font-medium text-muted-foreground">
+                  <span className="text-[11px] font-medium text-muted-foreground">
                     {item.label}
                   </span>
                 </button>
@@ -77,25 +77,25 @@ export function BottomNav() {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="flex flex-col items-center justify-center gap-0.5 min-w-[56px] py-2"
+                className="flex flex-col items-center justify-center gap-0.5 min-w-[60px] py-2"
               >
                 <div
                   className={cn(
-                    "flex items-center justify-center w-16 h-8 rounded-2xl transition-colors",
+                    "flex items-center justify-center w-16 h-9 rounded-2xl transition-colors",
                     active ? "bg-primary/12" : "bg-transparent"
                   )}
                 >
                   <FontAwesomeIcon
                     icon={item.icon!}
                     className={cn(
-                      "h-5 w-5 transition-colors",
+                      "h-[22px] w-[22px] transition-colors",
                       active ? "text-primary" : "text-muted-foreground"
                     )}
                   />
                 </div>
                 <span
                   className={cn(
-                    "text-[10px] font-medium transition-colors",
+                    "text-[11px] font-medium transition-colors",
                     active ? "text-primary" : "text-muted-foreground"
                   )}
                 >
