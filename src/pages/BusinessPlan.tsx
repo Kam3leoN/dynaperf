@@ -12,6 +12,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChartLine, faEuroSign, faUsers, faHandshake, faCar, faRocket, faBriefcase, faArrowTrendUp, faGift, faBolt, faFilePdf, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, Area, AreaChart } from "recharts";
 import { toast } from "sonner";
+import { exportBusinessPlanPdf } from "@/lib/businessPlanPdf";
 
 interface YearData {
   year: number;
