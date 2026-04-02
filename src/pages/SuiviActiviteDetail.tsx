@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SuiviActivitePdfDetail } from "@/components/SuiviActivitePdfDetail";
+import { ReportSignatures } from "@/components/ReportSignatures";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -25,6 +26,8 @@ interface SuiviRow {
   nb_contrats_total: number | null;
   nb_contrats_depuis_dernier: number | null;
   observations: string | null;
+  signature_auditeur: string | null;
+  signature_audite: string | null;
 }
 
 export default function SuiviActiviteDetail() {
@@ -225,6 +228,21 @@ export default function SuiviActiviteDetail() {
             </div>
           </div>
         )}
+
+        <ReportSignatures
+          signers={[
+            {
+              label: "Auditeur",
+              name: suivi.suivi_par,
+              signature: suivi.signature_auditeur,
+            },
+            {
+              label: "Partenaire audité",
+              name: suivi.agence,
+              signature: suivi.signature_audite,
+            },
+          ]}
+        />
       </div>
     </AppLayout>
   );

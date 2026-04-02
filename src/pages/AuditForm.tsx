@@ -153,11 +153,16 @@ export default function AuditForm() {
     setPhase("main");
   }, []);
 
-  const handleFinish = useCallback(async () => {
-    setPhase("saving");
-    await saveAudit(answers);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [answers]);
+  const handleFinish = async () => {
+    try {
+      setPhase("saving");
+      await saveAudit(answers);
+    } catch (error) {
+      console.error(error);
+      toast.error("Erreur lors de l'enregistrement des photos de l'audit");
+      setPhase("main");
+    }
+  };
 
   const uploadPhotos = async (id: string): Promise<string[]> => {
     const urls: string[] = [];
@@ -167,9 +172,11 @@ export default function AuditForm() {
       const { error } = await supabase.storage
         .from("audit-photos")
         .upload(path, file, { contentType: file.type });
-      if (!error) {
-        urls.push(path);
+      if (error) {
+        throw error;
       }
+
+      urls.push(path);
     }
     return urls;
   };
