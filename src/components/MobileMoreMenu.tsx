@@ -18,6 +18,7 @@ import {
   faBell,
   faCalendarPlus,
   faUpload,
+  faSquarePollVertical,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/hooks/useAuth";
