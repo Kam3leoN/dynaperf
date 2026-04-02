@@ -206,10 +206,12 @@ export default function Sondages() {
             <h1 className="text-xl font-semibold text-foreground">Sondages</h1>
             <p className="text-sm text-muted-foreground">Créez et participez aux sondages</p>
           </div>
-          <Button onClick={openNew} className="gap-2">
-            <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
-            Nouveau
-          </Button>
+          {isAdmin && (
+            <Button onClick={openNew} className="gap-2">
+              <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
+              Nouveau
+            </Button>
+          )}
         </div>
 
         {loading ? (
