@@ -513,6 +513,62 @@ export type Database = {
         }
         Relationships: []
       }
+      conversation_group_members: {
+        Row: {
+          group_id: string
+          id: string
+          joined_at: string
+          user_id: string
+        }
+        Insert: {
+          group_id: string
+          id?: string
+          joined_at?: string
+          user_id: string
+        }
+        Update: {
+          group_id?: string
+          id?: string
+          joined_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_groups: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          created_by: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       drive_categories: {
         Row: {
           created_at: string
@@ -638,6 +694,7 @@ export type Database = {
         Row: {
           content: string
           created_at: string
+          group_id: string | null
           id: string
           read: boolean
           recipient_id: string
@@ -646,6 +703,7 @@ export type Database = {
         Insert: {
           content: string
           created_at?: string
+          group_id?: string | null
           id?: string
           read?: boolean
           recipient_id: string
@@ -654,12 +712,21 @@ export type Database = {
         Update: {
           content?: string
           created_at?: string
+          group_id?: string | null
           id?: string
           read?: boolean
           recipient_id?: string
           sender_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "messages_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "conversation_groups"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {

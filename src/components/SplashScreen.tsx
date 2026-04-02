@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import logoLight from "@/assets/DynaPerf_light.svg";
 
 const SPLASH_DURATION = 2200;
 
@@ -7,7 +8,6 @@ export function SplashScreen({ onFinished }: { onFinished: () => void }) {
   const [visible, setVisible] = useState(true);
 
   useEffect(() => {
-    // Reset body background after splash exits
     document.body.style.backgroundColor = "#ee4540";
     const timer = setTimeout(() => setVisible(false), SPLASH_DURATION);
     return () => clearTimeout(timer);
@@ -27,17 +27,14 @@ export function SplashScreen({ onFinished }: { onFinished: () => void }) {
           className="fixed inset-0 z-[9999] flex flex-col items-center justify-center"
           style={{ backgroundColor: "#ee4540" }}
         >
-          {/* Logo */}
           <motion.img
-            src={`${import.meta.env.BASE_URL}pwaDynaperf.svg`}
+            src={logoLight}
             alt="DynaPerf"
             className="w-24 h-24 mb-6"
             initial={{ opacity: 0, scale: 0.7 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1], delay: 0.15 }}
           />
-
-          {/* App name */}
           <motion.h1
             className="text-3xl font-bold text-white tracking-tight"
             initial={{ opacity: 0, y: 16 }}
@@ -46,8 +43,6 @@ export function SplashScreen({ onFinished }: { onFinished: () => void }) {
           >
             DynaPerf
           </motion.h1>
-
-          {/* Tagline */}
           <motion.p
             className="text-white/80 text-sm mt-2 font-medium"
             initial={{ opacity: 0, y: 12 }}

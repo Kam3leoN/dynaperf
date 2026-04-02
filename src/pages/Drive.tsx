@@ -477,7 +477,7 @@ export default function Drive() {
           <ModifiedInfo updatedAt={doc.updated_at} updatedBy={doc.updated_by} />
         </div>
         {isAdmin && (
-          <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute top-1.5 right-1.5 flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             <button className="h-6 w-6 rounded-full bg-card/90 flex items-center justify-center hover:bg-accent shadow-sm" onClick={(e) => { e.stopPropagation(); openUploadDialog(doc); }}>
               <FontAwesomeIcon icon={faPen} className="h-2.5 w-2.5 text-muted-foreground" />
             </button>
@@ -487,7 +487,7 @@ export default function Drive() {
           </div>
         )}
         {isAdmin && (
-          <div className="absolute top-1.5 left-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="absolute top-1.5 left-1.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
             <div className="h-6 w-6 rounded-full bg-card/90 flex items-center justify-center shadow-sm cursor-grab" title="Glisser pour déplacer">
               <FontAwesomeIcon icon={faArrowsUpDownLeftRight} className="h-2.5 w-2.5 text-muted-foreground" />
             </div>
@@ -668,7 +668,7 @@ export default function Drive() {
                           {docCount > 0 && <Badge variant="outline" className="text-[10px]">{docCount} doc.</Badge>}
                         </div>
                         {isAdmin && (
-                          <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="absolute top-1.5 right-1.5 flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                             <button className="h-6 w-6 rounded-full bg-muted flex items-center justify-center hover:bg-accent" onClick={(e) => { e.stopPropagation(); openEditCat(cat); }}>
                               <FontAwesomeIcon icon={faPen} className="h-2.5 w-2.5 text-muted-foreground" />
                             </button>
