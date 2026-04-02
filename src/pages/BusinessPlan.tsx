@@ -630,8 +630,11 @@ export default function BusinessPlan({ embedded }: { embedded?: boolean }) {
           </div>
         </div>
       </div>
-    </AppLayout>
+    </div>
   );
+
+  if (embedded) return content;
+  return <AppLayout>{content}</AppLayout>;
 }
 
 function TableRow({ label, data, money, bold, highlight, negative }: {
