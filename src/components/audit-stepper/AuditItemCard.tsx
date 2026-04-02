@@ -78,7 +78,7 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
   // Sync boolVal & numVal when autoValue changes (e.g. step 0 data updated)
   useEffect(() => {
     if (isNoShowAuto) {
-      setBoolVal(autoValue !== undefined ? autoValue > 0 : null);
+      setBoolVal(autoValue !== undefined ? autoValue === 0 : null);
     } else if (isAutoFilled) {
       setNumVal(String(autoValue ?? 0));
     }
