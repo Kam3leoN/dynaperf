@@ -612,7 +612,7 @@ export default function AdminAuditGridInline() {
             </div>
             <div className="space-y-1.5">
               <Label>Quel intérêt ?</Label>
-              <Textarea value={itemForm.interets} onChange={(e) => setItemForm({ ...itemForm, interets: e.target.value })} rows={2} placeholder="Expliquez l'intérêt de ce critère…" />
+              <RichTextarea value={itemForm.interets} onChange={(val) => setItemForm({ ...itemForm, interets: val })} rows={2} placeholder="Expliquez l'intérêt de ce critère…" />
             </div>
             <div className="space-y-1.5">
               <Label>Comment y parvenir ?</Label>
