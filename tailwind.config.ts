@@ -14,7 +14,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Lexend", "sans-serif"],
+        sans: ["Plus Jakarta Sans", "Lexend", "sans-serif"],
+        display: ["Plus Jakarta Sans", "Lexend", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -71,11 +72,13 @@ export default {
       boxShadow: {
         soft: "var(--shadow-soft)",
         hover: "var(--shadow-hover)",
+        elevated: "var(--shadow-elevated)",
       },
       borderRadius: {
-        "3xl": "1.5rem",
-        "2xl": "1.25rem",
-        xl: "1rem",
+        "4xl": "2rem",
+        "3xl": "1.75rem",
+        "2xl": "1.5rem",
+        xl: "1.25rem",
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",

@@ -34,19 +34,19 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 inset-x-0 z-50 bg-card/95 backdrop-blur-lg border-t border-border safe-area-bottom lg:hidden">
-        <div className="flex items-end justify-around px-2 pt-1.5 pb-1.5">
+      <nav className="fixed bottom-0 inset-x-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border/40 safe-area-bottom lg:hidden">
+        <div className="flex items-end justify-around px-2 pt-2 pb-2">
           {navItems.map((item, idx) => {
             if (item.isFab) {
               return (
                 <button
                   key="fab"
                   onClick={() => navigate("/")}
-                  className="relative -top-3 flex items-center justify-center w-[60px] h-[60px] rounded-2xl shadow-lg active:scale-95 transition-transform"
+                  className="relative -top-4 flex items-center justify-center w-16 h-16 rounded-3xl shadow-elevated active:scale-95 transition-transform"
                   style={{ backgroundColor: "#212121" }}
                   aria-label="Accueil"
                 >
-                  <img src="/pwaDynaperf.svg" alt="DynaPerf" className="h-9 w-9" />
+                  <img src="/pwaDynaperf.svg" alt="DynaPerf" className="h-8 w-8" />
                 </button>
               );
             }
@@ -56,15 +56,15 @@ export function BottomNav() {
                 <button
                   key="menu"
                   onClick={() => setMenuOpen(true)}
-                  className="flex flex-col items-center justify-center gap-0.5 min-w-[60px] py-2"
+                  className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 touch-target"
                 >
-                  <div className="flex items-center justify-center w-16 h-9 rounded-2xl bg-transparent">
+                  <div className="flex items-center justify-center w-16 h-8 rounded-2xl bg-transparent">
                     <FontAwesomeIcon
                       icon={item.icon!}
                       className="h-[22px] w-[22px] text-muted-foreground"
                     />
                   </div>
-                  <span className="text-[11px] font-medium text-muted-foreground">
+                  <span className="text-[11px] font-semibold text-muted-foreground">
                     {item.label}
                   </span>
                 </button>
@@ -77,12 +77,12 @@ export function BottomNav() {
               <button
                 key={item.path}
                 onClick={() => navigate(item.path)}
-                className="flex flex-col items-center justify-center gap-0.5 min-w-[60px] py-2"
+                className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 touch-target"
               >
                 <div
                   className={cn(
-                    "flex items-center justify-center w-16 h-9 rounded-2xl transition-colors",
-                    active ? "bg-primary/12" : "bg-transparent"
+                    "flex items-center justify-center w-16 h-8 rounded-2xl transition-all duration-200",
+                    active ? "bg-primary/12 scale-105" : "bg-transparent"
                   )}
                 >
                   <FontAwesomeIcon
@@ -95,7 +95,7 @@ export function BottomNav() {
                 </div>
                 <span
                   className={cn(
-                    "text-[11px] font-medium transition-colors",
+                    "text-[11px] font-semibold transition-colors",
                     active ? "text-primary" : "text-muted-foreground"
                   )}
                 >
@@ -108,8 +108,8 @@ export function BottomNav() {
       </nav>
 
       <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-        <SheetContent side="bottom" className="rounded-t-3xl px-2 pb-8">
-          <SheetHeader className="pb-2">
+        <SheetContent side="bottom" className="rounded-t-[2rem] px-3 pb-10">
+          <SheetHeader className="pb-3">
             <SheetTitle className="text-base">Menu</SheetTitle>
           </SheetHeader>
           <MobileMoreMenu onClose={() => setMenuOpen(false)} />

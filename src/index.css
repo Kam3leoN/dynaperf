@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,47 +8,48 @@
 @layer base {
   :root {
     /* ── Surface & Foreground ── */
-    --background: 200 20% 97%;
-    --foreground: 200 52% 11%;
+    --background: 210 20% 98%;
+    --foreground: 210 40% 10%;
 
     --card: 0 0% 100%;
-    --card-foreground: 200 52% 11%;
+    --card-foreground: 210 40% 10%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 200 52% 11%;
+    --popover-foreground: 210 40% 10%;
 
     /* ── Brand Colors ── */
     --primary: 353 100% 44%;
     --primary-foreground: 0 0% 100%;
 
     --accent: 42 100% 57%;
-    --accent-foreground: 200 52% 11%;
+    --accent-foreground: 210 40% 10%;
 
     --destructive: 0 84% 50%;
     --destructive-foreground: 0 0% 100%;
 
     /* ── Unified Gray Ramp (Minéral-tinted cool grays) ── */
-    --secondary: 200 14% 93%;
-    --secondary-foreground: 200 52% 11%;
+    --secondary: 210 14% 93%;
+    --secondary-foreground: 210 40% 10%;
 
-    --muted: 200 12% 90%;
-    --muted-foreground: 200 14% 46%;
+    --muted: 210 12% 91%;
+    --muted-foreground: 210 10% 46%;
 
-    --border: 200 14% 87%;
-    --input: 200 14% 87%;
+    --border: 210 14% 89%;
+    --input: 210 14% 89%;
     --ring: 353 100% 44%;
 
-    /* ── Radius (M3 Expressive) ── */
-    --radius: 0.875rem;
+    /* ── Radius (M3 Expressive — larger, rounder) ── */
+    --radius: 1rem;
 
-    /* ── Elevation (M3 tonal) ── */
-    --shadow-soft: 0 1px 3px rgba(14,34,44,0.04), 0 4px 12px rgba(14,34,44,0.05);
-    --shadow-hover: 0 4px 16px rgba(14,34,44,0.08), 0 8px 28px rgba(14,34,44,0.06);
+    /* ── Elevation (M3 tonal — softer, more diffuse) ── */
+    --shadow-soft: 0 1px 2px rgba(14,34,44,0.03), 0 2px 8px rgba(14,34,44,0.04);
+    --shadow-hover: 0 2px 8px rgba(14,34,44,0.06), 0 8px 24px rgba(14,34,44,0.08);
+    --shadow-elevated: 0 4px 16px rgba(14,34,44,0.08), 0 12px 40px rgba(14,34,44,0.1);
 
     /* ── Charts ── */
-    --chart-grid: 200 14% 46% / 0.1;
-    --chart-tick: 200 14% 46% / 0.7;
-    --chart-area: 200 52% 11%;
+    --chart-grid: 210 10% 46% / 0.1;
+    --chart-tick: 210 10% 46% / 0.7;
+    --chart-area: 210 40% 10%;
 
     /* ── Event type colors ── */
     --color-rd-presentiel: 2 80% 58%;
@@ -58,58 +60,64 @@
     --color-rd-evenementiel: 28 80% 52%;
 
     /* ── Sidebar ── */
-    --sidebar-background: 200 52% 11%;
+    --sidebar-background: 210 40% 10%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 353 100% 44%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 200 40% 18%;
+    --sidebar-accent: 210 35% 18%;
     --sidebar-accent-foreground: 0 0% 95%;
-    --sidebar-border: 200 30% 20%;
+    --sidebar-border: 210 30% 20%;
     --sidebar-ring: 353 100% 44%;
 
-    /* ── Surface variants (M3) ── */
-    --surface-dim: 200 14% 93%;
-    --surface-container: 200 14% 95%;
-    --surface-container-high: 200 14% 91%;
-    --outline-variant: 200 14% 82%;
+    /* ── Surface variants (M3 Expressive) ── */
+    --surface-dim: 210 14% 93%;
+    --surface-container: 210 16% 96%;
+    --surface-container-high: 210 14% 92%;
+    --surface-container-highest: 210 12% 88%;
+    --outline-variant: 210 14% 82%;
+
+    /* ── M3 Expressive tokens ── */
+    --m3-state-layer-opacity: 0.08;
+    --m3-touch-target: 48px;
   }
 
   .dark {
-    --background: 200 45% 7%;
-    --foreground: 200 10% 92%;
+    --background: 220 30% 6%;
+    --foreground: 210 10% 93%;
 
-    --card: 200 38% 12%;
-    --card-foreground: 200 10% 92%;
+    --card: 220 25% 11%;
+    --card-foreground: 210 10% 93%;
 
-    --popover: 200 38% 12%;
-    --popover-foreground: 200 10% 92%;
+    --popover: 220 25% 11%;
+    --popover-foreground: 210 10% 93%;
 
     --primary: 353 100% 50%;
     --primary-foreground: 0 0% 100%;
 
     --accent: 42 100% 57%;
-    --accent-foreground: 200 52% 11%;
+    --accent-foreground: 210 40% 10%;
 
     --destructive: 0 84% 55%;
     --destructive-foreground: 0 0% 100%;
 
     /* ── Unified Dark Gray Ramp ── */
-    --secondary: 200 28% 16%;
-    --secondary-foreground: 200 10% 92%;
+    --secondary: 220 22% 15%;
+    --secondary-foreground: 210 10% 93%;
 
-    --muted: 200 24% 19%;
-    --muted-foreground: 200 12% 56%;
+    --muted: 220 20% 18%;
+    --muted-foreground: 210 10% 56%;
 
-    --border: 200 24% 20%;
-    --input: 200 24% 20%;
+    --border: 220 20% 20%;
+    --input: 220 20% 20%;
     --ring: 353 100% 50%;
 
-    --shadow-soft: 0 1px 3px rgba(0,0,0,0.2), 0 4px 12px rgba(0,0,0,0.16);
-    --shadow-hover: 0 4px 16px rgba(0,0,0,0.3), 0 8px 28px rgba(0,0,0,0.2);
+    --shadow-soft: 0 1px 2px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.14);
+    --shadow-hover: 0 2px 8px rgba(0,0,0,0.24), 0 8px 24px rgba(0,0,0,0.18);
+    --shadow-elevated: 0 4px 16px rgba(0,0,0,0.3), 0 12px 40px rgba(0,0,0,0.25);
 
-    --chart-grid: 200 12% 56% / 0.12;
-    --chart-tick: 200 12% 56% / 0.7;
-    --chart-area: 200 10% 92%;
+    --chart-grid: 210 10% 56% / 0.12;
+    --chart-tick: 210 10% 56% / 0.7;
+    --chart-area: 210 10% 93%;
 
     --color-rd-presentiel: 2 80% 58%;
     --color-club-affaires: 42 100% 57%;
@@ -118,19 +126,20 @@
     --color-mise-en-place: 263 70% 66%;
     --color-rd-evenementiel: 28 80% 52%;
 
-    --sidebar-background: 200 45% 7%;
-    --sidebar-foreground: 200 10% 92%;
+    --sidebar-background: 220 30% 6%;
+    --sidebar-foreground: 210 10% 93%;
     --sidebar-primary: 353 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 200 28% 16%;
-    --sidebar-accent-foreground: 200 10% 92%;
-    --sidebar-border: 200 24% 20%;
+    --sidebar-accent: 220 22% 15%;
+    --sidebar-accent-foreground: 210 10% 93%;
+    --sidebar-border: 220 20% 20%;
     --sidebar-ring: 353 100% 50%;
 
-    --surface-dim: 200 28% 16%;
-    --surface-container: 200 38% 10%;
-    --surface-container-high: 200 28% 14%;
-    --outline-variant: 200 20% 28%;
+    --surface-dim: 220 22% 15%;
+    --surface-container: 220 28% 9%;
+    --surface-container-high: 220 22% 13%;
+    --surface-container-highest: 220 20% 17%;
+    --outline-variant: 220 16% 28%;
   }
 }
 
@@ -141,12 +150,16 @@
 
   html {
     font-size: 16px;
+    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 
   body {
-    @apply bg-background text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased leading-relaxed;
     -webkit-tap-highlight-color: transparent;
     -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
   /* Safe area for bottom nav */
@@ -154,6 +167,75 @@
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
+
+/* ═══════════════════════════════════════════════
+   M3 Expressive — Type Scale
+   ═══════════════════════════════════════════════ */
+.m3-display-large  { @apply text-[2.25rem] sm:text-[2.75rem] font-extrabold leading-[1.15] tracking-tight; }
+.m3-display-medium { @apply text-[1.75rem] sm:text-[2.125rem] font-bold leading-tight tracking-tight; }
+.m3-headline-large { @apply text-[1.5rem] sm:text-[1.75rem] font-bold leading-snug; }
+.m3-headline-medium { @apply text-xl sm:text-2xl font-semibold leading-snug; }
+.m3-title-large    { @apply text-lg font-semibold leading-snug; }
+.m3-title-medium   { @apply text-base font-semibold leading-normal; }
+.m3-body-large     { @apply text-base leading-relaxed; }
+.m3-body-medium    { @apply text-sm leading-relaxed; }
+.m3-label-large    { @apply text-sm font-medium leading-normal tracking-wide; }
+.m3-label-medium   { @apply text-xs font-medium leading-normal tracking-wide; }
+
+@layer utilities {
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* M3 touch target enforcement */
+  .touch-target {
+    min-height: var(--m3-touch-target);
+    min-width: var(--m3-touch-target);
+  }
+
+  /* M3 state layer */
+  .state-hover {
+    @apply hover:bg-foreground/[0.08];
+  }
+
+  .state-pressed {
+    @apply active:bg-foreground/[0.12];
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   M3 Standardized Grids
+   ═══════════════════════════════════════════════ */
+@layer components {
+  /* Action grid (Welcome, NewAudit, DashboardHub) – icon cards */
+  .grid-action {
+    @apply grid grid-cols-2 sm:grid-cols-3 gap-4;
+  }
+
+  /* Stat grid (GlobalStats, ScoreCard) – small KPI cards */
+  .grid-stats {
+    @apply grid grid-cols-2 lg:grid-cols-4 gap-4;
+  }
+
+  /* Content grid (Drive folders/docs, admin panels) */
+  .grid-content {
+    @apply grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4;
+  }
+
+  /* Compact grid (Drive compact, photo grids) */
+  .grid-compact {
+    @apply grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3;
+  }
+
+  /* Form grid (2-col forms) */
+  .grid-form {
+    @apply grid grid-cols-1 sm:grid-cols-2 gap-4;
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   M3 Expressive — Component Overrides
+   ═══════════════════════════════════════════════ */
 
 /* Stroke highlight title */
 .stroke-title {
@@ -176,43 +258,15 @@
   display: inline-block;
 }
 
-@layer utilities {
-  .tabular-nums {
-    font-variant-numeric: tabular-nums;
-  }
-}
+/* M3-style scrollbar */
 
 /* ═══════════════════════════════════════════════
-   M3 Standardized Grids
+   M3 Expressive — Elevated surfaces
    ═══════════════════════════════════════════════ */
-@layer components {
-  /* Action grid (Welcome, NewAudit, DashboardHub) – icon cards */
-  .grid-action {
-    @apply grid grid-cols-2 sm:grid-cols-3 gap-3;
-  }
-
-  /* Stat grid (GlobalStats, ScoreCard) – small KPI cards */
-  .grid-stats {
-    @apply grid grid-cols-2 lg:grid-cols-4 gap-3;
-  }
-
-  /* Content grid (Drive folders/docs, admin panels) */
-  .grid-content {
-    @apply grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3;
-  }
-
-  /* Compact grid (Drive compact, photo grids) */
-  .grid-compact {
-    @apply grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-2;
-  }
-
-  /* Form grid (2-col forms) */
-  .grid-form {
-    @apply grid grid-cols-1 sm:grid-cols-2 gap-3;
-  }
+.surface-elevated {
+  background: hsl(var(--card));
+  box-shadow: var(--shadow-elevated);
 }
-
-/* M3-style scrollbar */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
