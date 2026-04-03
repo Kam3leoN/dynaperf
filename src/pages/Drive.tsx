@@ -801,7 +801,7 @@ export default function Drive() {
 
             {/* Categories grid */}
             {childCategories.length > 0 && (
-              <div className={density === "compact" ? "grid-compact" : "grid-content"}>
+              <div className="grid-content">
                 {childCategories.map((cat) => {
                   const subCount = categories.filter((c) => c.parent_id === cat.id).length;
                   const docCount = documents.filter((d) => d.category_id === cat.id).length;
