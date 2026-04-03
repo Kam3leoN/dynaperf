@@ -767,7 +767,6 @@ export default function AdminAuditGridInline() {
             {/* Scoring tiers */}
             {itemForm.input_type === "number" && (
               <div className="rounded-lg border border-border p-3 space-y-3">
-               <div className="rounded-lg border border-border p-3 space-y-3">
                 <Label className="font-medium text-sm">Mode de scoring</Label>
                 <div className="flex gap-2 flex-wrap">
                   {(["none", "tiers", "increment"] as const).map((mode) => (
