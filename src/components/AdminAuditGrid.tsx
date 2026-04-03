@@ -297,9 +297,11 @@ export default function AdminAuditGridInline() {
     setIsAutoCalc(!!item.auto_field);
     setScoringTiers(tiers);
     setUseTiers(hasTiers);
-    setScoringMode(hasIncrement ? "increment" : hasTiers ? "tiers" : "none");
+    setScoringMode(hasThreshold ? "threshold" : hasIncrement ? "increment" : hasTiers ? "tiers" : "none");
     setIncrementMin(incMin);
     setIncrementStep(incStep);
+    setThresholdOperator(thrOp);
+    setThresholdValue(thrVal);
     setItemDialogOpen(true);
   };
 
