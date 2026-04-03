@@ -177,7 +177,7 @@ export function AuditItemDialog({
               {formatThresholdDisplay(thresholdConfig, item.maxPoints)}
             </p>
           )}
-          {!tiers && !incrementConfig && item.scoringRules && (
+          {!tiers && !incrementConfig && !thresholdConfig && item.scoringRules && (
             <p className="text-sm whitespace-pre-line text-foreground/80 mt-2 pt-2 border-t border-border">{item.scoringRules}</p>
           )}
         </div>
