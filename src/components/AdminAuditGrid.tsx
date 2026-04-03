@@ -69,9 +69,11 @@ export default function AdminAuditGridInline() {
   const [isAutoCalc, setIsAutoCalc] = useState(false);
   const [scoringTiers, setScoringTiers] = useState<ScoringTier[]>([]);
   const [useTiers, setUseTiers] = useState(false);
-  const [scoringMode, setScoringMode] = useState<"none" | "tiers" | "increment">("none");
+  const [scoringMode, setScoringMode] = useState<"none" | "tiers" | "increment" | "threshold">("none");
   const [incrementMin, setIncrementMin] = useState(0);
   const [incrementStep, setIncrementStep] = useState(1);
+  const [thresholdOperator, setThresholdOperator] = useState<"lt" | "lte" | "gt" | "gte">("gte");
+  const [thresholdValue, setThresholdValue] = useState(0);
 
   // Load types
   const loadTypes = useCallback(async () => {
@@ -243,6 +245,8 @@ export default function AdminAuditGridInline() {
     setScoringMode("none");
     setIncrementMin(0);
     setIncrementStep(1);
+    setThresholdOperator("gte");
+    setThresholdValue(0);
     setItemDialogOpen(true);
   };
 
@@ -252,8 +256,11 @@ export default function AdminAuditGridInline() {
     let tiers: ScoringTier[] = [];
     let hasTiers = false;
     let hasIncrement = false;
+    let hasThreshold = false;
     let incMin = 0;
     let incStep = 1;
+    let thrOp: "lt" | "lte" | "gt" | "gte" = "gte";
+    let thrVal = 0;
     if (item.scoring_rules) {
       try {
         const parsed = JSON.parse(item.scoring_rules);
@@ -261,6 +268,10 @@ export default function AdminAuditGridInline() {
           hasIncrement = true;
           incMin = parsed.minValue ?? 0;
           incStep = parsed.step ?? 1;
+        } else if (parsed && parsed.type === "threshold") {
+          hasThreshold = true;
+          thrOp = parsed.operator ?? "gte";
+          thrVal = parsed.value ?? 0;
         } else if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0].points === "number") {
           tiers = parsed;
           hasTiers = true;
@@ -286,9 +297,11 @@ export default function AdminAuditGridInline() {
     setIsAutoCalc(!!item.auto_field);
     setScoringTiers(tiers);
     setUseTiers(hasTiers);
-    setScoringMode(hasIncrement ? "increment" : hasTiers ? "tiers" : "none");
+    setScoringMode(hasThreshold ? "threshold" : hasIncrement ? "increment" : hasTiers ? "tiers" : "none");
     setIncrementMin(incMin);
     setIncrementStep(incStep);
+    setThresholdOperator(thrOp);
+    setThresholdValue(thrVal);
     setItemDialogOpen(true);
   };
 
@@ -298,7 +311,9 @@ export default function AdminAuditGridInline() {
       ? JSON.stringify(scoringTiers)
       : scoringMode === "increment"
         ? JSON.stringify({ type: "increment", minValue: incrementMin, step: incrementStep })
-        : itemForm.scoring_rules.trim() || null;
+        : scoringMode === "threshold"
+          ? JSON.stringify({ type: "threshold", operator: thresholdOperator, value: thresholdValue })
+          : itemForm.scoring_rules.trim() || null;
 
     const payload = {
       category_id: itemForm.category_id,
@@ -769,10 +784,10 @@ export default function AdminAuditGridInline() {
               <div className="rounded-lg border border-border p-3 space-y-3">
                 <Label className="font-medium text-sm">Mode de scoring</Label>
                 <div className="flex gap-2 flex-wrap">
-                  {(["none", "tiers", "increment"] as const).map((mode) => (
+                  {(["none", "tiers", "increment", "threshold"] as const).map((mode) => (
                     <Button key={mode} type="button" variant={scoringMode === mode ? "default" : "outline"} size="sm"
                       onClick={() => { setScoringMode(mode); setUseTiers(mode === "tiers"); }}>
-                      {mode === "none" ? "Linéaire (1=1pt)" : mode === "tiers" ? "Paliers" : "Incrémentation"}
+                      {mode === "none" ? "Linéaire (1=1pt)" : mode === "tiers" ? "Paliers" : mode === "increment" ? "Incrémentation" : "Seuil (< / >)"}
                     </Button>
                   ))}
                 </div>
@@ -798,6 +813,35 @@ export default function AdminAuditGridInline() {
                       Ex: min={incrementMin}, pas={incrementStep}, max={itemForm.max_points} →
                       {" "}{incrementMin > 0 ? `<${incrementMin} = 0pt, ` : ""}
                       {incrementStep} = 1pt, {incrementStep * 2} = 2pts, … {incrementStep * itemForm.max_points} = {itemForm.max_points}pts
+                    </p>
+                  </div>
+                )}
+
+                {scoringMode === "threshold" && (
+                  <div className="space-y-3 pt-1">
+                    <p className="text-xs text-muted-foreground">Attribue le max de points si la valeur respecte la condition, sinon 0.</p>
+                    <div className="flex items-center gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Opérateur</Label>
+                        <select value={thresholdOperator} onChange={(e) => setThresholdOperator(e.target.value as any)}
+                          className="h-9 rounded-md border border-input bg-background px-2 text-xs">
+                          <option value="lt">{"< Inférieur"}</option>
+                          <option value="lte">{"≤ Inférieur ou égal"}</option>
+                          <option value="gt">{"> Supérieur"}</option>
+                          <option value="gte">{"≥ Supérieur ou égal"}</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Seuil</Label>
+                        <Input type="number" value={thresholdValue} onChange={(e) => setThresholdValue(parseInt(e.target.value) || 0)} className="w-20 h-9 text-xs" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Points si validé</Label>
+                        <Input type="number" min={1} value={itemForm.max_points} onChange={(e) => setItemForm({ ...itemForm, max_points: parseInt(e.target.value) || 1 })} className="w-20 h-9 text-xs" />
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground italic">
+                      Valeur {{ lt: "<", lte: "≤", gt: ">", gte: "≥" }[thresholdOperator]} {thresholdValue} → {itemForm.max_points} pts, sinon 0 pt
                     </p>
                   </div>
                 )}

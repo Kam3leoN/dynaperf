@@ -183,6 +183,12 @@ export interface IncrementConfig {
   step: number;
 }
 
+export interface ThresholdConfig {
+  type: "threshold";
+  operator: "lt" | "lte" | "gt" | "gte";
+  value: number;
+}
+
 export function parseIncrementConfig(scoringRules: string | null | undefined): IncrementConfig | null {
   if (!scoringRules) return null;
   try {
@@ -196,6 +202,30 @@ export function calcIncrementScore(value: number, config: IncrementConfig, maxPo
   if (value < config.minValue) return 0;
   const score = Math.floor(value / config.step);
   return Math.min(score, maxPoints);
+}
+
+export function parseThresholdConfig(scoringRules: string | null | undefined): ThresholdConfig | null {
+  if (!scoringRules) return null;
+  try {
+    const parsed = JSON.parse(scoringRules);
+    if (parsed && parsed.type === "threshold") return parsed as ThresholdConfig;
+  } catch {}
+  return null;
+}
+
+export function calcThresholdScore(value: number, config: ThresholdConfig, maxPoints: number): number {
+  switch (config.operator) {
+    case "lt": return value < config.value ? maxPoints : 0;
+    case "lte": return value <= config.value ? maxPoints : 0;
+    case "gt": return value > config.value ? maxPoints : 0;
+    case "gte": return value >= config.value ? maxPoints : 0;
+    default: return 0;
+  }
+}
+
+export function formatThresholdDisplay(config: ThresholdConfig, maxPoints: number): string {
+  const opLabel = { lt: "<", lte: "≤", gt: ">", gte: "≥" }[config.operator];
+  return `Valeur ${opLabel} ${config.value} → ${maxPoints} pts, sinon 0 pt`;
 }
 
 export function calcTiersScore(value: number, tiers: ScoringTier[]): number {

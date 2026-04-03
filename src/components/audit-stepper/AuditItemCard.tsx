@@ -16,6 +16,8 @@ import {
   formatTiersDisplay,
   parseIncrementConfig,
   calcIncrementScore,
+  parseThresholdConfig,
+  calcThresholdScore,
 } from "@/data/auditItems";
 import { StepZeroData } from "./StepZeroForm";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -80,6 +82,8 @@ function computeScore(item: AuditItemDef, boolVal: boolean | null, numVal: strin
     const n = autoValue !== undefined ? autoValue : (parseInt(numVal) || 0);
     const incCfg = parseIncrementConfig(item.scoringRules);
     if (incCfg) return calcIncrementScore(n, incCfg, item.maxPoints);
+    const thrCfg = parseThresholdConfig(item.scoringRules);
+    if (thrCfg) return calcThresholdScore(n, thrCfg, item.maxPoints);
     const tiers = parseScoringTiers(item.scoringRules);
     if (tiers) return calcTiersScore(n, tiers);
     if (item.scoringRules && item.scoringRules.includes("participants")) {
