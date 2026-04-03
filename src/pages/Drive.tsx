@@ -116,11 +116,39 @@ export default function Drive() {
       supabase.from("drive_documents").select("*").order("created_at", { ascending: false }),
       supabase.from("profiles").select("user_id, display_name"),
     ]);
-    setDocuments((docs as DriveDocument[]) ?? []);
+    const docList = (docs as DriveDocument[]) ?? [];
+    setDocuments(docList);
     const profileMap: Record<string, string> = {};
     (profs ?? []).forEach((p: any) => { if (p.user_id && p.display_name) profileMap[p.user_id] = p.display_name; });
     setProfiles(profileMap);
     setLoading(false);
+
+    // Generate signed URLs for images (bucket is private)
+    const urlMap: Record<string, string> = {};
+    const toSign = docList.filter((d) => canPreview(d));
+    await Promise.all(toSign.map(async (doc) => {
+      try {
+        // For image files, sign the file itself
+        if (doc.mime_type?.startsWith("image/")) {
+          const path = new URL(doc.file_url).pathname.split("/drive-files/")[1];
+          if (path) {
+            const { data } = await supabase.storage.from("drive-files").createSignedUrl(decodeURIComponent(path), 3600);
+            if (data?.signedUrl) urlMap[doc.id] = data.signedUrl;
+          }
+        }
+        // For image_url (custom preview), sign it too if it's from the same bucket
+        if (doc.image_url && !urlMap[doc.id]) {
+          const imgPath = new URL(doc.image_url).pathname.split("/drive-files/")[1];
+          if (imgPath) {
+            const { data } = await supabase.storage.from("drive-files").createSignedUrl(decodeURIComponent(imgPath), 3600);
+            if (data?.signedUrl) urlMap[doc.id] = data.signedUrl;
+          } else {
+            urlMap[doc.id] = doc.image_url; // external URL
+          }
+        }
+      } catch { /* ignore */ }
+    }));
+    setSignedUrls(urlMap);
   };
 
   useEffect(() => { fetchAll(); }, []);
