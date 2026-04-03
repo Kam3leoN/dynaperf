@@ -76,6 +76,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
   const [selectOptions, setSelectOptions] = useState<string[]>([""]);
   const [sourceNumerator, setSourceNumerator] = useState("");
   const [sourceDenominator, setSourceDenominator] = useState("");
+  const [sumOperation, setSumOperation] = useState<"add" | "subtract">("add");
   const [previewMode, setPreviewMode] = useState(false);
   const [previewKey, setPreviewKey] = useState(0);
   // For "add at position" from the grid
