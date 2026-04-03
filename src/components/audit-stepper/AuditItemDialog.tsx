@@ -115,6 +115,7 @@ export function AuditItemDialog({
     if (item.inputType === "number") {
       const n = isAutoFilled ? (autoValue ?? 0) : (parseInt(numVal) || 0);
       if (incrementConfig) return calcIncrementScore(n, incrementConfig, item.maxPoints);
+      if (thresholdConfig) return calcThresholdScore(n, thresholdConfig, item.maxPoints);
       if (tiers) return calcTiersScore(n, tiers);
       if (item.scoringRules && item.scoringRules.includes("participants")) return calcParticipantsScore(n);
       return calcLinearScore(n, item.maxPoints);
