@@ -47,8 +47,11 @@ const FIELD_TYPES_SMART = [
   { value: "auditeur_select", label: "🔗 Auditeur (sélection profils)" },
   { value: "city_autocomplete", label: "🔗 Ville (autocomplete)" },
   { value: "lieu_autocomplete", label: "🔗 Lieu (autocomplete)" },
-  { value: "qualite_lieu_rating", label: "🔗 Qualité lieu (étoiles)" },
+  { value: "qualite_rating", label: "🔗 Qualité (étoiles, libellé libre)" },
+  { value: "qualite_lieu_rating", label: "🔗 Qualité lieu (étoiles) [ancien]" },
   { value: "date_picker", label: "🔗 Date (calendrier)" },
+  { value: "heure_picker", label: "🔗 Heure (saisie)" },
+  { value: "auto_no_show", label: "🔗 No-show (calcul auto)" },
 ];
 
 const ALL_FIELD_TYPES = [...FIELD_TYPES_SMART, ...FIELD_TYPES_STANDARD];
