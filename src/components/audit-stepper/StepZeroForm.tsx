@@ -190,13 +190,12 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
       const cv = { ...prev.customFieldValues };
       let changed = false;
       for (const field of statFields) {
-        const aId = field.field_options?.source_a || field.field_options?.source_numerator;
-        const bId = field.field_options?.source_b || field.field_options?.source_denominator;
-        if (!aId || !bId) continue;
-        const a = Number(cv[aId]) || 0;
-        const b = Number(cv[bId]) || 0;
-        const total = a + b;
-        const pct = total > 0 ? Math.round((a / total) * 1000) / 10 : 0;
+        const numId = field.field_options?.source_numerator;
+        const denId = field.field_options?.source_denominator;
+        if (!numId || !denId) continue;
+        const numerator = Number(cv[numId]) || 0;
+        const denominator = Number(cv[denId]) || 0;
+        const pct = denominator > 0 ? Math.round((numerator / denominator) * 1000) / 10 : 0;
         if (cv[field.id] !== pct) {
           cv[field.id] = pct;
           changed = true;
@@ -220,13 +219,12 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
       for (const field of sumFields) {
         const aId = field.field_options?.source_a;
         const bId = field.field_options?.source_b;
-        const op = field.field_options?.operation || "add";
         if (!aId || !bId) continue;
         const a = Number(cv[aId]) || 0;
         const b = Number(cv[bId]) || 0;
-        const sum = op === "subtract" ? a - b : a + b;
-        if (cv[field.id] !== sum) {
-          cv[field.id] = sum;
+        const result = b - a;
+        if (cv[field.id] !== result) {
+          cv[field.id] = result;
           changed = true;
         }
       }
@@ -322,19 +320,18 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
           />
         );
       case "stat_percent": {
-        const aId = field.field_options?.source_a || field.field_options?.source_numerator;
-        const bId = field.field_options?.source_b || field.field_options?.source_denominator;
-        const a = Number(data.customFieldValues?.[aId]) || 0;
-        const b = Number(data.customFieldValues?.[bId]) || 0;
-        const total = a + b;
-        const pct = total > 0 ? Math.round((a / total) * 1000) / 10 : null;
+        const numId = field.field_options?.source_numerator;
+        const denId = field.field_options?.source_denominator;
+        const numerator = Number(data.customFieldValues?.[numId]) || 0;
+        const denominator = Number(data.customFieldValues?.[denId]) || 0;
+        const pct = denominator > 0 ? Math.round((numerator / denominator) * 1000) / 10 : null;
         return (
           <div className="flex items-center gap-2 h-12 px-4 rounded-xl border border-input bg-muted text-sm cursor-not-allowed">
             <span className="font-semibold text-foreground">
               {pct !== null ? `${pct} %` : "—"}
             </span>
             <span className="text-muted-foreground text-xs">
-              {total > 0 ? `(${a} / ${total})` : ""}
+              {denominator > 0 ? `(${numerator} / ${denominator})` : ""}
             </span>
           </div>
         );
@@ -342,19 +339,17 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
       case "stat_sum": {
         const aId = field.field_options?.source_a;
         const bId = field.field_options?.source_b;
-        const op = field.field_options?.operation || "add";
         const a = Number(data.customFieldValues?.[aId]) || 0;
         const b = Number(data.customFieldValues?.[bId]) || 0;
-        const result = op === "subtract" ? a - b : a + b;
-        const sign = op === "subtract" ? "−" : "+";
+        const result = b - a;
         const displayPrefix = result > 0 ? "+" : "";
         return (
           <div className="flex items-center gap-2 h-12 px-4 rounded-xl border border-input bg-muted text-sm cursor-not-allowed">
             <span className={`font-semibold ${result > 0 ? "text-green-600 dark:text-green-400" : result < 0 ? "text-red-500 dark:text-red-400" : "text-foreground"}`}>
-              {op === "subtract" ? `${displayPrefix}${result}` : result}
+              {displayPrefix}{result}
             </span>
             <span className="text-muted-foreground text-xs">
-              ({a} {sign} {b})
+              (B:{b} − A:{a})
             </span>
           </div>
         );

@@ -76,7 +76,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
   const [selectOptions, setSelectOptions] = useState<string[]>([""]);
   const [sourceNumerator, setSourceNumerator] = useState("");
   const [sourceDenominator, setSourceDenominator] = useState("");
-  const [sumOperation, setSumOperation] = useState<"add" | "subtract">("add");
+  
   const [previewMode, setPreviewMode] = useState(false);
   const [previewKey, setPreviewKey] = useState(0);
   // For "add at position" from the grid
@@ -103,7 +103,6 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setSelectOptions([""]);
     setSourceNumerator("");
     setSourceDenominator("");
-    setSumOperation("add");
     if (colStart && span) {
       setAddAtPosition({ colStart, colSpan: span, rowIndex: 0 });
     } else {
@@ -124,7 +123,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setSelectOptions(Array.isArray(opts) && opts.length > 0 ? opts : [""]);
     setSourceNumerator(f.field_options?.source_numerator || f.field_options?.source_a || "");
     setSourceDenominator(f.field_options?.source_denominator || f.field_options?.source_b || "");
-    setSumOperation(f.field_options?.operation || "add");
+    // no operation selector needed
     setAddAtPosition(null);
     setDialogOpen(true);
   };
@@ -172,8 +171,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     } else if (needsSources) {
       if (!sourceNumerator || !sourceDenominator) { toast.error("Sélectionnez les deux champs sources"); return; }
       fieldOpts = isStatPercent
-        ? { source_a: sourceNumerator, source_b: sourceDenominator }
-        : { source_a: sourceNumerator, source_b: sourceDenominator, operation: sumOperation };
+        ? { source_numerator: sourceNumerator, source_denominator: sourceDenominator }
+        : { source_a: sourceNumerator, source_b: sourceDenominator };
     }
 
     const payload = {
@@ -349,51 +348,49 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
 
                 {needsSources && (
                   <div className="space-y-3">
-                    {isStatSum && (
+                    {isStatPercent ? (
                       <>
-                        <Label>Opération</Label>
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant={sumOperation === "add" ? "default" : "outline"}
-                            size="sm"
-                            className="flex-1 gap-1.5"
-                            onClick={() => setSumOperation("add")}
-                          >
-                            ➕ Addition (A + B)
-                          </Button>
-                          <Button
-                            type="button"
-                            variant={sumOperation === "subtract" ? "default" : "outline"}
-                            size="sm"
-                            className="flex-1 gap-1.5"
-                            onClick={() => setSumOperation("subtract")}
-                          >
-                            ➖ Soustraction (A − B)
-                          </Button>
-                        </div>
+                        <Label>Champ numérateur</Label>
+                        <Select value={sourceNumerator} onValueChange={setSourceNumerator}>
+                          <SelectTrigger><SelectValue placeholder="Sélectionner le numérateur" /></SelectTrigger>
+                          <SelectContent>
+                            {numberFields.map((nf) => (
+                              <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Label>Champ dénominateur</Label>
+                        <Select value={sourceDenominator} onValueChange={setSourceDenominator}>
+                          <SelectTrigger><SelectValue placeholder="Sélectionner le dénominateur" /></SelectTrigger>
+                          <SelectContent>
+                            {numberFields.map((nf) => (
+                              <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </>
-                    )}
-                    <Label>Champ A (nombre)</Label>
-                    <Select value={sourceNumerator} onValueChange={setSourceNumerator}>
-                      <SelectTrigger><SelectValue placeholder="Sélectionner le champ A" /></SelectTrigger>
-                      <SelectContent>
-                        {numberFields.map((nf) => (
-                          <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Label>Champ B (nombre)</Label>
-                    <Select value={sourceDenominator} onValueChange={setSourceDenominator}>
-                      <SelectTrigger><SelectValue placeholder="Sélectionner le champ B" /></SelectTrigger>
-                      <SelectContent>
-                        {numberFields.map((nf) => (
-                          <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {isStatPercent && (
-                      <p className="text-xs text-muted-foreground">Le dénominateur sera automatiquement A + B. Résultat = A / (A+B) × 100</p>
+                    ) : (
+                      <>
+                        <Label>Champ A — référence (master)</Label>
+                        <Select value={sourceNumerator} onValueChange={setSourceNumerator}>
+                          <SelectTrigger><SelectValue placeholder="Sélectionner le champ A" /></SelectTrigger>
+                          <SelectContent>
+                            {numberFields.map((nf) => (
+                              <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Label>Champ B — comparaison</Label>
+                        <Select value={sourceDenominator} onValueChange={setSourceDenominator}>
+                          <SelectTrigger><SelectValue placeholder="Sélectionner le champ B" /></SelectTrigger>
+                          <SelectContent>
+                            {numberFields.map((nf) => (
+                              <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">Résultat = B − A. Affiche +2 si B &gt; A, −5 si B &lt; A.</p>
+                      </>
                     )}
                     {numberFields.length === 0 && (
                       <p className="text-xs text-muted-foreground">Ajoutez d'abord des champs « Nombre » pour configurer le calcul.</p>
