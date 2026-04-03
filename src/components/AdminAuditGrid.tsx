@@ -254,6 +254,8 @@ export default function AdminAuditGridInline() {
         }
       } catch {}
     }
+    const autoFieldRaw = item.auto_field || "";
+    const [parsedAutoField, parsedAutoCondition] = autoFieldRaw.includes("::") ? autoFieldRaw.split("::") : [autoFieldRaw, "zero"];
     setItemForm({
       category_id: item.category_id,
       title: item.title,
@@ -265,7 +267,8 @@ export default function AdminAuditGridInline() {
       checklist_items: item.checklist_items ? item.checklist_items.join("\n") : "",
       interets: item.interets || "",
       comment_y_parvenir: item.comment_y_parvenir || "",
-      auto_field: item.auto_field || "",
+      auto_field: parsedAutoField,
+      auto_condition: (parsedAutoCondition as "zero" | "positive") || "zero",
     });
     setIsAutoCalc(!!item.auto_field);
     setScoringTiers(tiers);
