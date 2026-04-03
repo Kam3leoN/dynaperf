@@ -267,7 +267,9 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                       <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                         <Badge variant="secondary" className="text-[10px]">{getTypeLabel(f.field_type)}</Badge>
                         {f.is_required && <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">Requis</Badge>}
-                        <Badge variant="outline" className="text-[10px]">{f.col_span || 6}/12 col</Badge>
+                        <Badge variant="outline" className="text-[10px]">
+                          {f.col_offset_before ? `↦${f.col_offset_before} ` : ""}{f.col_span || 6}/12{f.col_offset_after ? ` ${f.col_offset_after}↤` : ""} col
+                        </Badge>
                         {f.field_options?.options && (
                           <span className="text-[10px] text-muted-foreground">{f.field_options.options.length} options</span>
                         )}
