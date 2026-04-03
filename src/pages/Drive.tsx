@@ -74,11 +74,11 @@ function hasVisualPreview(mime: string | null): boolean {
   return mime.startsWith("image/") || mime.includes("pdf") || mime.includes("word") || mime.includes("document");
 }
 
-/** Build a thumbnail URL for the file - use image_url if available, else generate preview */
-function getPreviewUrl(doc: DriveDocument): string | null {
-  if (doc.image_url) return doc.image_url;
-  if (doc.mime_type?.startsWith("image/")) return doc.file_url;
-  return null;
+/** Check if doc has a potential visual preview */
+function canPreview(doc: DriveDocument): boolean {
+  if (doc.image_url) return true;
+  if (doc.mime_type?.startsWith("image/")) return true;
+  return false;
 }
 
 export default function Drive() {
@@ -86,6 +86,7 @@ export default function Drive() {
   const { isAdmin } = useAdmin(user);
   const [searchParams] = useSearchParams();
   const [documents, setDocuments] = useState<DriveDocument[]>([]);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -115,11 +116,39 @@ export default function Drive() {
       supabase.from("drive_documents").select("*").order("created_at", { ascending: false }),
       supabase.from("profiles").select("user_id, display_name"),
     ]);
-    setDocuments((docs as DriveDocument[]) ?? []);
+    const docList = (docs as DriveDocument[]) ?? [];
+    setDocuments(docList);
     const profileMap: Record<string, string> = {};
     (profs ?? []).forEach((p: any) => { if (p.user_id && p.display_name) profileMap[p.user_id] = p.display_name; });
     setProfiles(profileMap);
     setLoading(false);
+
+    // Generate signed URLs for images (bucket is private)
+    const urlMap: Record<string, string> = {};
+    const toSign = docList.filter((d) => canPreview(d));
+    await Promise.all(toSign.map(async (doc) => {
+      try {
+        // For image files, sign the file itself
+        if (doc.mime_type?.startsWith("image/")) {
+          const path = new URL(doc.file_url).pathname.split("/drive-files/")[1];
+          if (path) {
+            const { data } = await supabase.storage.from("drive-files").createSignedUrl(decodeURIComponent(path), 3600);
+            if (data?.signedUrl) urlMap[doc.id] = data.signedUrl;
+          }
+        }
+        // For image_url (custom preview), sign it too if it's from the same bucket
+        if (doc.image_url && !urlMap[doc.id]) {
+          const imgPath = new URL(doc.image_url).pathname.split("/drive-files/")[1];
+          if (imgPath) {
+            const { data } = await supabase.storage.from("drive-files").createSignedUrl(decodeURIComponent(imgPath), 3600);
+            if (data?.signedUrl) urlMap[doc.id] = data.signedUrl;
+          } else {
+            urlMap[doc.id] = doc.image_url; // external URL
+          }
+        }
+      } catch { /* ignore */ }
+    }));
+    setSignedUrls(urlMap);
   };
 
   useEffect(() => { fetchAll(); }, []);
@@ -383,7 +412,7 @@ export default function Drive() {
         {filteredDocs.length > 0 ? (
           <div className="grid-content">
             {filteredDocs.map((doc) => {
-              const previewUrl = getPreviewUrl(doc);
+              const previewUrl = signedUrls[doc.id] || null;
               return (
                 <Card
                   key={doc.id}
@@ -399,7 +428,6 @@ export default function Drive() {
                           alt={doc.title}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            // Fallback to icon if image fails
                             (e.target as HTMLImageElement).style.display = "none";
                             (e.target as HTMLImageElement).parentElement!.classList.add("flex", "items-center", "justify-center");
                             const icon = document.createElement("div");
@@ -429,17 +457,22 @@ export default function Drive() {
                       <ModifiedInfo updatedAt={doc.updated_at} updatedBy={doc.updated_by} />
                     </div>
 
-                    {/* Admin actions */}
-                    {isAdmin && (
-                      <div className="absolute top-1.5 right-1.5 flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                        <button className="h-6 w-6 rounded-full bg-card/90 flex items-center justify-center hover:bg-accent shadow-sm" onClick={(e) => { e.stopPropagation(); openUploadDialog(doc); }}>
-                          <FontAwesomeIcon icon={faPen} className="h-2.5 w-2.5 text-muted-foreground" />
-                        </button>
-                        <button className="h-6 w-6 rounded-full bg-card/90 flex items-center justify-center hover:bg-destructive/20 shadow-sm" onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: doc.id, name: doc.title }); }}>
-                          <FontAwesomeIcon icon={faTrash} className="h-2.5 w-2.5 text-destructive" />
-                        </button>
-                      </div>
-                    )}
+                    {/* Actions row */}
+                    <div className="absolute top-1.5 right-1.5 flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                      <button className="h-7 w-7 rounded-full bg-card/90 flex items-center justify-center hover:bg-primary/10 shadow-sm" title="Télécharger" onClick={(e) => { e.stopPropagation(); downloadDoc(doc); }}>
+                        <FontAwesomeIcon icon={faDownload} className="h-3 w-3 text-primary" />
+                      </button>
+                      {isAdmin && (
+                        <>
+                          <button className="h-7 w-7 rounded-full bg-card/90 flex items-center justify-center hover:bg-accent shadow-sm" title="Modifier" onClick={(e) => { e.stopPropagation(); openUploadDialog(doc); }}>
+                            <FontAwesomeIcon icon={faPen} className="h-2.5 w-2.5 text-muted-foreground" />
+                          </button>
+                          <button className="h-7 w-7 rounded-full bg-card/90 flex items-center justify-center hover:bg-destructive/20 shadow-sm" title="Supprimer" onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: doc.id, name: doc.title }); }}>
+                            <FontAwesomeIcon icon={faTrash} className="h-2.5 w-2.5 text-destructive" />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               );
