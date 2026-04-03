@@ -784,10 +784,10 @@ export default function AdminAuditGridInline() {
               <div className="rounded-lg border border-border p-3 space-y-3">
                 <Label className="font-medium text-sm">Mode de scoring</Label>
                 <div className="flex gap-2 flex-wrap">
-                  {(["none", "tiers", "increment"] as const).map((mode) => (
+                  {(["none", "tiers", "increment", "threshold"] as const).map((mode) => (
                     <Button key={mode} type="button" variant={scoringMode === mode ? "default" : "outline"} size="sm"
                       onClick={() => { setScoringMode(mode); setUseTiers(mode === "tiers"); }}>
-                      {mode === "none" ? "Linéaire (1=1pt)" : mode === "tiers" ? "Paliers" : "Incrémentation"}
+                      {mode === "none" ? "Linéaire (1=1pt)" : mode === "tiers" ? "Paliers" : mode === "increment" ? "Incrémentation" : "Seuil (< / >)"}
                     </Button>
                   ))}
                 </div>
