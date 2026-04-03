@@ -414,8 +414,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
             <DialogTitle>{editing ? "Modifier le champ" : "Ajouter un champ"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] lg:items-start">
-              <div className="space-y-4">
+          <div className="space-y-4">
                 <div className="space-y-1.5">
                   <Label>Libellé *</Label>
                   <Input value={fieldLabel} onChange={(e) => setFieldLabel(e.target.value)} placeholder="ex: Nombre de participants" />
@@ -498,14 +497,6 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                   </div>
                 )}
               </div>
-
-              <FieldLayoutEditor
-                fields={editorFields}
-                activeFieldId={activeFieldId}
-                onLayoutChange={handleLayoutChange}
-                onSpanChange={handleSpanChange}
-              />
-            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setDialogOpen(false); setLayoutDraft([]); }}>Annuler</Button>

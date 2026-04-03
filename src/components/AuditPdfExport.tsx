@@ -58,7 +58,6 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
       html += `<div class="report-header">
         <h1>Rapport d'Audit (${escapeHtml(typeEvenement)})</h1>
         <div class="subtitle">le : ${formatDateFr(date)}${heureEvent}</div>
-        <div class="subtitle">Généré le ${formatNow()}</div>
       </div>`;
 
       // ── Informations générales ──
