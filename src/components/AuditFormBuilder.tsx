@@ -120,9 +120,9 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     let fieldOpts: any = null;
     if (needsOptions) {
       fieldOpts = { options: validOpts };
-    } else if (isAutoNoShow) {
-      if (!sourceInvites || !sourceParticipants) { toast.error("Sélectionnez les deux champs sources"); return; }
-      fieldOpts = { source_invites: sourceInvites, source_participants: sourceParticipants };
+    } else if (isStatPercent) {
+      if (!sourceNumerator || !sourceDenominator) { toast.error("Sélectionnez les deux champs sources"); return; }
+      fieldOpts = { source_numerator: sourceNumerator, source_denominator: sourceDenominator };
     }
 
     const payload = {
