@@ -101,10 +101,40 @@ const FOLDER_NAME_TO_TYPE: Record<string, string> = {
   "Événementiel": "RD Événementiel",
 };
 
-function getFolderIcon(cat: { name: string; icon_url: string | null }): string | null {
-  if (cat.icon_url) return cat.icon_url;
+function getFolderIcon(cat: { name: string; icon_url: string | null }): { src: string; isLocal: boolean } | null {
   const typeKey = FOLDER_NAME_TO_TYPE[cat.name] || cat.name;
-  return auditTypeIcons[typeKey]?.icon || null;
+  const localIcon = auditTypeIcons[typeKey]?.icon || null;
+  if (cat.icon_url) return { src: cat.icon_url, isLocal: false };
+  if (localIcon) return { src: localIcon, isLocal: true };
+  return null;
+}
+
+function FolderIconImg({ cat, size = "h-7 w-7" }: { cat: { name: string; icon_url: string | null }; size?: string }) {
+  const iconData = getFolderIcon(cat);
+  const typeKey = FOLDER_NAME_TO_TYPE[cat.name] || cat.name;
+  const color = auditTypeIcons[typeKey]?.color || "#6b7280";
+  const [broken, setBroken] = useState(false);
+
+  if (!iconData || broken) {
+    return <FontAwesomeIcon icon={faFolderOpen} className={`${size} text-primary`} />;
+  }
+
+  // Local SVGs: use CSS mask for color consistency
+  if (iconData.isLocal) {
+    return (
+      <div
+        className={size}
+        style={{
+          backgroundColor: color,
+          mask: `url(${iconData.src}) no-repeat center / contain`,
+          WebkitMask: `url(${iconData.src}) no-repeat center / contain`,
+        }}
+      />
+    );
+  }
+
+  // Remote uploaded icons: use <img> with error fallback
+  return <img src={iconData.src} alt="" className={`${size} object-contain`} onError={() => setBroken(true)} />;
 }
 
 // ── Tree View Component ──────────────────────────────────────────
@@ -120,20 +150,18 @@ interface TreeViewProps {
   onEditDoc: (doc: DriveDocument) => void;
   onDeleteDoc: (doc: DriveDocument) => void;
   onMoveDoc: (docId: string, targetCatId: string) => void;
-  getFolderIcon: (cat: { name: string; icon_url: string | null }) => string | null;
   ModifiedInfo: React.FC<{ updatedAt: string; updatedBy: string | null }>;
 }
 
 function TreeNode({
   cat, categories, documents, depth, isAdmin,
   onNavigate, onEditCat, onDeleteCat, onDownloadDoc, onEditDoc, onDeleteDoc, onMoveDoc,
-  getFolderIcon, ModifiedInfo,
+  ModifiedInfo,
 }: TreeViewProps & { cat: Category; depth: number }) {
   const [expanded, setExpanded] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const children = categories.filter((c) => c.parent_id === cat.id);
   const docs = documents.filter((d) => d.category_id === cat.id);
-  const iconSrc = getFolderIcon(cat);
 
   return (
     <div>
@@ -154,11 +182,9 @@ function TreeNode({
           icon={faChevronRight}
           className={`h-2.5 w-2.5 text-muted-foreground transition-transform ${expanded ? "rotate-90" : ""} ${children.length === 0 && docs.length === 0 ? "invisible" : ""}`}
         />
-        {iconSrc ? (
-          <img src={iconSrc} alt="" className="h-5 w-5 object-contain flex-shrink-0" />
-        ) : (
-          <FontAwesomeIcon icon={expanded ? faFolderOpen : faFolder} className="h-4 w-4 text-primary flex-shrink-0" />
-        )}
+        <div className="flex-shrink-0">
+          <FolderIconImg cat={cat} size="h-5 w-5" />
+        </div>
         <span className="text-sm font-medium text-foreground truncate flex-1">{cat.name}</span>
         {(children.length > 0 || docs.length > 0) && (
           <Badge variant="secondary" className="text-[10px] shrink-0">
@@ -196,7 +222,7 @@ function TreeNode({
               onEditDoc={onEditDoc}
               onDeleteDoc={onDeleteDoc}
               onMoveDoc={onMoveDoc}
-              getFolderIcon={getFolderIcon}
+              
               ModifiedInfo={ModifiedInfo}
             />
           ))}
@@ -690,14 +716,9 @@ export default function Drive() {
             {searchResults.cats.map((cat) => (
               <Card key={cat.id} className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => { setCurrentCatId(cat.id); setSearch(""); }}>
                 <CardContent className="p-3 flex items-center gap-3">
-                  {(() => {
-                    const iconSrc = getFolderIcon(cat);
-                    return iconSrc ? (
-                      <img src={iconSrc} alt="" className="h-6 w-6 rounded object-contain" />
-                    ) : (
-                      <FontAwesomeIcon icon={faFolder} className="h-5 w-5 text-primary" />
-                    );
-                  })()}
+                  <div className="flex-shrink-0">
+                    <FolderIconImg cat={cat} size="h-6 w-6" />
+                  </div>
                   <div>
                     <p className="text-sm font-medium">{cat.name}</p>
                     <p className="text-xs text-muted-foreground">{getCatPath(cat.id)}</p>
@@ -750,7 +771,7 @@ export default function Drive() {
                 toast.success("Document déplacé");
                 fetchAll();
               }}
-              getFolderIcon={getFolderIcon}
+              
               ModifiedInfo={ModifiedInfo}
             />
             {categories.filter(c => c.parent_id === null).length === 0 && (
@@ -815,18 +836,9 @@ export default function Drive() {
                       onDrop={(e) => handleCatDrop(e, cat.id)}
                     >
                       <CardContent className="p-5 flex flex-col items-center gap-3 relative">
-                        {(() => {
-                          const iconSrc = getFolderIcon(cat);
-                          return iconSrc ? (
-                            <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/10">
-                              <img src={iconSrc} alt={cat.name} className="h-7 w-7 object-contain" />
-                            </div>
-                          ) : (
-                            <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/10">
-                              <FontAwesomeIcon icon={faFolderOpen} className="h-5 w-5 text-primary" />
-                            </div>
-                          );
-                        })()}
+                        <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-primary/10">
+                          <FolderIconImg cat={cat} size="h-7 w-7" />
+                        </div>
                         <p className="text-sm font-medium text-foreground text-center leading-snug">{cat.name}</p>
                         <div className="flex gap-1.5">
                           {subCount > 0 && <Badge variant="secondary" className="text-[10px]">{subCount} sous-cat.</Badge>}

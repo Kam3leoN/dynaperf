@@ -40,6 +40,9 @@ export interface StepZeroData {
   customFieldValues?: Record<string, any>;
 }
 
+// These hardcoded field keys match audit_type_custom_fields built-in defaults
+// If a custom field with matching auto_key exists, it replaces the hardcoded version
+
 interface CustomFieldDef {
   id: string;
   field_label: string;
@@ -55,10 +58,6 @@ interface Props {
   onSubmit: (data: StepZeroData) => void;
   hideSubmitButton?: boolean;
 }
-
-const isRdOrClub = (type: string) =>
-  type.includes("RD") || type.includes("Club");
-const isClub = (type: string) => type.includes("Club");
 
 interface SuggestionLists {
   partenaires: string[];
@@ -149,17 +148,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
       return next;
     });
 
-  const showRdClubFields = isRdOrClub(typeEvenement);
-  const showClubField = isClub(typeEvenement);
-
-  const ratioInvParticipants =
-    data.nbInvites && data.nbParticipants && data.nbParticipants > 0
-      ? (data.nbInvites / data.nbParticipants * 100).toFixed(1)
-      : null;
-  const ratioRdvInvites =
-    data.nbRdvPris !== undefined && data.nbInvites && data.nbInvites > 0
-      ? (data.nbRdvPris / data.nbInvites * 100).toFixed(1)
-      : null;
+  // Removed hardcoded type-specific flags — all extra fields now come from custom fields
 
   const isValid =
     data.partenaireAudite.trim() &&
@@ -396,127 +385,11 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
             </PopoverContent>
           </Popover>
         </div>
-        {typeEvenement === "RD Présentiel" ? (
-          <>
-            <div className="space-y-1.5">
-              <Label>Heure début prévue</Label>
-              <Input type="time" value={data.heureDebutPrevue ?? ""} onChange={(e) => set("heureDebutPrevue", e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Heure fin prévue</Label>
-              <Input type="time" value={data.heureFinPrevue ?? ""} onChange={(e) => set("heureFinPrevue", e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Heure début réelle</Label>
-              <Input type="time" value={data.heureDebutReelle ?? ""} onChange={(e) => set("heureDebutReelle", e.target.value)} />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Heure fin réelle</Label>
-              <Input type="time" value={data.heureFinReelle ?? ""} onChange={(e) => set("heureFinReelle", e.target.value)} />
-            </div>
-          </>
-        ) : (
-          <div className="space-y-1.5">
-            <Label>Heure de l'événement</Label>
-            <Input type="time" value={data.heureEvenement} onChange={(e) => set("heureEvenement", e.target.value)} />
-          </div>
-        )}
-      </div>
-
-      {showClubField && (
         <div className="space-y-1.5">
-          <Label>Nom du club</Label>
-          <Input
-            value={data.nomClub ?? ""}
-            onChange={(e) => set("nomClub", e.target.value)}
-            placeholder="ex: Club BTP Troyes"
-          />
+          <Label>Heure de l'événement</Label>
+          <Input type="time" value={data.heureEvenement} onChange={(e) => set("heureEvenement", e.target.value)} />
         </div>
-      )}
-
-      {showRdClubFields && (
-        <>
-          <div className="border-t border-border pt-4 mt-4">
-            <p className="text-sm font-medium text-muted-foreground mb-3">
-              Statistiques de l'événement
-            </p>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-            <div className="space-y-1.5">
-              <Label>
-                {isClub(typeEvenement) ? "Nb membres" : "Nb adhérents"}
-              </Label>
-              <Input
-                type="number"
-                min={0}
-                value={data.nbAdherents ?? ""}
-                onChange={(e) =>
-                  set("nbAdherents", e.target.value ? parseInt(e.target.value) : undefined)
-                }
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Nb invités</Label>
-              <Input
-                type="number"
-                min={0}
-                value={data.nbInvites ?? ""}
-                onChange={(e) =>
-                  set("nbInvites", e.target.value ? parseInt(e.target.value) : undefined)
-                }
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Nb no-show</Label>
-              <Input
-                type="number"
-                min={0}
-                value={data.nbNoShow ?? ""}
-                onChange={(e) =>
-                  set("nbNoShow", e.target.value ? parseInt(e.target.value) : undefined)
-                }
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Nb participants</Label>
-              <Input
-                type="number"
-                min={0}
-                value={data.nbParticipants ?? ""}
-                onChange={(e) =>
-                  set("nbParticipants", e.target.value ? parseInt(e.target.value) : undefined)
-                }
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Nb RDV pris</Label>
-              <Input
-                type="number"
-                min={0}
-                value={data.nbRdvPris ?? ""}
-                onChange={(e) =>
-                  set("nbRdvPris", e.target.value ? parseInt(e.target.value) : undefined)
-                }
-              />
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="rounded-lg border border-border bg-muted/50 p-3">
-              <p className="text-xs text-muted-foreground">Ratio invités / participants</p>
-              <p className="text-lg font-semibold tabular-nums">
-                {ratioInvParticipants ? `${ratioInvParticipants}%` : "—"}
-              </p>
-            </div>
-            <div className="rounded-lg border border-border bg-muted/50 p-3">
-              <p className="text-xs text-muted-foreground">Ratio RDV pris / invités</p>
-              <p className="text-lg font-semibold tabular-nums">
-                {ratioRdvInvites ? `${ratioRdvInvites}%` : "—"}
-              </p>
-            </div>
-          </div>
-        </>
-      )}
+      </div>
 
       {!hideSubmitButton && (
         <div className="pt-4">
