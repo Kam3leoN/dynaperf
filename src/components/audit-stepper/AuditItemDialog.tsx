@@ -200,7 +200,7 @@ export function AuditItemDialog({
 
           <div className="space-y-2">
             <Label className="text-xs text-muted-foreground">Commentaire (optionnel)</Label>
-            <RichTextarea value={comment} onChange={setComment} placeholder="Ajouter un commentaire..." rows={2} minimal />
+            <RichTextarea value={comment} onChange={setComment} placeholder="Ajouter un commentaire..." rows={2} />
           </div>
         </div>
 
