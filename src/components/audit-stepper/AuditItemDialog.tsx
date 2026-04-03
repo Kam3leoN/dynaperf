@@ -18,6 +18,9 @@ import {
   formatTiersDisplay,
   parseIncrementConfig,
   calcIncrementScore,
+  parseThresholdConfig,
+  calcThresholdScore,
+  formatThresholdDisplay,
 } from "@/data/auditItems";
 import { StepZeroData } from "./StepZeroForm";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
