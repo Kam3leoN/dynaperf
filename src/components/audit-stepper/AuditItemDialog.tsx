@@ -80,7 +80,7 @@ export function AuditItemDialog({
   const hasBoolCondition = parsed?.condition && item.inputType === "boolean";
   const isBoolAuto = isNoShowAuto || hasBoolCondition;
   const tiers = parseScoringTiers(item.scoringRules);
-
+  const incrementConfig = parseIncrementConfig(item.scoringRules);
   const autoBoolResult = (() => {
     if (isNoShowAuto) return (autoValue ?? 0) === 0;
     if (hasBoolCondition && autoValue !== undefined) {
