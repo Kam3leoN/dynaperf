@@ -47,8 +47,11 @@ const FIELD_TYPES_SMART = [
   { value: "auditeur_select", label: "🔗 Auditeur (sélection profils)" },
   { value: "city_autocomplete", label: "🔗 Ville (autocomplete)" },
   { value: "lieu_autocomplete", label: "🔗 Lieu (autocomplete)" },
-  { value: "qualite_lieu_rating", label: "🔗 Qualité lieu (étoiles)" },
+  { value: "qualite_rating", label: "🔗 Qualité (étoiles, libellé libre)" },
+  { value: "qualite_lieu_rating", label: "🔗 Qualité lieu (étoiles) [ancien]" },
   { value: "date_picker", label: "🔗 Date (calendrier)" },
+  { value: "heure_picker", label: "🔗 Heure (saisie)" },
+  { value: "auto_no_show", label: "🔗 No-show (calcul auto)" },
 ];
 
 const ALL_FIELD_TYPES = [...FIELD_TYPES_SMART, ...FIELD_TYPES_STANDARD];
@@ -67,6 +70,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
   const [isRequired, setIsRequired] = useState(false);
   const [selectOptions, setSelectOptions] = useState<string[]>([""]);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
+  const [sourceInvites, setSourceInvites] = useState("");
+  const [sourceParticipants, setSourceParticipants] = useState("");
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -86,6 +91,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setFieldType("text");
     setIsRequired(false);
     setSelectOptions([""]);
+    setSourceInvites("");
+    setSourceParticipants("");
     setDialogOpen(true);
   };
 
@@ -96,22 +103,34 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setIsRequired(f.is_required);
     const opts = f.field_options?.options;
     setSelectOptions(Array.isArray(opts) && opts.length > 0 ? opts : [""]);
+    setSourceInvites(f.field_options?.source_invites || "");
+    setSourceParticipants(f.field_options?.source_participants || "");
     setDialogOpen(true);
   };
 
   const needsOptions = ["select", "radio", "checkbox"].includes(fieldType);
+  const isAutoNoShow = fieldType === "auto_no_show";
+  const numberFields = fields.filter((f) => f.field_type === "number");
 
   const save = async () => {
     if (!fieldLabel.trim()) { toast.error("Libellé requis"); return; }
     const validOpts = selectOptions.filter((o) => o.trim());
     if (needsOptions && validOpts.length < 2) { toast.error("Au moins 2 options requises"); return; }
 
+    let fieldOpts: any = null;
+    if (needsOptions) {
+      fieldOpts = { options: validOpts };
+    } else if (isAutoNoShow) {
+      if (!sourceInvites || !sourceParticipants) { toast.error("Sélectionnez les deux champs sources"); return; }
+      fieldOpts = { source_invites: sourceInvites, source_participants: sourceParticipants };
+    }
+
     const payload = {
       audit_type_key: auditTypeKey,
       field_label: fieldLabel.trim(),
       field_type: fieldType,
       is_required: isRequired,
-      field_options: needsOptions ? { options: validOpts } : null,
+      field_options: fieldOpts,
       sort_order: editing ? editing.sort_order : fields.length,
     };
 
@@ -267,6 +286,32 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                 <Button variant="outline" size="sm" onClick={() => setSelectOptions([...selectOptions, ""])} className="gap-1.5">
                   <FontAwesomeIcon icon={faPlus} className="h-3 w-3" /> Ajouter une option
                 </Button>
+              </div>
+            )}
+
+            {isAutoNoShow && (
+              <div className="space-y-3">
+                <Label>Champ source « Invités »</Label>
+                <Select value={sourceInvites} onValueChange={setSourceInvites}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner le champ invités" /></SelectTrigger>
+                  <SelectContent>
+                    {numberFields.map((nf) => (
+                      <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Label>Champ source « Participants »</Label>
+                <Select value={sourceParticipants} onValueChange={setSourceParticipants}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner le champ participants" /></SelectTrigger>
+                  <SelectContent>
+                    {numberFields.map((nf) => (
+                      <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {numberFields.length === 0 && (
+                  <p className="text-xs text-muted-foreground">Ajoutez d'abord des champs « Nombre » pour les invités et participants.</p>
+                )}
               </div>
             )}
           </div>

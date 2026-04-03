@@ -49,7 +49,10 @@ const FIELD_TYPE_TO_DATA_KEY: Record<string, keyof StepZeroData> = {
   city_autocomplete: "lieu",
   lieu_autocomplete: "typeLieu",
   qualite_lieu_rating: "qualiteLieu",
+  qualite_rating: "qualiteLieu",
   date_picker: "dateEvenement",
+  heure_picker: "heureEvenement",
+  auto_no_show: "nbNoShow",
 };
 
 interface CustomFieldDef {
@@ -172,6 +175,33 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
     });
   };
 
+  // Auto-calculate no-show fields
+  useEffect(() => {
+    const autoNoShowFields = customFields.filter((f) => f.field_type === "auto_no_show");
+    if (autoNoShowFields.length === 0) return;
+    setData((prev) => {
+      const cv = { ...prev.customFieldValues };
+      let changed = false;
+      for (const field of autoNoShowFields) {
+        const srcInvId = field.field_options?.source_invites;
+        const srcPartId = field.field_options?.source_participants;
+        if (!srcInvId || !srcPartId) continue;
+        const invites = Number(cv[srcInvId]) || 0;
+        const participants = Number(cv[srcPartId]) || 0;
+        const noShow = Math.max(0, invites - participants);
+        if (cv[field.id] !== noShow) {
+          cv[field.id] = noShow;
+          changed = true;
+        }
+      }
+      if (!changed) return prev;
+      const next = { ...prev, customFieldValues: cv, nbNoShow: cv[autoNoShowFields[0].id] };
+      if (hideSubmitButton) setTimeout(() => onSubmit(next), 0);
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customFields, data.customFieldValues]);
+
   const isValid = customFields
     .filter((f) => f.is_required)
     .every((f) => {
@@ -240,12 +270,36 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
           />
         );
       case "qualite_lieu_rating":
+      case "qualite_rating":
         return (
           <StarRating
             value={typeof val === "number" ? val : 0}
             onChange={(v) => setFieldValue(field.id, field.field_type, v)}
           />
         );
+      case "heure_picker":
+        return (
+          <Input
+            type="time"
+            value={val}
+            onChange={(e) => setFieldValue(field.id, field.field_type, e.target.value)}
+          />
+        );
+      case "auto_no_show": {
+        const srcInvId = field.field_options?.source_invites;
+        const srcPartId = field.field_options?.source_participants;
+        const invites = Number(data.customFieldValues?.[srcInvId]) || 0;
+        const participants = Number(data.customFieldValues?.[srcPartId]) || 0;
+        const noShow = Math.max(0, invites - participants);
+        return (
+          <Input
+            type="number"
+            value={noShow}
+            readOnly
+            className="bg-muted cursor-not-allowed"
+          />
+        );
+      }
       case "date_picker":
         return (
           <Popover>
