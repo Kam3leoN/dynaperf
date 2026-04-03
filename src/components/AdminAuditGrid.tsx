@@ -256,8 +256,11 @@ export default function AdminAuditGridInline() {
     let tiers: ScoringTier[] = [];
     let hasTiers = false;
     let hasIncrement = false;
+    let hasThreshold = false;
     let incMin = 0;
     let incStep = 1;
+    let thrOp: "lt" | "lte" | "gt" | "gte" = "gte";
+    let thrVal = 0;
     if (item.scoring_rules) {
       try {
         const parsed = JSON.parse(item.scoring_rules);
@@ -265,6 +268,10 @@ export default function AdminAuditGridInline() {
           hasIncrement = true;
           incMin = parsed.minValue ?? 0;
           incStep = parsed.step ?? 1;
+        } else if (parsed && parsed.type === "threshold") {
+          hasThreshold = true;
+          thrOp = parsed.operator ?? "gte";
+          thrVal = parsed.value ?? 0;
         } else if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0].points === "number") {
           tiers = parsed;
           hasTiers = true;
