@@ -123,7 +123,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setSelectOptions(Array.isArray(opts) && opts.length > 0 ? opts : [""]);
     setSourceNumerator(f.field_options?.source_numerator || f.field_options?.source_a || "");
     setSourceDenominator(f.field_options?.source_denominator || f.field_options?.source_b || "");
-    setSumOperation(f.field_options?.operation || "add");
+    // no operation selector needed
     setAddAtPosition(null);
     setDialogOpen(true);
   };
