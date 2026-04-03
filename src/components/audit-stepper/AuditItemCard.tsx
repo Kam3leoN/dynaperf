@@ -246,7 +246,7 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
 
           <div className="space-y-1.5">
             <Label className="text-[11px] sm:text-xs text-muted-foreground">Commentaire (optionnel)</Label>
-            <RichTextarea value={comment} onChange={setComment} placeholder="Ajouter un commentaire..." rows={2} minimal className="text-sm" />
+            <RichTextarea value={comment} onChange={setComment} placeholder="Ajouter un commentaire..." rows={2} className="text-sm" />
           </div>
         </div>
       </CardContent>
