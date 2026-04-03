@@ -232,7 +232,7 @@ export default function AdminAuditGridInline() {
     setItemForm({
       category_id: categoryId, title: "", description: "", max_points: 1,
       condition: "", scoring_rules: "", input_type: "boolean", checklist_items: "",
-      interets: "", comment_y_parvenir: "", auto_field: "",
+      interets: "", comment_y_parvenir: "", auto_field: "", auto_condition: "zero",
     });
     setIsAutoCalc(false);
     setScoringTiers([]);
