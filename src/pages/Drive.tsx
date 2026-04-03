@@ -253,7 +253,7 @@ export default function Drive() {
   const [currentCatId, setCurrentCatId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("cards");
-  const [density, setDensity] = useState<Density>("comfortable");
+  
 
   // Dialog states
   const [catDialogOpen, setCatDialogOpen] = useState(false);

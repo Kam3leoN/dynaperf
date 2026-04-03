@@ -124,7 +124,7 @@ export async function fetchAuditConfigById(typeId: string): Promise<AuditTypeCon
     .in("category_id", catIds)
     .order("sort_order");
 
-  const categories: AuditCategoryDef[] = cats.map((c) => ({
+  const categories: AuditCategoryDef[] = safeCats.map((c) => ({
     id: c.id,
     name: c.name,
     sortOrder: c.sort_order,
