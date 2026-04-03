@@ -222,7 +222,7 @@ function TreeNode({
               onEditDoc={onEditDoc}
               onDeleteDoc={onDeleteDoc}
               onMoveDoc={onMoveDoc}
-              getFolderIcon={getFolderIcon}
+              
               ModifiedInfo={ModifiedInfo}
             />
           ))}
