@@ -288,6 +288,32 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                 </Button>
               </div>
             )}
+
+            {isAutoNoShow && (
+              <div className="space-y-3">
+                <Label>Champ source « Invités »</Label>
+                <Select value={sourceInvites} onValueChange={setSourceInvites}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner le champ invités" /></SelectTrigger>
+                  <SelectContent>
+                    {numberFields.map((nf) => (
+                      <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Label>Champ source « Participants »</Label>
+                <Select value={sourceParticipants} onValueChange={setSourceParticipants}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner le champ participants" /></SelectTrigger>
+                  <SelectContent>
+                    {numberFields.map((nf) => (
+                      <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {numberFields.length === 0 && (
+                  <p className="text-xs text-muted-foreground">Ajoutez d'abord des champs « Nombre » pour les invités et participants.</p>
+                )}
+              </div>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
