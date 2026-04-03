@@ -51,7 +51,7 @@ const FIELD_TYPES_SMART = [
   { value: "qualite_lieu_rating", label: "🔗 Qualité lieu (étoiles) [ancien]" },
   { value: "date_picker", label: "🔗 Date (calendrier)" },
   { value: "heure_picker", label: "🔗 Heure (saisie)" },
-  { value: "auto_no_show", label: "🔗 No-show (calcul auto)" },
+  { value: "stat_percent", label: "📊 Statistique % (calcul auto)" },
 ];
 
 const ALL_FIELD_TYPES = [...FIELD_TYPES_SMART, ...FIELD_TYPES_STANDARD];
