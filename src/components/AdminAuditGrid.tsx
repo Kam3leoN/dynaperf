@@ -295,7 +295,9 @@ export default function AdminAuditGridInline() {
         : null,
       interets: itemForm.interets.trim(),
       comment_y_parvenir: itemForm.comment_y_parvenir.trim(),
-      auto_field: isAutoCalc && itemForm.auto_field ? itemForm.auto_field : null,
+      auto_field: isAutoCalc && itemForm.auto_field
+        ? (itemForm.input_type === "boolean" ? `${itemForm.auto_field}::${itemForm.auto_condition}` : itemForm.auto_field)
+        : null,
     };
 
     if (editingItem) {
