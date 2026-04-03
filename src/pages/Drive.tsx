@@ -857,7 +857,7 @@ export default function Drive() {
                   Documents
                   {isAdmin && draggingDocId && <span className="text-primary ml-2">— Glissez sur un dossier pour déplacer</span>}
                 </p>
-                <div className={density === "compact" ? "grid-compact" : "grid-content"}>
+                <div className="grid-content">
                   {currentDocs.map((doc) => (
                     <div key={doc.id} className="relative">
                       <DocCard doc={doc} />
