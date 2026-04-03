@@ -397,7 +397,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
               {fields.map((f, idx) => (
                 <Card
                   key={f.id}
-                  className={`group cursor-grab ${dragIdx === idx ? "opacity-50" : ""}`}
+                  className={`group cursor-grab ${dragIdx === idx ? "opacity-50" : ""} ${listActiveFieldId === f.id ? "ring-2 ring-primary" : ""}`}
                   draggable
                   onDragStart={() => handleDragStart(idx)}
                   onDragOver={(e) => handleDragOver(e, idx)}
