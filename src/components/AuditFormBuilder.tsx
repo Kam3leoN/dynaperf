@@ -403,7 +403,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                   onDragOver={(e) => handleDragOver(e, idx)}
                   onDragEnd={handleDragEnd}
                 >
-                  <CardContent className="py-3 px-4 flex items-center gap-3">
+                  <CardContent className="py-3 px-4 flex items-center gap-3" onClick={() => setListActiveId(f.id)}>
                     <FontAwesomeIcon icon={faGripVertical} className="h-3.5 w-3.5 text-muted-foreground/40 cursor-grab" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{f.field_label}</p>
