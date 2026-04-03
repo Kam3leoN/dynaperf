@@ -294,9 +294,11 @@ export default function AdminAuditGridInline() {
 
   const saveItem = async () => {
     if (!itemForm.title.trim()) return;
-    const finalScoringRules = useTiers && scoringTiers.length > 0
+    const finalScoringRules = scoringMode === "tiers" && scoringTiers.length > 0
       ? JSON.stringify(scoringTiers)
-      : itemForm.scoring_rules.trim() || null;
+      : scoringMode === "increment"
+        ? JSON.stringify({ type: "increment", minValue: incrementMin, step: incrementStep })
+        : itemForm.scoring_rules.trim() || null;
 
     const payload = {
       category_id: itemForm.category_id,

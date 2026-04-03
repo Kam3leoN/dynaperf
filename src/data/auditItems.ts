@@ -177,6 +177,27 @@ export function parseScoringTiers(scoringRules: string | null | undefined): Scor
   return null;
 }
 
+export interface IncrementConfig {
+  type: "increment";
+  minValue: number;
+  step: number;
+}
+
+export function parseIncrementConfig(scoringRules: string | null | undefined): IncrementConfig | null {
+  if (!scoringRules) return null;
+  try {
+    const parsed = JSON.parse(scoringRules);
+    if (parsed && parsed.type === "increment") return parsed as IncrementConfig;
+  } catch {}
+  return null;
+}
+
+export function calcIncrementScore(value: number, config: IncrementConfig, maxPoints: number): number {
+  if (value < config.minValue) return 0;
+  const score = Math.floor(value / config.step);
+  return Math.min(score, maxPoints);
+}
+
 export function calcTiersScore(value: number, tiers: ScoringTier[]): number {
   const sorted = [...tiers].sort((a, b) => b.min - a.min);
   for (const tier of sorted) {
