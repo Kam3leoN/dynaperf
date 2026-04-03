@@ -96,6 +96,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
   const [previewMode, setPreviewMode] = useState(false);
   const [layoutDraft, setLayoutDraft] = useState<LayoutDraftItem[]>([]);
   const [previewKey, setPreviewKey] = useState(0);
+  const [listActiveId, setListActiveId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -216,6 +217,41 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setColSpan(span);
     setLayoutDraft((current) => current.map((item) => item.id === activeFieldId ? { ...item, col_span: span } : item));
   }, [activeFieldId]);
+
+  // ── List-level layout editor (shown below field cards) ──
+  const listActiveFieldId = listActiveId || (fields.length > 0 ? fields[0].id : "");
+
+  const listEditorFields = useMemo<LayoutEditorField[]>(() =>
+    fields.map((f) => ({
+      id: f.id,
+      field_label: f.field_label,
+      sort_order: f.sort_order,
+      col_span: f.col_span || 6,
+      col_offset_before: f.col_offset_before || 0,
+      col_offset_after: f.col_offset_after || 0,
+    })),
+    [fields]
+  );
+
+  const handleListLayoutChange = useCallback(async (nextLayout: LayoutDraftItem[]) => {
+    await Promise.all(
+      nextLayout.map((item) =>
+        supabase.from("audit_type_custom_fields").update({
+          sort_order: item.sort_order,
+          col_span: item.col_span,
+          col_offset_before: item.col_offset_before,
+          col_offset_after: item.col_offset_after,
+        }).eq("id", item.id)
+      )
+    );
+    load();
+  }, [load]);
+
+  const handleListSpanChange = useCallback(async (span: number) => {
+    if (!listActiveFieldId) return;
+    await supabase.from("audit_type_custom_fields").update({ col_span: span }).eq("id", listActiveFieldId);
+    load();
+  }, [listActiveFieldId, load]);
 
   const save = async () => {
     if (!fieldLabel.trim()) { toast.error("Libellé requis"); return; }
@@ -361,13 +397,13 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
               {fields.map((f, idx) => (
                 <Card
                   key={f.id}
-                  className={`group cursor-grab ${dragIdx === idx ? "opacity-50" : ""}`}
+                  className={`group cursor-grab ${dragIdx === idx ? "opacity-50" : ""} ${listActiveFieldId === f.id ? "ring-2 ring-primary" : ""}`}
                   draggable
                   onDragStart={() => handleDragStart(idx)}
                   onDragOver={(e) => handleDragOver(e, idx)}
                   onDragEnd={handleDragEnd}
                 >
-                  <CardContent className="py-3 px-4 flex items-center gap-3">
+                  <CardContent className="py-3 px-4 flex items-center gap-3" onClick={() => setListActiveId(f.id)}>
                     <FontAwesomeIcon icon={faGripVertical} className="h-3.5 w-3.5 text-muted-foreground/40 cursor-grab" />
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-foreground truncate">{f.field_label}</p>
@@ -395,17 +431,25 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
               ))}
             </div>
           )}
+
+          {/* Visual 12-column layout editor — shown below the field list */}
+          {fields.length > 0 && (
+            <FieldLayoutEditor
+              fields={listEditorFields}
+              activeFieldId={listActiveFieldId}
+              onLayoutChange={handleListLayoutChange}
+              onSpanChange={handleListSpanChange}
+            />
+          )}
         </>
       )}
 
       <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setLayoutDraft([]); }}>
-        <DialogContent className="max-w-4xl rounded-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-lg rounded-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? "Modifier le champ" : "Ajouter un champ"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="grid gap-4 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] lg:items-start">
-              <div className="space-y-4">
                 <div className="space-y-1.5">
                   <Label>Libellé *</Label>
                   <Input value={fieldLabel} onChange={(e) => setFieldLabel(e.target.value)} placeholder="ex: Nombre de participants" />
@@ -488,15 +532,6 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                   </div>
                 )}
               </div>
-
-              <FieldLayoutEditor
-                fields={editorFields}
-                activeFieldId={activeFieldId}
-                onLayoutChange={handleLayoutChange}
-                onSpanChange={handleSpanChange}
-              />
-            </div>
-          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setDialogOpen(false); setLayoutDraft([]); }}>Annuler</Button>
             <Button onClick={save}>{editing ? "Enregistrer" : "Ajouter"}</Button>
