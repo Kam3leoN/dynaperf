@@ -533,7 +533,7 @@ export default function Drive() {
               <button className={`h-10 w-10 flex items-center justify-center transition-colors ${viewMode === "cards" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary"}`} onClick={() => setViewMode("cards")} title="Vue cartes">
                 <FontAwesomeIcon icon={faGrip} className="h-4 w-4" />
               </button>
-              <button className={`h-10 w-10 flex items-center justify-center transition-colors ${viewMode === "table" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary"}`} onClick={() => setViewMode("table")} title="Vue tableau">
+              <button className={`h-10 w-10 flex items-center justify-center transition-colors ${viewMode === "tree" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary"}`} onClick={() => setViewMode("tree")} title="Vue arborescence">
                 <FontAwesomeIcon icon={faList} className="h-4 w-4" />
               </button>
             </div>
