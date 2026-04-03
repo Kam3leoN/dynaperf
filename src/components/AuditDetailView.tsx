@@ -176,7 +176,7 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
                       const catObtained = catItems.reduce((sum, i) => sum + (detail.items[i.id]?.score ?? 0), 0);
                       const pct = catMaxPoints > 0 ? Math.round((catObtained / catMaxPoints) * 100) : 0;
                       return (
-                        <div key={cat.id} className="rounded-xl border border-border bg-muted/30 p-3 space-y-1.5">
+                        <div key={cat.id} className="flex-1 min-w-[140px] rounded-xl border border-border bg-muted/30 p-3 space-y-1.5">
                           <p className="text-[11px] font-medium text-muted-foreground truncate">{cat.name}</p>
                           <div className="flex items-baseline gap-1.5">
                             <span className="text-lg font-bold tabular-nums text-foreground">{catObtained}</span>
