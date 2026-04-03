@@ -55,7 +55,7 @@ const FIELD_TYPES_SMART = [
   { value: "date_picker", label: "🔗 Date (calendrier)" },
   { value: "heure_picker", label: "🔗 Heure (saisie)" },
   { value: "stat_percent", label: "📊 Statistique % (calcul auto)" },
-  { value: "stat_sum", label: "📊 Somme (calcul auto)" },
+  { value: "stat_sum", label: "📊 Calcul auto (somme / différence)" },
 ];
 
 const ALL_FIELD_TYPES = [...FIELD_TYPES_SMART, ...FIELD_TYPES_STANDARD];
@@ -76,6 +76,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
   const [selectOptions, setSelectOptions] = useState<string[]>([""]);
   const [sourceNumerator, setSourceNumerator] = useState("");
   const [sourceDenominator, setSourceDenominator] = useState("");
+  const [sumOperation, setSumOperation] = useState<"add" | "subtract">("add");
   const [previewMode, setPreviewMode] = useState(false);
   const [previewKey, setPreviewKey] = useState(0);
   // For "add at position" from the grid
@@ -102,6 +103,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setSelectOptions([""]);
     setSourceNumerator("");
     setSourceDenominator("");
+    setSumOperation("add");
     if (colStart && span) {
       setAddAtPosition({ colStart, colSpan: span, rowIndex: 0 });
     } else {
@@ -120,8 +122,9 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setColSpan(f.col_span || 6);
     const opts = f.field_options?.options;
     setSelectOptions(Array.isArray(opts) && opts.length > 0 ? opts : [""]);
-    setSourceNumerator(f.field_options?.source_numerator || "");
-    setSourceDenominator(f.field_options?.source_denominator || "");
+    setSourceNumerator(f.field_options?.source_numerator || f.field_options?.source_a || "");
+    setSourceDenominator(f.field_options?.source_denominator || f.field_options?.source_b || "");
+    setSumOperation(f.field_options?.operation || "add");
     setAddAtPosition(null);
     setDialogOpen(true);
   };
@@ -170,7 +173,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
       if (!sourceNumerator || !sourceDenominator) { toast.error("Sélectionnez les deux champs sources"); return; }
       fieldOpts = isStatPercent
         ? { source_numerator: sourceNumerator, source_denominator: sourceDenominator }
-        : { source_a: sourceNumerator, source_b: sourceDenominator };
+        : { source_a: sourceNumerator, source_b: sourceDenominator, operation: sumOperation };
     }
 
     const payload = {
@@ -346,18 +349,43 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
 
                 {needsSources && (
                   <div className="space-y-3">
-                    <Label>{isStatPercent ? "Champ numérateur" : "Champ 1 (nombre)"}</Label>
+                    {isStatSum && (
+                      <>
+                        <Label>Opération</Label>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant={sumOperation === "add" ? "default" : "outline"}
+                            size="sm"
+                            className="flex-1 gap-1.5"
+                            onClick={() => setSumOperation("add")}
+                          >
+                            ➕ Addition (A + B)
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={sumOperation === "subtract" ? "default" : "outline"}
+                            size="sm"
+                            className="flex-1 gap-1.5"
+                            onClick={() => setSumOperation("subtract")}
+                          >
+                            ➖ Soustraction (A − B)
+                          </Button>
+                        </div>
+                      </>
+                    )}
+                    <Label>{isStatPercent ? "Champ numérateur" : "Champ A (nombre)"}</Label>
                     <Select value={sourceNumerator} onValueChange={setSourceNumerator}>
-                      <SelectTrigger><SelectValue placeholder={isStatPercent ? "Sélectionner le numérateur" : "Sélectionner le champ 1"} /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={isStatPercent ? "Sélectionner le numérateur" : "Sélectionner le champ A"} /></SelectTrigger>
                       <SelectContent>
                         {numberFields.map((nf) => (
                           <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <Label>{isStatPercent ? "Champ dénominateur" : "Champ 2 (nombre)"}</Label>
+                    <Label>{isStatPercent ? "Champ dénominateur" : "Champ B (nombre)"}</Label>
                     <Select value={sourceDenominator} onValueChange={setSourceDenominator}>
-                      <SelectTrigger><SelectValue placeholder={isStatPercent ? "Sélectionner le dénominateur" : "Sélectionner le champ 2"} /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={isStatPercent ? "Sélectionner le dénominateur" : "Sélectionner le champ B"} /></SelectTrigger>
                       <SelectContent>
                         {numberFields.map((nf) => (
                           <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>

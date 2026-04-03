@@ -219,10 +219,11 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
       for (const field of sumFields) {
         const aId = field.field_options?.source_a;
         const bId = field.field_options?.source_b;
+        const op = field.field_options?.operation || "add";
         if (!aId || !bId) continue;
         const a = Number(cv[aId]) || 0;
         const b = Number(cv[bId]) || 0;
-        const sum = a + b;
+        const sum = op === "subtract" ? a - b : a + b;
         if (cv[field.id] !== sum) {
           cv[field.id] = sum;
           changed = true;
@@ -339,16 +340,19 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
       case "stat_sum": {
         const aId = field.field_options?.source_a;
         const bId = field.field_options?.source_b;
+        const op = field.field_options?.operation || "add";
         const a = Number(data.customFieldValues?.[aId]) || 0;
         const b = Number(data.customFieldValues?.[bId]) || 0;
-        const sum = a + b;
-        const aLabel = customFields.find((f) => f.id === aId)?.field_label ?? "?";
-        const bLabel = customFields.find((f) => f.id === bId)?.field_label ?? "?";
+        const result = op === "subtract" ? a - b : a + b;
+        const sign = op === "subtract" ? "−" : "+";
+        const displayPrefix = result > 0 ? "+" : "";
         return (
           <div className="flex items-center gap-2 h-12 px-4 rounded-xl border border-input bg-muted text-sm cursor-not-allowed">
-            <span className="font-semibold text-foreground">{sum}</span>
+            <span className={`font-semibold ${result > 0 ? "text-green-600 dark:text-green-400" : result < 0 ? "text-red-500 dark:text-red-400" : "text-foreground"}`}>
+              {op === "subtract" ? `${displayPrefix}${result}` : result}
+            </span>
             <span className="text-muted-foreground text-xs">
-              ({a} + {b})
+              ({a} {sign} {b})
             </span>
           </div>
         );
