@@ -236,6 +236,8 @@ export type Database = {
       audit_type_custom_fields: {
         Row: {
           audit_type_key: string
+          col_offset_after: number
+          col_offset_before: number
           col_span: number
           created_at: string
           field_label: string
@@ -248,6 +250,8 @@ export type Database = {
         }
         Insert: {
           audit_type_key: string
+          col_offset_after?: number
+          col_offset_before?: number
           col_span?: number
           created_at?: string
           field_label: string
@@ -260,6 +264,8 @@ export type Database = {
         }
         Update: {
           audit_type_key?: string
+          col_offset_after?: number
+          col_offset_before?: number
           col_span?: number
           created_at?: string
           field_label?: string

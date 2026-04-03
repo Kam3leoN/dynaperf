@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,6 +28,8 @@ interface CustomField {
   is_required: boolean;
   sort_order: number;
   col_span: number;
+  col_offset_before: number;
+  col_offset_after: number;
 }
 
 const FIELD_TYPES_STANDARD = [
@@ -82,6 +85,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
   const [isRequired, setIsRequired] = useState(false);
   const [colSpan, setColSpan] = useState(6);
   const [selectOptions, setSelectOptions] = useState<string[]>([""]);
+  const [offsetBefore, setOffsetBefore] = useState(0);
+  const [offsetAfter, setOffsetAfter] = useState(0);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [sourceNumerator, setSourceNumerator] = useState("");
   const [sourceDenominator, setSourceDenominator] = useState("");
@@ -107,6 +112,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setFieldType("text");
     setIsRequired(false);
     setColSpan(6);
+    setOffsetBefore(0);
+    setOffsetAfter(0);
     setSelectOptions([""]);
     setSourceNumerator("");
     setSourceDenominator("");
@@ -119,6 +126,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setFieldType(f.field_type);
     setIsRequired(f.is_required);
     setColSpan(f.col_span || 6);
+    setOffsetBefore(f.col_offset_before || 0);
+    setOffsetAfter(f.col_offset_after || 0);
     const opts = f.field_options?.options;
     setSelectOptions(Array.isArray(opts) && opts.length > 0 ? opts : [""]);
     setSourceNumerator(f.field_options?.source_numerator || "");
@@ -151,6 +160,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
       field_options: fieldOpts,
       sort_order: editing ? editing.sort_order : fields.length,
       col_span: colSpan,
+      col_offset_before: offsetBefore,
+      col_offset_after: offsetAfter,
     };
 
     if (editing) {
@@ -257,7 +268,9 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                       <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
                         <Badge variant="secondary" className="text-[10px]">{getTypeLabel(f.field_type)}</Badge>
                         {f.is_required && <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">Requis</Badge>}
-                        <Badge variant="outline" className="text-[10px]">{f.col_span || 6}/12 col</Badge>
+                        <Badge variant="outline" className="text-[10px]">
+                          {f.col_offset_before ? `↦${f.col_offset_before} ` : ""}{f.col_span || 6}/12{f.col_offset_after ? ` ${f.col_offset_after}↤` : ""} col
+                        </Badge>
                         {f.field_options?.options && (
                           <span className="text-[10px] text-muted-foreground">{f.field_options.options.length} options</span>
                         )}
@@ -310,29 +323,52 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
               </Select>
             </div>
 
-            {/* Column span selector */}
-            <div className="space-y-2">
-              <Label>Largeur (colonnes sur 12)</Label>
-              <div className="flex items-center gap-3">
-                <Slider
-                  value={[colSpan]}
-                  onValueChange={([v]) => setColSpan(v)}
-                  min={1}
-                  max={12}
-                  step={1}
-                  className="flex-1"
-                />
-                <span className="text-sm font-mono font-semibold w-12 text-center bg-muted rounded px-2 py-1">{colSpan}/12</span>
+            {/* Column layout */}
+            <div className="space-y-3">
+              <Label>Disposition (colonnes sur 12)</Label>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Offset avant</span>
+                  <div className="flex items-center gap-2">
+                    <Slider value={[offsetBefore]} onValueChange={([v]) => setOffsetBefore(v)} min={0} max={11} step={1} className="flex-1" />
+                    <span className="text-xs font-mono w-6 text-center">{offsetBefore}</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Largeur</span>
+                  <div className="flex items-center gap-2">
+                    <Slider value={[colSpan]} onValueChange={([v]) => setColSpan(v)} min={1} max={12} step={1} className="flex-1" />
+                    <span className="text-xs font-mono w-6 text-center">{colSpan}</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Offset après</span>
+                  <div className="flex items-center gap-2">
+                    <Slider value={[offsetAfter]} onValueChange={([v]) => setOffsetAfter(v)} min={0} max={11} step={1} className="flex-1" />
+                    <span className="text-xs font-mono w-6 text-center">{offsetAfter}</span>
+                  </div>
+                </div>
               </div>
               {/* Visual preview bar */}
               <div className="grid grid-cols-12 gap-0.5 h-3">
-                {Array.from({ length: 12 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={`rounded-sm transition-colors ${i < colSpan ? "bg-primary" : "bg-muted"}`}
-                  />
-                ))}
+                {Array.from({ length: 12 }).map((_, i) => {
+                  const inOffset = i < offsetBefore;
+                  const inField = i >= offsetBefore && i < offsetBefore + colSpan;
+                  const inAfter = i >= offsetBefore + colSpan && i < offsetBefore + colSpan + offsetAfter;
+                  return (
+                    <div
+                      key={i}
+                      className={cn(
+                        "rounded-sm transition-colors",
+                        inField ? "bg-primary" : (inOffset || inAfter) ? "bg-primary/20" : "bg-muted"
+                      )}
+                    />
+                  );
+                })}
               </div>
+              {offsetBefore + colSpan + offsetAfter > 12 && (
+                <p className="text-[11px] text-destructive">⚠ Total dépasse 12 colonnes ({offsetBefore + colSpan + offsetAfter})</p>
+              )}
             </div>
 
             <div className="flex items-center gap-3">
