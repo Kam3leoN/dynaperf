@@ -270,12 +270,36 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
           />
         );
       case "qualite_lieu_rating":
+      case "qualite_rating":
         return (
           <StarRating
             value={typeof val === "number" ? val : 0}
             onChange={(v) => setFieldValue(field.id, field.field_type, v)}
           />
         );
+      case "heure_picker":
+        return (
+          <Input
+            type="time"
+            value={val}
+            onChange={(e) => setFieldValue(field.id, field.field_type, e.target.value)}
+          />
+        );
+      case "auto_no_show": {
+        const srcInvId = field.field_options?.source_invites;
+        const srcPartId = field.field_options?.source_participants;
+        const invites = Number(data.customFieldValues?.[srcInvId]) || 0;
+        const participants = Number(data.customFieldValues?.[srcPartId]) || 0;
+        const noShow = Math.max(0, invites - participants);
+        return (
+          <Input
+            type="number"
+            value={noShow}
+            readOnly
+            className="bg-muted cursor-not-allowed"
+          />
+        );
+      }
       case "date_picker":
         return (
           <Popover>
