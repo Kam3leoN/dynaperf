@@ -395,6 +395,16 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
               ))}
             </div>
           )}
+
+          {/* Visual 12-column layout editor — shown below the field list */}
+          {fields.length > 0 && (
+            <FieldLayoutEditor
+              fields={listEditorFields}
+              activeFieldId={listActiveFieldId}
+              onLayoutChange={handleListLayoutChange}
+              onSpanChange={handleListSpanChange}
+            />
+          )}
         </>
       )}
 
