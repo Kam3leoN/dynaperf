@@ -86,6 +86,7 @@ export default function Drive() {
   const { isAdmin } = useAdmin(user);
   const [searchParams] = useSearchParams();
   const [documents, setDocuments] = useState<DriveDocument[]>([]);
+  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
