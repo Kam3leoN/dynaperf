@@ -124,15 +124,34 @@ export default function Drive() {
 
   useEffect(() => { fetchAll(); }, []);
 
-  // Smart search: matches title, file_name, description
+  // Type filter helpers
+  const matchesType = (mime: string | null, filter: string): boolean => {
+    if (!mime) return false;
+    switch (filter) {
+      case "image": return mime.startsWith("image/");
+      case "pdf": return mime.includes("pdf");
+      case "video": return mime.startsWith("video/");
+      case "doc": return mime.includes("word") || mime.includes("document") || mime.includes("presentation") || mime.includes("powerpoint");
+      case "excel": return mime.includes("sheet") || mime.includes("excel") || mime.includes("csv");
+      default: return true;
+    }
+  };
+
+  // Smart search + type filter
   const filteredDocs = useMemo(() => {
-    if (!search.trim()) return documents;
-    const terms = search.toLowerCase().split(/\s+/).filter(Boolean);
-    return documents.filter((d) => {
-      const haystack = `${d.title} ${d.file_name} ${d.description || ""}`.toLowerCase();
-      return terms.every((t) => haystack.includes(t));
-    });
-  }, [search, documents]);
+    let result = documents;
+    if (typeFilter) {
+      result = result.filter((d) => matchesType(d.mime_type, typeFilter));
+    }
+    if (search.trim()) {
+      const terms = search.toLowerCase().split(/\s+/).filter(Boolean);
+      result = result.filter((d) => {
+        const haystack = `${d.title} ${d.file_name} ${d.description || ""}`.toLowerCase();
+        return terms.every((t) => haystack.includes(t));
+      });
+    }
+    return result;
+  }, [search, documents, typeFilter]);
 
   const getModifierName = (userId: string | null) => {
     if (!userId) return null;
