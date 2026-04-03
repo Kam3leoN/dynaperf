@@ -91,6 +91,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setFieldType("text");
     setIsRequired(false);
     setSelectOptions([""]);
+    setSourceInvites("");
+    setSourceParticipants("");
     setDialogOpen(true);
   };
 
@@ -101,10 +103,14 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setIsRequired(f.is_required);
     const opts = f.field_options?.options;
     setSelectOptions(Array.isArray(opts) && opts.length > 0 ? opts : [""]);
+    setSourceInvites(f.field_options?.source_invites || "");
+    setSourceParticipants(f.field_options?.source_participants || "");
     setDialogOpen(true);
   };
 
   const needsOptions = ["select", "radio", "checkbox"].includes(fieldType);
+  const isAutoNoShow = fieldType === "auto_no_show";
+  const numberFields = fields.filter((f) => f.field_type === "number");
 
   const save = async () => {
     if (!fieldLabel.trim()) { toast.error("Libellé requis"); return; }
