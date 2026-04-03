@@ -1406,6 +1406,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      record_activity: {
+        Args: { p_score?: number; p_type: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "user" | "redacteur" | "lecteur" | "super_admin"
