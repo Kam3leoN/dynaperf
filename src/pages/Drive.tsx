@@ -282,11 +282,32 @@ export default function Drive() {
   const downloadDoc = async (doc: DriveDocument) => {
     try {
       const path = new URL(doc.file_url).pathname.split("/drive-files/")[1];
-      if (!path) { window.open(doc.file_url, "_blank"); return; }
-      const { data, error } = await supabase.storage.from("drive-files").createSignedUrl(decodeURIComponent(path), 60);
-      if (error || !data?.signedUrl) { window.open(doc.file_url, "_blank"); return; }
-      window.open(data.signedUrl, "_blank");
-    } catch { window.open(doc.file_url, "_blank"); }
+      if (!path) return;
+      const { data, error } = await supabase.storage.from("drive-files").createSignedUrl(decodeURIComponent(path), 60, { download: doc.file_name || true });
+      if (error || !data?.signedUrl) return;
+      const a = document.createElement("a");
+      a.href = data.signedUrl;
+      a.download = doc.file_name || "download";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch { /* ignore */ }
+  };
+
+  // Preview state
+  const [previewDoc, setPreviewDoc] = useState<DriveDocument | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const openPreview = async (doc: DriveDocument) => {
+    try {
+      const path = new URL(doc.file_url).pathname.split("/drive-files/")[1];
+      if (!path) return;
+      const { data } = await supabase.storage.from("drive-files").createSignedUrl(decodeURIComponent(path), 3600);
+      if (data?.signedUrl) {
+        setPreviewUrl(data.signedUrl);
+        setPreviewDoc(doc);
+      }
+    } catch { /* ignore */ }
   };
 
   const handleDelete = async () => {
