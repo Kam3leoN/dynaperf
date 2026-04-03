@@ -74,11 +74,11 @@ function hasVisualPreview(mime: string | null): boolean {
   return mime.startsWith("image/") || mime.includes("pdf") || mime.includes("word") || mime.includes("document");
 }
 
-/** Build a thumbnail URL for the file - use image_url if available, else generate preview */
-function getPreviewUrl(doc: DriveDocument): string | null {
-  if (doc.image_url) return doc.image_url;
-  if (doc.mime_type?.startsWith("image/")) return doc.file_url;
-  return null;
+/** Check if doc has a potential visual preview */
+function canPreview(doc: DriveDocument): boolean {
+  if (doc.image_url) return true;
+  if (doc.mime_type?.startsWith("image/")) return true;
+  return false;
 }
 
 export default function Drive() {
