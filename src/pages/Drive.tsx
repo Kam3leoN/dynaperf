@@ -150,7 +150,6 @@ interface TreeViewProps {
   onEditDoc: (doc: DriveDocument) => void;
   onDeleteDoc: (doc: DriveDocument) => void;
   onMoveDoc: (docId: string, targetCatId: string) => void;
-  getFolderIcon: (cat: { name: string; icon_url: string | null }) => string | null;
   ModifiedInfo: React.FC<{ updatedAt: string; updatedBy: string | null }>;
 }
 
