@@ -166,20 +166,18 @@ export default function SuiviActiviteForm() {
     <AppLayout>
       {/* Sticky progress bar */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-2.5 -mx-4 mb-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center gap-3 mb-1.5">
-            <Badge variant="outline" className="text-xs">Suivi d'activité</Badge>
-            <span className="text-xs text-muted-foreground">
-              {totalFilled} / {totalExpected} champs renseignés
-            </span>
-            <span className="ml-auto text-xs font-semibold text-foreground tabular-nums">
-              {Math.round(progress)}%
-            </span>
-          </div>
-          <Progress value={progress} className="h-2" />
+        <div className="flex items-center gap-3 mb-1.5">
+          <Badge variant="outline" className="text-xs">Suivi d'activité</Badge>
+          <span className="text-xs text-muted-foreground">
+            {totalFilled} / {totalExpected} champs renseignés
+          </span>
+          <span className="ml-auto text-xs font-semibold text-foreground tabular-nums">
+            {Math.round(progress)}%
+          </span>
         </div>
+        <Progress value={progress} className="h-2" />
       </div>
-      <div className="max-w-4xl mx-auto px-4">
+      <div className="px-0">
         <h1 className="text-xl font-semibold text-foreground mb-6">Nouveau suivi d'activité</h1>
 
         <div className="space-y-8">
