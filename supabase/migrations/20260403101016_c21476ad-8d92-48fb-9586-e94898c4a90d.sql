@@ -1,0 +1,1 @@
+ALTER TABLE public.audit_type_custom_fields ADD COLUMN col_span integer NOT NULL DEFAULT 6;
