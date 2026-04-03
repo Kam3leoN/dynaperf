@@ -66,6 +66,8 @@ interface CustomFieldDef {
   is_required: boolean;
   sort_order: number;
   col_span: number;
+  col_offset_before: number;
+  col_offset_after: number;
 }
 
 interface Props {
