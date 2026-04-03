@@ -282,11 +282,32 @@ export default function Drive() {
   const downloadDoc = async (doc: DriveDocument) => {
     try {
       const path = new URL(doc.file_url).pathname.split("/drive-files/")[1];
-      if (!path) { window.open(doc.file_url, "_blank"); return; }
-      const { data, error } = await supabase.storage.from("drive-files").createSignedUrl(decodeURIComponent(path), 60);
-      if (error || !data?.signedUrl) { window.open(doc.file_url, "_blank"); return; }
-      window.open(data.signedUrl, "_blank");
-    } catch { window.open(doc.file_url, "_blank"); }
+      if (!path) return;
+      const { data, error } = await supabase.storage.from("drive-files").createSignedUrl(decodeURIComponent(path), 60, { download: doc.file_name || true });
+      if (error || !data?.signedUrl) return;
+      const a = document.createElement("a");
+      a.href = data.signedUrl;
+      a.download = doc.file_name || "download";
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    } catch { /* ignore */ }
+  };
+
+  // Preview state
+  const [previewDoc, setPreviewDoc] = useState<DriveDocument | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+  const openPreview = async (doc: DriveDocument) => {
+    try {
+      const path = new URL(doc.file_url).pathname.split("/drive-files/")[1];
+      if (!path) return;
+      const { data } = await supabase.storage.from("drive-files").createSignedUrl(decodeURIComponent(path), 3600);
+      if (data?.signedUrl) {
+        setPreviewUrl(data.signedUrl);
+        setPreviewDoc(doc);
+      }
+    } catch { /* ignore */ }
   };
 
   const handleDelete = async () => {
@@ -304,11 +325,15 @@ export default function Drive() {
     fetchAll();
   };
 
-  const ModifiedInfo = ({ updatedAt, updatedBy }: { updatedAt: string; updatedBy: string | null }) => {
-    const name = getModifierName(updatedBy);
+  const MetaInfo = ({ doc }: { doc: DriveDocument }) => {
+    const wasEdited = doc.updated_at !== doc.created_at;
+    const date = wasEdited ? doc.updated_at : doc.created_at;
+    const userId = wasEdited ? doc.updated_by : doc.uploaded_by;
+    const label = wasEdited ? "Modifié" : "Uploadé";
+    const name = getModifierName(userId);
     return (
       <p className="text-[10px] text-muted-foreground text-center">
-        Modifié {formatModifiedDate(updatedAt)}
+        {label} {formatModifiedDate(date)}
         {name && <> par <span className="font-medium">{name}</span></>}
       </p>
     );
@@ -417,7 +442,7 @@ export default function Drive() {
                 <Card
                   key={doc.id}
                   className="group cursor-pointer transition-all hover:shadow-hover hover:-translate-y-0.5 overflow-hidden relative"
-                  onClick={() => downloadDoc(doc)}
+                  onClick={() => openPreview(doc)}
                 >
                   <CardContent className="p-0">
                     {/* Visual preview area */}
@@ -454,7 +479,7 @@ export default function Drive() {
                       <p className="text-sm font-semibold text-center leading-tight line-clamp-2">{doc.title}</p>
                       {doc.description && <p className="text-xs text-muted-foreground text-center line-clamp-2">{doc.description}</p>}
                       {doc.file_size ? <p className="text-[10px] text-muted-foreground text-center">{formatSize(doc.file_size)}</p> : null}
-                      <ModifiedInfo updatedAt={doc.updated_at} updatedBy={doc.updated_by} />
+                      <MetaInfo doc={doc} />
                     </div>
 
                     {/* Actions row */}
@@ -561,6 +586,35 @@ export default function Drive() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Preview dialog */}
+      <Dialog open={!!previewDoc} onOpenChange={(o) => { if (!o) { setPreviewDoc(null); setPreviewUrl(null); } }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>{previewDoc?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4">
+            {previewUrl && previewDoc?.mime_type?.startsWith("image/") && (
+              <img src={previewUrl} alt={previewDoc.title} className="max-w-full max-h-[70vh] object-contain rounded-lg" />
+            )}
+            {previewUrl && previewDoc?.mime_type?.includes("pdf") && (
+              <iframe src={previewUrl} className="w-full h-[70vh] rounded-lg border border-border" />
+            )}
+            {previewUrl && previewDoc && !previewDoc.mime_type?.startsWith("image/") && !previewDoc.mime_type?.includes("pdf") && (
+              <div className="flex flex-col items-center gap-3 py-8">
+                <FontAwesomeIcon icon={fileIcon(previewDoc.mime_type)} className="h-16 w-16 text-muted-foreground/40" />
+                <p className="text-muted-foreground">Aperçu non disponible pour ce type de fichier</p>
+              </div>
+            )}
+            {previewDoc && (
+              <Button variant="outline" className="gap-2" onClick={() => downloadDoc(previewDoc)}>
+                <FontAwesomeIcon icon={faDownload} className="h-3.5 w-3.5" />
+                Télécharger
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
