@@ -322,29 +322,52 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
               </Select>
             </div>
 
-            {/* Column span selector */}
-            <div className="space-y-2">
-              <Label>Largeur (colonnes sur 12)</Label>
-              <div className="flex items-center gap-3">
-                <Slider
-                  value={[colSpan]}
-                  onValueChange={([v]) => setColSpan(v)}
-                  min={1}
-                  max={12}
-                  step={1}
-                  className="flex-1"
-                />
-                <span className="text-sm font-mono font-semibold w-12 text-center bg-muted rounded px-2 py-1">{colSpan}/12</span>
+            {/* Column layout */}
+            <div className="space-y-3">
+              <Label>Disposition (colonnes sur 12)</Label>
+              <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Offset avant</span>
+                  <div className="flex items-center gap-2">
+                    <Slider value={[offsetBefore]} onValueChange={([v]) => setOffsetBefore(v)} min={0} max={11} step={1} className="flex-1" />
+                    <span className="text-xs font-mono w-6 text-center">{offsetBefore}</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Largeur</span>
+                  <div className="flex items-center gap-2">
+                    <Slider value={[colSpan]} onValueChange={([v]) => setColSpan(v)} min={1} max={12} step={1} className="flex-1" />
+                    <span className="text-xs font-mono w-6 text-center">{colSpan}</span>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[11px] text-muted-foreground">Offset après</span>
+                  <div className="flex items-center gap-2">
+                    <Slider value={[offsetAfter]} onValueChange={([v]) => setOffsetAfter(v)} min={0} max={11} step={1} className="flex-1" />
+                    <span className="text-xs font-mono w-6 text-center">{offsetAfter}</span>
+                  </div>
+                </div>
               </div>
               {/* Visual preview bar */}
               <div className="grid grid-cols-12 gap-0.5 h-3">
-                {Array.from({ length: 12 }).map((_, i) => (
-                  <div
-                    key={i}
-                    className={`rounded-sm transition-colors ${i < colSpan ? "bg-primary" : "bg-muted"}`}
-                  />
-                ))}
+                {Array.from({ length: 12 }).map((_, i) => {
+                  const inOffset = i < offsetBefore;
+                  const inField = i >= offsetBefore && i < offsetBefore + colSpan;
+                  const inAfter = i >= offsetBefore + colSpan && i < offsetBefore + colSpan + offsetAfter;
+                  return (
+                    <div
+                      key={i}
+                      className={cn(
+                        "rounded-sm transition-colors",
+                        inField ? "bg-primary" : (inOffset || inAfter) ? "bg-primary/20" : "bg-muted"
+                      )}
+                    />
+                  );
+                })}
               </div>
+              {offsetBefore + colSpan + offsetAfter > 12 && (
+                <p className="text-[11px] text-destructive">⚠ Total dépasse 12 colonnes ({offsetBefore + colSpan + offsetAfter})</p>
+              )}
             </div>
 
             <div className="flex items-center gap-3">
