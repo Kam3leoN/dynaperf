@@ -175,27 +175,27 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
     });
   };
 
-  // Auto-calculate no-show fields
+  // Auto-calculate stat_percent fields
   useEffect(() => {
-    const autoNoShowFields = customFields.filter((f) => f.field_type === "auto_no_show");
-    if (autoNoShowFields.length === 0) return;
+    const statFields = customFields.filter((f) => f.field_type === "stat_percent");
+    if (statFields.length === 0) return;
     setData((prev) => {
       const cv = { ...prev.customFieldValues };
       let changed = false;
-      for (const field of autoNoShowFields) {
-        const srcInvId = field.field_options?.source_invites;
-        const srcPartId = field.field_options?.source_participants;
-        if (!srcInvId || !srcPartId) continue;
-        const invites = Number(cv[srcInvId]) || 0;
-        const participants = Number(cv[srcPartId]) || 0;
-        const noShow = Math.max(0, invites - participants);
-        if (cv[field.id] !== noShow) {
-          cv[field.id] = noShow;
+      for (const field of statFields) {
+        const numId = field.field_options?.source_numerator;
+        const denId = field.field_options?.source_denominator;
+        if (!numId || !denId) continue;
+        const numerator = Number(cv[numId]) || 0;
+        const denominator = Number(cv[denId]) || 0;
+        const pct = denominator > 0 ? Math.round((numerator / denominator) * 1000) / 10 : 0;
+        if (cv[field.id] !== pct) {
+          cv[field.id] = pct;
           changed = true;
         }
       }
       if (!changed) return prev;
-      const next = { ...prev, customFieldValues: cv, nbNoShow: cv[autoNoShowFields[0].id] };
+      const next = { ...prev, customFieldValues: cv };
       if (hideSubmitButton) setTimeout(() => onSubmit(next), 0);
       return next;
     });
