@@ -103,6 +103,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setSelectOptions([""]);
     setSourceNumerator("");
     setSourceDenominator("");
+    setSumOperation("add");
     if (colStart && span) {
       setAddAtPosition({ colStart, colSpan: span, rowIndex: 0 });
     } else {
