@@ -442,7 +442,7 @@ export default function Drive() {
                 <Card
                   key={doc.id}
                   className="group cursor-pointer transition-all hover:shadow-hover hover:-translate-y-0.5 overflow-hidden relative"
-                  onClick={() => downloadDoc(doc)}
+                  onClick={() => openPreview(doc)}
                 >
                   <CardContent className="p-0">
                     {/* Visual preview area */}
