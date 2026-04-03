@@ -225,7 +225,7 @@ export function calcThresholdScore(value: number, config: ThresholdConfig, maxPo
 }
 
 export function formatThresholdDisplay(config: ThresholdConfig, maxPoints: number): string {
-  const opLabel = { lt: "<", lte: "≤", gt: ">", gte: "≥" }[config.operator];
+  const opLabel = { lt: "<", lte: "≤", eq: "=", gt: ">", gte: "≥" }[config.operator];
   return `Valeur ${opLabel} ${config.value} → ${maxPoints} pts, sinon 0 pt`;
 }
 
