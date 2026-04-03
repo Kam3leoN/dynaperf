@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type DragEvent } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGripVertical } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "@/components/ui/button";
@@ -217,7 +217,7 @@ const serializeLayout = (
   });
 };
 
-const getPointerStartCol = (event: React.DragEvent<HTMLDivElement>, span: number) => {
+const getPointerStartCol = (event: DragEvent<HTMLDivElement>, span: number) => {
   const rect = event.currentTarget.getBoundingClientRect();
   const widthPerCol = rect.width / GRID_COLUMNS;
   const relativeX = event.clientX - rect.left;
