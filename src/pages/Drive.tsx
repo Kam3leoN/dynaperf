@@ -319,49 +319,65 @@ export default function Drive() {
     <AppLayout>
       <div className="space-y-4">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2 shrink-0">
             <FontAwesomeIcon icon={faBoxOpen} className="text-primary" />
             Drive
           </h1>
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1 sm:max-w-sm w-full">
-              <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher un fichier…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-9 h-10"
-              />
-              {search && (
-                <button
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  onClick={() => setSearch("")}
-                >
-                  ✕
-                </button>
-              )}
-            </div>
-            {isAdmin && (
-              <Button size="sm" variant="default" className="gap-1.5 h-10 shrink-0" onClick={() => openUploadDialog()}>
-                <FontAwesomeIcon icon={faUpload} className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Uploader</span>
-              </Button>
-            )}
-          </div>
+          {isAdmin && (
+            <Button size="sm" variant="default" className="gap-1.5 h-10 shrink-0" onClick={() => openUploadDialog()}>
+              <FontAwesomeIcon icon={faUpload} className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Uploader</span>
+            </Button>
+          )}
         </div>
 
-        {/* File size info */}
-        <p className="text-[10px] text-muted-foreground">
-          Fichiers : max {formatSize(MAX_FILE_SIZE)} • Images : max {formatSize(MAX_IMAGE_SIZE)} (JPG, PNG, WebP, SVG)
-        </p>
+        {/* Full-width search bar */}
+        <div className="relative w-full">
+          <FontAwesomeIcon icon={faSearch} className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher un fichier par nom, description…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-11 pr-10 h-12 text-base rounded-xl"
+          />
+          {search && (
+            <button
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              onClick={() => setSearch("")}
+            >
+              ✕
+            </button>
+          )}
+        </div>
 
-        {/* Search summary */}
-        {search.trim() && (
-          <p className="text-sm text-muted-foreground">
-            {filteredDocs.length} résultat{filteredDocs.length !== 1 ? "s" : ""} pour « {search} »
-          </p>
-        )}
+        {/* Type filters */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {[
+            { key: null, label: "Tout", icon: faBoxOpen },
+            { key: "image", label: "Images", icon: faFileImage },
+            { key: "pdf", label: "PDF", icon: faFilePdf },
+            { key: "doc", label: "Documents", icon: faFileWord },
+            { key: "excel", label: "Excel", icon: faFileExcel },
+            { key: "video", label: "Vidéos", icon: faFile },
+          ].map((f) => (
+            <button
+              key={f.key ?? "all"}
+              onClick={() => setTypeFilter(f.key)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                typeFilter === f.key
+                  ? "bg-primary text-primary-foreground"
+                  : "bg-secondary text-secondary-foreground hover:bg-accent"
+              }`}
+            >
+              <FontAwesomeIcon icon={f.icon} className="h-3 w-3" />
+              {f.label}
+            </button>
+          ))}
+          <span className="text-xs text-muted-foreground ml-auto">
+            {filteredDocs.length} fichier{filteredDocs.length !== 1 ? "s" : ""}
+          </span>
+        </div>
 
         {/* Documents grid */}
         {filteredDocs.length > 0 ? (
