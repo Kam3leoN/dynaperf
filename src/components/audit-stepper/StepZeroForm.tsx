@@ -49,7 +49,10 @@ const FIELD_TYPE_TO_DATA_KEY: Record<string, keyof StepZeroData> = {
   city_autocomplete: "lieu",
   lieu_autocomplete: "typeLieu",
   qualite_lieu_rating: "qualiteLieu",
+  qualite_rating: "qualiteLieu",
   date_picker: "dateEvenement",
+  heure_picker: "heureEvenement",
+  auto_no_show: "nbNoShow",
 };
 
 interface CustomFieldDef {
