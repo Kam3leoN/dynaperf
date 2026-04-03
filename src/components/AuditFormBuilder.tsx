@@ -51,7 +51,7 @@ const FIELD_TYPES_SMART = [
   { value: "qualite_lieu_rating", label: "🔗 Qualité lieu (étoiles) [ancien]" },
   { value: "date_picker", label: "🔗 Date (calendrier)" },
   { value: "heure_picker", label: "🔗 Heure (saisie)" },
-  { value: "auto_no_show", label: "🔗 No-show (calcul auto)" },
+  { value: "stat_percent", label: "📊 Statistique % (calcul auto)" },
 ];
 
 const ALL_FIELD_TYPES = [...FIELD_TYPES_SMART, ...FIELD_TYPES_STANDARD];
@@ -70,8 +70,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
   const [isRequired, setIsRequired] = useState(false);
   const [selectOptions, setSelectOptions] = useState<string[]>([""]);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [sourceInvites, setSourceInvites] = useState("");
-  const [sourceParticipants, setSourceParticipants] = useState("");
+  const [sourceNumerator, setSourceNumerator] = useState("");
+  const [sourceDenominator, setSourceDenominator] = useState("");
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -91,8 +91,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setFieldType("text");
     setIsRequired(false);
     setSelectOptions([""]);
-    setSourceInvites("");
-    setSourceParticipants("");
+    setSourceNumerator("");
+    setSourceDenominator("");
     setDialogOpen(true);
   };
 
@@ -103,13 +103,13 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setIsRequired(f.is_required);
     const opts = f.field_options?.options;
     setSelectOptions(Array.isArray(opts) && opts.length > 0 ? opts : [""]);
-    setSourceInvites(f.field_options?.source_invites || "");
-    setSourceParticipants(f.field_options?.source_participants || "");
+    setSourceNumerator(f.field_options?.source_numerator || "");
+    setSourceDenominator(f.field_options?.source_denominator || "");
     setDialogOpen(true);
   };
 
   const needsOptions = ["select", "radio", "checkbox"].includes(fieldType);
-  const isAutoNoShow = fieldType === "auto_no_show";
+  const isStatPercent = fieldType === "stat_percent";
   const numberFields = fields.filter((f) => f.field_type === "number");
 
   const save = async () => {
@@ -120,9 +120,9 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     let fieldOpts: any = null;
     if (needsOptions) {
       fieldOpts = { options: validOpts };
-    } else if (isAutoNoShow) {
-      if (!sourceInvites || !sourceParticipants) { toast.error("Sélectionnez les deux champs sources"); return; }
-      fieldOpts = { source_invites: sourceInvites, source_participants: sourceParticipants };
+    } else if (isStatPercent) {
+      if (!sourceNumerator || !sourceDenominator) { toast.error("Sélectionnez les deux champs sources"); return; }
+      fieldOpts = { source_numerator: sourceNumerator, source_denominator: sourceDenominator };
     }
 
     const payload = {
@@ -289,20 +289,20 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
               </div>
             )}
 
-            {isAutoNoShow && (
+            {isStatPercent && (
               <div className="space-y-3">
-                <Label>Champ source « Invités »</Label>
-                <Select value={sourceInvites} onValueChange={setSourceInvites}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner le champ invités" /></SelectTrigger>
+                <Label>Champ numérateur</Label>
+                <Select value={sourceNumerator} onValueChange={setSourceNumerator}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner le numérateur" /></SelectTrigger>
                   <SelectContent>
                     {numberFields.map((nf) => (
                       <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <Label>Champ source « Participants »</Label>
-                <Select value={sourceParticipants} onValueChange={setSourceParticipants}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner le champ participants" /></SelectTrigger>
+                <Label>Champ dénominateur</Label>
+                <Select value={sourceDenominator} onValueChange={setSourceDenominator}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner le dénominateur" /></SelectTrigger>
                   <SelectContent>
                     {numberFields.map((nf) => (
                       <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
@@ -310,7 +310,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                   </SelectContent>
                 </Select>
                 {numberFields.length === 0 && (
-                  <p className="text-xs text-muted-foreground">Ajoutez d'abord des champs « Nombre » pour les invités et participants.</p>
+                  <p className="text-xs text-muted-foreground">Ajoutez d'abord des champs « Nombre » pour configurer la statistique.</p>
                 )}
               </div>
             )}
