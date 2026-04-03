@@ -445,11 +445,10 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
       )}
 
       <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setLayoutDraft([]); }}>
-        <DialogContent className="max-w-4xl rounded-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-lg rounded-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? "Modifier le champ" : "Ajouter un champ"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
           <div className="space-y-4">
                 <div className="space-y-1.5">
                   <Label>Libellé *</Label>
