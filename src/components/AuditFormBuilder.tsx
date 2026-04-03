@@ -125,6 +125,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setFieldType(f.field_type);
     setIsRequired(f.is_required);
     setColSpan(f.col_span || 6);
+    setOffsetBefore(f.col_offset_before || 0);
+    setOffsetAfter(f.col_offset_after || 0);
     const opts = f.field_options?.options;
     setSelectOptions(Array.isArray(opts) && opts.length > 0 ? opts : [""]);
     setSourceNumerator(f.field_options?.source_numerator || "");
