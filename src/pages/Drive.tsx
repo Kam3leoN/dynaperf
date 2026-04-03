@@ -90,7 +90,7 @@ function formatModifiedDate(dateStr: string) {
 }
 
 type ViewMode = "cards" | "tree";
-type Density = "compact" | "comfortable";
+
 
 // Map known folder names to audit type SVG icons
 const FOLDER_NAME_TO_TYPE: Record<string, string> = {
