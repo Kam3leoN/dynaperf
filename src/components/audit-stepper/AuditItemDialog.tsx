@@ -84,6 +84,7 @@ export function AuditItemDialog({
   const isBoolAuto = isNoShowAuto || hasBoolCondition;
   const tiers = parseScoringTiers(item.scoringRules);
   const incrementConfig = parseIncrementConfig(item.scoringRules);
+  const thresholdConfig = parseThresholdConfig(item.scoringRules);
   const autoBoolResult = (() => {
     if (isNoShowAuto) return (autoValue ?? 0) === 0;
     if (hasBoolCondition && autoValue !== undefined) {
