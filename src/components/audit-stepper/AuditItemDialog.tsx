@@ -1,12 +1,7 @@
 import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +13,9 @@ import {
   AuditItemDef,
   calcParticipantsScore,
   calcLinearScore,
+  parseScoringTiers,
+  calcTiersScore,
+  formatTiersDisplay,
 } from "@/data/auditItems";
 import { StepZeroData } from "./StepZeroForm";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -52,25 +50,20 @@ function getAutoValue(item: AuditItemDef, stepZeroData?: StepZeroData): number |
     nbNoShow: stepZeroData.nbNoShow,
     nbRdvPris: stepZeroData.nbRdvPris,
   };
-  return fieldMap[item.autoField];
+  if (item.autoField in fieldMap && fieldMap[item.autoField] !== undefined) return fieldMap[item.autoField];
+  const cv = stepZeroData.customFieldValues?.[item.autoField];
+  if (cv !== undefined && cv !== null && cv !== "") return Number(cv) || 0;
+  return undefined;
 }
 
 export function AuditItemDialog({
-  item,
-  stepIndex,
-  totalSteps,
-  categoryName,
-  open,
-  initialAnswer,
-  onSubmit,
-  onBack,
-  onClose,
-  isLast,
-  stepZeroData,
+  item, stepIndex, totalSteps, categoryName, open, initialAnswer,
+  onSubmit, onBack, onClose, isLast, stepZeroData,
 }: Props) {
   const autoValue = getAutoValue(item, stepZeroData);
   const isAutoFilled = autoValue !== undefined;
   const isNoShowAuto = item.autoField === "nbNoShow";
+  const tiers = parseScoringTiers(item.scoringRules);
 
   const [boolVal, setBoolVal] = useState<boolean | null>(() => {
     if (isNoShowAuto) return (autoValue ?? 0) === 0;
@@ -86,15 +79,12 @@ export function AuditItemDialog({
   const [comment, setComment] = useState(initialAnswer?.comment ?? "");
 
   function getScore(): number {
-    if (isNoShowAuto) {
-      return (autoValue ?? 0) === 0 ? item.maxPoints : 0;
-    }
+    if (isNoShowAuto) return (autoValue ?? 0) === 0 ? item.maxPoints : 0;
     if (item.inputType === "boolean") return boolVal === true ? item.maxPoints : 0;
     if (item.inputType === "number") {
-      const n = parseInt(numVal) || 0;
-      if (item.scoringRules && item.scoringRules.includes("participants")) {
-        return calcParticipantsScore(n);
-      }
+      const n = isAutoFilled ? (autoValue ?? 0) : (parseInt(numVal) || 0);
+      if (tiers) return calcTiersScore(n, tiers);
+      if (item.scoringRules && item.scoringRules.includes("participants")) return calcParticipantsScore(n);
       return calcLinearScore(n, item.maxPoints);
     }
     if (item.inputType === "checklist") return checklist.filter(Boolean).length;
@@ -118,197 +108,105 @@ export function AuditItemDialog({
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-center gap-2 mb-1">
-            <Badge variant="outline" className="text-xs font-mono">
-              {stepIndex}/{totalSteps}
-            </Badge>
-            <Badge variant="secondary" className="text-xs">
-              {categoryName}
-            </Badge>
-            <Badge
-              className={cn(
-                "text-xs",
-                currentScore === item.maxPoints
-                  ? "bg-emerald-600 text-white"
-                  : currentScore > 0
-                  ? "bg-amber-500 text-white"
-                  : "bg-muted text-muted-foreground"
-              )}
-            >
+            <Badge variant="outline" className="text-xs font-mono">{stepIndex}/{totalSteps}</Badge>
+            <Badge variant="secondary" className="text-xs">{categoryName}</Badge>
+            <Badge className={cn("text-xs", currentScore === item.maxPoints ? "bg-emerald-600 text-white" : currentScore > 0 ? "bg-amber-500 text-white" : "bg-muted text-muted-foreground")}>
               {currentScore}/{item.maxPoints} pts
             </Badge>
             {isAutoFilled && (
               <Badge variant="outline" className="text-xs gap-1 text-muted-foreground">
-                <FontAwesomeIcon icon={faLock} className="h-2.5 w-2.5" />
-                Auto
+                <FontAwesomeIcon icon={faLock} className="h-2.5 w-2.5" /> Auto
               </Badge>
             )}
           </div>
           <DialogTitle className="text-lg">{item.title}</DialogTitle>
-          <DialogDescription className="whitespace-pre-line text-sm leading-relaxed">
-            {item.description}
-          </DialogDescription>
+          <DialogDescription className="whitespace-pre-line text-sm leading-relaxed">{item.description}</DialogDescription>
         </DialogHeader>
 
-        {/* Conditions de validation */}
         <div className="rounded-lg border border-border bg-muted/50 p-3 space-y-1">
           <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            <FontAwesomeIcon icon={faCircleInfo} className="h-3 w-3" />
-            Conditions de validation
+            <FontAwesomeIcon icon={faCircleInfo} className="h-3 w-3" /> Conditions de validation
           </div>
-          <p className="text-sm whitespace-pre-line text-foreground/80">
-            {item.condition}
-          </p>
-          {item.scoringRules && (
+          <p className="text-sm whitespace-pre-line text-foreground/80">{item.condition}</p>
+          {tiers && (
             <p className="text-sm whitespace-pre-line text-foreground/80 mt-2 pt-2 border-t border-border">
-              {item.scoringRules}
+              {formatTiersDisplay(tiers)}
             </p>
+          )}
+          {!tiers && item.scoringRules && (
+            <p className="text-sm whitespace-pre-line text-foreground/80 mt-2 pt-2 border-t border-border">{item.scoringRules}</p>
           )}
         </div>
 
-        {/* Input area */}
         <div className="space-y-4 pt-2">
-          {/* Auto-filled number items (participants, invités, rdv) */}
           {isAutoFilled && !isNoShowAuto && item.inputType === "number" && (
             <div className="space-y-2">
-              <Label>Nombre (pré-rempli)</Label>
-              <Input
-                type="number"
-                value={numVal}
-                disabled
-                className="bg-muted cursor-not-allowed"
-              />
-              <p className="text-xs text-muted-foreground">
-                Valeur renseignée à l'étape précédente. Non modifiable.
-              </p>
+              <Label>Valeur saisie : <span className="font-bold">{autoValue}</span></Label>
+              <Input type="number" value={numVal} disabled className="bg-muted cursor-not-allowed" />
+              <p className="text-xs text-muted-foreground">Valeur renseignée à l'étape précédente. Non modifiable.</p>
             </div>
           )}
 
-          {/* Auto no-show: display status */}
           {isNoShowAuto && (
             <div className="space-y-2">
               <div className="flex items-center gap-4">
-                <Button
-                  type="button"
-                  variant={boolVal ? "default" : "outline"}
-                  disabled
-                  className={cn(
-                    "flex-1 cursor-not-allowed",
-                    boolVal && "bg-emerald-600 text-white"
-                  )}
-                >
-                  <FontAwesomeIcon icon={faCheck} className="mr-1 h-3 w-3" />
-                  Validé
+                <Button type="button" variant={boolVal ? "default" : "outline"} disabled className={cn("flex-1 cursor-not-allowed", boolVal && "bg-emerald-600 text-white")}>
+                  <FontAwesomeIcon icon={faCheck} className="mr-1 h-3 w-3" /> Validé
                 </Button>
-                <Button
-                  type="button"
-                  variant={!boolVal ? "destructive" : "outline"}
-                  disabled
-                  className="flex-1 cursor-not-allowed"
-                >
-                  Non validé
-                </Button>
+                <Button type="button" variant={!boolVal ? "destructive" : "outline"} disabled className="flex-1 cursor-not-allowed">Non validé</Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                {(autoValue ?? 0) > 0
-                  ? `${autoValue} no-show détecté(s) — item non validé automatiquement.`
-                  : "Aucun no-show — item validé automatiquement."}
+                {(autoValue ?? 0) > 0 ? `${autoValue} no-show détecté(s) — item non validé automatiquement.` : "Aucun no-show — item validé automatiquement."}
               </p>
             </div>
           )}
 
-          {/* Regular boolean (non-auto) */}
           {item.inputType === "boolean" && !isAutoFilled && (
             <div className="flex items-center gap-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setBoolVal(true)}
-                className={cn(
-                  "flex-1 transition-colors",
-                  boolVal === true
-                    ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700"
-                    : "hover:bg-accent hover:text-accent-foreground"
-                )}
-              >
-                <FontAwesomeIcon icon={faCheck} className="mr-1 h-3 w-3" />
-                Validé
+              <Button type="button" variant="outline" onClick={() => setBoolVal(true)}
+                className={cn("flex-1 transition-colors", boolVal === true ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700" : "hover:bg-accent hover:text-accent-foreground")}>
+                <FontAwesomeIcon icon={faCheck} className="mr-1 h-3 w-3" /> Validé
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setBoolVal(false)}
-                className={cn(
-                  "flex-1 transition-colors",
-                  boolVal === false
-                    ? "bg-destructive text-destructive-foreground border-destructive hover:bg-destructive/90"
-                    : "hover:bg-accent hover:text-accent-foreground"
-                )}
-              >
+              <Button type="button" variant="outline" onClick={() => setBoolVal(false)}
+                className={cn("flex-1 transition-colors", boolVal === false ? "bg-destructive text-destructive-foreground border-destructive hover:bg-destructive/90" : "hover:bg-accent hover:text-accent-foreground")}>
                 Non validé
               </Button>
             </div>
           )}
 
-          {/* Regular number (non-auto) */}
           {item.inputType === "number" && !isAutoFilled && (
             <div className="space-y-2">
               <Label>Nombre</Label>
-              <Input
-                type="number"
-                min={0}
-                value={numVal}
-                onChange={(e) => setNumVal(e.target.value)}
-                placeholder="Entrez le nombre..."
-              />
+              <Input type="number" min={0} value={numVal} onChange={(e) => setNumVal(e.target.value)} placeholder="Entrez le nombre..." />
+              {numVal && tiers && (
+                <p className="text-xs text-muted-foreground">
+                  Valeur saisie : <span className="font-bold text-foreground">{numVal}</span>
+                </p>
+              )}
             </div>
           )}
 
           {item.inputType === "checklist" && item.checklistItems && (
             <div className="space-y-2 max-h-[280px] overflow-y-auto pr-1">
               {item.checklistItems.map((label, idx) => (
-                <label
-                  key={idx}
-                  className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer transition-colors hover:bg-accent/50"
-                  style={
-                    checklist[idx]
-                      ? { borderColor: "hsl(var(--chart-2))", backgroundColor: "hsl(var(--chart-2) / 0.06)" }
-                      : {}
-                  }
-                >
-                  <Checkbox
-                    checked={checklist[idx]}
-                    onCheckedChange={(v) => {
-                      const next = [...checklist];
-                      next[idx] = !!v;
-                      setChecklist(next);
-                    }}
-                    className="mt-0.5"
-                  />
+                <label key={idx} className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer transition-colors hover:bg-accent/50"
+                  style={checklist[idx] ? { borderColor: "hsl(var(--chart-2))", backgroundColor: "hsl(var(--chart-2) / 0.06)" } : {}}>
+                  <Checkbox checked={checklist[idx]} onCheckedChange={(v) => { const next = [...checklist]; next[idx] = !!v; setChecklist(next); }} className="mt-0.5" />
                   <span className="text-sm leading-snug">{label}</span>
                 </label>
               ))}
             </div>
           )}
 
-          {/* Comment */}
           <div className="space-y-2">
-            <Label className="text-xs text-muted-foreground">
-              Commentaire (optionnel)
-            </Label>
-            <RichTextarea
-              value={comment}
-              onChange={setComment}
-              placeholder="Ajouter un commentaire..."
-              rows={2}
-              minimal
-            />
+            <Label className="text-xs text-muted-foreground">Commentaire (optionnel)</Label>
+            <RichTextarea value={comment} onChange={setComment} placeholder="Ajouter un commentaire..." rows={2} minimal />
           </div>
         </div>
 
         <DialogFooter className="flex-row gap-2 pt-2">
           <Button type="button" variant="outline" onClick={onBack} className="gap-1">
-            <FontAwesomeIcon icon={faChevronLeft} className="h-3 w-3" />
-            Retour
+            <FontAwesomeIcon icon={faChevronLeft} className="h-3 w-3" /> Retour
           </Button>
           <Button type="button" onClick={handleSubmit} className="gap-1 flex-1">
             {isLast ? "Terminer l'audit" : "Suivant"}

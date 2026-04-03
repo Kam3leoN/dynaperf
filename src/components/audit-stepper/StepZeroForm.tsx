@@ -345,9 +345,9 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
         );
       case "textarea":
         return (
-          <Textarea
+          <RichTextarea
             value={val}
-            onChange={(e) => setFieldValue(field.id, field.field_type, e.target.value)}
+            onChange={(v) => setFieldValue(field.id, field.field_type, v)}
             placeholder={field.field_label}
             rows={3}
           />

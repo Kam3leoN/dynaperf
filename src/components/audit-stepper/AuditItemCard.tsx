@@ -11,6 +11,9 @@ import {
   AuditItemDef,
   calcParticipantsScore,
   calcLinearScore,
+  parseScoringTiers,
+  calcTiersScore,
+  formatTiersDisplay,
 } from "@/data/auditItems";
 import { StepZeroData } from "./StepZeroForm";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -35,22 +38,28 @@ interface Props {
 
 function getAutoValue(item: AuditItemDef, stepZeroData?: StepZeroData): number | undefined {
   if (!stepZeroData || !item.autoField) return undefined;
+  // Legacy keys
   const fieldMap: Record<string, number | undefined> = {
     nbParticipants: stepZeroData.nbParticipants,
     nbInvites: stepZeroData.nbInvites,
     nbNoShow: stepZeroData.nbNoShow,
     nbRdvPris: stepZeroData.nbRdvPris,
   };
-  return fieldMap[item.autoField];
+  if (item.autoField in fieldMap && fieldMap[item.autoField] !== undefined) return fieldMap[item.autoField];
+  // Custom field reference (UUID)
+  const cv = stepZeroData.customFieldValues?.[item.autoField];
+  if (cv !== undefined && cv !== null && cv !== "") return Number(cv) || 0;
+  return undefined;
 }
 
 function computeScore(item: AuditItemDef, boolVal: boolean | null, numVal: string, checklist: boolean[], autoValue?: number): number {
   const isNoShowAuto = item.autoField === "nbNoShow";
-  // 0 no-shows = validated (max points), any positive number = not validated (0 points)
   if (isNoShowAuto) return (autoValue ?? 0) === 0 ? item.maxPoints : 0;
   if (item.inputType === "boolean") return boolVal === true ? item.maxPoints : 0;
   if (item.inputType === "number") {
-    const n = parseInt(numVal) || 0;
+    const n = autoValue !== undefined ? autoValue : (parseInt(numVal) || 0);
+    const tiers = parseScoringTiers(item.scoringRules);
+    if (tiers) return calcTiersScore(n, tiers);
     if (item.scoringRules && item.scoringRules.includes("participants")) {
       return calcParticipantsScore(n);
     }
@@ -65,6 +74,7 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
   const isAutoFilled = autoValue !== undefined;
   const isNoShowAuto = item.autoField === "nbNoShow";
   const noShowNotEntered = isNoShowAuto && autoValue === undefined;
+  const tiers = parseScoringTiers(item.scoringRules);
 
   const [boolVal, setBoolVal] = useState<boolean | null>(() => {
     if (isNoShowAuto) return autoValue !== undefined ? autoValue === 0 : null;
@@ -75,7 +85,6 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
     return answer?.rawValue !== undefined ? String(answer.rawValue) : "";
   });
 
-  // Sync boolVal & numVal when autoValue changes (e.g. step 0 data updated)
   useEffect(() => {
     if (isNoShowAuto) {
       setBoolVal(autoValue !== undefined ? autoValue === 0 : null);
@@ -83,20 +92,17 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
       setNumVal(String(autoValue ?? 0));
     }
   }, [autoValue, isNoShowAuto, isAutoFilled]);
+
   const [checklist, setChecklist] = useState<boolean[]>(
     answer?.checklist ?? new Array(item.checklistItems?.length ?? 0).fill(false)
   );
   const [comment, setComment] = useState(answer?.comment ?? "");
-
   const mountedRef = useRef(false);
 
-  // Emit changes
   useEffect(() => {
     const score = computeScore(item, boolVal, numVal, checklist, autoValue);
     const isTouched = mountedRef.current || isAutoFilled;
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-    }
+    if (!mountedRef.current) mountedRef.current = true;
     onChange({
       score,
       comment: comment.trim() || undefined,
@@ -112,6 +118,8 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
   const isTouched = answer?.touched || false;
   const isExplicitZero = isTouched && currentScore === 0;
 
+  const displayValue = isAutoFilled && !isNoShowAuto ? autoValue : (parseInt(numVal) || 0);
+
   return (
     <Card className={cn(
       "transition-all border-l-4",
@@ -123,12 +131,7 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
             <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap mb-1.5">
               <span className="text-[11px] sm:text-xs text-muted-foreground font-mono">{index + 1}.</span>
               <Badge variant="secondary" className="text-[10px]">{categoryName}</Badge>
-              <Badge
-                className={cn(
-                  "text-[10px]",
-                  isMax ? "bg-emerald-600 text-white" : currentScore > 0 ? "bg-amber-500 text-white" : isExplicitZero ? "bg-destructive text-white" : "bg-muted text-muted-foreground"
-                )}
-              >
+              <Badge className={cn("text-[10px]", isMax ? "bg-emerald-600 text-white" : currentScore > 0 ? "bg-amber-500 text-white" : isExplicitZero ? "bg-destructive text-white" : "bg-muted text-muted-foreground")}>
                 {currentScore}/{item.maxPoints} pts
               </Badge>
               {isAutoFilled && (
@@ -141,7 +144,7 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
           </div>
         </div>
 
-        {(item.description || item.condition) && (
+        {(item.description || item.condition || tiers) && (
           <div className="rounded-md border border-border bg-muted/30 p-2.5 sm:p-3 space-y-1.5">
             {item.description && (
               <p className="text-xs sm:text-sm text-muted-foreground whitespace-pre-line leading-relaxed">{item.description}</p>
@@ -152,7 +155,12 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
                 <span className="whitespace-pre-line">{item.condition}</span>
               </div>
             )}
-            {item.scoringRules && (
+            {tiers && (
+              <p className="text-xs sm:text-sm text-foreground/70 pt-1.5 border-t border-border whitespace-pre-line leading-relaxed">
+                {formatTiersDisplay(tiers)}
+              </p>
+            )}
+            {!tiers && item.scoringRules && !parseScoringTiers(item.scoringRules) && (
               <p className="text-xs sm:text-sm text-foreground/70 pt-1.5 border-t border-border whitespace-pre-line leading-relaxed">
                 {item.scoringRules}
               </p>
@@ -161,11 +169,12 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
         )}
 
         <div className="space-y-3">
+          {/* Auto-filled number (disabled) */}
           {isAutoFilled && !isNoShowAuto && item.inputType === "number" && (
             <div className="space-y-1.5">
-              <Label className="text-xs">Nombre (pré-rempli)</Label>
+              <Label className="text-xs">Valeur saisie : <span className="font-bold text-foreground">{autoValue}</span></Label>
               <Input type="number" value={numVal} disabled className="bg-muted cursor-not-allowed h-10 text-sm" />
-              <p className="text-[11px] text-muted-foreground">Valeur renseignée à l'étape précédente.</p>
+              <p className="text-[11px] text-muted-foreground">Valeur renseignée à l'étape précédente. Non modifiable.</p>
             </div>
           )}
 
@@ -214,6 +223,11 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
             <div className="space-y-1.5">
               <Label className="text-xs sm:text-sm">Nombre</Label>
               <Input type="number" min={0} value={numVal} onChange={e => setNumVal(e.target.value)} placeholder="Entrez le nombre..." className="h-10 text-sm" />
+              {numVal && tiers && (
+                <p className="text-xs text-muted-foreground">
+                  Valeur saisie : <span className="font-bold text-foreground">{numVal}</span>
+                </p>
+              )}
             </div>
           )}
 
