@@ -832,6 +832,7 @@ export default function AdminAuditGridInline() {
                           className="h-9 rounded-md border border-input bg-background px-2 text-xs">
                           <option value="lt">{"< Inférieur"}</option>
                           <option value="lte">{"≤ Inférieur ou égal"}</option>
+                          <option value="eq">{"= Égal"}</option>
                           <option value="gt">{"> Supérieur"}</option>
                           <option value="gte">{"≥ Supérieur ou égal"}</option>
                         </select>
