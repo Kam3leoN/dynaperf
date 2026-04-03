@@ -16,6 +16,8 @@ import {
   parseScoringTiers,
   calcTiersScore,
   formatTiersDisplay,
+  parseIncrementConfig,
+  calcIncrementScore,
 } from "@/data/auditItems";
 import { StepZeroData } from "./StepZeroForm";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -78,7 +80,7 @@ export function AuditItemDialog({
   const hasBoolCondition = parsed?.condition && item.inputType === "boolean";
   const isBoolAuto = isNoShowAuto || hasBoolCondition;
   const tiers = parseScoringTiers(item.scoringRules);
-
+  const incrementConfig = parseIncrementConfig(item.scoringRules);
   const autoBoolResult = (() => {
     if (isNoShowAuto) return (autoValue ?? 0) === 0;
     if (hasBoolCondition && autoValue !== undefined) {
@@ -108,6 +110,7 @@ export function AuditItemDialog({
     if (item.inputType === "boolean") return boolVal === true ? item.maxPoints : 0;
     if (item.inputType === "number") {
       const n = isAutoFilled ? (autoValue ?? 0) : (parseInt(numVal) || 0);
+      if (incrementConfig) return calcIncrementScore(n, incrementConfig, item.maxPoints);
       if (tiers) return calcTiersScore(n, tiers);
       if (item.scoringRules && item.scoringRules.includes("participants")) return calcParticipantsScore(n);
       return calcLinearScore(n, item.maxPoints);
@@ -158,7 +161,13 @@ export function AuditItemDialog({
               {formatTiersDisplay(tiers)}
             </p>
           )}
-          {!tiers && item.scoringRules && (
+          {incrementConfig && (
+            <p className="text-sm text-foreground/80 mt-2 pt-2 border-t border-border">
+              {incrementConfig.minValue > 0 ? `Min. ${incrementConfig.minValue} pour scorer. ` : ""}
+              {incrementConfig.step === 1 ? "1 = 1 pt" : `${incrementConfig.step} = 1 pt`}, max {item.maxPoints} pts
+            </p>
+          )}
+          {!tiers && !incrementConfig && item.scoringRules && (
             <p className="text-sm whitespace-pre-line text-foreground/80 mt-2 pt-2 border-t border-border">{item.scoringRules}</p>
           )}
         </div>
