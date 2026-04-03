@@ -671,17 +671,6 @@ export default function Drive() {
                 <FontAwesomeIcon icon={faList} className="h-4 w-4" />
               </button>
             </div>
-            {/* Density toggle */}
-            {viewMode === "cards" && (
-              <div className="flex border border-border rounded-lg overflow-hidden shrink-0">
-                <button className={`h-10 w-10 flex items-center justify-center transition-colors ${density === "compact" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary"}`} onClick={() => setDensity("compact")} title="Compact">
-                  <FontAwesomeIcon icon={faCompress} className="h-4 w-4" />
-                </button>
-                <button className={`h-10 w-10 flex items-center justify-center transition-colors ${density === "comfortable" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary"}`} onClick={() => setDensity("comfortable")} title="Aéré">
-                  <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />
-                </button>
-              </div>
-            )}
           </div>
         </div>
 
