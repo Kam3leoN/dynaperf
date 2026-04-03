@@ -223,8 +223,8 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
         const a = Number(cv[aId]) || 0;
         const b = Number(cv[bId]) || 0;
         const result = b - a;
-        if (cv[field.id] !== sum) {
-          cv[field.id] = sum;
+        if (cv[field.id] !== result) {
+          cv[field.id] = result;
           changed = true;
         }
       }
