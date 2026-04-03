@@ -7,14 +7,16 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Slider } from "@/components/ui/slider";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faPlus, faTrashCan, faPenToSquare, faGripVertical, faXmark,
+  faPlus, faTrashCan, faPenToSquare, faGripVertical, faXmark, faEye, faWrench,
 } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
+import { StepZeroForm } from "@/components/audit-stepper/StepZeroForm";
 
 interface CustomField {
   id: string;
@@ -24,6 +26,7 @@ interface CustomField {
   field_options: any;
   is_required: boolean;
   sort_order: number;
+  col_span: number;
 }
 
 const FIELD_TYPES_STANDARD = [
@@ -56,6 +59,15 @@ const FIELD_TYPES_SMART = [
 
 const ALL_FIELD_TYPES = [...FIELD_TYPES_SMART, ...FIELD_TYPES_STANDARD];
 
+const COL_SPAN_OPTIONS = [
+  { value: 3, label: "3/12 — ¼" },
+  { value: 4, label: "4/12 — ⅓" },
+  { value: 6, label: "6/12 — ½" },
+  { value: 8, label: "8/12 — ⅔" },
+  { value: 9, label: "9/12 — ¾" },
+  { value: 12, label: "12/12 — Plein" },
+];
+
 interface Props {
   auditTypeKey: string;
 }
@@ -68,10 +80,14 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
   const [fieldLabel, setFieldLabel] = useState("");
   const [fieldType, setFieldType] = useState("text");
   const [isRequired, setIsRequired] = useState(false);
+  const [colSpan, setColSpan] = useState(6);
   const [selectOptions, setSelectOptions] = useState<string[]>([""]);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [sourceNumerator, setSourceNumerator] = useState("");
   const [sourceDenominator, setSourceDenominator] = useState("");
+  const [previewMode, setPreviewMode] = useState(false);
+  // Force StepZeroForm remount on toggle
+  const [previewKey, setPreviewKey] = useState(0);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -90,6 +106,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setFieldLabel("");
     setFieldType("text");
     setIsRequired(false);
+    setColSpan(6);
     setSelectOptions([""]);
     setSourceNumerator("");
     setSourceDenominator("");
@@ -101,6 +118,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setFieldLabel(f.field_label);
     setFieldType(f.field_type);
     setIsRequired(f.is_required);
+    setColSpan(f.col_span || 6);
     const opts = f.field_options?.options;
     setSelectOptions(Array.isArray(opts) && opts.length > 0 ? opts : [""]);
     setSourceNumerator(f.field_options?.source_numerator || "");
@@ -132,6 +150,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
       is_required: isRequired,
       field_options: fieldOpts,
       sort_order: editing ? editing.sort_order : fields.length,
+      col_span: colSpan,
     };
 
     if (editing) {
@@ -166,7 +185,6 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
   };
   const handleDragEnd = async () => {
     setDragIdx(null);
-    // Persist new sort_order
     await Promise.all(
       fields.map((f, i) =>
         supabase.from("audit_type_custom_fields").update({ sort_order: i }).eq("id", f.id)
@@ -180,55 +198,85 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <div>
           <h3 className="text-sm font-semibold text-foreground">Champs du formulaire</h3>
           <p className="text-xs text-muted-foreground">Construisez le formulaire « Informations générales » de cet audit</p>
         </div>
-        <Button variant="outline" size="sm" onClick={openNew} className="gap-1.5">
-          <FontAwesomeIcon icon={faPlus} className="h-3 w-3" /> Ajouter
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant={previewMode ? "default" : "outline"}
+            size="sm"
+            onClick={() => { setPreviewMode(!previewMode); setPreviewKey((k) => k + 1); }}
+            className="gap-1.5"
+          >
+            <FontAwesomeIcon icon={previewMode ? faWrench : faEye} className="h-3 w-3" />
+            {previewMode ? "Éditeur" : "Aperçu"}
+          </Button>
+          {!previewMode && (
+            <Button variant="outline" size="sm" onClick={openNew} className="gap-1.5">
+              <FontAwesomeIcon icon={faPlus} className="h-3 w-3" /> Ajouter
+            </Button>
+          )}
+        </div>
       </div>
 
-      {fields.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-6 border border-dashed border-border rounded-xl">
-          Aucun champ. Cliquez sur « Ajouter » pour construire votre formulaire.
-        </p>
-      ) : (
-        <div className="space-y-2">
-          {fields.map((f, idx) => (
-            <Card
-              key={f.id}
-              className={`group cursor-grab ${dragIdx === idx ? "opacity-50" : ""}`}
-              draggable
-              onDragStart={() => handleDragStart(idx)}
-              onDragOver={(e) => handleDragOver(e, idx)}
-              onDragEnd={handleDragEnd}
-            >
-              <CardContent className="py-3 px-4 flex items-center gap-3">
-                <FontAwesomeIcon icon={faGripVertical} className="h-3.5 w-3.5 text-muted-foreground/40 cursor-grab" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-foreground truncate">{f.field_label}</p>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <Badge variant="secondary" className="text-[10px]">{getTypeLabel(f.field_type)}</Badge>
-                    {f.is_required && <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">Requis</Badge>}
-                    {f.field_options?.options && (
-                      <span className="text-[10px] text-muted-foreground">{f.field_options.options.length} options</span>
-                    )}
-                  </div>
-                </div>
-                <div className="flex gap-1">
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(f)}>
-                    <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteField(f.id)}>
-                    <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-destructive" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+      {previewMode ? (
+        <div className="border border-dashed border-primary/30 rounded-2xl p-4 bg-muted/30">
+          <p className="text-xs text-primary font-medium mb-3 text-center">
+            👁️ Aperçu du rendu en remplissage
+          </p>
+          <StepZeroForm
+            key={previewKey}
+            typeEvenement={auditTypeKey}
+            onSubmit={() => {}}
+            hideSubmitButton
+          />
         </div>
+      ) : (
+        <>
+          {fields.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-6 border border-dashed border-border rounded-xl">
+              Aucun champ. Cliquez sur « Ajouter » pour construire votre formulaire.
+            </p>
+          ) : (
+            <div className="space-y-2">
+              {fields.map((f, idx) => (
+                <Card
+                  key={f.id}
+                  className={`group cursor-grab ${dragIdx === idx ? "opacity-50" : ""}`}
+                  draggable
+                  onDragStart={() => handleDragStart(idx)}
+                  onDragOver={(e) => handleDragOver(e, idx)}
+                  onDragEnd={handleDragEnd}
+                >
+                  <CardContent className="py-3 px-4 flex items-center gap-3">
+                    <FontAwesomeIcon icon={faGripVertical} className="h-3.5 w-3.5 text-muted-foreground/40 cursor-grab" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground truncate">{f.field_label}</p>
+                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                        <Badge variant="secondary" className="text-[10px]">{getTypeLabel(f.field_type)}</Badge>
+                        {f.is_required && <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">Requis</Badge>}
+                        <Badge variant="outline" className="text-[10px]">{f.col_span || 6}/12 col</Badge>
+                        {f.field_options?.options && (
+                          <span className="text-[10px] text-muted-foreground">{f.field_options.options.length} options</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(f)}>
+                        <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteField(f.id)}>
+                        <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-destructive" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -261,6 +309,32 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Column span selector */}
+            <div className="space-y-2">
+              <Label>Largeur (colonnes sur 12)</Label>
+              <div className="flex items-center gap-3">
+                <Slider
+                  value={[colSpan]}
+                  onValueChange={([v]) => setColSpan(v)}
+                  min={1}
+                  max={12}
+                  step={1}
+                  className="flex-1"
+                />
+                <span className="text-sm font-mono font-semibold w-12 text-center bg-muted rounded px-2 py-1">{colSpan}/12</span>
+              </div>
+              {/* Visual preview bar */}
+              <div className="grid grid-cols-12 gap-0.5 h-3">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className={`rounded-sm transition-colors ${i < colSpan ? "bg-primary" : "bg-muted"}`}
+                  />
+                ))}
+              </div>
+            </div>
+
             <div className="flex items-center gap-3">
               <Switch checked={isRequired} onCheckedChange={setIsRequired} id="req" />
               <Label htmlFor="req">Champ obligatoire</Label>

@@ -63,6 +63,7 @@ interface CustomFieldDef {
   field_options: any;
   is_required: boolean;
   sort_order: number;
+  col_span: number;
 }
 
 interface Props {
