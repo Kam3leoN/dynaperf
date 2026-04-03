@@ -190,13 +190,12 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
       const cv = { ...prev.customFieldValues };
       let changed = false;
       for (const field of statFields) {
-        const aId = field.field_options?.source_a || field.field_options?.source_numerator;
-        const bId = field.field_options?.source_b || field.field_options?.source_denominator;
-        if (!aId || !bId) continue;
-        const a = Number(cv[aId]) || 0;
-        const b = Number(cv[bId]) || 0;
-        const total = a + b;
-        const pct = total > 0 ? Math.round((a / total) * 1000) / 10 : 0;
+        const numId = field.field_options?.source_numerator;
+        const denId = field.field_options?.source_denominator;
+        if (!numId || !denId) continue;
+        const numerator = Number(cv[numId]) || 0;
+        const denominator = Number(cv[denId]) || 0;
+        const pct = denominator > 0 ? Math.round((numerator / denominator) * 1000) / 10 : 0;
         if (cv[field.id] !== pct) {
           cv[field.id] = pct;
           changed = true;
