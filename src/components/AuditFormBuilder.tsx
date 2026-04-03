@@ -172,7 +172,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     } else if (needsSources) {
       if (!sourceNumerator || !sourceDenominator) { toast.error("Sélectionnez les deux champs sources"); return; }
       fieldOpts = isStatPercent
-        ? { source_numerator: sourceNumerator, source_denominator: sourceDenominator }
+        ? { source_a: sourceNumerator, source_b: sourceDenominator }
         : { source_a: sourceNumerator, source_b: sourceDenominator, operation: sumOperation };
     }
 
@@ -374,24 +374,27 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                         </div>
                       </>
                     )}
-                    <Label>{isStatPercent ? "Champ numérateur" : "Champ A (nombre)"}</Label>
+                    <Label>Champ A (nombre)</Label>
                     <Select value={sourceNumerator} onValueChange={setSourceNumerator}>
-                      <SelectTrigger><SelectValue placeholder={isStatPercent ? "Sélectionner le numérateur" : "Sélectionner le champ A"} /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Sélectionner le champ A" /></SelectTrigger>
                       <SelectContent>
                         {numberFields.map((nf) => (
                           <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <Label>{isStatPercent ? "Champ dénominateur" : "Champ B (nombre)"}</Label>
+                    <Label>Champ B (nombre)</Label>
                     <Select value={sourceDenominator} onValueChange={setSourceDenominator}>
-                      <SelectTrigger><SelectValue placeholder={isStatPercent ? "Sélectionner le dénominateur" : "Sélectionner le champ B"} /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Sélectionner le champ B" /></SelectTrigger>
                       <SelectContent>
                         {numberFields.map((nf) => (
                           <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    {isStatPercent && (
+                      <p className="text-xs text-muted-foreground">Le dénominateur sera automatiquement A + B. Résultat = A / (A+B) × 100</p>
+                    )}
                     {numberFields.length === 0 && (
                       <p className="text-xs text-muted-foreground">Ajoutez d'abord des champs « Nombre » pour configurer le calcul.</p>
                     )}
