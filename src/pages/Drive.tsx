@@ -108,6 +108,140 @@ function getFolderIcon(cat: { name: string; icon_url: string | null }): string |
   return auditTypeIcons[typeKey]?.icon || null;
 }
 
+// ── Tree View Component ──────────────────────────────────────────
+interface TreeViewProps {
+  categories: Category[];
+  documents: DriveDocument[];
+  rootParentId: string | null;
+  isAdmin: boolean;
+  onNavigate: (catId: string) => void;
+  onEditCat: (cat: Category) => void;
+  onDeleteCat: (cat: Category) => void;
+  onDownloadDoc: (doc: DriveDocument) => void;
+  onEditDoc: (doc: DriveDocument) => void;
+  onDeleteDoc: (doc: DriveDocument) => void;
+  onMoveDoc: (docId: string, targetCatId: string) => void;
+  getFolderIcon: (cat: { name: string; icon_url: string | null }) => string | null;
+  ModifiedInfo: React.FC<{ updatedAt: string; updatedBy: string | null }>;
+}
+
+function TreeNode({
+  cat, categories, documents, depth, isAdmin,
+  onNavigate, onEditCat, onDeleteCat, onDownloadDoc, onEditDoc, onDeleteDoc, onMoveDoc,
+  getFolderIcon, ModifiedInfo,
+}: TreeViewProps & { cat: Category; depth: number }) {
+  const [expanded, setExpanded] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const children = categories.filter((c) => c.parent_id === cat.id);
+  const docs = documents.filter((d) => d.category_id === cat.id);
+  const iconSrc = getFolderIcon(cat);
+
+  return (
+    <div>
+      <div
+        className={`flex items-center gap-2 px-2 py-2 rounded-xl cursor-pointer transition-colors hover:bg-accent/50 group ${dragOver ? "ring-2 ring-primary bg-primary/5" : ""}`}
+        style={{ paddingLeft: `${depth * 20 + 8}px` }}
+        onClick={() => setExpanded(!expanded)}
+        onDragOver={(e) => { e.preventDefault(); e.dataTransfer.dropEffect = "move"; setDragOver(true); }}
+        onDragLeave={() => setDragOver(false)}
+        onDrop={(e) => {
+          e.preventDefault();
+          setDragOver(false);
+          const docId = e.dataTransfer.getData("text/plain");
+          if (docId && isAdmin) onMoveDoc(docId, cat.id);
+        }}
+      >
+        <FontAwesomeIcon
+          icon={faChevronRight}
+          className={`h-2.5 w-2.5 text-muted-foreground transition-transform ${expanded ? "rotate-90" : ""} ${children.length === 0 && docs.length === 0 ? "invisible" : ""}`}
+        />
+        {iconSrc ? (
+          <img src={iconSrc} alt="" className="h-5 w-5 object-contain flex-shrink-0" />
+        ) : (
+          <FontAwesomeIcon icon={expanded ? faFolderOpen : faFolder} className="h-4 w-4 text-primary flex-shrink-0" />
+        )}
+        <span className="text-sm font-medium text-foreground truncate flex-1">{cat.name}</span>
+        {(children.length > 0 || docs.length > 0) && (
+          <Badge variant="secondary" className="text-[10px] shrink-0">
+            {children.length > 0 && `${children.length} doss.`}
+            {children.length > 0 && docs.length > 0 && " · "}
+            {docs.length > 0 && `${docs.length} doc.`}
+          </Badge>
+        )}
+        {isAdmin && (
+          <div className="flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
+            <button className="h-6 w-6 rounded-full flex items-center justify-center hover:bg-accent" onClick={(e) => { e.stopPropagation(); onEditCat(cat); }}>
+              <FontAwesomeIcon icon={faPen} className="h-2.5 w-2.5 text-muted-foreground" />
+            </button>
+            <button className="h-6 w-6 rounded-full flex items-center justify-center hover:bg-destructive/20" onClick={(e) => { e.stopPropagation(); onDeleteCat(cat); }}>
+              <FontAwesomeIcon icon={faTrash} className="h-2.5 w-2.5 text-destructive" />
+            </button>
+          </div>
+        )}
+      </div>
+      {expanded && (
+        <div>
+          {children.map((child) => (
+            <TreeNode
+              key={child.id}
+              cat={child}
+              categories={categories}
+              documents={documents}
+              depth={depth + 1}
+              isAdmin={isAdmin}
+              rootParentId={null}
+              onNavigate={onNavigate}
+              onEditCat={onEditCat}
+              onDeleteCat={onDeleteCat}
+              onDownloadDoc={onDownloadDoc}
+              onEditDoc={onEditDoc}
+              onDeleteDoc={onDeleteDoc}
+              onMoveDoc={onMoveDoc}
+              getFolderIcon={getFolderIcon}
+              ModifiedInfo={ModifiedInfo}
+            />
+          ))}
+          {docs.map((doc) => (
+            <div
+              key={doc.id}
+              className="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer transition-colors hover:bg-accent/50 group"
+              style={{ paddingLeft: `${(depth + 1) * 20 + 8}px` }}
+              onClick={() => onDownloadDoc(doc)}
+              draggable={isAdmin}
+              onDragStart={(e) => { e.dataTransfer.setData("text/plain", doc.id); e.dataTransfer.effectAllowed = "move"; }}
+            >
+              <FontAwesomeIcon icon={fileIcon(doc.mime_type)} className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+              <span className="text-sm text-foreground truncate flex-1">{doc.title}</span>
+              <span className="text-[10px] text-muted-foreground shrink-0">{formatSize(doc.file_size)}</span>
+              {isAdmin && (
+                <div className="flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0">
+                  <button className="h-6 w-6 rounded-full flex items-center justify-center hover:bg-accent" onClick={(e) => { e.stopPropagation(); onEditDoc(doc); }}>
+                    <FontAwesomeIcon icon={faPen} className="h-2.5 w-2.5 text-muted-foreground" />
+                  </button>
+                  <button className="h-6 w-6 rounded-full flex items-center justify-center hover:bg-destructive/20" onClick={(e) => { e.stopPropagation(); onDeleteDoc(doc); }}>
+                    <FontAwesomeIcon icon={faTrash} className="h-2.5 w-2.5 text-destructive" />
+                  </button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function TreeView(props: TreeViewProps) {
+  const rootCats = props.categories.filter((c) => c.parent_id === props.rootParentId);
+  return (
+    <div className="border border-border rounded-2xl bg-card p-2 space-y-0.5">
+      {rootCats.map((cat) => (
+        <TreeNode key={cat.id} cat={cat} depth={0} {...props} />
+      ))}
+    </div>
+  );
+}
+
 export default function Drive() {
   const { user } = useAuth();
   const { isAdmin } = useAdmin(user);
