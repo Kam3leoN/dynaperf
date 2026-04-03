@@ -217,6 +217,7 @@ export function calcThresholdScore(value: number, config: ThresholdConfig, maxPo
   switch (config.operator) {
     case "lt": return value < config.value ? maxPoints : 0;
     case "lte": return value <= config.value ? maxPoints : 0;
+    case "eq": return value === config.value ? maxPoints : 0;
     case "gt": return value > config.value ? maxPoints : 0;
     case "gte": return value >= config.value ? maxPoints : 0;
     default: return 0;
