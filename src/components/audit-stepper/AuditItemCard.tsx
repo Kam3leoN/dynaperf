@@ -91,11 +91,23 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
   const autoValue = getAutoValue(item, stepZeroData);
   const isAutoFilled = autoValue !== undefined;
   const isNoShowAuto = item.autoField === "nbNoShow";
-  const noShowNotEntered = isNoShowAuto && autoValue === undefined;
+  const parsed = parseAutoField(item.autoField);
+  const hasBoolCondition = parsed?.condition && item.inputType === "boolean";
+  const isBoolAuto = isNoShowAuto || hasBoolCondition;
+  const boolAutoNotEntered = isBoolAuto && autoValue === undefined;
   const tiers = parseScoringTiers(item.scoringRules);
 
-  const [boolVal, setBoolVal] = useState<boolean | null>(() => {
+  // Compute auto bool value
+  const autoBoolResult = (() => {
     if (isNoShowAuto) return autoValue !== undefined ? autoValue === 0 : null;
+    if (hasBoolCondition && autoValue !== undefined) {
+      return parsed!.condition === "zero" ? autoValue === 0 : autoValue > 0;
+    }
+    return null;
+  })();
+
+  const [boolVal, setBoolVal] = useState<boolean | null>(() => {
+    if (isBoolAuto) return autoBoolResult;
     return answer ? answer.score > 0 : null;
   });
   const [numVal, setNumVal] = useState<string>(() => {
