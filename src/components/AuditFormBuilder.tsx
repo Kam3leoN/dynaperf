@@ -218,6 +218,41 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setLayoutDraft((current) => current.map((item) => item.id === activeFieldId ? { ...item, col_span: span } : item));
   }, [activeFieldId]);
 
+  // ── List-level layout editor (shown below field cards) ──
+  const listActiveFieldId = listActiveId || (fields.length > 0 ? fields[0].id : "");
+
+  const listEditorFields = useMemo<LayoutEditorField[]>(() =>
+    fields.map((f) => ({
+      id: f.id,
+      field_label: f.field_label,
+      sort_order: f.sort_order,
+      col_span: f.col_span || 6,
+      col_offset_before: f.col_offset_before || 0,
+      col_offset_after: f.col_offset_after || 0,
+    })),
+    [fields]
+  );
+
+  const handleListLayoutChange = useCallback(async (nextLayout: LayoutDraftItem[]) => {
+    await Promise.all(
+      nextLayout.map((item) =>
+        supabase.from("audit_type_custom_fields").update({
+          sort_order: item.sort_order,
+          col_span: item.col_span,
+          col_offset_before: item.col_offset_before,
+          col_offset_after: item.col_offset_after,
+        }).eq("id", item.id)
+      )
+    );
+    load();
+  }, [load]);
+
+  const handleListSpanChange = useCallback(async (span: number) => {
+    if (!listActiveFieldId) return;
+    await supabase.from("audit_type_custom_fields").update({ col_span: span }).eq("id", listActiveFieldId);
+    load();
+  }, [listActiveFieldId, load]);
+
   const save = async () => {
     if (!fieldLabel.trim()) { toast.error("Libellé requis"); return; }
     const validOpts = selectOptions.filter((o) => o.trim());
