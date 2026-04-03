@@ -111,17 +111,17 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
     return answer ? answer.score > 0 : null;
   });
   const [numVal, setNumVal] = useState<string>(() => {
-    if (isAutoFilled && !isNoShowAuto) return String(autoValue ?? 0);
+    if (isAutoFilled && !isBoolAuto) return String(autoValue ?? 0);
     return answer?.rawValue !== undefined ? String(answer.rawValue) : "";
   });
 
   useEffect(() => {
-    if (isNoShowAuto) {
-      setBoolVal(autoValue !== undefined ? autoValue === 0 : null);
+    if (isBoolAuto) {
+      setBoolVal(autoBoolResult);
     } else if (isAutoFilled) {
       setNumVal(String(autoValue ?? 0));
     }
-  }, [autoValue, isNoShowAuto, isAutoFilled]);
+  }, [autoValue, isBoolAuto, isAutoFilled, autoBoolResult]);
 
   const [checklist, setChecklist] = useState<boolean[]>(
     answer?.checklist ?? new Array(item.checklistItems?.length ?? 0).fill(false)
