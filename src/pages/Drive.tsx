@@ -30,7 +30,6 @@ import {
   faFilePdf, faFileImage, faFileExcel, faFileWord,
   faGrip, faList, faImage, faXmark, faArrowsUpDownLeftRight,
 } from "@fortawesome/free-solid-svg-icons";
-} from "@fortawesome/free-solid-svg-icons";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { auditTypeIcons } from "@/lib/auditTypeVisuals";
