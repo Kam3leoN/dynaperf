@@ -111,6 +111,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setFieldType("text");
     setIsRequired(false);
     setColSpan(6);
+    setOffsetBefore(0);
+    setOffsetAfter(0);
     setSelectOptions([""]);
     setSourceNumerator("");
     setSourceDenominator("");
