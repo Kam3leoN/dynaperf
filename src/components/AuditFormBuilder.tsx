@@ -246,14 +246,18 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
               <Select value={fieldType} onValueChange={setFieldType}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <div className="px-2 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Champs intelligents</div>
-                  {FIELD_TYPES_SMART.map((ft) => (
-                    <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
-                  ))}
-                  <div className="px-2 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider border-t mt-1 pt-2">Champs standards</div>
-                  {FIELD_TYPES_STANDARD.map((ft) => (
-                    <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
-                  ))}
+                  <SelectGroup>
+                    <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Champs intelligents</SelectLabel>
+                    {FIELD_TYPES_SMART.map((ft) => (
+                      <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
+                    ))}
+                  </SelectGroup>
+                  <SelectGroup>
+                    <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Champs standards</SelectLabel>
+                    {FIELD_TYPES_STANDARD.map((ft) => (
+                      <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
             </div>
