@@ -245,6 +245,8 @@ export default function AdminAuditGridInline() {
     setScoringMode("none");
     setIncrementMin(0);
     setIncrementStep(1);
+    setThresholdOperator("gte");
+    setThresholdValue(0);
     setItemDialogOpen(true);
   };
 
