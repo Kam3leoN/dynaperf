@@ -148,17 +148,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
       return next;
     });
 
-  const showRdClubFields = isRdOrClub(typeEvenement);
-  const showClubField = isClub(typeEvenement);
-
-  const ratioInvParticipants =
-    data.nbInvites && data.nbParticipants && data.nbParticipants > 0
-      ? (data.nbInvites / data.nbParticipants * 100).toFixed(1)
-      : null;
-  const ratioRdvInvites =
-    data.nbRdvPris !== undefined && data.nbInvites && data.nbInvites > 0
-      ? (data.nbRdvPris / data.nbInvites * 100).toFixed(1)
-      : null;
+  // Removed hardcoded type-specific flags — all extra fields now come from custom fields
 
   const isValid =
     data.partenaireAudite.trim() &&
