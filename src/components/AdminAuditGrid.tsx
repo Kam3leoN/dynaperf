@@ -64,7 +64,7 @@ export default function AdminAuditGridInline() {
   const [itemForm, setItemForm] = useState({
     category_id: "", title: "", description: "", max_points: 1,
     condition: "", scoring_rules: "", input_type: "boolean", checklist_items: "",
-    interets: "", comment_y_parvenir: "", auto_field: "",
+    interets: "", comment_y_parvenir: "", auto_field: "", auto_condition: "zero" as "zero" | "positive",
   });
   const [isAutoCalc, setIsAutoCalc] = useState(false);
   const [scoringTiers, setScoringTiers] = useState<ScoringTier[]>([]);
