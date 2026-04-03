@@ -96,6 +96,7 @@ export default function AuditForm() {
           const itemsData = detail.items as Record<string, any>;
           const loadedAnswers: Record<string, ItemAnswer> = {};
           Object.entries(itemsData).forEach(([id, ans]) => {
+            if (id === "__custom_fields") return; // skip custom fields
             loadedAnswers[id] = {
               score: ans.score ?? 0,
               touched: true,
@@ -105,6 +106,13 @@ export default function AuditForm() {
             };
           });
           setAnswers(loadedAnswers);
+
+          // Restore custom field values
+          if (itemsData.__custom_fields) {
+            setStepZeroData((prev) =>
+              prev ? { ...prev, customFieldValues: itemsData.__custom_fields } : prev
+            );
+          }
         }
 
         if (detail?.photos) {
@@ -256,6 +264,10 @@ export default function AuditForm() {
         ...(ans.rawValue !== undefined && { rawValue: ans.rawValue }),
       };
     });
+    // Store custom field values alongside items
+    if (stepZeroData.customFieldValues && Object.keys(stepZeroData.customFieldValues).length > 0) {
+      itemsJson["__custom_fields"] = stepZeroData.customFieldValues;
+    }
 
     const detailPayload = {
       audit_id: targetAuditId,

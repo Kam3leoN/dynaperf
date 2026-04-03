@@ -29,7 +29,6 @@ import {
   faSearch, faChevronRight, faArrowLeft, faDownload,
   faFilePdf, faFileImage, faFileExcel, faFileWord,
   faGrip, faList, faImage, faXmark, faArrowsUpDownLeftRight,
-  faCompress, faExpand,
 } from "@fortawesome/free-solid-svg-icons";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -90,7 +89,7 @@ function formatModifiedDate(dateStr: string) {
 }
 
 type ViewMode = "cards" | "tree";
-type Density = "compact" | "comfortable";
+
 
 // Map known folder names to audit type SVG icons
 const FOLDER_NAME_TO_TYPE: Record<string, string> = {
@@ -253,7 +252,7 @@ export default function Drive() {
   const [currentCatId, setCurrentCatId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [viewMode, setViewMode] = useState<ViewMode>("cards");
-  const [density, setDensity] = useState<Density>("comfortable");
+  
 
   // Dialog states
   const [catDialogOpen, setCatDialogOpen] = useState(false);
@@ -671,17 +670,6 @@ export default function Drive() {
                 <FontAwesomeIcon icon={faList} className="h-4 w-4" />
               </button>
             </div>
-            {/* Density toggle */}
-            {viewMode === "cards" && (
-              <div className="flex border border-border rounded-lg overflow-hidden shrink-0">
-                <button className={`h-10 w-10 flex items-center justify-center transition-colors ${density === "compact" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary"}`} onClick={() => setDensity("compact")} title="Compact">
-                  <FontAwesomeIcon icon={faCompress} className="h-4 w-4" />
-                </button>
-                <button className={`h-10 w-10 flex items-center justify-center transition-colors ${density === "comfortable" ? "bg-primary/10 text-primary" : "text-muted-foreground hover:bg-secondary"}`} onClick={() => setDensity("comfortable")} title="Aéré">
-                  <FontAwesomeIcon icon={faExpand} className="h-4 w-4" />
-                </button>
-              </div>
-            )}
           </div>
         </div>
 
@@ -812,7 +800,7 @@ export default function Drive() {
 
             {/* Categories grid */}
             {childCategories.length > 0 && (
-              <div className={density === "compact" ? "grid-compact" : "grid-content"}>
+              <div className="grid-content">
                 {childCategories.map((cat) => {
                   const subCount = categories.filter((c) => c.parent_id === cat.id).length;
                   const docCount = documents.filter((d) => d.category_id === cat.id).length;
@@ -868,7 +856,7 @@ export default function Drive() {
                   Documents
                   {isAdmin && draggingDocId && <span className="text-primary ml-2">— Glissez sur un dossier pour déplacer</span>}
                 </p>
-                <div className={density === "compact" ? "grid-compact" : "grid-content"}>
+                <div className="grid-content">
                   {currentDocs.map((doc) => (
                     <div key={doc.id} className="relative">
                       <DocCard doc={doc} />
