@@ -115,9 +115,9 @@ export async function fetchAuditConfigById(typeId: string): Promise<AuditTypeCon
     .eq("audit_type_id", typeRow.id)
     .order("sort_order");
 
-  if (!cats || cats.length === 0) return null;
+  const safeCats = cats || [];
 
-  const catIds = cats.map((c) => c.id);
+  const catIds = safeCats.map((c) => c.id);
   const { data: items } = await supabase
     .from("audit_items_config")
     .select("*")
