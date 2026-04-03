@@ -5,19 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGroup, SelectLabel } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faPlus, faTrashCan, faPenToSquare, faGripVertical, faXmark, faEye, faWrench,
+  faPlus, faXmark, faEye, faWrench,
 } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { StepZeroForm } from "@/components/audit-stepper/StepZeroForm";
 import { FieldLayoutEditor, type LayoutDraftItem, type LayoutEditorField } from "@/components/admin/FieldLayoutEditor";
-
 
 interface CustomField {
   id: string;
@@ -61,19 +58,6 @@ const FIELD_TYPES_SMART = [
 ];
 
 const ALL_FIELD_TYPES = [...FIELD_TYPES_SMART, ...FIELD_TYPES_STANDARD];
-const DRAFT_FIELD_ID = "__draft_custom_field__";
-
-const areLayoutDraftsEqual = (left: LayoutDraftItem[], right: LayoutDraftItem[]) => (
-  left.length === right.length && left.every((item, index) => {
-    const other = right[index];
-    return !!other
-      && item.id === other.id
-      && item.sort_order === other.sort_order
-      && item.col_span === other.col_span
-      && item.col_offset_before === other.col_offset_before
-      && item.col_offset_after === other.col_offset_after;
-  })
-);
 
 interface Props {
   auditTypeKey: string;
@@ -89,13 +73,12 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
   const [isRequired, setIsRequired] = useState(false);
   const [colSpan, setColSpan] = useState(6);
   const [selectOptions, setSelectOptions] = useState<string[]>([""]);
-  const [offsetBefore, setOffsetBefore] = useState(0);
-  const [offsetAfter, setOffsetAfter] = useState(0);
-  const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [sourceNumerator, setSourceNumerator] = useState("");
   const [sourceDenominator, setSourceDenominator] = useState("");
   const [previewMode, setPreviewMode] = useState(false);
   const [previewKey, setPreviewKey] = useState(0);
+  // For "add at position" from the grid
+  const [addAtPosition, setAddAtPosition] = useState<{ colStart: number; colSpan: number; rowIndex: number } | null>(null);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -109,118 +92,44 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
-  const buildLayoutDraft = useCallback((active?: Partial<CustomField> & { id: string }) => {
-    const baseLayout = fields.map((field) => ({
-      id: field.id,
-      sort_order: field.sort_order,
-      col_span: field.col_span || 6,
-      col_offset_before: field.col_offset_before || 0,
-      col_offset_after: field.col_offset_after || 0,
-    }));
-
-    const activeLayout: LayoutDraftItem = {
-      id: active?.id || DRAFT_FIELD_ID,
-      sort_order: active?.sort_order ?? fields.length,
-      col_span: active?.col_span || 6,
-      col_offset_before: active?.col_offset_before || 0,
-      col_offset_after: active?.col_offset_after || 0,
-    };
-
-    return [...baseLayout.filter((item) => item.id !== activeLayout.id), activeLayout]
-      .sort((a, b) => a.sort_order - b.sort_order);
-  }, [fields]);
-
-  const openNew = () => {
+  const openNew = (colStart?: number, span?: number) => {
     setEditing(null);
     setFieldLabel("");
     setFieldType("text");
     setIsRequired(false);
-    setColSpan(6);
-    setOffsetBefore(0);
-    setOffsetAfter(0);
+    setColSpan(span || 6);
     setSelectOptions([""]);
     setSourceNumerator("");
     setSourceDenominator("");
-    setLayoutDraft(buildLayoutDraft({ id: DRAFT_FIELD_ID, sort_order: fields.length, col_span: 6 }));
+    if (colStart && span) {
+      setAddAtPosition({ colStart, colSpan: span, rowIndex: 0 });
+    } else {
+      setAddAtPosition(null);
+    }
     setDialogOpen(true);
   };
 
-  const openEdit = (f: CustomField) => {
+  const openEdit = (fieldId: string) => {
+    const f = fields.find((field) => field.id === fieldId);
+    if (!f) return;
     setEditing(f);
     setFieldLabel(f.field_label);
     setFieldType(f.field_type);
     setIsRequired(f.is_required);
     setColSpan(f.col_span || 6);
-    setOffsetBefore(f.col_offset_before || 0);
-    setOffsetAfter(f.col_offset_after || 0);
     const opts = f.field_options?.options;
     setSelectOptions(Array.isArray(opts) && opts.length > 0 ? opts : [""]);
     setSourceNumerator(f.field_options?.source_numerator || "");
     setSourceDenominator(f.field_options?.source_denominator || "");
-    setLayoutDraft(buildLayoutDraft({
-      id: f.id,
-      sort_order: f.sort_order,
-      col_span: f.col_span || 6,
-      col_offset_before: f.col_offset_before || 0,
-      col_offset_after: f.col_offset_after || 0,
-    }));
+    setAddAtPosition(null);
     setDialogOpen(true);
   };
 
   const needsOptions = ["select", "radio", "checkbox"].includes(fieldType);
   const isStatPercent = fieldType === "stat_percent";
   const numberFields = fields.filter((f) => f.field_type === "number");
-  const activeFieldId = editing?.id || DRAFT_FIELD_ID;
 
-  const editorFields = useMemo<LayoutEditorField[]>(() => {
-    const draftMap = new Map(layoutDraft.map((item) => [item.id, item]));
-
-    const stableFields = fields
-      .filter((field) => field.id !== activeFieldId)
-      .map((field) => {
-        const layout = draftMap.get(field.id);
-        return {
-          id: field.id,
-          field_label: field.field_label,
-          sort_order: layout?.sort_order ?? field.sort_order,
-          col_span: layout?.col_span ?? field.col_span ?? 6,
-          col_offset_before: layout?.col_offset_before ?? field.col_offset_before ?? 0,
-          col_offset_after: layout?.col_offset_after ?? field.col_offset_after ?? 0,
-        };
-      });
-
-    const activeLayout = draftMap.get(activeFieldId);
-    const activeField: LayoutEditorField = {
-      id: activeFieldId,
-      field_label: fieldLabel.trim() || editing?.field_label || "Nouveau champ",
-      sort_order: activeLayout?.sort_order ?? editing?.sort_order ?? fields.length,
-      col_span: activeLayout?.col_span ?? colSpan,
-      col_offset_before: activeLayout?.col_offset_before ?? offsetBefore,
-      col_offset_after: activeLayout?.col_offset_after ?? offsetAfter,
-    };
-
-    return [...stableFields, activeField].sort((a, b) => a.sort_order - b.sort_order);
-  }, [activeFieldId, colSpan, editing?.field_label, editing?.sort_order, fieldLabel, fields, layoutDraft, offsetAfter, offsetBefore]);
-
-  const handleLayoutChange = useCallback((nextLayout: LayoutDraftItem[]) => {
-    setLayoutDraft((current) => areLayoutDraftsEqual(current, nextLayout) ? current : nextLayout);
-    const activeLayout = nextLayout.find((item) => item.id === activeFieldId);
-    if (activeLayout) {
-      setColSpan(activeLayout.col_span);
-      setOffsetBefore(activeLayout.col_offset_before);
-      setOffsetAfter(activeLayout.col_offset_after);
-    }
-  }, [activeFieldId]);
-
-  const handleSpanChange = useCallback((span: number) => {
-    setColSpan(span);
-    setLayoutDraft((current) => current.map((item) => item.id === activeFieldId ? { ...item, col_span: span } : item));
-  }, [activeFieldId]);
-
-  // ── List-level layout editor (shown below field cards) ──
-  const listActiveFieldId = listActiveId || (fields.length > 0 ? fields[0].id : "");
-
-  const listEditorFields = useMemo<LayoutEditorField[]>(() =>
+  const editorFields = useMemo<LayoutEditorField[]>(() =>
     fields.map((f) => ({
       id: f.id,
       field_label: f.field_label,
@@ -232,7 +141,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     [fields]
   );
 
-  const handleListLayoutChange = useCallback(async (nextLayout: LayoutDraftItem[]) => {
+  const handleLayoutChange = useCallback(async (nextLayout: LayoutDraftItem[]) => {
     await Promise.all(
       nextLayout.map((item) =>
         supabase.from("audit_type_custom_fields").update({
@@ -245,12 +154,6 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     );
     load();
   }, [load]);
-
-  const handleListSpanChange = useCallback(async (span: number) => {
-    if (!listActiveFieldId) return;
-    await supabase.from("audit_type_custom_fields").update({ col_span: span }).eq("id", listActiveFieldId);
-    load();
-  }, [listActiveFieldId, load]);
 
   const save = async () => {
     if (!fieldLabel.trim()) { toast.error("Libellé requis"); return; }
@@ -265,55 +168,30 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
       fieldOpts = { source_numerator: sourceNumerator, source_denominator: sourceDenominator };
     }
 
-    const activeLayout = layoutDraft.find((item) => item.id === activeFieldId);
-    const layoutUpdates = layoutDraft
-      .filter((item) => item.id !== activeFieldId)
-      .map((item) => supabase
-        .from("audit_type_custom_fields")
-        .update({
-          sort_order: item.sort_order,
-          col_span: item.col_span,
-          col_offset_before: item.col_offset_before,
-          col_offset_after: item.col_offset_after,
-        })
-        .eq("id", item.id)
-      );
-
     const payload = {
       audit_type_key: auditTypeKey,
       field_label: fieldLabel.trim(),
       field_type: fieldType,
       is_required: isRequired,
       field_options: fieldOpts,
-      sort_order: activeLayout?.sort_order ?? (editing ? editing.sort_order : fields.length),
-      col_span: activeLayout?.col_span ?? colSpan,
-      col_offset_before: activeLayout?.col_offset_before ?? offsetBefore,
-      col_offset_after: activeLayout?.col_offset_after ?? offsetAfter,
+      sort_order: editing ? editing.sort_order : fields.length,
+      col_span: colSpan,
+      col_offset_before: addAtPosition ? Math.max(addAtPosition.colStart - 1, 0) : 0,
+      col_offset_after: 0,
     };
 
     if (editing) {
-      const results = await Promise.all([
-        supabase.from("audit_type_custom_fields").update(payload).eq("id", editing.id),
-        ...layoutUpdates,
-      ]);
-      const firstError = results.find((result) => result.error)?.error;
-      if (firstError) { toast.error(firstError.message); return; }
+      const { error } = await supabase.from("audit_type_custom_fields").update(payload).eq("id", editing.id);
+      if (error) { toast.error(error.message); return; }
       toast.success("Champ modifié");
     } else {
       const { error } = await supabase.from("audit_type_custom_fields").insert(payload);
       if (error) { toast.error(error.message); return; }
-
-      if (layoutUpdates.length > 0) {
-        const results = await Promise.all(layoutUpdates);
-        const firstError = results.find((result) => result.error)?.error;
-        if (firstError) { toast.error(firstError.message); return; }
-      }
-
       toast.success("Champ ajouté");
     }
 
     setDialogOpen(false);
-    setLayoutDraft([]);
+    setAddAtPosition(null);
     load();
   };
 
@@ -322,29 +200,6 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     toast.success("Champ supprimé");
     load();
   };
-
-  const handleDragStart = (idx: number) => setDragIdx(idx);
-
-  const handleDragOver = (e: React.DragEvent, idx: number) => {
-    e.preventDefault();
-    if (dragIdx === null || dragIdx === idx) return;
-    const reordered = [...fields];
-    const [moved] = reordered.splice(dragIdx, 1);
-    reordered.splice(idx, 0, moved);
-    setFields(reordered);
-    setDragIdx(idx);
-  };
-
-  const handleDragEnd = async () => {
-    setDragIdx(null);
-    await Promise.all(
-      fields.map((f, i) =>
-        supabase.from("audit_type_custom_fields").update({ sort_order: i }).eq("id", f.id)
-      )
-    );
-  };
-
-  const getTypeLabel = (t: string) => ALL_FIELD_TYPES.find((ft) => ft.value === t)?.label || t;
 
   if (loading) return <p className="text-sm text-muted-foreground py-4">Chargement…</p>;
 
@@ -366,7 +221,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
             {previewMode ? "Éditeur" : "Aperçu"}
           </Button>
           {!previewMode && (
-            <Button variant="outline" size="sm" onClick={openNew} className="gap-1.5">
+            <Button variant="outline" size="sm" onClick={() => openNew()} className="gap-1.5">
               <FontAwesomeIcon icon={faPlus} className="h-3 w-3" /> Ajouter
             </Button>
           )}
@@ -389,61 +244,21 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
         <>
           {fields.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6 border border-dashed border-border rounded-xl">
-              Aucun champ. Cliquez sur « Ajouter » pour construire votre formulaire.
+              Aucun champ. Cliquez sur « Ajouter » ou sur le + dans la grille.
             </p>
-          ) : (
-            <div className="space-y-2">
-              {fields.map((f, idx) => (
-                <Card
-                  key={f.id}
-                  className={`group cursor-grab ${dragIdx === idx ? "opacity-50" : ""} ${listActiveFieldId === f.id ? "ring-2 ring-primary" : ""}`}
-                  draggable
-                  onDragStart={() => handleDragStart(idx)}
-                  onDragOver={(e) => handleDragOver(e, idx)}
-                  onDragEnd={handleDragEnd}
-                >
-                  <CardContent className="py-3 px-4 flex items-center gap-3" onClick={() => setListActiveId(f.id)}>
-                    <FontAwesomeIcon icon={faGripVertical} className="h-3.5 w-3.5 text-muted-foreground/40 cursor-grab" />
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground truncate">{f.field_label}</p>
-                      <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                        <Badge variant="secondary" className="text-[10px]">{getTypeLabel(f.field_type)}</Badge>
-                        {f.is_required && <Badge variant="outline" className="text-[10px] text-amber-600 border-amber-300">Requis</Badge>}
-                        <Badge variant="outline" className="text-[10px]">
-                          {f.col_offset_before ? `↦${f.col_offset_before} ` : ""}{f.col_span || 6}/12{f.col_offset_after ? ` ${f.col_offset_after}↤` : ""} col
-                        </Badge>
-                        {f.field_options?.options && (
-                          <span className="text-[10px] text-muted-foreground">{f.field_options.options.length} options</span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEdit(f)}>
-                        <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => deleteField(f.id)}>
-                        <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-destructive" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
+          ) : null}
 
-          {/* Visual 12-column layout editor — shown below the field list */}
-          {fields.length > 0 && (
-            <FieldLayoutEditor
-              fields={listEditorFields}
-              activeFieldId={listActiveFieldId}
-              onLayoutChange={handleListLayoutChange}
-              onSpanChange={handleListSpanChange}
-            />
-          )}
+          <FieldLayoutEditor
+            fields={editorFields}
+            onLayoutChange={handleLayoutChange}
+            onEdit={openEdit}
+            onDelete={deleteField}
+            onAdd={(colStart, span, _rowIndex) => openNew(colStart, span)}
+          />
         </>
       )}
 
-      <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setLayoutDraft([]); }}>
+      <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setAddAtPosition(null); }}>
         <DialogContent className="max-w-lg rounded-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? "Modifier le champ" : "Ajouter un champ"}</DialogTitle>
@@ -473,6 +288,25 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                     </SelectContent>
                   </Select>
                 </div>
+
+                <div className="space-y-1.5">
+                  <Label>Largeur (colonnes)</Label>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[2, 3, 4, 6, 8, 9, 12].map((s) => (
+                      <Button
+                        key={s}
+                        type="button"
+                        variant={colSpan === s ? "default" : "outline"}
+                        size="sm"
+                        className="h-7 rounded-full px-2.5 text-xs"
+                        onClick={() => setColSpan(s)}
+                      >
+                        {s}/12
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex items-center gap-3">
                   <Switch checked={isRequired} onCheckedChange={setIsRequired} id="req" />
                   <Label htmlFor="req">Champ obligatoire</Label>
@@ -532,7 +366,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                 )}
               </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setDialogOpen(false); setLayoutDraft([]); }}>Annuler</Button>
+            <Button variant="outline" onClick={() => { setDialogOpen(false); setAddAtPosition(null); }}>Annuler</Button>
             <Button onClick={save}>{editing ? "Enregistrer" : "Ajouter"}</Button>
           </DialogFooter>
         </DialogContent>
