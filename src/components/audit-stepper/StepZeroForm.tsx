@@ -209,6 +209,33 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customFields, data.customFieldValues]);
 
+  // Auto-calculate stat_sum fields
+  useEffect(() => {
+    const sumFields = customFields.filter((f) => f.field_type === "stat_sum");
+    if (sumFields.length === 0) return;
+    setData((prev) => {
+      const cv = { ...prev.customFieldValues };
+      let changed = false;
+      for (const field of sumFields) {
+        const aId = field.field_options?.source_a;
+        const bId = field.field_options?.source_b;
+        if (!aId || !bId) continue;
+        const a = Number(cv[aId]) || 0;
+        const b = Number(cv[bId]) || 0;
+        const sum = a + b;
+        if (cv[field.id] !== sum) {
+          cv[field.id] = sum;
+          changed = true;
+        }
+      }
+      if (!changed) return prev;
+      const next = { ...prev, customFieldValues: cv };
+      if (hideSubmitButton) setTimeout(() => onSubmit(next), 0);
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customFields, data.customFieldValues]);
+
   const isValid = customFields
     .filter((f) => f.is_required)
     .every((f) => {
@@ -305,6 +332,23 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
             </span>
             <span className="text-muted-foreground text-xs">
               {denominator > 0 ? `(${numerator} / ${denominator})` : ""}
+            </span>
+          </div>
+        );
+      }
+      case "stat_sum": {
+        const aId = field.field_options?.source_a;
+        const bId = field.field_options?.source_b;
+        const a = Number(data.customFieldValues?.[aId]) || 0;
+        const b = Number(data.customFieldValues?.[bId]) || 0;
+        const sum = a + b;
+        const aLabel = customFields.find((f) => f.id === aId)?.field_label ?? "?";
+        const bLabel = customFields.find((f) => f.id === bId)?.field_label ?? "?";
+        return (
+          <div className="flex items-center gap-2 h-12 px-4 rounded-xl border border-input bg-muted text-sm cursor-not-allowed">
+            <span className="font-semibold text-foreground">{sum}</span>
+            <span className="text-muted-foreground text-xs">
+              ({a} + {b})
             </span>
           </div>
         );
