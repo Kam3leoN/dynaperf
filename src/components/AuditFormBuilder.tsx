@@ -159,6 +159,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
       field_options: fieldOpts,
       sort_order: editing ? editing.sort_order : fields.length,
       col_span: colSpan,
+      col_offset_before: offsetBefore,
+      col_offset_after: offsetAfter,
     };
 
     if (editing) {
