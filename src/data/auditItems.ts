@@ -52,10 +52,10 @@ export async function fetchAuditConfig(typeKey: string): Promise<AuditTypeConfig
     .eq("audit_type_id", typeRow.id)
     .order("sort_order");
 
-  if (!cats || cats.length === 0) return null;
+  const safeCats = cats || [];
 
   // 3. Get items for all categories
-  const catIds = cats.map((c) => c.id);
+  const catIds = safeCats.map((c) => c.id);
   const { data: items } = await supabase
     .from("audit_items_config")
     .select("*")
