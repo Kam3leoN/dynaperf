@@ -65,7 +65,14 @@ function getAutoValue(item: AuditItemDef, stepZeroData?: StepZeroData): number |
 
 function computeScore(item: AuditItemDef, boolVal: boolean | null, numVal: string, checklist: boolean[], autoValue?: number): number {
   const isNoShowAuto = item.autoField === "nbNoShow";
+  const parsed = parseAutoField(item.autoField);
+  const hasBoolCondition = parsed?.condition && item.inputType === "boolean";
+  
   if (isNoShowAuto) return (autoValue ?? 0) === 0 ? item.maxPoints : 0;
+  if (hasBoolCondition && autoValue !== undefined) {
+    if (parsed!.condition === "zero") return autoValue === 0 ? item.maxPoints : 0;
+    if (parsed!.condition === "positive") return autoValue > 0 ? item.maxPoints : 0;
+  }
   if (item.inputType === "boolean") return boolVal === true ? item.maxPoints : 0;
   if (item.inputType === "number") {
     const n = autoValue !== undefined ? autoValue : (parseInt(numVal) || 0);
