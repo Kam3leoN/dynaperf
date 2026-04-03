@@ -55,7 +55,7 @@ const FIELD_TYPES_SMART = [
   { value: "date_picker", label: "🔗 Date (calendrier)" },
   { value: "heure_picker", label: "🔗 Heure (saisie)" },
   { value: "stat_percent", label: "📊 Statistique % (calcul auto)" },
-  { value: "stat_sum", label: "📊 Somme (calcul auto)" },
+  { value: "stat_sum", label: "📊 Calcul auto (somme / différence)" },
 ];
 
 const ALL_FIELD_TYPES = [...FIELD_TYPES_SMART, ...FIELD_TYPES_STANDARD];
