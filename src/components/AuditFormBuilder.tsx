@@ -122,8 +122,9 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setColSpan(f.col_span || 6);
     const opts = f.field_options?.options;
     setSelectOptions(Array.isArray(opts) && opts.length > 0 ? opts : [""]);
-    setSourceNumerator(f.field_options?.source_numerator || "");
-    setSourceDenominator(f.field_options?.source_denominator || "");
+    setSourceNumerator(f.field_options?.source_numerator || f.field_options?.source_a || "");
+    setSourceDenominator(f.field_options?.source_denominator || f.field_options?.source_b || "");
+    setSumOperation(f.field_options?.operation || "add");
     setAddAtPosition(null);
     setDialogOpen(true);
   };
