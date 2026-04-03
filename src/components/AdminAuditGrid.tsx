@@ -311,7 +311,9 @@ export default function AdminAuditGridInline() {
       ? JSON.stringify(scoringTiers)
       : scoringMode === "increment"
         ? JSON.stringify({ type: "increment", minValue: incrementMin, step: incrementStep })
-        : itemForm.scoring_rules.trim() || null;
+        : scoringMode === "threshold"
+          ? JSON.stringify({ type: "threshold", operator: thresholdOperator, value: thresholdValue })
+          : itemForm.scoring_rules.trim() || null;
 
     const payload = {
       category_id: itemForm.category_id,
