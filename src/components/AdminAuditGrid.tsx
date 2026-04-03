@@ -697,14 +697,16 @@ export default function AdminAuditGridInline() {
             </div>
 
             {/* Auto-calc toggle */}
-            {itemForm.input_type === "number" && (
+            {(itemForm.input_type === "number" || itemForm.input_type === "boolean") && (
               <div className="rounded-lg border border-border p-3 space-y-3">
                 <div className="flex items-center gap-3">
                   <Switch checked={isAutoCalc} onCheckedChange={setIsAutoCalc} id="auto-calc" />
-                  <Label htmlFor="auto-calc" className="font-medium">Calcul automatique (désactivé en saisie)</Label>
+                  <Label htmlFor="auto-calc" className="font-medium">
+                    {itemForm.input_type === "boolean" ? "Validation automatique (depuis un champ nombre)" : "Calcul automatique (désactivé en saisie)"}
+                  </Label>
                 </div>
                 {isAutoCalc && (
-                  <div className="space-y-1.5">
+                  <div className="space-y-2">
                     <Label className="text-xs">Champ source (informations générales)</Label>
                     <Select value={itemForm.auto_field} onValueChange={(v) => setItemForm({ ...itemForm, auto_field: v })}>
                       <SelectTrigger><SelectValue placeholder="Sélectionner un champ nombre…" /></SelectTrigger>
@@ -717,9 +719,28 @@ export default function AdminAuditGridInline() {
                     {numberCustomFields.length === 0 && (
                       <p className="text-xs text-muted-foreground">Ajoutez d'abord des champs « Nombre » dans le formulaire ci-dessus.</p>
                     )}
-                    <p className="text-[11px] text-muted-foreground">
-                      La valeur sera pré-remplie depuis ce champ et l'utilisateur ne pourra pas la modifier.
-                    </p>
+                    {itemForm.input_type === "boolean" && (
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Condition de validation</Label>
+                        <Select value={itemForm.auto_condition} onValueChange={(v) => setItemForm({ ...itemForm, auto_condition: v as "zero" | "positive" })}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="zero">Validé si la valeur = 0 (ex: no-show)</SelectItem>
+                            <SelectItem value="positive">Validé si la valeur &gt; 0 (ex: participants)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <p className="text-[11px] text-muted-foreground">
+                          {itemForm.auto_condition === "zero"
+                            ? "L'item sera validé automatiquement si la valeur du champ source est 0."
+                            : "L'item sera validé automatiquement si la valeur du champ source est supérieure à 0."}
+                        </p>
+                      </div>
+                    )}
+                    {itemForm.input_type === "number" && (
+                      <p className="text-[11px] text-muted-foreground">
+                        La valeur sera pré-remplie depuis ce champ et l'utilisateur ne pourra pas la modifier.
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
