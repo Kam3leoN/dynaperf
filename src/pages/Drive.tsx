@@ -771,7 +771,7 @@ export default function Drive() {
                 toast.success("Document déplacé");
                 fetchAll();
               }}
-              getFolderIcon={getFolderIcon}
+              
               ModifiedInfo={ModifiedInfo}
             />
             {categories.filter(c => c.parent_id === null).length === 0 && (
