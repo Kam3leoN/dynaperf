@@ -412,7 +412,7 @@ export default function Drive() {
         {filteredDocs.length > 0 ? (
           <div className="grid-content">
             {filteredDocs.map((doc) => {
-              const previewUrl = getPreviewUrl(doc);
+              const previewUrl = signedUrls[doc.id] || null;
               return (
                 <Card
                   key={doc.id}
@@ -428,7 +428,6 @@ export default function Drive() {
                           alt={doc.title}
                           className="w-full h-full object-cover"
                           onError={(e) => {
-                            // Fallback to icon if image fails
                             (e.target as HTMLImageElement).style.display = "none";
                             (e.target as HTMLImageElement).parentElement!.classList.add("flex", "items-center", "justify-center");
                             const icon = document.createElement("div");
@@ -458,17 +457,22 @@ export default function Drive() {
                       <ModifiedInfo updatedAt={doc.updated_at} updatedBy={doc.updated_by} />
                     </div>
 
-                    {/* Admin actions */}
-                    {isAdmin && (
-                      <div className="absolute top-1.5 right-1.5 flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                        <button className="h-6 w-6 rounded-full bg-card/90 flex items-center justify-center hover:bg-accent shadow-sm" onClick={(e) => { e.stopPropagation(); openUploadDialog(doc); }}>
-                          <FontAwesomeIcon icon={faPen} className="h-2.5 w-2.5 text-muted-foreground" />
-                        </button>
-                        <button className="h-6 w-6 rounded-full bg-card/90 flex items-center justify-center hover:bg-destructive/20 shadow-sm" onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: doc.id, name: doc.title }); }}>
-                          <FontAwesomeIcon icon={faTrash} className="h-2.5 w-2.5 text-destructive" />
-                        </button>
-                      </div>
-                    )}
+                    {/* Actions row */}
+                    <div className="absolute top-1.5 right-1.5 flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                      <button className="h-7 w-7 rounded-full bg-card/90 flex items-center justify-center hover:bg-primary/10 shadow-sm" title="Télécharger" onClick={(e) => { e.stopPropagation(); downloadDoc(doc); }}>
+                        <FontAwesomeIcon icon={faDownload} className="h-3 w-3 text-primary" />
+                      </button>
+                      {isAdmin && (
+                        <>
+                          <button className="h-7 w-7 rounded-full bg-card/90 flex items-center justify-center hover:bg-accent shadow-sm" title="Modifier" onClick={(e) => { e.stopPropagation(); openUploadDialog(doc); }}>
+                            <FontAwesomeIcon icon={faPen} className="h-2.5 w-2.5 text-muted-foreground" />
+                          </button>
+                          <button className="h-7 w-7 rounded-full bg-card/90 flex items-center justify-center hover:bg-destructive/20 shadow-sm" title="Supprimer" onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: doc.id, name: doc.title }); }}>
+                            <FontAwesomeIcon icon={faTrash} className="h-2.5 w-2.5 text-destructive" />
+                          </button>
+                        </>
+                      )}
+                    </div>
                   </CardContent>
                 </Card>
               );
