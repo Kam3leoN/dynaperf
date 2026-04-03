@@ -84,6 +84,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
   const [isRequired, setIsRequired] = useState(false);
   const [colSpan, setColSpan] = useState(6);
   const [selectOptions, setSelectOptions] = useState<string[]>([""]);
+  const [offsetBefore, setOffsetBefore] = useState(0);
+  const [offsetAfter, setOffsetAfter] = useState(0);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [sourceNumerator, setSourceNumerator] = useState("");
   const [sourceDenominator, setSourceDenominator] = useState("");
