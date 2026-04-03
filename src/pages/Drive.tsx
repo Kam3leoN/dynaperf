@@ -586,6 +586,35 @@ export default function Drive() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Preview dialog */}
+      <Dialog open={!!previewDoc} onOpenChange={(o) => { if (!o) { setPreviewDoc(null); setPreviewUrl(null); } }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+          <DialogHeader>
+            <DialogTitle>{previewDoc?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="flex flex-col items-center gap-4">
+            {previewUrl && previewDoc?.mime_type?.startsWith("image/") && (
+              <img src={previewUrl} alt={previewDoc.title} className="max-w-full max-h-[70vh] object-contain rounded-lg" />
+            )}
+            {previewUrl && previewDoc?.mime_type?.includes("pdf") && (
+              <iframe src={previewUrl} className="w-full h-[70vh] rounded-lg border border-border" />
+            )}
+            {previewUrl && previewDoc && !previewDoc.mime_type?.startsWith("image/") && !previewDoc.mime_type?.includes("pdf") && (
+              <div className="flex flex-col items-center gap-3 py-8">
+                <FontAwesomeIcon icon={fileIcon(previewDoc.mime_type)} className="h-16 w-16 text-muted-foreground/40" />
+                <p className="text-muted-foreground">Aperçu non disponible pour ce type de fichier</p>
+              </div>
+            )}
+            {previewDoc && (
+              <Button variant="outline" className="gap-2" onClick={() => downloadDoc(previewDoc)}>
+                <FontAwesomeIcon icon={faDownload} className="h-3.5 w-3.5" />
+                Télécharger
+              </Button>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 }
