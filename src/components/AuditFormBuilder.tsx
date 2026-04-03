@@ -91,8 +91,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setFieldType("text");
     setIsRequired(false);
     setSelectOptions([""]);
-    setSourceInvites("");
-    setSourceParticipants("");
+    setSourceNumerator("");
+    setSourceDenominator("");
     setDialogOpen(true);
   };
 
