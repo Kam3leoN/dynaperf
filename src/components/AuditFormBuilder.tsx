@@ -532,7 +532,6 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                   </div>
                 )}
               </div>
-          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => { setDialogOpen(false); setLayoutDraft([]); }}>Annuler</Button>
             <Button onClick={save}>{editing ? "Enregistrer" : "Ajouter"}</Button>
