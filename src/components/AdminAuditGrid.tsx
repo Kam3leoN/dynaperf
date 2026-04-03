@@ -817,6 +817,35 @@ export default function AdminAuditGridInline() {
                   </div>
                 )}
 
+                {scoringMode === "threshold" && (
+                  <div className="space-y-3 pt-1">
+                    <p className="text-xs text-muted-foreground">Attribue le max de points si la valeur respecte la condition, sinon 0.</p>
+                    <div className="flex items-center gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Opérateur</Label>
+                        <select value={thresholdOperator} onChange={(e) => setThresholdOperator(e.target.value as any)}
+                          className="h-9 rounded-md border border-input bg-background px-2 text-xs">
+                          <option value="lt">{"< Inférieur"}</option>
+                          <option value="lte">{"≤ Inférieur ou égal"}</option>
+                          <option value="gt">{"> Supérieur"}</option>
+                          <option value="gte">{"≥ Supérieur ou égal"}</option>
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Seuil</Label>
+                        <Input type="number" value={thresholdValue} onChange={(e) => setThresholdValue(parseInt(e.target.value) || 0)} className="w-20 h-9 text-xs" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Points si validé</Label>
+                        <Input type="number" min={1} value={itemForm.max_points} onChange={(e) => setItemForm({ ...itemForm, max_points: parseInt(e.target.value) || 1 })} className="w-20 h-9 text-xs" />
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground italic">
+                      Valeur {{ lt: "<", lte: "≤", gt: ">", gte: "≥" }[thresholdOperator]} {thresholdValue} → {itemForm.max_points} pts, sinon 0 pt
+                    </p>
+                  </div>
+                )}
+
                 {scoringMode === "tiers" && (
                   <div className="space-y-2">
                     {scoringTiers.map((tier, idx) => (
