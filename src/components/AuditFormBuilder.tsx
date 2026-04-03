@@ -344,20 +344,20 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                   </div>
                 )}
 
-                {isStatPercent && (
+                {needsSources && (
                   <div className="space-y-3">
-                    <Label>Champ numérateur</Label>
+                    <Label>{isStatPercent ? "Champ numérateur" : "Champ 1 (nombre)"}</Label>
                     <Select value={sourceNumerator} onValueChange={setSourceNumerator}>
-                      <SelectTrigger><SelectValue placeholder="Sélectionner le numérateur" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={isStatPercent ? "Sélectionner le numérateur" : "Sélectionner le champ 1"} /></SelectTrigger>
                       <SelectContent>
                         {numberFields.map((nf) => (
                           <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    <Label>Champ dénominateur</Label>
+                    <Label>{isStatPercent ? "Champ dénominateur" : "Champ 2 (nombre)"}</Label>
                     <Select value={sourceDenominator} onValueChange={setSourceDenominator}>
-                      <SelectTrigger><SelectValue placeholder="Sélectionner le dénominateur" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder={isStatPercent ? "Sélectionner le dénominateur" : "Sélectionner le champ 2"} /></SelectTrigger>
                       <SelectContent>
                         {numberFields.map((nf) => (
                           <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
@@ -365,7 +365,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                       </SelectContent>
                     </Select>
                     {numberFields.length === 0 && (
-                      <p className="text-xs text-muted-foreground">Ajoutez d'abord des champs « Nombre » pour configurer la statistique.</p>
+                      <p className="text-xs text-muted-foreground">Ajoutez d'abord des champs « Nombre » pour configurer le calcul.</p>
                     )}
                   </div>
                 )}
