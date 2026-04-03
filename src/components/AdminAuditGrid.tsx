@@ -69,9 +69,11 @@ export default function AdminAuditGridInline() {
   const [isAutoCalc, setIsAutoCalc] = useState(false);
   const [scoringTiers, setScoringTiers] = useState<ScoringTier[]>([]);
   const [useTiers, setUseTiers] = useState(false);
-  const [scoringMode, setScoringMode] = useState<"none" | "tiers" | "increment">("none");
+  const [scoringMode, setScoringMode] = useState<"none" | "tiers" | "increment" | "threshold">("none");
   const [incrementMin, setIncrementMin] = useState(0);
   const [incrementStep, setIncrementStep] = useState(1);
+  const [thresholdOperator, setThresholdOperator] = useState<"lt" | "lte" | "gt" | "gte">("gte");
+  const [thresholdValue, setThresholdValue] = useState(0);
 
   // Load types
   const loadTypes = useCallback(async () => {
