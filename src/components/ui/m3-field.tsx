@@ -55,7 +55,7 @@ export const M3Field = React.forwardRef<HTMLDivElement, M3FieldProps>(
           <span
             className={cn(
               "absolute left-3 pointer-events-none transition-all duration-200 origin-top-left z-10",
-              "px-1 bg-card",
+              "px-1 bg-background",
               floated
                 ? "-top-2.5 text-[11px] font-medium scale-100"
                 : "top-1/2 -translate-y-1/2 text-sm",
