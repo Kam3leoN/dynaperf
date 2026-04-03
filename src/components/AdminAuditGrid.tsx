@@ -735,22 +735,27 @@ export default function AdminAuditGridInline() {
                 <div className="flex items-center gap-3">
                   <Switch checked={isAutoCalc} onCheckedChange={setIsAutoCalc} id="auto-calc" />
                   <Label htmlFor="auto-calc" className="font-medium">
-                    {itemForm.input_type === "boolean" ? "Validation automatique (depuis un champ nombre)" : "Calcul automatique (désactivé en saisie)"}
+                    {itemForm.input_type === "boolean" ? "Validation automatique (depuis un champ source)" : "Calcul automatique (désactivé en saisie)"}
                   </Label>
                 </div>
                 {isAutoCalc && (
                   <div className="space-y-2">
                     <Label className="text-xs">Champ source (informations générales)</Label>
                     <Select value={itemForm.auto_field} onValueChange={(v) => setItemForm({ ...itemForm, auto_field: v })}>
-                      <SelectTrigger><SelectValue placeholder="Sélectionner un champ nombre…" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Sélectionner un champ source…" /></SelectTrigger>
                       <SelectContent>
-                        {numberCustomFields.map((f) => (
-                          <SelectItem key={f.id} value={f.id}>{f.field_label}</SelectItem>
+                        {sourceCustomFields.map((f) => (
+                          <SelectItem key={f.id} value={f.id}>
+                            {f.field_label}
+                            <span className="ml-1 text-muted-foreground text-[10px]">
+                              ({f.field_type === "number" ? "nombre" : f.field_type === "stat_percent" ? "ratio" : "évolution"})
+                            </span>
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    {numberCustomFields.length === 0 && (
-                      <p className="text-xs text-muted-foreground">Ajoutez d'abord des champs « Nombre » dans le formulaire ci-dessus.</p>
+                    {sourceCustomFields.length === 0 && (
+                      <p className="text-xs text-muted-foreground">Ajoutez d'abord des champs « Nombre », « Ratio » ou « Évolution » dans le formulaire ci-dessus.</p>
                     )}
                     {itemForm.input_type === "boolean" && (
                       <div className="space-y-1.5">
