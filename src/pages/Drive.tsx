@@ -479,7 +479,7 @@ export default function Drive() {
                       <p className="text-sm font-semibold text-center leading-tight line-clamp-2">{doc.title}</p>
                       {doc.description && <p className="text-xs text-muted-foreground text-center line-clamp-2">{doc.description}</p>}
                       {doc.file_size ? <p className="text-[10px] text-muted-foreground text-center">{formatSize(doc.file_size)}</p> : null}
-                      <ModifiedInfo updatedAt={doc.updated_at} updatedBy={doc.updated_by} />
+                      <MetaInfo doc={doc} />
                     </div>
 
                     {/* Actions row */}
