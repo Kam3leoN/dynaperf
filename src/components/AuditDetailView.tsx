@@ -169,7 +169,7 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
 
                 {/* Score par catégorie */}
                 {config && config.categories.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {config.categories.map((cat) => {
                       const catItems = allItems.filter((i) => i.categoryId === cat.id);
                       const catMaxPoints = catItems.reduce((sum, i) => sum + i.maxPoints, 0);
