@@ -29,7 +29,7 @@ export default function Welcome() {
 
   const greeting = firstName ?? user?.email?.split("@")[0] ?? "Utilisateur";
 
-  const appUrl = "https://kam3leon.github.io/dynaperf/";
+  const appUrl = "https://dynaperf.lovable.app/";
 
   return (
     <AppLayout>
