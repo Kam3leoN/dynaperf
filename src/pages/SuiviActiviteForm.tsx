@@ -16,6 +16,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
+import { M3Field } from "@/components/ui/m3-field";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -166,20 +167,18 @@ export default function SuiviActiviteForm() {
     <AppLayout>
       {/* Sticky progress bar */}
       <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-2.5 -mx-4 mb-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center gap-3 mb-1.5">
-            <Badge variant="outline" className="text-xs">Suivi d'activité</Badge>
-            <span className="text-xs text-muted-foreground">
-              {totalFilled} / {totalExpected} champs renseignés
-            </span>
-            <span className="ml-auto text-xs font-semibold text-foreground tabular-nums">
-              {Math.round(progress)}%
-            </span>
-          </div>
-          <Progress value={progress} className="h-2" />
+        <div className="flex items-center gap-3 mb-1.5">
+          <Badge variant="outline" className="text-xs">Suivi d'activité</Badge>
+          <span className="text-xs text-muted-foreground">
+            {totalFilled} / {totalExpected} champs renseignés
+          </span>
+          <span className="ml-auto text-xs font-semibold text-foreground tabular-nums">
+            {Math.round(progress)}%
+          </span>
         </div>
+        <Progress value={progress} className="h-2" />
       </div>
-      <div className="max-w-4xl mx-auto px-4">
+      <div className="px-0">
         <h1 className="text-xl font-semibold text-foreground mb-6">Nouveau suivi d'activité</h1>
 
         <div className="space-y-8">
@@ -188,27 +187,24 @@ export default function SuiviActiviteForm() {
             <h2 className="text-sm font-bold text-foreground uppercase tracking-wider border-b border-border pb-2 mb-4">
               Informations générales
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl">
-              <div className="space-y-1.5">
-                <Label>Partenaire accompagné (Prénom NOM) *</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <M3Field label="Partenaire accompagné (Prénom NOM)" required filled={!!partenaire}>
                 <AutocompleteInput
                   value={partenaire}
                   onChange={setPartenaire}
                   suggestions={partenaires.map((p) => `${p.prenom} ${p.nom.toUpperCase()}`)}
                   placeholder="ex: Émilie BLAISE"
                 />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Partenaire référent (Prénom NOM)</Label>
+              </M3Field>
+              <M3Field label="Partenaire référent (Prénom NOM)" filled={!!accompagnePar}>
                 <AutocompleteInput
                   value={accompagnePar}
                   onChange={setAccompagnePar}
                   suggestions={partenaires.map((p) => `${p.prenom} ${p.nom.toUpperCase()}`)}
                   placeholder="ex: Marie DUPONT"
                 />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Suivi réalisé par *</Label>
+              </M3Field>
+              <M3Field label="Suivi réalisé par" required filled={!!suiviPar}>
                 {auditeurs.length > 0 ? (
                   <Select value={suiviPar} onValueChange={setSuiviPar}>
                     <SelectTrigger>
@@ -223,12 +219,11 @@ export default function SuiviActiviteForm() {
                 ) : (
                   <Input value={suiviPar} onChange={(e) => setSuiviPar(e.target.value)} placeholder="ex: Cédric MALZAT" />
                 )}
-              </div>
-              <div className="space-y-1.5">
-                <Label>Date de l'entretien *</Label>
+              </M3Field>
+              <M3Field label="Date de l'entretien" required filled={!!dateEntretien}>
                 <Popover>
                   <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-full justify-start text-left font-normal", !dateEntretien && "text-muted-foreground")}>
+                    <Button variant="ghost" className={cn("w-full justify-start text-left font-normal h-auto p-0", !dateEntretien && "text-muted-foreground")}>
                       <FontAwesomeIcon icon={faCalendar} className="mr-2 h-3.5 w-3.5" />
                       {dateEntretien ? format(dateEntretien, "dd MMMM yyyy", { locale: fr }) : "Sélectionner une date"}
                     </Button>
@@ -237,15 +232,13 @@ export default function SuiviActiviteForm() {
                     <Calendar mode="single" selected={dateEntretien} onSelect={setDateEntretien} initialFocus className="p-3 pointer-events-auto" />
                   </PopoverContent>
                 </Popover>
-              </div>
-              <div className="space-y-1.5">
-                <Label>Nb contrats total depuis début d'année</Label>
+              </M3Field>
+              <M3Field label="Nb contrats total depuis début d'année" filled={!!nbContratsTotal}>
                 <Input type="number" min={0} value={nbContratsTotal} onChange={(e) => setNbContratsTotal(e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label>Nb contrats depuis dernier entretien</Label>
+              </M3Field>
+              <M3Field label="Nb contrats depuis dernier entretien" filled={!!nbContratsDernier}>
                 <Input type="number" min={0} value={nbContratsDernier} onChange={(e) => setNbContratsDernier(e.target.value)} />
-              </div>
+              </M3Field>
             </div>
           </div>
 
