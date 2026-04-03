@@ -29,18 +29,6 @@ import {
   faCircleInfo,
   faSave,
 } from "@fortawesome/free-solid-svg-icons";
-import { cn } from "@/lib/utils";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faCalendar,
-  faCheck,
-  faXmark,
-  faMinus,
-  faCircleInfo,
-  faSave,
-} from "@fortawesome/free-solid-svg-icons";
 
 type ItemStatus = "fait" | "pas_fait" | "nc" | null;
 
