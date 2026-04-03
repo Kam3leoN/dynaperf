@@ -89,7 +89,7 @@ function formatModifiedDate(dateStr: string) {
   }
 }
 
-type ViewMode = "cards" | "table";
+type ViewMode = "cards" | "tree";
 type Density = "compact" | "comfortable";
 
 // Map known folder names to audit type SVG icons
