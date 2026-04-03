@@ -105,13 +105,32 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
       html += `<span class="badge badge-secondary">Note : ${detail.note_sur_10 ?? note ?? "—"}/10</span>`;
       html += `</div>`;
 
+      // ── Score par catégorie ──
+      html += `<div style="margin-top:8px;display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;">`;
+      for (const cat of config.categories) {
+        const catItems = allItems.filter((i) => i.categoryId === cat.id);
+        if (catItems.length === 0) continue;
+        const catMax = catItems.reduce((s, i) => s + i.maxPoints, 0);
+        const catObt = catItems.reduce((s, i) => s + (items[i.id]?.score ?? 0), 0);
+        const pct = catMax > 0 ? Math.round((catObt / catMax) * 100) : 0;
+        const color = pct >= 80 ? "#22c55e" : pct >= 50 ? "#f59e0b" : "#ef4444";
+        html += `<div style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 8px;">`;
+        html += `<div style="font-size:9px;color:#6b7280;margin-bottom:2px;">${escapeHtml(cat.name)}</div>`;
+        html += `<div style="font-size:13px;font-weight:700;">${catObt}<span style="font-size:10px;color:#9ca3af;font-weight:400;"> / ${catMax} pts</span></div>`;
+        html += `<div style="height:4px;border-radius:2px;background:#e5e7eb;margin-top:3px;"><div style="height:100%;border-radius:2px;width:${pct}%;background:${color};"></div></div>`;
+        html += `<div style="font-size:9px;color:#6b7280;text-align:right;margin-top:1px;">${pct}%</div>`;
+        html += `</div>`;
+      }
+      html += `</div>`;
+
       // ── Items par catégorie ──
       let globalIdx = 0;
       for (const cat of config.categories) {
         const catItems = allItems.filter((i) => i.categoryId === cat.id);
         if (catItems.length === 0) continue;
-
-        html += `<div class="cat-header">${escapeHtml(cat.name)}</div>`;
+        const catMax = catItems.reduce((s, i) => s + i.maxPoints, 0);
+        const catObt = catItems.reduce((s, i) => s + (items[i.id]?.score ?? 0), 0);
+        html += `<div class="cat-header">${escapeHtml(cat.name)} <span style="float:right;font-size:11px;font-weight:600;">${catObt}/${catMax} pts</span></div>`;
 
         for (const item of catItems) {
           globalIdx++;
