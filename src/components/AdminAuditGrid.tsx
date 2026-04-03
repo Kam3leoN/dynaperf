@@ -847,7 +847,7 @@ export default function AdminAuditGridInline() {
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground italic">
-                      Valeur {{ lt: "<", lte: "≤", gt: ">", gte: "≥" }[thresholdOperator]} {thresholdValue} → {itemForm.max_points} pts, sinon 0 pt
+                      Valeur {{ lt: "<", lte: "≤", eq: "=", gt: ">", gte: "≥" }[thresholdOperator]} {thresholdValue} → {itemForm.max_points} pts, sinon 0 pt
                     </p>
                   </div>
                 )}
