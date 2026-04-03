@@ -171,8 +171,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     } else if (needsSources) {
       if (!sourceNumerator || !sourceDenominator) { toast.error("Sélectionnez les deux champs sources"); return; }
       fieldOpts = isStatPercent
-        ? { source_a: sourceNumerator, source_b: sourceDenominator }
-        : { source_a: sourceNumerator, source_b: sourceDenominator, operation: sumOperation };
+        ? { source_numerator: sourceNumerator, source_denominator: sourceDenominator }
+        : { source_a: sourceNumerator, source_b: sourceDenominator };
     }
 
     const payload = {
