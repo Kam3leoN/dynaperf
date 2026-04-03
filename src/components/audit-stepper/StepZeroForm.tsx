@@ -322,18 +322,19 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
           />
         );
       case "stat_percent": {
-        const numId = field.field_options?.source_numerator;
-        const denId = field.field_options?.source_denominator;
-        const numerator = Number(data.customFieldValues?.[numId]) || 0;
-        const denominator = Number(data.customFieldValues?.[denId]) || 0;
-        const pct = denominator > 0 ? Math.round((numerator / denominator) * 1000) / 10 : null;
+        const aId = field.field_options?.source_a || field.field_options?.source_numerator;
+        const bId = field.field_options?.source_b || field.field_options?.source_denominator;
+        const a = Number(data.customFieldValues?.[aId]) || 0;
+        const b = Number(data.customFieldValues?.[bId]) || 0;
+        const total = a + b;
+        const pct = total > 0 ? Math.round((a / total) * 1000) / 10 : null;
         return (
           <div className="flex items-center gap-2 h-12 px-4 rounded-xl border border-input bg-muted text-sm cursor-not-allowed">
             <span className="font-semibold text-foreground">
               {pct !== null ? `${pct} %` : "—"}
             </span>
             <span className="text-muted-foreground text-xs">
-              {denominator > 0 ? `(${numerator} / ${denominator})` : ""}
+              {total > 0 ? `(${a} / ${total})` : ""}
             </span>
           </div>
         );
