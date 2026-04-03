@@ -157,13 +157,46 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
               )}
 
               {/* Score global */}
-              <div className="mt-4 flex gap-3 flex-wrap">
-                <Badge variant="secondary" className="text-xs">
-                  Total : {detail.total_points ?? "—"} pts
-                </Badge>
-                <Badge variant="secondary" className="text-xs">
-                  Note : {detail.note_sur_10 ?? "—"}/10
-                </Badge>
+              <div className="mt-5 space-y-3">
+                <div className="flex gap-3 flex-wrap">
+                  <Badge variant="secondary" className="text-sm px-3 py-1">
+                    Total : {detail.total_points ?? "—"} pts
+                  </Badge>
+                  <Badge variant="secondary" className="text-sm px-3 py-1">
+                    Note : {detail.note_sur_10 ?? "—"}/10
+                  </Badge>
+                </div>
+
+                {/* Score par catégorie */}
+                {config && config.categories.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                    {config.categories.map((cat) => {
+                      const catItems = allItems.filter((i) => i.categoryId === cat.id);
+                      const catMaxPoints = catItems.reduce((sum, i) => sum + i.maxPoints, 0);
+                      const catObtained = catItems.reduce((sum, i) => sum + (detail.items[i.id]?.score ?? 0), 0);
+                      const pct = catMaxPoints > 0 ? Math.round((catObtained / catMaxPoints) * 100) : 0;
+                      return (
+                        <div key={cat.id} className="rounded-xl border border-border bg-muted/30 p-3 space-y-1.5">
+                          <p className="text-[11px] font-medium text-muted-foreground truncate">{cat.name}</p>
+                          <div className="flex items-baseline gap-1.5">
+                            <span className="text-lg font-bold tabular-nums text-foreground">{catObtained}</span>
+                            <span className="text-xs text-muted-foreground">/ {catMaxPoints} pts</span>
+                          </div>
+                          <div className="h-1.5 rounded-full bg-border overflow-hidden">
+                            <div
+                              className={cn(
+                                "h-full rounded-full transition-all",
+                                pct >= 80 ? "bg-emerald-500" : pct >= 50 ? "bg-amber-500" : "bg-destructive"
+                              )}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                          <p className="text-[11px] tabular-nums text-muted-foreground text-right">{pct}%</p>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -171,10 +204,13 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
             {config?.categories.map((cat) => {
               const catItems = allItems.filter((i) => i.categoryId === cat.id);
               if (catItems.length === 0) return null;
+              const catMaxPoints = catItems.reduce((sum, i) => sum + i.maxPoints, 0);
+              const catObtained = catItems.reduce((sum, i) => sum + (detail.items[i.id]?.score ?? 0), 0);
               return (
                 <div key={cat.id} className="space-y-3">
-                  <h2 className="text-sm font-bold text-foreground uppercase tracking-wider border-b border-border pb-2">
-                    {cat.name}
+                  <h2 className="text-sm font-bold text-foreground uppercase tracking-wider border-b border-border pb-2 flex items-center justify-between gap-2">
+                    <span>{cat.name}</span>
+                    <Badge variant="outline" className="text-[11px] tabular-nums font-semibold">{catObtained}/{catMaxPoints} pts</Badge>
                   </h2>
                   {catItems.map((item) => {
                     const answer = detail.items[item.id];
