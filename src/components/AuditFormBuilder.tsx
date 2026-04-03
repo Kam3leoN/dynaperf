@@ -109,7 +109,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
   };
 
   const needsOptions = ["select", "radio", "checkbox"].includes(fieldType);
-  const isAutoNoShow = fieldType === "auto_no_show";
+  const isStatPercent = fieldType === "stat_percent";
   const numberFields = fields.filter((f) => f.field_type === "number");
 
   const save = async () => {
