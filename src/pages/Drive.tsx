@@ -325,11 +325,15 @@ export default function Drive() {
     fetchAll();
   };
 
-  const ModifiedInfo = ({ updatedAt, updatedBy }: { updatedAt: string; updatedBy: string | null }) => {
-    const name = getModifierName(updatedBy);
+  const MetaInfo = ({ doc }: { doc: DriveDocument }) => {
+    const wasEdited = doc.updated_at !== doc.created_at;
+    const date = wasEdited ? doc.updated_at : doc.created_at;
+    const userId = wasEdited ? doc.updated_by : doc.uploaded_by;
+    const label = wasEdited ? "Modifié" : "Uploadé";
+    const name = getModifierName(userId);
     return (
       <p className="text-[10px] text-muted-foreground text-center">
-        Modifié {formatModifiedDate(updatedAt)}
+        {label} {formatModifiedDate(date)}
         {name && <> par <span className="font-medium">{name}</span></>}
       </p>
     );
