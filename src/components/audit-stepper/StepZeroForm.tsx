@@ -209,6 +209,33 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customFields, data.customFieldValues]);
 
+  // Auto-calculate stat_sum fields
+  useEffect(() => {
+    const sumFields = customFields.filter((f) => f.field_type === "stat_sum");
+    if (sumFields.length === 0) return;
+    setData((prev) => {
+      const cv = { ...prev.customFieldValues };
+      let changed = false;
+      for (const field of sumFields) {
+        const aId = field.field_options?.source_a;
+        const bId = field.field_options?.source_b;
+        if (!aId || !bId) continue;
+        const a = Number(cv[aId]) || 0;
+        const b = Number(cv[bId]) || 0;
+        const sum = a + b;
+        if (cv[field.id] !== sum) {
+          cv[field.id] = sum;
+          changed = true;
+        }
+      }
+      if (!changed) return prev;
+      const next = { ...prev, customFieldValues: cv };
+      if (hideSubmitButton) setTimeout(() => onSubmit(next), 0);
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customFields, data.customFieldValues]);
+
   const isValid = customFields
     .filter((f) => f.is_required)
     .every((f) => {
