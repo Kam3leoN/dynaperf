@@ -440,16 +440,23 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
           Aucun champ configuré pour ce type d'audit. Configurez les champs dans l'administration.
         </p>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {customFields.map((field) => (
-            <div key={field.id} className="space-y-1.5">
-              <Label>
-                {field.field_label}
-                {field.is_required && " *"}
-              </Label>
-              {renderField(field)}
-            </div>
-          ))}
+        <div className="grid grid-cols-12 gap-4">
+          {customFields.map((field) => {
+            const span = field.col_span || 6;
+            return (
+              <div
+                key={field.id}
+                className="space-y-1.5"
+                style={{ gridColumn: `span ${span} / span ${span}` }}
+              >
+                <Label>
+                  {field.field_label}
+                  {field.is_required && " *"}
+                </Label>
+                {renderField(field)}
+              </div>
+            );
+          })}
         </div>
       )}
 
