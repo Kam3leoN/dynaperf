@@ -156,7 +156,7 @@ interface TreeViewProps {
 function TreeNode({
   cat, categories, documents, depth, isAdmin,
   onNavigate, onEditCat, onDeleteCat, onDownloadDoc, onEditDoc, onDeleteDoc, onMoveDoc,
-  getFolderIcon, ModifiedInfo,
+  ModifiedInfo,
 }: TreeViewProps & { cat: Category; depth: number }) {
   const [expanded, setExpanded] = useState(false);
   const [dragOver, setDragOver] = useState(false);
