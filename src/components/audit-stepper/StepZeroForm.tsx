@@ -59,11 +59,7 @@ interface Props {
   hideSubmitButton?: boolean;
 }
 
-const isRdOrClub = (type: string) =>
-  type.includes("RD") || type.includes("Club");
-const isClub = (type: string) => type.includes("Club");
-
-interface SuggestionLists {
+// No more hardcoded type checks - all extra fields come from custom fields
   partenaires: string[];
   auditeurs: string[];
   lieux: string[];
