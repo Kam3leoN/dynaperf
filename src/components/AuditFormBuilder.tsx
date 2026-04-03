@@ -26,11 +26,11 @@ interface CustomField {
   sort_order: number;
 }
 
-const FIELD_TYPES = [
+const FIELD_TYPES_STANDARD = [
   { value: "text", label: "Texte" },
   { value: "textarea", label: "Zone de texte" },
   { value: "number", label: "Nombre" },
-  { value: "date", label: "Date" },
+  { value: "date", label: "Date (simple)" },
   { value: "time", label: "Heure" },
   { value: "select", label: "Liste déroulante" },
   { value: "radio", label: "Choix unique" },
@@ -41,6 +41,18 @@ const FIELD_TYPES = [
   { value: "url", label: "URL" },
 ];
 
+const FIELD_TYPES_SMART = [
+  { value: "partenaire_autocomplete", label: "🔗 Partenaire (autocomplete)" },
+  { value: "referent_autocomplete", label: "🔗 Référent (autocomplete)" },
+  { value: "auditeur_select", label: "🔗 Auditeur (sélection profils)" },
+  { value: "city_autocomplete", label: "🔗 Ville (autocomplete)" },
+  { value: "lieu_autocomplete", label: "🔗 Lieu (autocomplete)" },
+  { value: "qualite_lieu_rating", label: "🔗 Qualité lieu (étoiles)" },
+  { value: "date_picker", label: "🔗 Date (calendrier)" },
+];
+
+const ALL_FIELD_TYPES = [...FIELD_TYPES_SMART, ...FIELD_TYPES_STANDARD];
+
 interface Props {
   auditTypeKey: string;
 }
@@ -48,14 +60,13 @@ interface Props {
 export function AuditFormBuilder({ auditTypeKey }: Props) {
   const [fields, setFields] = useState<CustomField[]>([]);
   const [loading, setLoading] = useState(true);
-
-  // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<CustomField | null>(null);
   const [fieldLabel, setFieldLabel] = useState("");
   const [fieldType, setFieldType] = useState("text");
   const [isRequired, setIsRequired] = useState(false);
   const [selectOptions, setSelectOptions] = useState<string[]>([""]);
+  const [dragIdx, setDragIdx] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     const { data } = await supabase
@@ -123,7 +134,28 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     load();
   };
 
-  const getTypeLabel = (t: string) => FIELD_TYPES.find((ft) => ft.value === t)?.label || t;
+  // Drag and drop reorder
+  const handleDragStart = (idx: number) => setDragIdx(idx);
+  const handleDragOver = (e: React.DragEvent, idx: number) => {
+    e.preventDefault();
+    if (dragIdx === null || dragIdx === idx) return;
+    const reordered = [...fields];
+    const [moved] = reordered.splice(dragIdx, 1);
+    reordered.splice(idx, 0, moved);
+    setFields(reordered);
+    setDragIdx(idx);
+  };
+  const handleDragEnd = async () => {
+    setDragIdx(null);
+    // Persist new sort_order
+    await Promise.all(
+      fields.map((f, i) =>
+        supabase.from("audit_type_custom_fields").update({ sort_order: i }).eq("id", f.id)
+      )
+    );
+  };
+
+  const getTypeLabel = (t: string) => ALL_FIELD_TYPES.find((ft) => ft.value === t)?.label || t;
 
   if (loading) return <p className="text-sm text-muted-foreground py-4">Chargement…</p>;
 
@@ -131,8 +163,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-sm font-semibold text-foreground">Champs personnalisés</h3>
-          <p className="text-xs text-muted-foreground">Informations générales supplémentaires (façon Google Forms)</p>
+          <h3 className="text-sm font-semibold text-foreground">Champs du formulaire</h3>
+          <p className="text-xs text-muted-foreground">Construisez le formulaire « Informations générales » de cet audit</p>
         </div>
         <Button variant="outline" size="sm" onClick={openNew} className="gap-1.5">
           <FontAwesomeIcon icon={faPlus} className="h-3 w-3" /> Ajouter
@@ -141,14 +173,21 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
 
       {fields.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-6 border border-dashed border-border rounded-xl">
-          Aucun champ personnalisé. Cliquez sur "Ajouter" pour construire votre formulaire.
+          Aucun champ. Cliquez sur « Ajouter » pour construire votre formulaire.
         </p>
       ) : (
         <div className="space-y-2">
-          {fields.map((f) => (
-            <Card key={f.id} className="group">
+          {fields.map((f, idx) => (
+            <Card
+              key={f.id}
+              className={`group cursor-grab ${dragIdx === idx ? "opacity-50" : ""}`}
+              draggable
+              onDragStart={() => handleDragStart(idx)}
+              onDragOver={(e) => handleDragOver(e, idx)}
+              onDragEnd={handleDragEnd}
+            >
               <CardContent className="py-3 px-4 flex items-center gap-3">
-                <FontAwesomeIcon icon={faGripVertical} className="h-3.5 w-3.5 text-muted-foreground/40" />
+                <FontAwesomeIcon icon={faGripVertical} className="h-3.5 w-3.5 text-muted-foreground/40 cursor-grab" />
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-foreground truncate">{f.field_label}</p>
                   <div className="flex items-center gap-1.5 mt-0.5">
@@ -188,7 +227,12 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
               <Select value={fieldType} onValueChange={setFieldType}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  {FIELD_TYPES.map((ft) => (
+                  <div className="px-2 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Champs intelligents</div>
+                  {FIELD_TYPES_SMART.map((ft) => (
+                    <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
+                  ))}
+                  <div className="px-2 py-1.5 text-[10px] font-semibold text-muted-foreground uppercase tracking-wider border-t mt-1 pt-2">Champs standards</div>
+                  {FIELD_TYPES_STANDARD.map((ft) => (
                     <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
                   ))}
                 </SelectContent>
