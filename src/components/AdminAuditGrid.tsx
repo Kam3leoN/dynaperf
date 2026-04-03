@@ -59,6 +59,8 @@ export default function AdminAuditGridInline() {
   // Item dialog
   const [itemDialogOpen, setItemDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<ItemConfig | null>(null);
+  const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ categoryId: string; index: number } | null>(null);
   const [itemForm, setItemForm] = useState({
     category_id: "", title: "", description: "", max_points: 1,
     condition: "", scoring_rules: "", input_type: "boolean", checklist_items: "",
@@ -316,6 +318,65 @@ export default function AdminAuditGridInline() {
     loadData();
   };
 
+  const buildReorderedItems = (itemId: string, targetCategoryId: string, targetIndex: number) => {
+    const draggedItem = items.find((item) => item.id === itemId);
+    if (!draggedItem) return null;
+
+    const byCategory = new Map(
+      categories.map((category) => [
+        category.id,
+        items
+          .filter((item) => item.category_id === category.id && item.id !== itemId)
+          .sort((a, b) => a.sort_order - b.sort_order),
+      ])
+    );
+
+    const targetItems = [...(byCategory.get(targetCategoryId) || [])];
+    targetItems.splice(Math.max(0, Math.min(targetIndex, targetItems.length)), 0, {
+      ...draggedItem,
+      category_id: targetCategoryId,
+    });
+    byCategory.set(targetCategoryId, targetItems);
+
+    return categories.flatMap((category) =>
+      (byCategory.get(category.id) || []).map((item, index) => ({
+        ...item,
+        category_id: category.id,
+        sort_order: index,
+      }))
+    );
+  };
+
+  const persistReorderedItems = async (nextItems: ItemConfig[]) => {
+    setItems(nextItems);
+    const results = await Promise.all(
+      nextItems.map((item) =>
+        supabase
+          .from("audit_items_config")
+          .update({ category_id: item.category_id, sort_order: item.sort_order })
+          .eq("id", item.id)
+      )
+    );
+    const firstError = results.find((result) => result.error)?.error;
+    if (firstError) {
+      toast.error(firstError.message || "Erreur lors du déplacement");
+      loadData();
+      return;
+    }
+    toast.success("Ordre des items mis à jour");
+  };
+
+  const handleItemDragStart = (itemId: string) => setDraggedItemId(itemId);
+
+  const handleItemDrop = async (categoryId: string, index: number) => {
+    if (!draggedItemId) return;
+    const nextItems = buildReorderedItems(draggedItemId, categoryId, index);
+    setDraggedItemId(null);
+    setDropTarget(null);
+    if (!nextItems) return;
+    await persistReorderedItems(nextItems);
+  };
+
   // Scoring tiers helpers
   const addTier = () => {
     const last = scoringTiers[scoringTiers.length - 1];
@@ -477,7 +538,18 @@ export default function AdminAuditGridInline() {
                 </div>
                 <div className="divide-y divide-border">
                   {catItems.map((item, idx) => (
-                    <div key={item.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-accent/30 transition-colors">
+                    <div
+                      key={item.id}
+                      draggable
+                      onDragStart={() => handleItemDragStart(item.id)}
+                      onDragEnd={() => { setDraggedItemId(null); setDropTarget(null); }}
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        setDropTarget({ categoryId: cat.id, index: idx });
+                      }}
+                      onDrop={() => handleItemDrop(cat.id, idx)}
+                      className={`flex items-center gap-3 px-4 py-2.5 hover:bg-accent/30 transition-colors cursor-grab ${dropTarget?.categoryId === cat.id && dropTarget.index === idx ? "border-t-2 border-primary" : ""}`}
+                    >
                       <span className="text-xs text-muted-foreground tabular-nums w-6 text-right">{idx + 1}</span>
                       <FontAwesomeIcon icon={faGripVertical} className="h-3 w-3 text-muted-foreground/50" />
                       <div className="flex-1 min-w-0">
@@ -495,7 +567,28 @@ export default function AdminAuditGridInline() {
                       </Button>
                     </div>
                   ))}
-                  {catItems.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Aucun item</p>}
+                  {catItems.length === 0 && (
+                    <div
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        setDropTarget({ categoryId: cat.id, index: 0 });
+                      }}
+                      onDrop={() => handleItemDrop(cat.id, 0)}
+                      className={`text-xs text-center py-4 ${dropTarget?.categoryId === cat.id && dropTarget.index === 0 ? "text-primary border-2 border-dashed border-primary rounded-lg m-2" : "text-muted-foreground"}`}
+                    >
+                      Aucun item
+                    </div>
+                  )}
+                  {catItems.length > 0 && (
+                    <div
+                      onDragOver={(event) => {
+                        event.preventDefault();
+                        setDropTarget({ categoryId: cat.id, index: catItems.length });
+                      }}
+                      onDrop={() => handleItemDrop(cat.id, catItems.length)}
+                      className={`h-3 transition-colors ${dropTarget?.categoryId === cat.id && dropTarget.index === catItems.length ? "bg-primary/20" : "bg-transparent"}`}
+                    />
+                  )}
                 </div>
                 <div className="px-4 py-2 border-t border-border">
                   <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => openNewItem(cat.id)}>

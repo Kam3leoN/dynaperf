@@ -1,5 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
-import { cn } from "@/lib/utils";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue, SelectGr
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Slider } from "@/components/ui/slider";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
@@ -18,6 +16,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
 import { StepZeroForm } from "@/components/audit-stepper/StepZeroForm";
+import { FieldLayoutEditor, type LayoutDraftItem, type LayoutEditorField } from "@/components/admin/FieldLayoutEditor";
 
 interface CustomField {
   id: string;
@@ -61,15 +60,19 @@ const FIELD_TYPES_SMART = [
 ];
 
 const ALL_FIELD_TYPES = [...FIELD_TYPES_SMART, ...FIELD_TYPES_STANDARD];
+const DRAFT_FIELD_ID = "__draft_custom_field__";
 
-const COL_SPAN_OPTIONS = [
-  { value: 3, label: "3/12 — ¼" },
-  { value: 4, label: "4/12 — ⅓" },
-  { value: 6, label: "6/12 — ½" },
-  { value: 8, label: "8/12 — ⅔" },
-  { value: 9, label: "9/12 — ¾" },
-  { value: 12, label: "12/12 — Plein" },
-];
+const areLayoutDraftsEqual = (left: LayoutDraftItem[], right: LayoutDraftItem[]) => (
+  left.length === right.length && left.every((item, index) => {
+    const other = right[index];
+    return !!other
+      && item.id === other.id
+      && item.sort_order === other.sort_order
+      && item.col_span === other.col_span
+      && item.col_offset_before === other.col_offset_before
+      && item.col_offset_after === other.col_offset_after;
+  })
+);
 
 interface Props {
   auditTypeKey: string;
@@ -91,7 +94,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
   const [sourceNumerator, setSourceNumerator] = useState("");
   const [sourceDenominator, setSourceDenominator] = useState("");
   const [previewMode, setPreviewMode] = useState(false);
-  // Force StepZeroForm remount on toggle
+  const [layoutDraft, setLayoutDraft] = useState<LayoutDraftItem[]>([]);
   const [previewKey, setPreviewKey] = useState(0);
 
   const load = useCallback(async () => {
@@ -106,6 +109,27 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
 
   useEffect(() => { load(); }, [load]);
 
+  const buildLayoutDraft = useCallback((active?: Partial<CustomField> & { id: string }) => {
+    const baseLayout = fields.map((field) => ({
+      id: field.id,
+      sort_order: field.sort_order,
+      col_span: field.col_span || 6,
+      col_offset_before: field.col_offset_before || 0,
+      col_offset_after: field.col_offset_after || 0,
+    }));
+
+    const activeLayout: LayoutDraftItem = {
+      id: active?.id || DRAFT_FIELD_ID,
+      sort_order: active?.sort_order ?? fields.length,
+      col_span: active?.col_span || 6,
+      col_offset_before: active?.col_offset_before || 0,
+      col_offset_after: active?.col_offset_after || 0,
+    };
+
+    return [...baseLayout.filter((item) => item.id !== activeLayout.id), activeLayout]
+      .sort((a, b) => a.sort_order - b.sort_order);
+  }, [fields]);
+
   const openNew = () => {
     setEditing(null);
     setFieldLabel("");
@@ -117,6 +141,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setSelectOptions([""]);
     setSourceNumerator("");
     setSourceDenominator("");
+    setLayoutDraft(buildLayoutDraft({ id: DRAFT_FIELD_ID, sort_order: fields.length, col_span: 6 }));
     setDialogOpen(true);
   };
 
@@ -132,12 +157,65 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setSelectOptions(Array.isArray(opts) && opts.length > 0 ? opts : [""]);
     setSourceNumerator(f.field_options?.source_numerator || "");
     setSourceDenominator(f.field_options?.source_denominator || "");
+    setLayoutDraft(buildLayoutDraft({
+      id: f.id,
+      sort_order: f.sort_order,
+      col_span: f.col_span || 6,
+      col_offset_before: f.col_offset_before || 0,
+      col_offset_after: f.col_offset_after || 0,
+    }));
     setDialogOpen(true);
   };
 
   const needsOptions = ["select", "radio", "checkbox"].includes(fieldType);
   const isStatPercent = fieldType === "stat_percent";
   const numberFields = fields.filter((f) => f.field_type === "number");
+  const activeFieldId = editing?.id || DRAFT_FIELD_ID;
+
+  const editorFields = useMemo<LayoutEditorField[]>(() => {
+    const draftMap = new Map(layoutDraft.map((item) => [item.id, item]));
+
+    const stableFields = fields
+      .filter((field) => field.id !== activeFieldId)
+      .map((field) => {
+        const layout = draftMap.get(field.id);
+        return {
+          id: field.id,
+          field_label: field.field_label,
+          sort_order: layout?.sort_order ?? field.sort_order,
+          col_span: layout?.col_span ?? field.col_span ?? 6,
+          col_offset_before: layout?.col_offset_before ?? field.col_offset_before ?? 0,
+          col_offset_after: layout?.col_offset_after ?? field.col_offset_after ?? 0,
+        };
+      });
+
+    const activeLayout = draftMap.get(activeFieldId);
+    const activeField: LayoutEditorField = {
+      id: activeFieldId,
+      field_label: fieldLabel.trim() || editing?.field_label || "Nouveau champ",
+      sort_order: activeLayout?.sort_order ?? editing?.sort_order ?? fields.length,
+      col_span: activeLayout?.col_span ?? colSpan,
+      col_offset_before: activeLayout?.col_offset_before ?? offsetBefore,
+      col_offset_after: activeLayout?.col_offset_after ?? offsetAfter,
+    };
+
+    return [...stableFields, activeField].sort((a, b) => a.sort_order - b.sort_order);
+  }, [activeFieldId, colSpan, editing?.field_label, editing?.sort_order, fieldLabel, fields, layoutDraft, offsetAfter, offsetBefore]);
+
+  const handleLayoutChange = useCallback((nextLayout: LayoutDraftItem[]) => {
+    setLayoutDraft((current) => areLayoutDraftsEqual(current, nextLayout) ? current : nextLayout);
+    const activeLayout = nextLayout.find((item) => item.id === activeFieldId);
+    if (activeLayout) {
+      setColSpan(activeLayout.col_span);
+      setOffsetBefore(activeLayout.col_offset_before);
+      setOffsetAfter(activeLayout.col_offset_after);
+    }
+  }, [activeFieldId]);
+
+  const handleSpanChange = useCallback((span: number) => {
+    setColSpan(span);
+    setLayoutDraft((current) => current.map((item) => item.id === activeFieldId ? { ...item, col_span: span } : item));
+  }, [activeFieldId]);
 
   const save = async () => {
     if (!fieldLabel.trim()) { toast.error("Libellé requis"); return; }
@@ -152,28 +230,55 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
       fieldOpts = { source_numerator: sourceNumerator, source_denominator: sourceDenominator };
     }
 
+    const activeLayout = layoutDraft.find((item) => item.id === activeFieldId);
+    const layoutUpdates = layoutDraft
+      .filter((item) => item.id !== activeFieldId)
+      .map((item) => supabase
+        .from("audit_type_custom_fields")
+        .update({
+          sort_order: item.sort_order,
+          col_span: item.col_span,
+          col_offset_before: item.col_offset_before,
+          col_offset_after: item.col_offset_after,
+        })
+        .eq("id", item.id)
+      );
+
     const payload = {
       audit_type_key: auditTypeKey,
       field_label: fieldLabel.trim(),
       field_type: fieldType,
       is_required: isRequired,
       field_options: fieldOpts,
-      sort_order: editing ? editing.sort_order : fields.length,
-      col_span: colSpan,
-      col_offset_before: offsetBefore,
-      col_offset_after: offsetAfter,
+      sort_order: activeLayout?.sort_order ?? (editing ? editing.sort_order : fields.length),
+      col_span: activeLayout?.col_span ?? colSpan,
+      col_offset_before: activeLayout?.col_offset_before ?? offsetBefore,
+      col_offset_after: activeLayout?.col_offset_after ?? offsetAfter,
     };
 
     if (editing) {
-      const { error } = await supabase.from("audit_type_custom_fields").update(payload).eq("id", editing.id);
-      if (error) { toast.error(error.message); return; }
+      const results = await Promise.all([
+        supabase.from("audit_type_custom_fields").update(payload).eq("id", editing.id),
+        ...layoutUpdates,
+      ]);
+      const firstError = results.find((result) => result.error)?.error;
+      if (firstError) { toast.error(firstError.message); return; }
       toast.success("Champ modifié");
     } else {
       const { error } = await supabase.from("audit_type_custom_fields").insert(payload);
       if (error) { toast.error(error.message); return; }
+
+      if (layoutUpdates.length > 0) {
+        const results = await Promise.all(layoutUpdates);
+        const firstError = results.find((result) => result.error)?.error;
+        if (firstError) { toast.error(firstError.message); return; }
+      }
+
       toast.success("Champ ajouté");
     }
+
     setDialogOpen(false);
+    setLayoutDraft([]);
     load();
   };
 
@@ -183,8 +288,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     load();
   };
 
-  // Drag and drop reorder
   const handleDragStart = (idx: number) => setDragIdx(idx);
+
   const handleDragOver = (e: React.DragEvent, idx: number) => {
     e.preventDefault();
     if (dragIdx === null || dragIdx === idx) return;
@@ -194,6 +299,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setFields(reordered);
     setDragIdx(idx);
   };
+
   const handleDragEnd = async () => {
     setDragIdx(null);
     await Promise.all(
@@ -292,145 +398,107 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
         </>
       )}
 
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-md rounded-2xl max-h-[85vh] overflow-y-auto">
+      <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setLayoutDraft([]); }}>
+        <DialogContent className="max-w-4xl rounded-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? "Modifier le champ" : "Ajouter un champ"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-1.5">
-              <Label>Libellé *</Label>
-              <Input value={fieldLabel} onChange={(e) => setFieldLabel(e.target.value)} placeholder="ex: Nombre de participants" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Type de champ</Label>
-              <Select value={fieldType} onValueChange={setFieldType}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Champs intelligents</SelectLabel>
-                    {FIELD_TYPES_SMART.map((ft) => (
-                      <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
+            <div className="grid gap-4 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] lg:items-start">
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label>Libellé *</Label>
+                  <Input value={fieldLabel} onChange={(e) => setFieldLabel(e.target.value)} placeholder="ex: Nombre de participants" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Type de champ</Label>
+                  <Select value={fieldType} onValueChange={setFieldType}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Champs intelligents</SelectLabel>
+                        {FIELD_TYPES_SMART.map((ft) => (
+                          <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
+                        ))}
+                      </SelectGroup>
+                      <SelectGroup>
+                        <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Champs standards</SelectLabel>
+                        {FIELD_TYPES_STANDARD.map((ft) => (
+                          <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Switch checked={isRequired} onCheckedChange={setIsRequired} id="req" />
+                  <Label htmlFor="req">Champ obligatoire</Label>
+                </div>
+
+                {needsOptions && (
+                  <div className="space-y-2">
+                    <Label>Options</Label>
+                    {selectOptions.map((opt, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <Input
+                          value={opt}
+                          onChange={(e) => {
+                            const next = [...selectOptions];
+                            next[i] = e.target.value;
+                            setSelectOptions(next);
+                          }}
+                          placeholder={`Option ${i + 1}`}
+                        />
+                        {selectOptions.length > 1 && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setSelectOptions(selectOptions.filter((_, j) => j !== i))}>
+                            <FontAwesomeIcon icon={faXmark} className="h-3.5 w-3.5 text-muted-foreground" />
+                          </Button>
+                        )}
+                      </div>
                     ))}
-                  </SelectGroup>
-                  <SelectGroup>
-                    <SelectLabel className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Champs standards</SelectLabel>
-                    {FIELD_TYPES_STANDARD.map((ft) => (
-                      <SelectItem key={ft.value} value={ft.value}>{ft.label}</SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Column layout */}
-            <div className="space-y-3">
-              <Label>Disposition (colonnes sur 12)</Label>
-              <div className="grid grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <span className="text-[11px] text-muted-foreground">Offset avant</span>
-                  <div className="flex items-center gap-2">
-                    <Slider value={[offsetBefore]} onValueChange={([v]) => setOffsetBefore(v)} min={0} max={11} step={1} className="flex-1" />
-                    <span className="text-xs font-mono w-6 text-center">{offsetBefore}</span>
+                    <Button variant="outline" size="sm" onClick={() => setSelectOptions([...selectOptions, ""])} className="gap-1.5">
+                      <FontAwesomeIcon icon={faPlus} className="h-3 w-3" /> Ajouter une option
+                    </Button>
                   </div>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-[11px] text-muted-foreground">Largeur</span>
-                  <div className="flex items-center gap-2">
-                    <Slider value={[colSpan]} onValueChange={([v]) => setColSpan(v)} min={1} max={12} step={1} className="flex-1" />
-                    <span className="text-xs font-mono w-6 text-center">{colSpan}</span>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <span className="text-[11px] text-muted-foreground">Offset après</span>
-                  <div className="flex items-center gap-2">
-                    <Slider value={[offsetAfter]} onValueChange={([v]) => setOffsetAfter(v)} min={0} max={11} step={1} className="flex-1" />
-                    <span className="text-xs font-mono w-6 text-center">{offsetAfter}</span>
-                  </div>
-                </div>
-              </div>
-              {/* Visual preview bar */}
-              <div className="grid grid-cols-12 gap-0.5 h-3">
-                {Array.from({ length: 12 }).map((_, i) => {
-                  const inOffset = i < offsetBefore;
-                  const inField = i >= offsetBefore && i < offsetBefore + colSpan;
-                  const inAfter = i >= offsetBefore + colSpan && i < offsetBefore + colSpan + offsetAfter;
-                  return (
-                    <div
-                      key={i}
-                      className={cn(
-                        "rounded-sm transition-colors",
-                        inField ? "bg-primary" : (inOffset || inAfter) ? "bg-primary/20" : "bg-muted"
-                      )}
-                    />
-                  );
-                })}
-              </div>
-              {offsetBefore + colSpan + offsetAfter > 12 && (
-                <p className="text-[11px] text-destructive">⚠ Total dépasse 12 colonnes ({offsetBefore + colSpan + offsetAfter})</p>
-              )}
-            </div>
+                )}
 
-            <div className="flex items-center gap-3">
-              <Switch checked={isRequired} onCheckedChange={setIsRequired} id="req" />
-              <Label htmlFor="req">Champ obligatoire</Label>
-            </div>
-
-            {needsOptions && (
-              <div className="space-y-2">
-                <Label>Options</Label>
-                {selectOptions.map((opt, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <Input
-                      value={opt}
-                      onChange={(e) => {
-                        const next = [...selectOptions];
-                        next[i] = e.target.value;
-                        setSelectOptions(next);
-                      }}
-                      placeholder={`Option ${i + 1}`}
-                    />
-                    {selectOptions.length > 1 && (
-                      <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setSelectOptions(selectOptions.filter((_, j) => j !== i))}>
-                        <FontAwesomeIcon icon={faXmark} className="h-3.5 w-3.5 text-muted-foreground" />
-                      </Button>
+                {isStatPercent && (
+                  <div className="space-y-3">
+                    <Label>Champ numérateur</Label>
+                    <Select value={sourceNumerator} onValueChange={setSourceNumerator}>
+                      <SelectTrigger><SelectValue placeholder="Sélectionner le numérateur" /></SelectTrigger>
+                      <SelectContent>
+                        {numberFields.map((nf) => (
+                          <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Label>Champ dénominateur</Label>
+                    <Select value={sourceDenominator} onValueChange={setSourceDenominator}>
+                      <SelectTrigger><SelectValue placeholder="Sélectionner le dénominateur" /></SelectTrigger>
+                      <SelectContent>
+                        {numberFields.map((nf) => (
+                          <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {numberFields.length === 0 && (
+                      <p className="text-xs text-muted-foreground">Ajoutez d'abord des champs « Nombre » pour configurer la statistique.</p>
                     )}
                   </div>
-                ))}
-                <Button variant="outline" size="sm" onClick={() => setSelectOptions([...selectOptions, ""])} className="gap-1.5">
-                  <FontAwesomeIcon icon={faPlus} className="h-3 w-3" /> Ajouter une option
-                </Button>
-              </div>
-            )}
-
-            {isStatPercent && (
-              <div className="space-y-3">
-                <Label>Champ numérateur</Label>
-                <Select value={sourceNumerator} onValueChange={setSourceNumerator}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner le numérateur" /></SelectTrigger>
-                  <SelectContent>
-                    {numberFields.map((nf) => (
-                      <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Label>Champ dénominateur</Label>
-                <Select value={sourceDenominator} onValueChange={setSourceDenominator}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner le dénominateur" /></SelectTrigger>
-                  <SelectContent>
-                    {numberFields.map((nf) => (
-                      <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {numberFields.length === 0 && (
-                  <p className="text-xs text-muted-foreground">Ajoutez d'abord des champs « Nombre » pour configurer la statistique.</p>
                 )}
               </div>
-            )}
+
+              <FieldLayoutEditor
+                fields={editorFields}
+                activeFieldId={activeFieldId}
+                onLayoutChange={handleLayoutChange}
+                onSpanChange={handleSpanChange}
+              />
+            </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => { setDialogOpen(false); setLayoutDraft([]); }}>Annuler</Button>
             <Button onClick={save}>{editing ? "Enregistrer" : "Ajouter"}</Button>
           </DialogFooter>
         </DialogContent>
