@@ -70,8 +70,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
   const [isRequired, setIsRequired] = useState(false);
   const [selectOptions, setSelectOptions] = useState<string[]>([""]);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
-  const [sourceInvites, setSourceInvites] = useState("");
-  const [sourceParticipants, setSourceParticipants] = useState("");
+  const [sourceNumerator, setSourceNumerator] = useState("");
+  const [sourceDenominator, setSourceDenominator] = useState("");
 
   const load = useCallback(async () => {
     const { data } = await supabase
