@@ -162,7 +162,6 @@ function TreeNode({
   const [dragOver, setDragOver] = useState(false);
   const children = categories.filter((c) => c.parent_id === cat.id);
   const docs = documents.filter((d) => d.category_id === cat.id);
-  const iconSrc = getFolderIcon(cat);
 
   return (
     <div>
@@ -183,11 +182,9 @@ function TreeNode({
           icon={faChevronRight}
           className={`h-2.5 w-2.5 text-muted-foreground transition-transform ${expanded ? "rotate-90" : ""} ${children.length === 0 && docs.length === 0 ? "invisible" : ""}`}
         />
-        {iconSrc ? (
-          <img src={iconSrc} alt="" className="h-5 w-5 object-contain flex-shrink-0" />
-        ) : (
-          <FontAwesomeIcon icon={expanded ? faFolderOpen : faFolder} className="h-4 w-4 text-primary flex-shrink-0" />
-        )}
+        <div className="flex-shrink-0">
+          <FolderIconImg cat={cat} size="h-5 w-5" />
+        </div>
         <span className="text-sm font-medium text-foreground truncate flex-1">{cat.name}</span>
         {(children.length > 0 || docs.length > 0) && (
           <Badge variant="secondary" className="text-[10px] shrink-0">
