@@ -101,10 +101,40 @@ const FOLDER_NAME_TO_TYPE: Record<string, string> = {
   "Événementiel": "RD Événementiel",
 };
 
-function getFolderIcon(cat: { name: string; icon_url: string | null }): string | null {
-  if (cat.icon_url) return cat.icon_url;
+function getFolderIcon(cat: { name: string; icon_url: string | null }): { src: string; isLocal: boolean } | null {
   const typeKey = FOLDER_NAME_TO_TYPE[cat.name] || cat.name;
-  return auditTypeIcons[typeKey]?.icon || null;
+  const localIcon = auditTypeIcons[typeKey]?.icon || null;
+  if (cat.icon_url) return { src: cat.icon_url, isLocal: false };
+  if (localIcon) return { src: localIcon, isLocal: true };
+  return null;
+}
+
+function FolderIconImg({ cat, size = "h-7 w-7" }: { cat: { name: string; icon_url: string | null }; size?: string }) {
+  const iconData = getFolderIcon(cat);
+  const typeKey = FOLDER_NAME_TO_TYPE[cat.name] || cat.name;
+  const color = auditTypeIcons[typeKey]?.color || "#6b7280";
+  const [broken, setBroken] = useState(false);
+
+  if (!iconData || broken) {
+    return <FontAwesomeIcon icon={faFolderOpen} className={`${size} text-primary`} />;
+  }
+
+  // Local SVGs: use CSS mask for color consistency
+  if (iconData.isLocal) {
+    return (
+      <div
+        className={size}
+        style={{
+          backgroundColor: color,
+          mask: `url(${iconData.src}) no-repeat center / contain`,
+          WebkitMask: `url(${iconData.src}) no-repeat center / contain`,
+        }}
+      />
+    );
+  }
+
+  // Remote uploaded icons: use <img> with error fallback
+  return <img src={iconData.src} alt="" className={`${size} object-contain`} onError={() => setBroken(true)} />;
 }
 
 // ── Tree View Component ──────────────────────────────────────────

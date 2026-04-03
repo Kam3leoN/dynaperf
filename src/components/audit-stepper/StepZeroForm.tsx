@@ -40,6 +40,9 @@ export interface StepZeroData {
   customFieldValues?: Record<string, any>;
 }
 
+// These hardcoded field keys match audit_type_custom_fields built-in defaults
+// If a custom field with matching auto_key exists, it replaces the hardcoded version
+
 interface CustomFieldDef {
   id: string;
   field_label: string;

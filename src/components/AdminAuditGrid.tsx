@@ -434,6 +434,11 @@ export default function AdminAuditGridInline() {
       {/* Categories + Items */}
       {selectedTypeId && (
         <div className="space-y-4">
+          {/* Form Builder for custom fields — at the top */}
+          <div className="border-b border-border pb-4 mb-4">
+            <AuditFormBuilder auditTypeKey={selectedType?.key || ""} />
+          </div>
+
           {categories.map((cat) => {
             const catItems = items.filter((i) => i.category_id === cat.id).sort((a, b) => a.sort_order - b.sort_order);
             const catMaxPts = catItems.reduce((s, i) => s + i.max_points, 0);
@@ -499,11 +504,6 @@ export default function AdminAuditGridInline() {
             <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
             Ajouter une catégorie
           </Button>
-
-          {/* Form Builder for custom fields */}
-          <div className="border-t border-border pt-4 mt-4">
-            <AuditFormBuilder auditTypeKey={selectedType?.key || ""} />
-          </div>
         </div>
       )}
 
