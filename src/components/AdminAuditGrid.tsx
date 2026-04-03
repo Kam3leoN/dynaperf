@@ -240,18 +240,28 @@ export default function AdminAuditGridInline() {
     setIsAutoCalc(false);
     setScoringTiers([]);
     setUseTiers(false);
+    setScoringMode("none");
+    setIncrementMin(0);
+    setIncrementStep(1);
     setItemDialogOpen(true);
   };
 
   const openEditItem = (item: ItemConfig) => {
     setEditingItem(item);
-    // Parse scoring tiers from scoring_rules
+    // Parse scoring tiers or increment from scoring_rules
     let tiers: ScoringTier[] = [];
     let hasTiers = false;
+    let hasIncrement = false;
+    let incMin = 0;
+    let incStep = 1;
     if (item.scoring_rules) {
       try {
         const parsed = JSON.parse(item.scoring_rules);
-        if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0].points === "number") {
+        if (parsed && parsed.type === "increment") {
+          hasIncrement = true;
+          incMin = parsed.minValue ?? 0;
+          incStep = parsed.step ?? 1;
+        } else if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0].points === "number") {
           tiers = parsed;
           hasTiers = true;
         }
