@@ -289,20 +289,20 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
               </div>
             )}
 
-            {isAutoNoShow && (
+            {isStatPercent && (
               <div className="space-y-3">
-                <Label>Champ source « Invités »</Label>
-                <Select value={sourceInvites} onValueChange={setSourceInvites}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner le champ invités" /></SelectTrigger>
+                <Label>Champ numérateur</Label>
+                <Select value={sourceNumerator} onValueChange={setSourceNumerator}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner le numérateur" /></SelectTrigger>
                   <SelectContent>
                     {numberFields.map((nf) => (
                       <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <Label>Champ source « Participants »</Label>
-                <Select value={sourceParticipants} onValueChange={setSourceParticipants}>
-                  <SelectTrigger><SelectValue placeholder="Sélectionner le champ participants" /></SelectTrigger>
+                <Label>Champ dénominateur</Label>
+                <Select value={sourceDenominator} onValueChange={setSourceDenominator}>
+                  <SelectTrigger><SelectValue placeholder="Sélectionner le dénominateur" /></SelectTrigger>
                   <SelectContent>
                     {numberFields.map((nf) => (
                       <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
@@ -310,7 +310,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                   </SelectContent>
                 </Select>
                 {numberFields.length === 0 && (
-                  <p className="text-xs text-muted-foreground">Ajoutez d'abord des champs « Nombre » pour les invités et participants.</p>
+                  <p className="text-xs text-muted-foreground">Ajoutez d'abord des champs « Nombre » pour configurer la statistique.</p>
                 )}
               </div>
             )}

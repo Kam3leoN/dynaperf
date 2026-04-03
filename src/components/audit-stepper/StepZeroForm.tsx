@@ -285,19 +285,21 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
             onChange={(e) => setFieldValue(field.id, field.field_type, e.target.value)}
           />
         );
-      case "auto_no_show": {
-        const srcInvId = field.field_options?.source_invites;
-        const srcPartId = field.field_options?.source_participants;
-        const invites = Number(data.customFieldValues?.[srcInvId]) || 0;
-        const participants = Number(data.customFieldValues?.[srcPartId]) || 0;
-        const noShow = Math.max(0, invites - participants);
+      case "stat_percent": {
+        const numId = field.field_options?.source_numerator;
+        const denId = field.field_options?.source_denominator;
+        const numerator = Number(data.customFieldValues?.[numId]) || 0;
+        const denominator = Number(data.customFieldValues?.[denId]) || 0;
+        const pct = denominator > 0 ? Math.round((numerator / denominator) * 1000) / 10 : null;
         return (
-          <Input
-            type="number"
-            value={noShow}
-            readOnly
-            className="bg-muted cursor-not-allowed"
-          />
+          <div className="flex items-center gap-2 h-12 px-4 rounded-xl border border-input bg-muted text-sm cursor-not-allowed">
+            <span className="font-semibold text-foreground">
+              {pct !== null ? `${pct} %` : "—"}
+            </span>
+            <span className="text-muted-foreground text-xs">
+              {denominator > 0 ? `(${numerator} / ${denominator})` : ""}
+            </span>
+          </div>
         );
       }
       case "date_picker":
