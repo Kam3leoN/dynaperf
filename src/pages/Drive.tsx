@@ -29,7 +29,7 @@ import {
   faSearch, faChevronRight, faArrowLeft, faDownload,
   faFilePdf, faFileImage, faFileExcel, faFileWord,
   faGrip, faList, faImage, faXmark, faArrowsUpDownLeftRight,
-  faCompress, faExpand,
+} from "@fortawesome/free-solid-svg-icons";
 } from "@fortawesome/free-solid-svg-icons";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
