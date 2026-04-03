@@ -185,7 +185,7 @@ export interface IncrementConfig {
 
 export interface ThresholdConfig {
   type: "threshold";
-  operator: "lt" | "lte" | "gt" | "gte";
+  operator: "lt" | "lte" | "eq" | "gt" | "gte";
   value: number;
 }
 
