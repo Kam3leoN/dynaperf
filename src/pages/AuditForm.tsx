@@ -256,6 +256,10 @@ export default function AuditForm() {
         ...(ans.rawValue !== undefined && { rawValue: ans.rawValue }),
       };
     });
+    // Store custom field values alongside items
+    if (stepZeroData.customFieldValues && Object.keys(stepZeroData.customFieldValues).length > 0) {
+      itemsJson["__custom_fields"] = stepZeroData.customFieldValues;
+    }
 
     const detailPayload = {
       audit_id: targetAuditId,
