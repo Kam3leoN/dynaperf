@@ -183,6 +183,12 @@ export interface IncrementConfig {
   step: number;
 }
 
+export interface ThresholdConfig {
+  type: "threshold";
+  operator: "lt" | "lte" | "gt" | "gte";
+  value: number;
+}
+
 export function parseIncrementConfig(scoringRules: string | null | undefined): IncrementConfig | null {
   if (!scoringRules) return null;
   try {
