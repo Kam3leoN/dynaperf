@@ -59,7 +59,7 @@ interface Props {
   hideSubmitButton?: boolean;
 }
 
-// No more hardcoded type checks - all extra fields come from custom fields
+interface SuggestionLists {
   partenaires: string[];
   auditeurs: string[];
   lieux: string[];
