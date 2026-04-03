@@ -36,8 +36,19 @@ interface Props {
   stepZeroData?: StepZeroData;
 }
 
+function parseAutoField(autoField?: string): { fieldId: string; condition?: string } | null {
+  if (!autoField) return null;
+  if (autoField.includes("::")) {
+    const [fieldId, condition] = autoField.split("::");
+    return { fieldId, condition };
+  }
+  return { fieldId: autoField };
+}
+
 function getAutoValue(item: AuditItemDef, stepZeroData?: StepZeroData): number | undefined {
   if (!stepZeroData || !item.autoField) return undefined;
+  const parsed = parseAutoField(item.autoField);
+  if (!parsed) return undefined;
   // Legacy keys
   const fieldMap: Record<string, number | undefined> = {
     nbParticipants: stepZeroData.nbParticipants,
@@ -45,9 +56,9 @@ function getAutoValue(item: AuditItemDef, stepZeroData?: StepZeroData): number |
     nbNoShow: stepZeroData.nbNoShow,
     nbRdvPris: stepZeroData.nbRdvPris,
   };
-  if (item.autoField in fieldMap && fieldMap[item.autoField] !== undefined) return fieldMap[item.autoField];
+  if (parsed.fieldId in fieldMap && fieldMap[parsed.fieldId] !== undefined) return fieldMap[parsed.fieldId];
   // Custom field reference (UUID)
-  const cv = stepZeroData.customFieldValues?.[item.autoField];
+  const cv = stepZeroData.customFieldValues?.[parsed.fieldId];
   if (cv !== undefined && cv !== null && cv !== "") return Number(cv) || 0;
   return undefined;
 }
