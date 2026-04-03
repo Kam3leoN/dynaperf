@@ -36,8 +36,19 @@ interface Props {
   stepZeroData?: StepZeroData;
 }
 
+function parseAutoField(autoField?: string): { fieldId: string; condition?: string } | null {
+  if (!autoField) return null;
+  if (autoField.includes("::")) {
+    const [fieldId, condition] = autoField.split("::");
+    return { fieldId, condition };
+  }
+  return { fieldId: autoField };
+}
+
 function getAutoValue(item: AuditItemDef, stepZeroData?: StepZeroData): number | undefined {
   if (!stepZeroData || !item.autoField) return undefined;
+  const parsed = parseAutoField(item.autoField);
+  if (!parsed) return undefined;
   // Legacy keys
   const fieldMap: Record<string, number | undefined> = {
     nbParticipants: stepZeroData.nbParticipants,
@@ -45,16 +56,23 @@ function getAutoValue(item: AuditItemDef, stepZeroData?: StepZeroData): number |
     nbNoShow: stepZeroData.nbNoShow,
     nbRdvPris: stepZeroData.nbRdvPris,
   };
-  if (item.autoField in fieldMap && fieldMap[item.autoField] !== undefined) return fieldMap[item.autoField];
+  if (parsed.fieldId in fieldMap && fieldMap[parsed.fieldId] !== undefined) return fieldMap[parsed.fieldId];
   // Custom field reference (UUID)
-  const cv = stepZeroData.customFieldValues?.[item.autoField];
+  const cv = stepZeroData.customFieldValues?.[parsed.fieldId];
   if (cv !== undefined && cv !== null && cv !== "") return Number(cv) || 0;
   return undefined;
 }
 
 function computeScore(item: AuditItemDef, boolVal: boolean | null, numVal: string, checklist: boolean[], autoValue?: number): number {
   const isNoShowAuto = item.autoField === "nbNoShow";
+  const parsed = parseAutoField(item.autoField);
+  const hasBoolCondition = parsed?.condition && item.inputType === "boolean";
+  
   if (isNoShowAuto) return (autoValue ?? 0) === 0 ? item.maxPoints : 0;
+  if (hasBoolCondition && autoValue !== undefined) {
+    if (parsed!.condition === "zero") return autoValue === 0 ? item.maxPoints : 0;
+    if (parsed!.condition === "positive") return autoValue > 0 ? item.maxPoints : 0;
+  }
   if (item.inputType === "boolean") return boolVal === true ? item.maxPoints : 0;
   if (item.inputType === "number") {
     const n = autoValue !== undefined ? autoValue : (parseInt(numVal) || 0);
@@ -73,25 +91,37 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
   const autoValue = getAutoValue(item, stepZeroData);
   const isAutoFilled = autoValue !== undefined;
   const isNoShowAuto = item.autoField === "nbNoShow";
-  const noShowNotEntered = isNoShowAuto && autoValue === undefined;
+  const parsed = parseAutoField(item.autoField);
+  const hasBoolCondition = parsed?.condition && item.inputType === "boolean";
+  const isBoolAuto = isNoShowAuto || hasBoolCondition;
+  const boolAutoNotEntered = isBoolAuto && autoValue === undefined;
   const tiers = parseScoringTiers(item.scoringRules);
 
-  const [boolVal, setBoolVal] = useState<boolean | null>(() => {
+  // Compute auto bool value
+  const autoBoolResult = (() => {
     if (isNoShowAuto) return autoValue !== undefined ? autoValue === 0 : null;
+    if (hasBoolCondition && autoValue !== undefined) {
+      return parsed!.condition === "zero" ? autoValue === 0 : autoValue > 0;
+    }
+    return null;
+  })();
+
+  const [boolVal, setBoolVal] = useState<boolean | null>(() => {
+    if (isBoolAuto) return autoBoolResult;
     return answer ? answer.score > 0 : null;
   });
   const [numVal, setNumVal] = useState<string>(() => {
-    if (isAutoFilled && !isNoShowAuto) return String(autoValue ?? 0);
+    if (isAutoFilled && !isBoolAuto) return String(autoValue ?? 0);
     return answer?.rawValue !== undefined ? String(answer.rawValue) : "";
   });
 
   useEffect(() => {
-    if (isNoShowAuto) {
-      setBoolVal(autoValue !== undefined ? autoValue === 0 : null);
+    if (isBoolAuto) {
+      setBoolVal(autoBoolResult);
     } else if (isAutoFilled) {
       setNumVal(String(autoValue ?? 0));
     }
-  }, [autoValue, isNoShowAuto, isAutoFilled]);
+  }, [autoValue, isBoolAuto, isAutoFilled, autoBoolResult]);
 
   const [checklist, setChecklist] = useState<boolean[]>(
     answer?.checklist ?? new Array(item.checklistItems?.length ?? 0).fill(false)
@@ -170,15 +200,15 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
 
         <div className="space-y-3">
           {/* Auto-filled number (disabled) */}
-          {isAutoFilled && !isNoShowAuto && item.inputType === "number" && (
+          {isAutoFilled && !isBoolAuto && item.inputType === "number" && (
             <div className="space-y-1.5">
               <Label className="text-xs">Valeur saisie : <span className="font-bold text-foreground">{autoValue}</span></Label>
               <Input type="number" value={numVal} disabled className="bg-muted cursor-not-allowed h-10 text-sm" />
-              <p className="text-[11px] text-muted-foreground">Valeur renseignée à l'étape précédente. Non modifiable.</p>
+              <p className="text-[11px] text-muted-foreground">Calcul automatique — valeur renseignée à l'étape précédente.</p>
             </div>
           )}
 
-          {isNoShowAuto && !noShowNotEntered && (
+          {isBoolAuto && !boolAutoNotEntered && (
             <div className="space-y-1.5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                 <Button type="button" size="sm" variant={boolVal ? "default" : "outline"} disabled
@@ -191,18 +221,19 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
                 </Button>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                {(autoValue ?? 0) === 0 ? "Aucun no-show — validé." : `${autoValue} no-show — non validé.`}
+                Calcul automatique — valeur source : {autoValue}.
+                {boolVal ? " Item validé." : " Item non validé."}
               </p>
             </div>
           )}
 
-          {isNoShowAuto && noShowNotEntered && (
+          {isBoolAuto && boolAutoNotEntered && (
             <p className="text-[11px] text-muted-foreground italic">
-              Renseignez le nombre de no-show dans les informations générales pour pré-remplir ce champ.
+              Renseignez la valeur dans les informations générales pour pré-remplir ce champ.
             </p>
           )}
 
-          {item.inputType === "boolean" && !isAutoFilled && (
+          {item.inputType === "boolean" && !isBoolAuto && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
               <Button type="button" size="sm" variant="outline" onClick={() => setBoolVal(true)}
                 className={cn("h-10 text-xs sm:text-sm transition-colors",

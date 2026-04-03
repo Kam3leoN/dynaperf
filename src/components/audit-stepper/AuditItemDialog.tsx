@@ -42,16 +42,27 @@ interface Props {
   stepZeroData?: StepZeroData;
 }
 
+function parseAutoField(autoField?: string): { fieldId: string; condition?: string } | null {
+  if (!autoField) return null;
+  if (autoField.includes("::")) {
+    const [fieldId, condition] = autoField.split("::");
+    return { fieldId, condition };
+  }
+  return { fieldId: autoField };
+}
+
 function getAutoValue(item: AuditItemDef, stepZeroData?: StepZeroData): number | undefined {
   if (!stepZeroData || !item.autoField) return undefined;
+  const parsed = parseAutoField(item.autoField);
+  if (!parsed) return undefined;
   const fieldMap: Record<string, number | undefined> = {
     nbParticipants: stepZeroData.nbParticipants,
     nbInvites: stepZeroData.nbInvites,
     nbNoShow: stepZeroData.nbNoShow,
     nbRdvPris: stepZeroData.nbRdvPris,
   };
-  if (item.autoField in fieldMap && fieldMap[item.autoField] !== undefined) return fieldMap[item.autoField];
-  const cv = stepZeroData.customFieldValues?.[item.autoField];
+  if (parsed.fieldId in fieldMap && fieldMap[parsed.fieldId] !== undefined) return fieldMap[parsed.fieldId];
+  const cv = stepZeroData.customFieldValues?.[parsed.fieldId];
   if (cv !== undefined && cv !== null && cv !== "") return Number(cv) || 0;
   return undefined;
 }
@@ -63,14 +74,25 @@ export function AuditItemDialog({
   const autoValue = getAutoValue(item, stepZeroData);
   const isAutoFilled = autoValue !== undefined;
   const isNoShowAuto = item.autoField === "nbNoShow";
+  const parsed = parseAutoField(item.autoField);
+  const hasBoolCondition = parsed?.condition && item.inputType === "boolean";
+  const isBoolAuto = isNoShowAuto || hasBoolCondition;
   const tiers = parseScoringTiers(item.scoringRules);
 
-  const [boolVal, setBoolVal] = useState<boolean | null>(() => {
+  const autoBoolResult = (() => {
     if (isNoShowAuto) return (autoValue ?? 0) === 0;
+    if (hasBoolCondition && autoValue !== undefined) {
+      return parsed!.condition === "zero" ? autoValue === 0 : autoValue > 0;
+    }
+    return null;
+  })();
+
+  const [boolVal, setBoolVal] = useState<boolean | null>(() => {
+    if (isBoolAuto) return autoBoolResult;
     return initialAnswer ? initialAnswer.score > 0 : null;
   });
   const [numVal, setNumVal] = useState<string>(() => {
-    if (isAutoFilled && !isNoShowAuto) return String(autoValue ?? 0);
+    if (isAutoFilled && !isBoolAuto) return String(autoValue ?? 0);
     return initialAnswer?.rawValue !== undefined ? String(initialAnswer.rawValue) : "";
   });
   const [checklist, setChecklist] = useState<boolean[]>(
@@ -80,6 +102,9 @@ export function AuditItemDialog({
 
   function getScore(): number {
     if (isNoShowAuto) return (autoValue ?? 0) === 0 ? item.maxPoints : 0;
+    if (hasBoolCondition && autoValue !== undefined) {
+      return parsed!.condition === "zero" ? (autoValue === 0 ? item.maxPoints : 0) : (autoValue > 0 ? item.maxPoints : 0);
+    }
     if (item.inputType === "boolean") return boolVal === true ? item.maxPoints : 0;
     if (item.inputType === "number") {
       const n = isAutoFilled ? (autoValue ?? 0) : (parseInt(numVal) || 0);
@@ -139,29 +164,30 @@ export function AuditItemDialog({
         </div>
 
         <div className="space-y-4 pt-2">
-          {isAutoFilled && !isNoShowAuto && item.inputType === "number" && (
+          {isAutoFilled && !isBoolAuto && item.inputType === "number" && (
             <div className="space-y-2">
               <Label>Valeur saisie : <span className="font-bold">{autoValue}</span></Label>
               <Input type="number" value={numVal} disabled className="bg-muted cursor-not-allowed" />
-              <p className="text-xs text-muted-foreground">Valeur renseignée à l'étape précédente. Non modifiable.</p>
+              <p className="text-xs text-muted-foreground">Calcul automatique — valeur renseignée à l'étape précédente.</p>
             </div>
           )}
 
-          {isNoShowAuto && (
+          {isBoolAuto && (
             <div className="space-y-2">
               <div className="flex items-center gap-4">
-                <Button type="button" variant={boolVal ? "default" : "outline"} disabled className={cn("flex-1 cursor-not-allowed", boolVal && "bg-emerald-600 text-white")}>
+                <Button type="button" variant={autoBoolResult ? "default" : "outline"} disabled className={cn("flex-1 cursor-not-allowed", autoBoolResult && "bg-emerald-600 text-white")}>
                   <FontAwesomeIcon icon={faCheck} className="mr-1 h-3 w-3" /> Validé
                 </Button>
-                <Button type="button" variant={!boolVal ? "destructive" : "outline"} disabled className="flex-1 cursor-not-allowed">Non validé</Button>
+                <Button type="button" variant={!autoBoolResult ? "destructive" : "outline"} disabled className="flex-1 cursor-not-allowed">Non validé</Button>
               </div>
               <p className="text-xs text-muted-foreground">
-                {(autoValue ?? 0) > 0 ? `${autoValue} no-show détecté(s) — item non validé automatiquement.` : "Aucun no-show — item validé automatiquement."}
+                Calcul automatique — valeur source : {autoValue ?? "non renseignée"}.
+                {autoBoolResult ? " Item validé." : " Item non validé."}
               </p>
             </div>
           )}
 
-          {item.inputType === "boolean" && !isAutoFilled && (
+          {item.inputType === "boolean" && !isBoolAuto && (
             <div className="flex items-center gap-4">
               <Button type="button" variant="outline" onClick={() => setBoolVal(true)}
                 className={cn("flex-1 transition-colors", boolVal === true ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700" : "hover:bg-accent hover:text-accent-foreground")}>
