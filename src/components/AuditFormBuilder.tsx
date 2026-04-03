@@ -117,12 +117,20 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     const validOpts = selectOptions.filter((o) => o.trim());
     if (needsOptions && validOpts.length < 2) { toast.error("Au moins 2 options requises"); return; }
 
+    let fieldOpts: any = null;
+    if (needsOptions) {
+      fieldOpts = { options: validOpts };
+    } else if (isAutoNoShow) {
+      if (!sourceInvites || !sourceParticipants) { toast.error("Sélectionnez les deux champs sources"); return; }
+      fieldOpts = { source_invites: sourceInvites, source_participants: sourceParticipants };
+    }
+
     const payload = {
       audit_type_key: auditTypeKey,
       field_label: fieldLabel.trim(),
       field_type: fieldType,
       is_required: isRequired,
-      field_options: needsOptions ? { options: validOpts } : null,
+      field_options: fieldOpts,
       sort_order: editing ? editing.sort_order : fields.length,
     };
 
