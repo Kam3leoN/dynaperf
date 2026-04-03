@@ -14,6 +14,8 @@ import {
   parseScoringTiers,
   calcTiersScore,
   formatTiersDisplay,
+  parseIncrementConfig,
+  calcIncrementScore,
 } from "@/data/auditItems";
 import { StepZeroData } from "./StepZeroForm";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
