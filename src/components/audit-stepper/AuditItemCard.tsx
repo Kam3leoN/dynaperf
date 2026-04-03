@@ -200,15 +200,15 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
 
         <div className="space-y-3">
           {/* Auto-filled number (disabled) */}
-          {isAutoFilled && !isNoShowAuto && item.inputType === "number" && (
+          {isAutoFilled && !isBoolAuto && item.inputType === "number" && (
             <div className="space-y-1.5">
               <Label className="text-xs">Valeur saisie : <span className="font-bold text-foreground">{autoValue}</span></Label>
               <Input type="number" value={numVal} disabled className="bg-muted cursor-not-allowed h-10 text-sm" />
-              <p className="text-[11px] text-muted-foreground">Valeur renseignée à l'étape précédente. Non modifiable.</p>
+              <p className="text-[11px] text-muted-foreground">Calcul automatique — valeur renseignée à l'étape précédente.</p>
             </div>
           )}
 
-          {isNoShowAuto && !noShowNotEntered && (
+          {isBoolAuto && !boolAutoNotEntered && (
             <div className="space-y-1.5">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
                 <Button type="button" size="sm" variant={boolVal ? "default" : "outline"} disabled
@@ -221,18 +221,19 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
                 </Button>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                {(autoValue ?? 0) === 0 ? "Aucun no-show — validé." : `${autoValue} no-show — non validé.`}
+                Calcul automatique — valeur source : {autoValue}.
+                {boolVal ? " Item validé." : " Item non validé."}
               </p>
             </div>
           )}
 
-          {isNoShowAuto && noShowNotEntered && (
+          {isBoolAuto && boolAutoNotEntered && (
             <p className="text-[11px] text-muted-foreground italic">
-              Renseignez le nombre de no-show dans les informations générales pour pré-remplir ce champ.
+              Renseignez la valeur dans les informations générales pour pré-remplir ce champ.
             </p>
           )}
 
-          {item.inputType === "boolean" && !isAutoFilled && (
+          {item.inputType === "boolean" && !isBoolAuto && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
               <Button type="button" size="sm" variant="outline" onClick={() => setBoolVal(true)}
                 className={cn("h-10 text-xs sm:text-sm transition-colors",
