@@ -312,6 +312,7 @@ export type Database = {
         Row: {
           auditeur: string
           created_at: string
+          created_by: string | null
           custom_prime_id: string | null
           date: string
           id: string
@@ -326,6 +327,7 @@ export type Database = {
         Insert: {
           auditeur: string
           created_at?: string
+          created_by?: string | null
           custom_prime_id?: string | null
           date: string
           id?: string
@@ -340,6 +342,7 @@ export type Database = {
         Update: {
           auditeur?: string
           created_at?: string
+          created_by?: string | null
           custom_prime_id?: string | null
           date?: string
           id?: string
@@ -1089,6 +1092,7 @@ export type Database = {
           agence: string
           agence_referente: string | null
           created_at: string
+          created_by: string | null
           date: string
           id: string
           items: Json
@@ -1106,6 +1110,7 @@ export type Database = {
           agence?: string
           agence_referente?: string | null
           created_at?: string
+          created_by?: string | null
           date?: string
           id?: string
           items?: Json
@@ -1123,6 +1128,7 @@ export type Database = {
           agence?: string
           agence_referente?: string | null
           created_at?: string
+          created_by?: string | null
           date?: string
           id?: string
           items?: Json
