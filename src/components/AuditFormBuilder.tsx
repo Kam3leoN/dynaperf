@@ -95,9 +95,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
   const [sourceNumerator, setSourceNumerator] = useState("");
   const [sourceDenominator, setSourceDenominator] = useState("");
   const [previewMode, setPreviewMode] = useState(false);
-  const [layoutDraft, setLayoutDraft] = useState<LayoutDraftItem[]>([]);
   const [previewKey, setPreviewKey] = useState(0);
-  const [listActiveId, setListActiveId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const { data } = await supabase
