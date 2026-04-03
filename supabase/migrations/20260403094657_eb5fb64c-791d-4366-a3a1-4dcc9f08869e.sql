@@ -1,0 +1,1 @@
+ALTER TABLE public.drive_documents ALTER COLUMN category_id DROP NOT NULL;

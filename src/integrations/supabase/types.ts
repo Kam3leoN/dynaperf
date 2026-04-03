@@ -684,7 +684,7 @@ export type Database = {
       }
       drive_documents: {
         Row: {
-          category_id: string
+          category_id: string | null
           created_at: string
           description: string | null
           file_name: string
@@ -699,7 +699,7 @@ export type Database = {
           uploaded_by: string | null
         }
         Insert: {
-          category_id: string
+          category_id?: string | null
           created_at?: string
           description?: string | null
           file_name: string
@@ -714,7 +714,7 @@ export type Database = {
           uploaded_by?: string | null
         }
         Update: {
-          category_id?: string
+          category_id?: string | null
           created_at?: string
           description?: string | null
           file_name?: string
