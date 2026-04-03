@@ -219,10 +219,11 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
       for (const field of sumFields) {
         const aId = field.field_options?.source_a;
         const bId = field.field_options?.source_b;
+        const op = field.field_options?.operation || "add";
         if (!aId || !bId) continue;
         const a = Number(cv[aId]) || 0;
         const b = Number(cv[bId]) || 0;
-        const sum = a + b;
+        const sum = op === "subtract" ? a - b : a + b;
         if (cv[field.id] !== sum) {
           cv[field.id] = sum;
           changed = true;
