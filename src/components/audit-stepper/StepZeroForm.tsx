@@ -454,18 +454,27 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
         >
           {customFields.map((field) => {
             const span = field.col_span || 6;
+            const before = field.col_offset_before || 0;
+            const after = field.col_offset_after || 0;
             const val = data.customFieldValues?.[field.id] ?? "";
             const isFilled = val !== "" && val !== null && val !== undefined && val !== 0;
             return (
-              <M3Field
-                key={field.id}
-                label={field.field_label}
-                required={field.is_required}
-                filled={isFilled}
-                style={isMobile ? undefined : { gridColumn: `span ${span} / span ${span}` }}
-              >
-                {renderField(field)}
-              </M3Field>
+              <React.Fragment key={field.id}>
+                {!isMobile && before > 0 && (
+                  <div style={{ gridColumn: `span ${before} / span ${before}` }} />
+                )}
+                <M3Field
+                  label={field.field_label}
+                  required={field.is_required}
+                  filled={isFilled}
+                  style={isMobile ? undefined : { gridColumn: `span ${span} / span ${span}` }}
+                >
+                  {renderField(field)}
+                </M3Field>
+                {!isMobile && after > 0 && (
+                  <div style={{ gridColumn: `span ${after} / span ${after}` }} />
+                )}
+              </React.Fragment>
             );
           })}
         </div>
