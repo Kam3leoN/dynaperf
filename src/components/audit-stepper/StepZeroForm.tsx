@@ -75,6 +75,7 @@ interface Props {
 }
 
 export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitButton }: Props) {
+  const isMobile = useIsMobile();
   const [data, setData] = useState<StepZeroData>(
     initialData ?? {
       partenaireAudite: "",
