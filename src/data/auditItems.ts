@@ -158,6 +158,46 @@ export async function fetchAuditConfigById(typeId: string): Promise<AuditTypeCon
     maxPoints,
   };
 }
+export interface ScoringTier {
+  min: number;
+  max: number | null;
+  points: number;
+}
+
+export function parseScoringTiers(scoringRules: string | null | undefined): ScoringTier[] | null {
+  if (!scoringRules) return null;
+  try {
+    const parsed = JSON.parse(scoringRules);
+    if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0].points === "number") {
+      return parsed as ScoringTier[];
+    }
+  } catch {
+    // Not JSON — legacy text
+  }
+  return null;
+}
+
+export function calcTiersScore(value: number, tiers: ScoringTier[]): number {
+  const sorted = [...tiers].sort((a, b) => b.min - a.min);
+  for (const tier of sorted) {
+    if (value >= tier.min && (tier.max === null || value <= tier.max)) {
+      return tier.points;
+    }
+  }
+  return 0;
+}
+
+export function formatTiersDisplay(tiers: ScoringTier[]): string {
+  return tiers
+    .sort((a, b) => a.min - b.min)
+    .map((t) =>
+      t.max === null
+        ? `Plus de ${t.min - 1} → ${t.points} pts`
+        : `${t.min} à ${t.max} → ${t.points} pts`
+    )
+    .join("\n");
+}
+
 export function calcParticipantsScore(nb: number): number {
   if (nb >= 30) return 10;
   if (nb >= 26) return 5;

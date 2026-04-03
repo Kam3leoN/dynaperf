@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RichTextarea } from "@/components/ui/rich-textarea";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
@@ -13,9 +14,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faGripVertical, faLayerGroup, faCopy, faBoxArchive, faRotateLeft,
+  faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faGripVertical, faLayerGroup, faCopy, faBoxArchive, faRotateLeft, faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { getAuditTypeVisual } from "@/lib/auditTypeVisuals";
+import type { ScoringTier } from "@/data/auditItems";
 
 interface AuditType { id: string; key: string; label: string; version: number; version_label: string | null; is_active: boolean; color: string | null; }
 interface Category { id: string; audit_type_id: string; name: string; sort_order: number; }
@@ -23,6 +25,13 @@ interface ItemConfig {
   id: string; category_id: string; sort_order: number; title: string; description: string;
   max_points: number; condition: string; scoring_rules: string | null; input_type: string;
   checklist_items: string[] | null; interets: string; comment_y_parvenir: string;
+  auto_field: string | null;
+}
+
+interface CustomFieldRef {
+  id: string;
+  field_label: string;
+  field_type: string;
 }
 
 export default function AdminAuditGridInline() {
@@ -32,6 +41,7 @@ export default function AdminAuditGridInline() {
   const [items, setItems] = useState<ItemConfig[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [customFieldsForType, setCustomFieldsForType] = useState<CustomFieldRef[]>([]);
 
   // Type CRUD dialog
   const [typeDialogOpen, setTypeDialogOpen] = useState(false);
@@ -52,8 +62,11 @@ export default function AdminAuditGridInline() {
   const [itemForm, setItemForm] = useState({
     category_id: "", title: "", description: "", max_points: 1,
     condition: "", scoring_rules: "", input_type: "boolean", checklist_items: "",
-    interets: "", comment_y_parvenir: "",
+    interets: "", comment_y_parvenir: "", auto_field: "",
   });
+  const [isAutoCalc, setIsAutoCalc] = useState(false);
+  const [scoringTiers, setScoringTiers] = useState<ScoringTier[]>([]);
+  const [useTiers, setUseTiers] = useState(false);
 
   // Load types
   const loadTypes = useCallback(async () => {
@@ -83,11 +96,25 @@ export default function AdminAuditGridInline() {
           scoring_rules: i.scoring_rules ?? null,
           interets: (i as any).interets ?? "",
           comment_y_parvenir: (i as any).comment_y_parvenir ?? "",
+          auto_field: (i as any).auto_field ?? null,
         }))
     );
   }, [selectedTypeId]);
 
   useEffect(() => { loadData(); }, [loadData]);
+
+  // Load custom fields for current type (for auto_field reference)
+  useEffect(() => {
+    if (!selectedTypeId) { setCustomFieldsForType([]); return; }
+    const selectedType = types.find(t => t.id === selectedTypeId);
+    if (!selectedType) return;
+    supabase
+      .from("audit_type_custom_fields")
+      .select("id, field_label, field_type")
+      .eq("audit_type_key", selectedType.key)
+      .order("sort_order")
+      .then(({ data }) => setCustomFieldsForType((data as CustomFieldRef[]) || []));
+  }, [selectedTypeId, types]);
 
   // === Type CRUD ===
   const openNewType = () => { setEditingType(null); setTypeKey(""); setTypeLabel(""); setTypeVersionLabel(""); setTypeColor(""); setTypeDialogOpen(true); };
@@ -111,7 +138,6 @@ export default function AdminAuditGridInline() {
 
   const deleteType = async (id: string) => {
     if (!confirm("Supprimer ce type d'audit et toutes ses catégories/items ?")) return;
-    // Delete items in categories of this type first
     const { data: cats } = await supabase.from("audit_categories").select("id").eq("audit_type_id", id);
     if (cats && cats.length > 0) {
       await supabase.from("audit_items_config").delete().in("category_id", cats.map(c => c.id));
@@ -130,14 +156,10 @@ export default function AdminAuditGridInline() {
     const sameKeyTypes = types.filter(t => t.key === source.key);
     const nextVersion = Math.max(...sameKeyTypes.map(t => t.version)) + 1;
     const versionLabel = `V${nextVersion}`;
-
-    // Create new type
     const { data: newType, error: typeErr } = await supabase.from("audit_types").insert({
       key: source.key, label: source.label, version: nextVersion, version_label: versionLabel, is_active: true,
     }).select().single();
     if (typeErr || !newType) { toast.error("Erreur lors de la duplication"); return; }
-
-    // Duplicate categories
     const { data: srcCats } = await supabase.from("audit_categories").select("*").eq("audit_type_id", typeId).order("sort_order");
     if (srcCats) {
       for (const cat of srcCats) {
@@ -145,7 +167,6 @@ export default function AdminAuditGridInline() {
           audit_type_id: newType.id, name: cat.name, sort_order: cat.sort_order,
         }).select().single();
         if (!newCat) continue;
-        // Duplicate items of this category
         const { data: srcItems } = await supabase.from("audit_items_config").select("*").eq("category_id", cat.id).order("sort_order");
         if (srcItems && srcItems.length > 0) {
           await supabase.from("audit_items_config").insert(
@@ -159,12 +180,10 @@ export default function AdminAuditGridInline() {
         }
       }
     }
-
     toast.success(`Version ${versionLabel} créée`);
     setSelectedTypeId(newType.id);
     loadTypes();
   };
-
 
   const toggleActive = async (typeId: string, currentActive: boolean) => {
     const { error } = await supabase.from("audit_types").update({ is_active: !currentActive }).eq("id", typeId);
@@ -204,48 +223,74 @@ export default function AdminAuditGridInline() {
   };
 
   // === Item CRUD ===
+  const numberCustomFields = customFieldsForType.filter(f => f.field_type === "number");
+
   const openNewItem = (categoryId: string) => {
     setEditingItem(null);
     setItemForm({
       category_id: categoryId, title: "", description: "", max_points: 1,
       condition: "", scoring_rules: "", input_type: "boolean", checklist_items: "",
-      interets: "", comment_y_parvenir: "",
+      interets: "", comment_y_parvenir: "", auto_field: "",
     });
+    setIsAutoCalc(false);
+    setScoringTiers([]);
+    setUseTiers(false);
     setItemDialogOpen(true);
   };
 
   const openEditItem = (item: ItemConfig) => {
     setEditingItem(item);
+    // Parse scoring tiers from scoring_rules
+    let tiers: ScoringTier[] = [];
+    let hasTiers = false;
+    if (item.scoring_rules) {
+      try {
+        const parsed = JSON.parse(item.scoring_rules);
+        if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0].points === "number") {
+          tiers = parsed;
+          hasTiers = true;
+        }
+      } catch {}
+    }
     setItemForm({
       category_id: item.category_id,
       title: item.title,
       description: item.description,
       max_points: item.max_points,
       condition: item.condition,
-      scoring_rules: item.scoring_rules || "",
+      scoring_rules: hasTiers ? "" : (item.scoring_rules || ""),
       input_type: item.input_type,
       checklist_items: item.checklist_items ? item.checklist_items.join("\n") : "",
       interets: item.interets || "",
       comment_y_parvenir: item.comment_y_parvenir || "",
+      auto_field: item.auto_field || "",
     });
+    setIsAutoCalc(!!item.auto_field);
+    setScoringTiers(tiers);
+    setUseTiers(hasTiers);
     setItemDialogOpen(true);
   };
 
   const saveItem = async () => {
     if (!itemForm.title.trim()) return;
+    const finalScoringRules = useTiers && scoringTiers.length > 0
+      ? JSON.stringify(scoringTiers)
+      : itemForm.scoring_rules.trim() || null;
+
     const payload = {
       category_id: itemForm.category_id,
       title: itemForm.title.trim(),
       description: itemForm.description.trim(),
       max_points: itemForm.max_points,
       condition: itemForm.condition.trim(),
-      scoring_rules: itemForm.scoring_rules.trim() || null,
+      scoring_rules: finalScoringRules,
       input_type: itemForm.input_type,
       checklist_items: itemForm.input_type === "checklist" && itemForm.checklist_items.trim()
         ? itemForm.checklist_items.split("\n").map((s) => s.trim()).filter(Boolean)
         : null,
       interets: itemForm.interets.trim(),
       comment_y_parvenir: itemForm.comment_y_parvenir.trim(),
+      auto_field: isAutoCalc && itemForm.auto_field ? itemForm.auto_field : null,
     };
 
     if (editingItem) {
@@ -271,16 +316,24 @@ export default function AdminAuditGridInline() {
     loadData();
   };
 
+  // Scoring tiers helpers
+  const addTier = () => {
+    const last = scoringTiers[scoringTiers.length - 1];
+    const nextMin = last ? (last.max !== null ? last.max + 1 : last.min + 1) : 0;
+    setScoringTiers([...scoringTiers, { min: nextMin, max: nextMin + 9, points: 0 }]);
+  };
+  const updateTier = (idx: number, field: keyof ScoringTier, value: number | null) => {
+    setScoringTiers(scoringTiers.map((t, i) => i === idx ? { ...t, [field]: value } : t));
+  };
+  const removeTier = (idx: number) => {
+    setScoringTiers(scoringTiers.filter((_, i) => i !== idx));
+  };
+
   const selectedType = types.find((t) => t.id === selectedTypeId);
   const totalMaxPts = items.reduce((s, i) => s + i.max_points, 0);
-
-  // Group types by key for 2-level selection
   const uniqueKeys = [...new Set(types.map(t => t.key))];
-
-  // When a key is selected, show its versions
   const versionsForKey = selectedKey ? types.filter(t => t.key === selectedKey) : [];
 
-  // Auto-select key from selectedTypeId
   useEffect(() => {
     if (selectedTypeId) {
       const t = types.find(t => t.id === selectedTypeId);
@@ -326,19 +379,9 @@ export default function AdminAuditGridInline() {
                     onClick={() => setSelectedKey(key)}
                     className="flex flex-col items-center gap-3 rounded-2xl border border-border/60 bg-card p-6 shadow-soft transition-all hover:shadow-md hover:border-transparent hover:-translate-y-1 active:scale-[0.97]"
                   >
-                    <div
-                      className="flex items-center justify-center w-14 h-14 rounded-full"
-                      style={{ backgroundColor: `${visual.color}18` }}
-                    >
+                    <div className="flex items-center justify-center w-14 h-14 rounded-full" style={{ backgroundColor: `${visual.color}18` }}>
                       {visual.icon ? (
-                        <div
-                          className="h-7 w-7"
-                          style={{
-                            backgroundColor: visual.color,
-                            mask: `url(${visual.icon}) no-repeat center / contain`,
-                            WebkitMask: `url(${visual.icon}) no-repeat center / contain`,
-                          }}
-                        />
+                        <div className="h-7 w-7" style={{ backgroundColor: visual.color, mask: `url(${visual.icon}) no-repeat center / contain`, WebkitMask: `url(${visual.icon}) no-repeat center / contain` }} />
                       ) : (
                         <FontAwesomeIcon icon={faLayerGroup} className="h-5 w-5" style={{ color: visual.color }} />
                       )}
@@ -354,16 +397,11 @@ export default function AdminAuditGridInline() {
           {selectedKey && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {versionsForKey.map((v) => (
-                <div
-                  key={v.id}
-                  className={`flex flex-col items-start gap-2 rounded-2xl border border-border/60 bg-card p-4 shadow-soft transition-all text-left ${v.is_active ? "border-border" : "border-border/50 opacity-60"}`}
-                >
+                <div key={v.id} className={`flex flex-col items-start gap-2 rounded-2xl border border-border/60 bg-card p-4 shadow-soft transition-all text-left ${v.is_active ? "border-border" : "border-border/50 opacity-60"}`}>
                   <div className="flex items-center gap-2 w-full">
                     <button onClick={() => setSelectedTypeId(v.id)} className="flex items-center gap-2 flex-1 min-w-0 hover:opacity-80 transition-opacity">
                       <FontAwesomeIcon icon={faLayerGroup} className="h-4 w-4 text-primary" />
-                      <span className="text-sm font-semibold text-foreground truncate">
-                        {v.version_label || `V${v.version}`}
-                      </span>
+                      <span className="text-sm font-semibold text-foreground truncate">{v.version_label || `V${v.version}`}</span>
                     </button>
                     {v.is_active ? (
                       <Badge className="text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-0">Active</Badge>
@@ -374,16 +412,9 @@ export default function AdminAuditGridInline() {
                   <p className="text-xs text-muted-foreground">{v.label}</p>
                   <div className="flex items-center gap-1 w-full pt-1 border-t border-border/50">
                     <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs flex-1" onClick={() => setSelectedTypeId(v.id)}>
-                      <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3" />
-                      Éditer
+                      <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3" /> Éditer
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className={`h-7 gap-1 text-xs ${v.is_active ? "text-amber-600" : "text-emerald-600"}`}
-                      onClick={(e) => { e.stopPropagation(); toggleActive(v.id, v.is_active); }}
-                      title={v.is_active ? "Archiver" : "Réactiver"}
-                    >
+                    <Button variant="ghost" size="sm" className={`h-7 gap-1 text-xs ${v.is_active ? "text-amber-600" : "text-emerald-600"}`} onClick={(e) => { e.stopPropagation(); toggleActive(v.id, v.is_active); }} title={v.is_active ? "Archiver" : "Réactiver"}>
                       <FontAwesomeIcon icon={v.is_active ? faBoxArchive : faRotateLeft} className="h-3 w-3" />
                       {v.is_active ? "Archiver" : "Activer"}
                     </Button>
@@ -398,43 +429,28 @@ export default function AdminAuditGridInline() {
       {/* Selected type header */}
       {selectedTypeId && selectedType && (
         <div className="flex items-center gap-3 flex-wrap">
-          <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => { setSelectedTypeId(""); }}>
-            ← Retour
-          </Button>
-          <span className="text-sm font-semibold text-foreground">
-            {selectedType.label}{selectedType.version_label ? ` (${selectedType.version_label})` : ""}
-          </span>
+          <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => { setSelectedTypeId(""); }}>← Retour</Button>
+          <span className="text-sm font-semibold text-foreground">{selectedType.label}{selectedType.version_label ? ` (${selectedType.version_label})` : ""}</span>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditType(selectedType)}>
             <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3" />
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => duplicateAsNewVersion(selectedType.id)} title="Dupliquer comme nouvelle version">
             <FontAwesomeIcon icon={faCopy} className="h-3 w-3" />
           </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className={`h-8 w-8 ${selectedType.is_active ? "text-amber-600" : "text-emerald-600"}`}
-            onClick={() => toggleActive(selectedType.id, selectedType.is_active)}
-            title={selectedType.is_active ? "Archiver" : "Réactiver"}
-          >
+          <Button variant="ghost" size="icon" className={`h-8 w-8 ${selectedType.is_active ? "text-amber-600" : "text-emerald-600"}`} onClick={() => toggleActive(selectedType.id, selectedType.is_active)} title={selectedType.is_active ? "Archiver" : "Réactiver"}>
             <FontAwesomeIcon icon={selectedType.is_active ? faBoxArchive : faRotateLeft} className="h-3 w-3" />
           </Button>
           <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => { deleteType(selectedType.id); }}>
             <FontAwesomeIcon icon={faTrashCan} className="h-3 w-3" />
           </Button>
-          {!selectedType.is_active && (
-            <Badge variant="secondary" className="text-xs">Archivée</Badge>
-          )}
-          <Badge variant="outline" className="text-xs tabular-nums ml-auto">
-            {totalMaxPts} pts max
-          </Badge>
+          {!selectedType.is_active && <Badge variant="secondary" className="text-xs">Archivée</Badge>}
+          <Badge variant="outline" className="text-xs tabular-nums ml-auto">{totalMaxPts} pts max</Badge>
         </div>
       )}
 
       {/* Categories + Items */}
       {selectedTypeId && (
         <div className="space-y-4">
-          {/* Form Builder for custom fields — at the top */}
           <div className="border-b border-border pb-4 mb-4">
             <AuditFormBuilder auditTypeKey={selectedType?.key || ""} />
           </div>
@@ -459,7 +475,6 @@ export default function AdminAuditGridInline() {
                     </Button>
                   </div>
                 </div>
-
                 <div className="divide-y divide-border">
                   {catItems.map((item, idx) => (
                     <div key={item.id} className="flex items-center gap-3 px-4 py-2.5 hover:bg-accent/30 transition-colors">
@@ -471,6 +486,7 @@ export default function AdminAuditGridInline() {
                       </div>
                       <Badge variant="outline" className="text-xs tabular-nums shrink-0">{item.max_points} pts</Badge>
                       <Badge variant="secondary" className="text-xs shrink-0">{item.input_type}</Badge>
+                      {item.auto_field && <Badge variant="outline" className="text-[10px] shrink-0 text-muted-foreground">Auto</Badge>}
                       <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => openEditItem(item)}>
                         <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3" />
                       </Button>
@@ -479,15 +495,11 @@ export default function AdminAuditGridInline() {
                       </Button>
                     </div>
                   ))}
-                  {catItems.length === 0 && (
-                    <p className="text-xs text-muted-foreground text-center py-4">Aucun item</p>
-                  )}
+                  {catItems.length === 0 && <p className="text-xs text-muted-foreground text-center py-4">Aucun item</p>}
                 </div>
-
                 <div className="px-4 py-2 border-t border-border">
                   <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => openNewItem(cat.id)}>
-                    <FontAwesomeIcon icon={faPlus} className="h-3 w-3" />
-                    Ajouter un item
+                    <FontAwesomeIcon icon={faPlus} className="h-3 w-3" /> Ajouter un item
                   </Button>
                 </div>
               </div>
@@ -501,8 +513,7 @@ export default function AdminAuditGridInline() {
           )}
 
           <Button variant="outline" className="gap-2" onClick={openNewCat}>
-            <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
-            Ajouter une catégorie
+            <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" /> Ajouter une catégorie
           </Button>
         </div>
       )}
@@ -512,40 +523,23 @@ export default function AdminAuditGridInline() {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>{editingType ? "Modifier le type" : "Nouveau type d'audit"}</DialogTitle>
-            <DialogDescription>
-              {editingType ? "Modifiez la clé et le libellé." : "Créez un nouveau type d'événement à auditer."}
-            </DialogDescription>
+            <DialogDescription>{editingType ? "Modifiez la clé et le libellé." : "Créez un nouveau type d'événement à auditer."}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
-            <div className="space-y-1.5">
-              <Label>Clé (identifiant)</Label>
-              <Input value={typeKey} onChange={(e) => setTypeKey(e.target.value)} placeholder="ex: RD Présentiel" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Libellé</Label>
-              <Input value={typeLabel} onChange={(e) => setTypeLabel(e.target.value)} placeholder="ex: Rencontre Dirigeants Présentiel" />
-            </div>
-            <div className="space-y-1.5">
-              <Label>Label de version</Label>
-              <Input value={typeVersionLabel} onChange={(e) => setTypeVersionLabel(e.target.value)} placeholder="ex: V1, v3.0, 2026-Q1…" />
-            </div>
+            <div className="space-y-1.5"><Label>Clé (identifiant)</Label><Input value={typeKey} onChange={(e) => setTypeKey(e.target.value)} placeholder="ex: RD Présentiel" /></div>
+            <div className="space-y-1.5"><Label>Libellé</Label><Input value={typeLabel} onChange={(e) => setTypeLabel(e.target.value)} placeholder="ex: Rencontre Dirigeants Présentiel" /></div>
+            <div className="space-y-1.5"><Label>Label de version</Label><Input value={typeVersionLabel} onChange={(e) => setTypeVersionLabel(e.target.value)} placeholder="ex: V1, v3.0, 2026-Q1…" /></div>
             <div className="space-y-1.5">
               <Label>Couleur</Label>
               <div className="flex items-center gap-2">
-                <input
-                  type="color"
-                  value={typeColor || "#6b7280"}
-                  onChange={(e) => setTypeColor(e.target.value)}
-                  className="w-10 h-10 rounded-lg border border-border cursor-pointer"
-                />
+                <input type="color" value={typeColor || "#6b7280"} onChange={(e) => setTypeColor(e.target.value)} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
                 <Input value={typeColor} onChange={(e) => setTypeColor(e.target.value)} placeholder="#ee4540" className="flex-1" />
               </div>
             </div>
           </div>
           <DialogFooter>
             <Button onClick={saveType} disabled={!typeKey.trim() || !typeLabel.trim()} className="gap-1.5">
-              <FontAwesomeIcon icon={faFloppyDisk} className="h-3.5 w-3.5" />
-              Enregistrer
+              <FontAwesomeIcon icon={faFloppyDisk} className="h-3.5 w-3.5" /> Enregistrer
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -556,9 +550,7 @@ export default function AdminAuditGridInline() {
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>{editingCat ? "Modifier la catégorie" : "Nouvelle catégorie"}</DialogTitle>
-            <DialogDescription>
-              {editingCat ? "Renommez cette catégorie." : "Ajoutez une catégorie à cette grille d'audit."}
-            </DialogDescription>
+            <DialogDescription>{editingCat ? "Renommez cette catégorie." : "Ajoutez une catégorie à cette grille d'audit."}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
             <Label>Nom</Label>
@@ -566,8 +558,7 @@ export default function AdminAuditGridInline() {
           </div>
           <DialogFooter>
             <Button onClick={saveCat} disabled={!catName.trim()} className="gap-1.5">
-              <FontAwesomeIcon icon={faFloppyDisk} className="h-3.5 w-3.5" />
-              Enregistrer
+              <FontAwesomeIcon icon={faFloppyDisk} className="h-3.5 w-3.5" /> Enregistrer
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -578,9 +569,7 @@ export default function AdminAuditGridInline() {
         <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingItem ? "Modifier l'item" : "Nouvel item"}</DialogTitle>
-            <DialogDescription>
-              {editingItem ? "Modifiez les propriétés de cet item." : "Ajoutez un item à cette catégorie."}
-            </DialogDescription>
+            <DialogDescription>{editingItem ? "Modifiez les propriétés de cet item." : "Ajoutez un item à cette catégorie."}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
@@ -608,14 +597,97 @@ export default function AdminAuditGridInline() {
                 </Select>
               </div>
             </div>
+
+            {/* Auto-calc toggle */}
+            {itemForm.input_type === "number" && (
+              <div className="rounded-lg border border-border p-3 space-y-3">
+                <div className="flex items-center gap-3">
+                  <Switch checked={isAutoCalc} onCheckedChange={setIsAutoCalc} id="auto-calc" />
+                  <Label htmlFor="auto-calc" className="font-medium">Calcul automatique (désactivé en saisie)</Label>
+                </div>
+                {isAutoCalc && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Champ source (informations générales)</Label>
+                    <Select value={itemForm.auto_field} onValueChange={(v) => setItemForm({ ...itemForm, auto_field: v })}>
+                      <SelectTrigger><SelectValue placeholder="Sélectionner un champ nombre…" /></SelectTrigger>
+                      <SelectContent>
+                        {numberCustomFields.map((f) => (
+                          <SelectItem key={f.id} value={f.id}>{f.field_label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {numberCustomFields.length === 0 && (
+                      <p className="text-xs text-muted-foreground">Ajoutez d'abord des champs « Nombre » dans le formulaire ci-dessus.</p>
+                    )}
+                    <p className="text-[11px] text-muted-foreground">
+                      La valeur sera pré-remplie depuis ce champ et l'utilisateur ne pourra pas la modifier.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Scoring tiers */}
+            {itemForm.input_type === "number" && (
+              <div className="rounded-lg border border-border p-3 space-y-3">
+                <div className="flex items-center gap-3">
+                  <Switch checked={useTiers} onCheckedChange={setUseTiers} id="use-tiers" />
+                  <Label htmlFor="use-tiers" className="font-medium">Paliers de scoring</Label>
+                </div>
+                {useTiers && (
+                  <div className="space-y-2">
+                    {scoringTiers.map((tier, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <Input
+                          type="number"
+                          min={0}
+                          value={tier.min}
+                          onChange={(e) => updateTier(idx, "min", parseInt(e.target.value) || 0)}
+                          className="w-20 h-9 text-xs"
+                          placeholder="Min"
+                        />
+                        <span className="text-xs text-muted-foreground">à</span>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={tier.max ?? ""}
+                          onChange={(e) => updateTier(idx, "max", e.target.value === "" ? null : parseInt(e.target.value) || 0)}
+                          className="w-20 h-9 text-xs"
+                          placeholder="∞"
+                        />
+                        <span className="text-xs text-muted-foreground">→</span>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={tier.points}
+                          onChange={(e) => updateTier(idx, "points", parseInt(e.target.value) || 0)}
+                          className="w-16 h-9 text-xs"
+                          placeholder="Pts"
+                        />
+                        <span className="text-xs text-muted-foreground">pts</span>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => removeTier(idx)}>
+                          <FontAwesomeIcon icon={faXmark} className="h-3 w-3 text-muted-foreground" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button variant="outline" size="sm" onClick={addTier} className="gap-1.5 text-xs">
+                      <FontAwesomeIcon icon={faPlus} className="h-3 w-3" /> Ajouter un palier
+                    </Button>
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="space-y-1.5">
               <Label>Conditions de validation</Label>
               <RichTextarea value={itemForm.condition} onChange={(val) => setItemForm({ ...itemForm, condition: val })} rows={2} />
             </div>
-            <div className="space-y-1.5">
-              <Label>Règles de scoring (optionnel)</Label>
-              <RichTextarea value={itemForm.scoring_rules} onChange={(val) => setItemForm({ ...itemForm, scoring_rules: val })} rows={2} />
-            </div>
+            {!useTiers && (
+              <div className="space-y-1.5">
+                <Label>Règles de scoring (optionnel)</Label>
+                <RichTextarea value={itemForm.scoring_rules} onChange={(val) => setItemForm({ ...itemForm, scoring_rules: val })} rows={2} />
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label>Quel intérêt ?</Label>
               <RichTextarea value={itemForm.interets} onChange={(val) => setItemForm({ ...itemForm, interets: val })} rows={2} placeholder="Expliquez l'intérêt de ce critère…" />
@@ -627,19 +699,13 @@ export default function AdminAuditGridInline() {
             {itemForm.input_type === "checklist" && (
               <div className="space-y-1.5">
                 <Label>Éléments de la checklist (1 par ligne)</Label>
-                <RichTextarea
-                  value={itemForm.checklist_items}
-                  onChange={(val) => setItemForm({ ...itemForm, checklist_items: val })}
-                  rows={6}
-                  placeholder={"Ordinateur, micro, sono...\nLa présentation officielle (PPT)\nLe logiciel Dynamatch"}
-                />
+                <RichTextarea value={itemForm.checklist_items} onChange={(val) => setItemForm({ ...itemForm, checklist_items: val })} rows={6} placeholder={"Ordinateur, micro, sono...\nLa présentation officielle (PPT)\nLe logiciel Dynamatch"} />
               </div>
             )}
           </div>
           <DialogFooter>
             <Button onClick={saveItem} disabled={!itemForm.title.trim()} className="gap-1.5">
-              <FontAwesomeIcon icon={faFloppyDisk} className="h-3.5 w-3.5" />
-              Enregistrer
+              <FontAwesomeIcon icon={faFloppyDisk} className="h-3.5 w-3.5" /> Enregistrer
             </Button>
           </DialogFooter>
         </DialogContent>
