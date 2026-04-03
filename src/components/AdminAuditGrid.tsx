@@ -72,7 +72,7 @@ export default function AdminAuditGridInline() {
   const [scoringMode, setScoringMode] = useState<"none" | "tiers" | "increment" | "threshold">("none");
   const [incrementMin, setIncrementMin] = useState(0);
   const [incrementStep, setIncrementStep] = useState(1);
-  const [thresholdOperator, setThresholdOperator] = useState<"lt" | "lte" | "gt" | "gte">("gte");
+  const [thresholdOperator, setThresholdOperator] = useState<"lt" | "lte" | "eq" | "gt" | "gte">("gte");
   const [thresholdValue, setThresholdValue] = useState(0);
 
   // Load types
@@ -230,7 +230,7 @@ export default function AdminAuditGridInline() {
   };
 
   // === Item CRUD ===
-  const numberCustomFields = customFieldsForType.filter(f => f.field_type === "number");
+  const sourceCustomFields = customFieldsForType.filter(f => ["number", "stat_percent", "stat_sum"].includes(f.field_type));
 
   const openNewItem = (categoryId: string) => {
     setEditingItem(null);
@@ -735,22 +735,27 @@ export default function AdminAuditGridInline() {
                 <div className="flex items-center gap-3">
                   <Switch checked={isAutoCalc} onCheckedChange={setIsAutoCalc} id="auto-calc" />
                   <Label htmlFor="auto-calc" className="font-medium">
-                    {itemForm.input_type === "boolean" ? "Validation automatique (depuis un champ nombre)" : "Calcul automatique (désactivé en saisie)"}
+                    {itemForm.input_type === "boolean" ? "Validation automatique (depuis un champ source)" : "Calcul automatique (désactivé en saisie)"}
                   </Label>
                 </div>
                 {isAutoCalc && (
                   <div className="space-y-2">
                     <Label className="text-xs">Champ source (informations générales)</Label>
                     <Select value={itemForm.auto_field} onValueChange={(v) => setItemForm({ ...itemForm, auto_field: v })}>
-                      <SelectTrigger><SelectValue placeholder="Sélectionner un champ nombre…" /></SelectTrigger>
+                      <SelectTrigger><SelectValue placeholder="Sélectionner un champ source…" /></SelectTrigger>
                       <SelectContent>
-                        {numberCustomFields.map((f) => (
-                          <SelectItem key={f.id} value={f.id}>{f.field_label}</SelectItem>
+                        {sourceCustomFields.map((f) => (
+                          <SelectItem key={f.id} value={f.id}>
+                            {f.field_label}
+                            <span className="ml-1 text-muted-foreground text-[10px]">
+                              ({f.field_type === "number" ? "nombre" : f.field_type === "stat_percent" ? "ratio" : "évolution"})
+                            </span>
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    {numberCustomFields.length === 0 && (
-                      <p className="text-xs text-muted-foreground">Ajoutez d'abord des champs « Nombre » dans le formulaire ci-dessus.</p>
+                    {sourceCustomFields.length === 0 && (
+                      <p className="text-xs text-muted-foreground">Ajoutez d'abord des champs « Nombre », « Ratio » ou « Évolution » dans le formulaire ci-dessus.</p>
                     )}
                     {itemForm.input_type === "boolean" && (
                       <div className="space-y-1.5">
@@ -827,6 +832,7 @@ export default function AdminAuditGridInline() {
                           className="h-9 rounded-md border border-input bg-background px-2 text-xs">
                           <option value="lt">{"< Inférieur"}</option>
                           <option value="lte">{"≤ Inférieur ou égal"}</option>
+                          <option value="eq">{"= Égal"}</option>
                           <option value="gt">{"> Supérieur"}</option>
                           <option value="gte">{"≥ Supérieur ou égal"}</option>
                         </select>
@@ -841,7 +847,7 @@ export default function AdminAuditGridInline() {
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground italic">
-                      Valeur {{ lt: "<", lte: "≤", gt: ">", gte: "≥" }[thresholdOperator]} {thresholdValue} → {itemForm.max_points} pts, sinon 0 pt
+                      Valeur {{ lt: "<", lte: "≤", eq: "=", gt: ">", gte: "≥" }[thresholdOperator]} {thresholdValue} → {itemForm.max_points} pts, sinon 0 pt
                     </p>
                   </div>
                 )}
