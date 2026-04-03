@@ -767,40 +767,51 @@ export default function AdminAuditGridInline() {
             {/* Scoring tiers */}
             {itemForm.input_type === "number" && (
               <div className="rounded-lg border border-border p-3 space-y-3">
-                <div className="flex items-center gap-3">
-                  <Switch checked={useTiers} onCheckedChange={setUseTiers} id="use-tiers" />
-                  <Label htmlFor="use-tiers" className="font-medium">Paliers de scoring</Label>
+               <div className="rounded-lg border border-border p-3 space-y-3">
+                <Label className="font-medium text-sm">Mode de scoring</Label>
+                <div className="flex gap-2 flex-wrap">
+                  {(["none", "tiers", "increment"] as const).map((mode) => (
+                    <Button key={mode} type="button" variant={scoringMode === mode ? "default" : "outline"} size="sm"
+                      onClick={() => { setScoringMode(mode); setUseTiers(mode === "tiers"); }}>
+                      {mode === "none" ? "Linéaire (1=1pt)" : mode === "tiers" ? "Paliers" : "Incrémentation"}
+                    </Button>
+                  ))}
                 </div>
-                {useTiers && (
+
+                {scoringMode === "increment" && (
+                  <div className="space-y-3 pt-1">
+                    <p className="text-xs text-muted-foreground">Score = valeur ÷ pas (arrondi inf.), plafonné au max points. Les valeurs sous le minimum donnent 0.</p>
+                    <div className="flex items-center gap-3">
+                      <div className="space-y-1">
+                        <Label className="text-xs">Valeur min.</Label>
+                        <Input type="number" min={0} value={incrementMin} onChange={(e) => setIncrementMin(parseInt(e.target.value) || 0)} className="w-20 h-9 text-xs" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Max points</Label>
+                        <Input type="number" min={1} value={itemForm.max_points} onChange={(e) => setItemForm({ ...itemForm, max_points: parseInt(e.target.value) || 1 })} className="w-20 h-9 text-xs" />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Pas (incrément)</Label>
+                        <Input type="number" min={1} value={incrementStep} onChange={(e) => setIncrementStep(parseInt(e.target.value) || 1)} className="w-20 h-9 text-xs" />
+                      </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground italic">
+                      Ex: min={incrementMin}, pas={incrementStep}, max={itemForm.max_points} →
+                      {" "}{incrementMin > 0 ? `<${incrementMin} = 0pt, ` : ""}
+                      {incrementStep} = 1pt, {incrementStep * 2} = 2pts, … {incrementStep * itemForm.max_points} = {itemForm.max_points}pts
+                    </p>
+                  </div>
+                )}
+
+                {scoringMode === "tiers" && (
                   <div className="space-y-2">
                     {scoringTiers.map((tier, idx) => (
                       <div key={idx} className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          min={0}
-                          value={tier.min}
-                          onChange={(e) => updateTier(idx, "min", parseInt(e.target.value) || 0)}
-                          className="w-20 h-9 text-xs"
-                          placeholder="Min"
-                        />
+                        <Input type="number" min={0} value={tier.min} onChange={(e) => updateTier(idx, "min", parseInt(e.target.value) || 0)} className="w-20 h-9 text-xs" placeholder="Min" />
                         <span className="text-xs text-muted-foreground">à</span>
-                        <Input
-                          type="number"
-                          min={0}
-                          value={tier.max ?? ""}
-                          onChange={(e) => updateTier(idx, "max", e.target.value === "" ? null : parseInt(e.target.value) || 0)}
-                          className="w-20 h-9 text-xs"
-                          placeholder="∞"
-                        />
+                        <Input type="number" min={0} value={tier.max ?? ""} onChange={(e) => updateTier(idx, "max", e.target.value === "" ? null : parseInt(e.target.value) || 0)} className="w-20 h-9 text-xs" placeholder="∞" />
                         <span className="text-xs text-muted-foreground">→</span>
-                        <Input
-                          type="number"
-                          min={0}
-                          value={tier.points}
-                          onChange={(e) => updateTier(idx, "points", parseInt(e.target.value) || 0)}
-                          className="w-16 h-9 text-xs"
-                          placeholder="Pts"
-                        />
+                        <Input type="number" min={0} value={tier.points} onChange={(e) => updateTier(idx, "points", parseInt(e.target.value) || 0)} className="w-16 h-9 text-xs" placeholder="Pts" />
                         <span className="text-xs text-muted-foreground">pts</span>
                         <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => removeTier(idx)}>
                           <FontAwesomeIcon icon={faXmark} className="h-3 w-3 text-muted-foreground" />
