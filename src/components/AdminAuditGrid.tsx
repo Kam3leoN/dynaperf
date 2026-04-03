@@ -830,7 +830,7 @@ export default function AdminAuditGridInline() {
               <Label>Conditions de validation</Label>
               <RichTextarea value={itemForm.condition} onChange={(val) => setItemForm({ ...itemForm, condition: val })} rows={2} />
             </div>
-            {!useTiers && (
+            {scoringMode === "none" && (
               <div className="space-y-1.5">
                 <Label>Règles de scoring (optionnel)</Label>
                 <RichTextarea value={itemForm.scoring_rules} onChange={(val) => setItemForm({ ...itemForm, scoring_rules: val })} rows={2} />
