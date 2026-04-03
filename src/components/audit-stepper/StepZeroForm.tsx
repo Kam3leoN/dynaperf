@@ -437,7 +437,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
   };
 
   return (
-    <div className="space-y-5 max-w-3xl mx-auto">
+    <div className="space-y-5">
       {customFields.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-6 border border-dashed border-border rounded-xl">
           Aucun champ configuré pour ce type d'audit. Configurez les champs dans l'administration.
@@ -452,18 +452,18 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
         >
           {customFields.map((field) => {
             const span = field.col_span || 6;
+            const val = data.customFieldValues?.[field.id] ?? "";
+            const isFilled = val !== "" && val !== null && val !== undefined && val !== 0;
             return (
-              <div
+              <M3Field
                 key={field.id}
-                className="space-y-1.5"
+                label={field.field_label}
+                required={field.is_required}
+                filled={isFilled}
                 style={isMobile ? undefined : { gridColumn: `span ${span} / span ${span}` }}
               >
-                <Label>
-                  {field.field_label}
-                  {field.is_required && " *"}
-                </Label>
                 {renderField(field)}
-              </div>
+              </M3Field>
             );
           })}
         </div>
