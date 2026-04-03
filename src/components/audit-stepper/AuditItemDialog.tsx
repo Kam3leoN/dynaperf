@@ -172,6 +172,11 @@ export function AuditItemDialog({
               {incrementConfig.step === 1 ? "1 = 1 pt" : `${incrementConfig.step} = 1 pt`}, max {item.maxPoints} pts
             </p>
           )}
+          {thresholdConfig && (
+            <p className="text-sm text-foreground/80 mt-2 pt-2 border-t border-border">
+              {formatThresholdDisplay(thresholdConfig, item.maxPoints)}
+            </p>
+          )}
           {!tiers && !incrementConfig && item.scoringRules && (
             <p className="text-sm whitespace-pre-line text-foreground/80 mt-2 pt-2 border-t border-border">{item.scoringRules}</p>
           )}
