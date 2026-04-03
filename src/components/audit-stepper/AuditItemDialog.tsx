@@ -74,14 +74,25 @@ export function AuditItemDialog({
   const autoValue = getAutoValue(item, stepZeroData);
   const isAutoFilled = autoValue !== undefined;
   const isNoShowAuto = item.autoField === "nbNoShow";
+  const parsed = parseAutoField(item.autoField);
+  const hasBoolCondition = parsed?.condition && item.inputType === "boolean";
+  const isBoolAuto = isNoShowAuto || hasBoolCondition;
   const tiers = parseScoringTiers(item.scoringRules);
 
-  const [boolVal, setBoolVal] = useState<boolean | null>(() => {
+  const autoBoolResult = (() => {
     if (isNoShowAuto) return (autoValue ?? 0) === 0;
+    if (hasBoolCondition && autoValue !== undefined) {
+      return parsed!.condition === "zero" ? autoValue === 0 : autoValue > 0;
+    }
+    return null;
+  })();
+
+  const [boolVal, setBoolVal] = useState<boolean | null>(() => {
+    if (isBoolAuto) return autoBoolResult;
     return initialAnswer ? initialAnswer.score > 0 : null;
   });
   const [numVal, setNumVal] = useState<string>(() => {
-    if (isAutoFilled && !isNoShowAuto) return String(autoValue ?? 0);
+    if (isAutoFilled && !isBoolAuto) return String(autoValue ?? 0);
     return initialAnswer?.rawValue !== undefined ? String(initialAnswer.rawValue) : "";
   });
   const [checklist, setChecklist] = useState<boolean[]>(
@@ -91,6 +102,9 @@ export function AuditItemDialog({
 
   function getScore(): number {
     if (isNoShowAuto) return (autoValue ?? 0) === 0 ? item.maxPoints : 0;
+    if (hasBoolCondition && autoValue !== undefined) {
+      return parsed!.condition === "zero" ? (autoValue === 0 ? item.maxPoints : 0) : (autoValue > 0 ? item.maxPoints : 0);
+    }
     if (item.inputType === "boolean") return boolVal === true ? item.maxPoints : 0;
     if (item.inputType === "number") {
       const n = isAutoFilled ? (autoValue ?? 0) : (parseInt(numVal) || 0);
