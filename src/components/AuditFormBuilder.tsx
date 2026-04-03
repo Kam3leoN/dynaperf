@@ -103,8 +103,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setIsRequired(f.is_required);
     const opts = f.field_options?.options;
     setSelectOptions(Array.isArray(opts) && opts.length > 0 ? opts : [""]);
-    setSourceInvites(f.field_options?.source_invites || "");
-    setSourceParticipants(f.field_options?.source_participants || "");
+    setSourceNumerator(f.field_options?.source_numerator || "");
+    setSourceDenominator(f.field_options?.source_denominator || "");
     setDialogOpen(true);
   };
 
