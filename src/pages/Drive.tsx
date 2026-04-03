@@ -89,6 +89,7 @@ export default function Drive() {
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [typeFilter, setTypeFilter] = useState<string | null>(null);
 
   // Upload / Edit doc
   const [uploadOpen, setUploadOpen] = useState(false);
