@@ -716,14 +716,9 @@ export default function Drive() {
             {searchResults.cats.map((cat) => (
               <Card key={cat.id} className="cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => { setCurrentCatId(cat.id); setSearch(""); }}>
                 <CardContent className="p-3 flex items-center gap-3">
-                  {(() => {
-                    const iconSrc = getFolderIcon(cat);
-                    return iconSrc ? (
-                      <img src={iconSrc} alt="" className="h-6 w-6 rounded object-contain" />
-                    ) : (
-                      <FontAwesomeIcon icon={faFolder} className="h-5 w-5 text-primary" />
-                    );
-                  })()}
+                  <div className="flex-shrink-0">
+                    <FolderIconImg cat={cat} size="h-6 w-6" />
+                  </div>
                   <div>
                     <p className="text-sm font-medium">{cat.name}</p>
                     <p className="text-xs text-muted-foreground">{getCatPath(cat.id)}</p>
