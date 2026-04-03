@@ -15,20 +15,6 @@ import { MOIS_ORDRE } from "@/data/audits";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronRight, faCamera } from "@fortawesome/free-solid-svg-icons";
 
-/** Count how many required info fields are filled */
-function countInfoFilled(data: StepZeroData | undefined): number {
-  if (!data) return 0;
-  let count = 0;
-  if (data.partenaireAudite.trim()) count++;
-  if (data.auditeur.trim()) count++;
-  if (data.lieu.trim()) count++;
-  if (data.typeLieu.trim()) count++;
-  if (data.dateEvenement) count++;
-  return count;
-}
-
-const INFO_REQUIRED_FIELDS = 5;
-
 export default function AuditForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -47,7 +33,18 @@ export default function AuditForm() {
   const [signatureAuditeur, setSignatureAuditeur] = useState<string | null>(null);
   const [signatureAudite, setSignatureAudite] = useState<string | null>(null);
   const [editLoaded, setEditLoaded] = useState(false);
+  const [requiredFieldIds, setRequiredFieldIds] = useState<string[]>([]);
   const itemsSectionRef = useRef<HTMLDivElement>(null);
+
+  // Load required custom field IDs for progress tracking
+  useEffect(() => {
+    supabase
+      .from("audit_type_custom_fields")
+      .select("id")
+      .eq("audit_type_key", typeEvenement)
+      .eq("is_required", true)
+      .then(({ data }) => setRequiredFieldIds(data?.map((f) => f.id) ?? []));
+  }, [typeEvenement]);
 
   // Load config - prefer typeId if provided, fallback to typeKey
   useEffect(() => {
@@ -71,6 +68,8 @@ export default function AuditForm() {
       ]);
 
       if (audit) {
+        const customFieldValues = (detail?.items as any)?.__custom_fields || {};
+        
         setStepZeroData({
           partenaireAudite: audit.partenaire,
           partenaireReferent: detail?.partenaire_referent || "",
@@ -90,13 +89,14 @@ export default function AuditForm() {
           nbNoShow: detail?.nb_no_show ?? undefined,
           nbParticipants: detail?.nb_participants ?? undefined,
           nbRdvPris: detail?.nb_rdv_pris ?? undefined,
+          customFieldValues,
         });
 
         if (detail?.items) {
           const itemsData = detail.items as Record<string, any>;
           const loadedAnswers: Record<string, ItemAnswer> = {};
           Object.entries(itemsData).forEach(([id, ans]) => {
-            if (id === "__custom_fields") return; // skip custom fields
+            if (id === "__custom_fields") return;
             loadedAnswers[id] = {
               score: ans.score ?? 0,
               touched: true,
@@ -106,13 +106,6 @@ export default function AuditForm() {
             };
           });
           setAnswers(loadedAnswers);
-
-          // Restore custom field values
-          if (itemsData.__custom_fields) {
-            setStepZeroData((prev) =>
-              prev ? { ...prev, customFieldValues: itemsData.__custom_fields } : prev
-            );
-          }
         }
 
         if (detail?.photos) {
@@ -136,13 +129,18 @@ export default function AuditForm() {
 
   const totalItems = allItems.length;
   const answeredCount = Object.values(answers).filter((a) => a.touched).length;
-  const infoFilled = countInfoFilled(stepZeroData);
 
-  const totalExpected = INFO_REQUIRED_FIELDS + totalItems;
+  // Count filled required custom fields
+  const infoFilled = requiredFieldIds.filter((id) => {
+    const val = stepZeroData?.customFieldValues?.[id];
+    return val !== undefined && val !== null && val !== "";
+  }).length;
+
+  const totalExpected = requiredFieldIds.length + totalItems;
   const totalFilled = infoFilled + answeredCount;
   const progress = totalExpected > 0 ? (totalFilled / totalExpected) * 100 : 0;
 
-  const infoValid = infoFilled === INFO_REQUIRED_FIELDS;
+  const infoValid = requiredFieldIds.length === 0 || infoFilled === requiredFieldIds.length;
 
   const handleStepZeroChange = useCallback((data: StepZeroData) => {
     setStepZeroData(data);
@@ -180,10 +178,7 @@ export default function AuditForm() {
       const { error } = await supabase.storage
         .from("audit-photos")
         .upload(path, file, { contentType: file.type });
-      if (error) {
-        throw error;
-      }
-
+      if (error) throw error;
       urls.push(path);
     }
     return urls;
@@ -207,9 +202,9 @@ export default function AuditForm() {
 
     const auditPayload = {
       date: dateStr,
-      partenaire: stepZeroData.partenaireAudite,
+      partenaire: stepZeroData.partenaireAudite || "—",
       lieu: stepZeroData.lieu,
-      auditeur: stepZeroData.auditeur,
+      auditeur: stepZeroData.auditeur || "—",
       type_evenement: typeEvenement,
       note: noteSur10,
       mois_versement: moisVersement,
@@ -219,12 +214,10 @@ export default function AuditForm() {
     let targetAuditId: string;
 
     if (isEditMode && auditId) {
-      // Update existing audit
       const { error: auditErr } = await supabase
         .from("audits")
         .update(auditPayload)
         .eq("id", auditId);
-
       if (auditErr) {
         toast.error("Erreur lors de la modification de l'audit");
         console.error(auditErr);
@@ -233,13 +226,11 @@ export default function AuditForm() {
       }
       targetAuditId = auditId;
     } else {
-      // Create new audit
       const { data: auditRow, error: auditErr } = await supabase
         .from("audits")
         .insert(auditPayload)
         .select()
         .single();
-
       if (auditErr) {
         toast.error("Erreur lors de la création de l'audit");
         console.error(auditErr);
@@ -264,7 +255,6 @@ export default function AuditForm() {
         ...(ans.rawValue !== undefined && { rawValue: ans.rawValue }),
       };
     });
-    // Store custom field values alongside items
     if (stepZeroData.customFieldValues && Object.keys(stepZeroData.customFieldValues).length > 0) {
       itemsJson["__custom_fields"] = stepZeroData.customFieldValues;
     }
@@ -294,7 +284,6 @@ export default function AuditForm() {
     } as any;
 
     if (isEditMode) {
-      // Update or upsert detail
       const { data: existingDetail } = await supabase
         .from("audit_details")
         .select("id")

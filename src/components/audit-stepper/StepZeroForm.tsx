@@ -26,12 +26,13 @@ export interface StepZeroData {
   typeLieu: string;
   dateEvenement: Date | undefined;
   heureEvenement: string;
+  qualiteLieu?: number;
+  // Legacy fields kept for backward compat in save logic
   heureDebutPrevue?: string;
   heureFinPrevue?: string;
   heureDebutReelle?: string;
   heureFinReelle?: string;
   nomClub?: string;
-  qualiteLieu?: number;
   nbAdherents?: number;
   nbInvites?: number;
   nbNoShow?: number;
@@ -40,8 +41,16 @@ export interface StepZeroData {
   customFieldValues?: Record<string, any>;
 }
 
-// These hardcoded field keys match audit_type_custom_fields built-in defaults
-// If a custom field with matching auto_key exists, it replaces the hardcoded version
+// Maps special field types to StepZeroData keys so audit save logic still works
+const FIELD_TYPE_TO_DATA_KEY: Record<string, keyof StepZeroData> = {
+  partenaire_autocomplete: "partenaireAudite",
+  referent_autocomplete: "partenaireReferent",
+  auditeur_select: "auditeur",
+  city_autocomplete: "lieu",
+  lieu_autocomplete: "typeLieu",
+  qualite_lieu_rating: "qualiteLieu",
+  date_picker: "dateEvenement",
+};
 
 interface CustomFieldDef {
   id: string;
@@ -59,14 +68,6 @@ interface Props {
   hideSubmitButton?: boolean;
 }
 
-interface SuggestionLists {
-  partenaires: string[];
-  auditeurs: string[];
-  lieux: string[];
-  typesLieu: string[];
-  referents: string[];
-}
-
 export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitButton }: Props) {
   const [data, setData] = useState<StepZeroData>(
     initialData ?? {
@@ -82,12 +83,12 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
     }
   );
 
-  const [suggestions, setSuggestions] = useState<SuggestionLists>({
-    partenaires: [],
-    auditeurs: [],
-    lieux: [],
-    typesLieu: [],
-    referents: [],
+  const [suggestions, setSuggestions] = useState({
+    partenaires: [] as string[],
+    auditeurs: [] as string[],
+    lieux: [] as string[],
+    typesLieu: [] as string[],
+    referents: [] as string[],
   });
 
   const [customFields, setCustomFields] = useState<CustomFieldDef[]>([]);
@@ -99,10 +100,8 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
         supabase.from("audit_details").select("partenaire_referent, type_lieu").limit(500),
         supabase.from("profiles").select("display_name"),
       ]);
-
       const unique = (arr: (string | null | undefined)[]) =>
         [...new Set(arr.filter((v): v is string => !!v && v.trim() !== ""))].sort();
-
       setSuggestions({
         partenaires: unique(audits?.map((a) => a.partenaire)),
         auditeurs: unique(profiles?.map((p) => p.display_name)),
@@ -114,7 +113,6 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
     loadSuggestions();
   }, []);
 
-  // Load custom fields for this audit type
   useEffect(() => {
     async function loadCustomFields() {
       const { data: fields } = await supabase
@@ -127,41 +125,156 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
     loadCustomFields();
   }, [typeEvenement]);
 
-  const set = <K extends keyof StepZeroData>(k: K, v: StepZeroData[K]) =>
+  // Backfill customFieldValues from legacy StepZeroData when editing existing audits
+  useEffect(() => {
+    if (customFields.length === 0 || !initialData) return;
     setData((prev) => {
-      const next = { ...prev, [k]: v };
-      if (hideSubmitButton) {
-        setTimeout(() => onSubmit(next), 0);
+      const cv = { ...prev.customFieldValues };
+      let changed = false;
+      for (const field of customFields) {
+        if (cv[field.id] !== undefined && cv[field.id] !== "" && cv[field.id] !== null) continue;
+        const dataKey = FIELD_TYPE_TO_DATA_KEY[field.field_type];
+        if (dataKey && prev[dataKey] !== undefined && prev[dataKey] !== "" && prev[dataKey] !== null) {
+          cv[field.id] = prev[dataKey];
+          changed = true;
+        }
+        if (field.field_type === "time" && prev.heureEvenement) {
+          cv[field.id] = prev.heureEvenement;
+          changed = true;
+        }
       }
+      if (!changed) return prev;
+      const next = { ...prev, customFieldValues: cv };
+      if (hideSubmitButton) setTimeout(() => onSubmit(next), 0);
       return next;
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customFields]);
 
-  const setCustomValue = (fieldId: string, value: any) =>
+  const setFieldValue = (fieldId: string, fieldType: string, value: any) => {
     setData((prev) => {
-      const next = {
+      const next: StepZeroData = {
         ...prev,
         customFieldValues: { ...prev.customFieldValues, [fieldId]: value },
       };
+      // Map to legacy keys for backward-compatible save
+      const dataKey = FIELD_TYPE_TO_DATA_KEY[fieldType];
+      if (dataKey) {
+        (next as any)[dataKey] = value;
+      }
+      if (fieldType === "time") {
+        next.heureEvenement = value;
+      }
       if (hideSubmitButton) {
         setTimeout(() => onSubmit(next), 0);
       }
       return next;
     });
+  };
 
-  // Removed hardcoded type-specific flags — all extra fields now come from custom fields
+  const isValid = customFields
+    .filter((f) => f.is_required)
+    .every((f) => {
+      if (f.field_type === "date_picker") return !!data.dateEvenement;
+      const val = data.customFieldValues?.[f.id];
+      return val !== undefined && val !== null && val !== "";
+    });
 
-  const isValid =
-    data.partenaireAudite.trim() &&
-    data.auditeur.trim() &&
-    data.lieu.trim() &&
-    data.typeLieu.trim() &&
-    data.dateEvenement;
-
-  const renderCustomField = (field: CustomFieldDef) => {
+  const renderField = (field: CustomFieldDef) => {
     const val = data.customFieldValues?.[field.id] ?? "";
     const options: string[] = field.field_options?.options || [];
 
     switch (field.field_type) {
+      case "partenaire_autocomplete":
+        return (
+          <AutocompleteInput
+            value={val}
+            onChange={(v) => setFieldValue(field.id, field.field_type, v)}
+            suggestions={suggestions.partenaires}
+            placeholder="ex: Émilie BLAISE"
+          />
+        );
+      case "referent_autocomplete":
+        return (
+          <AutocompleteInput
+            value={val}
+            onChange={(v) => setFieldValue(field.id, field.field_type, v)}
+            suggestions={suggestions.referents}
+            placeholder="ex: Marie DUPONT"
+          />
+        );
+      case "auditeur_select":
+        return suggestions.auditeurs.length > 0 ? (
+          <Select value={val} onValueChange={(v) => setFieldValue(field.id, field.field_type, v)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Sélectionner un auditeur" />
+            </SelectTrigger>
+            <SelectContent>
+              {suggestions.auditeurs.map((a) => (
+                <SelectItem key={a} value={a}>{a}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <Input
+            value={val}
+            onChange={(e) => setFieldValue(field.id, field.field_type, e.target.value)}
+            placeholder="ex: Cédric MALZAT"
+          />
+        );
+      case "city_autocomplete":
+        return (
+          <CityAutocomplete
+            value={val}
+            onChange={(v) => setFieldValue(field.id, field.field_type, v)}
+            placeholder="ex: Troyes ou 10000"
+          />
+        );
+      case "lieu_autocomplete":
+        return (
+          <AutocompleteInput
+            value={val}
+            onChange={(v) => setFieldValue(field.id, field.field_type, v)}
+            suggestions={suggestions.typesLieu}
+            placeholder="ex: Hôtel, Restaurant..."
+          />
+        );
+      case "qualite_lieu_rating":
+        return (
+          <StarRating
+            value={typeof val === "number" ? val : 0}
+            onChange={(v) => setFieldValue(field.id, field.field_type, v)}
+          />
+        );
+      case "date_picker":
+        return (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-start text-left font-normal",
+                  !data.dateEvenement && "text-muted-foreground"
+                )}
+              >
+                <FontAwesomeIcon icon={faCalendar} className="mr-2 h-3.5 w-3.5" />
+                {data.dateEvenement
+                  ? format(data.dateEvenement, "dd MMMM yyyy", { locale: fr })
+                  : "Sélectionner une date"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                selected={data.dateEvenement}
+                onSelect={(d) => setFieldValue(field.id, field.field_type, d)}
+                initialFocus
+                className="p-3 pointer-events-auto"
+              />
+            </PopoverContent>
+          </Popover>
+        );
+      // --- Standard types ---
       case "text":
       case "email":
       case "tel":
@@ -170,7 +283,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
           <Input
             type={field.field_type}
             value={val}
-            onChange={(e) => setCustomValue(field.id, e.target.value)}
+            onChange={(e) => setFieldValue(field.id, field.field_type, e.target.value)}
             placeholder={field.field_label}
           />
         );
@@ -178,7 +291,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
         return (
           <Textarea
             value={val}
-            onChange={(e) => setCustomValue(field.id, e.target.value)}
+            onChange={(e) => setFieldValue(field.id, field.field_type, e.target.value)}
             placeholder={field.field_label}
             rows={3}
           />
@@ -188,32 +301,22 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
           <Input
             type="number"
             value={val}
-            onChange={(e) => setCustomValue(field.id, e.target.value)}
+            onChange={(e) => setFieldValue(field.id, field.field_type, e.target.value)}
             placeholder={field.field_label}
           />
         );
       case "date":
         return (
-          <Input
-            type="date"
-            value={val}
-            onChange={(e) => setCustomValue(field.id, e.target.value)}
-          />
+          <Input type="date" value={val} onChange={(e) => setFieldValue(field.id, field.field_type, e.target.value)} />
         );
       case "time":
         return (
-          <Input
-            type="time"
-            value={val}
-            onChange={(e) => setCustomValue(field.id, e.target.value)}
-          />
+          <Input type="time" value={val} onChange={(e) => setFieldValue(field.id, field.field_type, e.target.value)} />
         );
       case "select":
         return (
-          <Select value={val} onValueChange={(v) => setCustomValue(field.id, v)}>
-            <SelectTrigger>
-              <SelectValue placeholder={`Sélectionner…`} />
-            </SelectTrigger>
+          <Select value={val} onValueChange={(v) => setFieldValue(field.id, field.field_type, v)}>
+            <SelectTrigger><SelectValue placeholder="Sélectionner…" /></SelectTrigger>
             <SelectContent>
               {options.map((opt) => (
                 <SelectItem key={opt} value={opt}>{opt}</SelectItem>
@@ -223,7 +326,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
         );
       case "radio":
         return (
-          <RadioGroup value={val} onValueChange={(v) => setCustomValue(field.id, v)}>
+          <RadioGroup value={val} onValueChange={(v) => setFieldValue(field.id, field.field_type, v)}>
             {options.map((opt) => (
               <div key={opt} className="flex items-center gap-2">
                 <RadioGroupItem value={opt} id={`${field.id}-${opt}`} />
@@ -245,7 +348,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
                     const next = checked
                       ? [...checkedValues, opt]
                       : checkedValues.filter((v) => v !== opt);
-                    setCustomValue(field.id, next);
+                    setFieldValue(field.id, field.field_type, next);
                   }}
                 />
                 <Label htmlFor={`${field.id}-${opt}`} className="font-normal">{opt}</Label>
@@ -258,14 +361,14 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
         return (
           <StarRating
             value={typeof val === "number" ? val : 0}
-            onChange={(v) => setCustomValue(field.id, v)}
+            onChange={(v) => setFieldValue(field.id, field.field_type, v)}
           />
         );
       default:
         return (
           <Input
             value={val}
-            onChange={(e) => setCustomValue(field.id, e.target.value)}
+            onChange={(e) => setFieldValue(field.id, field.field_type, e.target.value)}
             placeholder={field.field_label}
           />
         );
@@ -274,8 +377,11 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
 
   return (
     <div className="space-y-5 max-w-3xl mx-auto">
-      {/* Custom fields at the top */}
-      {customFields.length > 0 && (
+      {customFields.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-6 border border-dashed border-border rounded-xl">
+          Aucun champ configuré pour ce type d'audit. Configurez les champs dans l'administration.
+        </p>
+      ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {customFields.map((field) => (
             <div key={field.id} className="space-y-1.5">
@@ -283,113 +389,11 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
                 {field.field_label}
                 {field.is_required && " *"}
               </Label>
-              {renderCustomField(field)}
+              {renderField(field)}
             </div>
           ))}
         </div>
       )}
-
-      {customFields.length > 0 && (
-        <div className="border-t border-border" />
-      )}
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <Label>Partenaire audité (Prénom NOM) *</Label>
-          <AutocompleteInput
-            value={data.partenaireAudite}
-            onChange={(v) => set("partenaireAudite", v)}
-            suggestions={suggestions.partenaires}
-            placeholder="ex: Émilie BLAISE"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Partenaire référent (Prénom NOM)</Label>
-          <AutocompleteInput
-            value={data.partenaireReferent}
-            onChange={(v) => set("partenaireReferent", v)}
-            suggestions={suggestions.referents}
-            placeholder="ex: Marie DUPONT"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Auditeur (Prénom NOM) *</Label>
-          {suggestions.auditeurs.length > 0 ? (
-            <Select value={data.auditeur} onValueChange={(v) => set("auditeur", v)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner un auditeur" />
-              </SelectTrigger>
-              <SelectContent>
-                {suggestions.auditeurs.map((a) => (
-                  <SelectItem key={a} value={a}>{a}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          ) : (
-            <Input
-              value={data.auditeur}
-              onChange={(e) => set("auditeur", e.target.value)}
-              placeholder="ex: Cédric MALZAT"
-            />
-          )}
-        </div>
-        <div className="space-y-1.5">
-          <Label>Ville de l'événement *</Label>
-          <CityAutocomplete
-            value={data.lieu}
-            onChange={(v) => set("lieu", v)}
-            placeholder="ex: Troyes ou 10000"
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Lieu de l'événement *</Label>
-          <AutocompleteInput
-            value={data.typeLieu}
-            onChange={(v) => set("typeLieu", v)}
-            suggestions={suggestions.typesLieu}
-            placeholder="ex: Hôtel, Restaurant..."
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Qualité du lieu d'accueil</Label>
-          <StarRating
-            value={data.qualiteLieu ?? 0}
-            onChange={(v) => set("qualiteLieu", v)}
-          />
-        </div>
-        <div className="space-y-1.5">
-          <Label>Date de l'événement *</Label>
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-start text-left font-normal",
-                  !data.dateEvenement && "text-muted-foreground"
-                )}
-              >
-                <FontAwesomeIcon icon={faCalendar} className="mr-2 h-3.5 w-3.5" />
-                {data.dateEvenement
-                  ? format(data.dateEvenement, "dd MMMM yyyy", { locale: fr })
-                  : "Sélectionner une date"}
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={data.dateEvenement}
-                onSelect={(d) => set("dateEvenement", d)}
-                initialFocus
-                className="p-3 pointer-events-auto"
-              />
-            </PopoverContent>
-          </Popover>
-        </div>
-        <div className="space-y-1.5">
-          <Label>Heure de l'événement</Label>
-          <Input type="time" value={data.heureEvenement} onChange={(e) => set("heureEvenement", e.target.value)} />
-        </div>
-      </div>
 
       {!hideSubmitButton && (
         <div className="pt-4">
