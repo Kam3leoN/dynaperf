@@ -13,6 +13,7 @@ export interface LayoutEditorField {
   col_span: number;
   col_offset_before: number;
   col_offset_after: number;
+  is_required?: boolean;
 }
 
 export interface LayoutDraftItem {
