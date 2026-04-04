@@ -187,8 +187,10 @@ export default function AuditForm() {
   const saveAudit = async (finalAnswers: Record<string, ItemAnswer>) => {
     if (!stepZeroData || !config) return;
 
-    const totalPoints = Object.values(finalAnswers).reduce((s, a) => s + a.score, 0);
-    const noteSur10 = +((totalPoints / config.maxPoints) * 10).toFixed(2);
+    const applicableAnswers = Object.entries(finalAnswers).filter(([, a]) => !a.notApplicable);
+    const totalPoints = applicableAnswers.reduce((s, [, a]) => s + a.score, 0);
+    const applicableMaxPoints = allItems.filter(i => !finalAnswers[i.id]?.notApplicable).reduce((s, i) => s + i.maxPoints, 0);
+    const noteSur10 = applicableMaxPoints > 0 ? +((totalPoints / applicableMaxPoints) * 10).toFixed(2) : 0;
 
     const dateStr = stepZeroData.dateEvenement
       ? format(stepZeroData.dateEvenement, "yyyy-MM-dd")
