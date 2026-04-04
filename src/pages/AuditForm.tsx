@@ -446,8 +446,8 @@ export default function AuditForm() {
                   {categories.map((cat) => {
                     const catItems = allItems.filter((i) => i.categoryId === cat.id);
                     if (catItems.length === 0) return null;
-                    const catMaxPoints = catItems.reduce((sum, i) => sum + i.maxPoints, 0);
-                    const catObtained = catItems.reduce((sum, i) => sum + (answers[i.id]?.score ?? 0), 0);
+                    const catMaxPoints = catItems.filter(i => !answers[i.id]?.notApplicable).reduce((sum, i) => sum + i.maxPoints, 0);
+                    const catObtained = catItems.filter(i => !answers[i.id]?.notApplicable).reduce((sum, i) => sum + (answers[i.id]?.score ?? 0), 0);
                     const pct = catMaxPoints > 0 ? Math.round((catObtained / catMaxPoints) * 100) : 0;
                     return (
                       <div key={cat.id} className="flex-1 min-w-[140px] rounded-xl border border-border bg-muted/30 p-3 space-y-1.5">

@@ -29,7 +29,7 @@ interface AuditDetailViewProps {
 }
 
 interface DetailData {
-  items: Record<string, { score: number; comment?: string; checklist?: boolean[]; rawValue?: number }>;
+  items: Record<string, { score: number; comment?: string; checklist?: boolean[]; rawValue?: number; notApplicable?: boolean }>;
   total_points: number | null;
   note_sur_10: number | null;
   partenaire_referent: string | null;
