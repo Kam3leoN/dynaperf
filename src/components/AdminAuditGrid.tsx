@@ -748,7 +748,7 @@ export default function AdminAuditGridInline() {
                           <SelectItem key={f.id} value={f.id}>
                             {f.field_label}
                             <span className="ml-1 text-muted-foreground text-[10px]">
-                              ({f.field_type === "number" ? "nombre" : f.field_type === "stat_percent" ? "ratio" : "évolution"})
+                              ({f.field_type === "number" ? "nombre" : f.field_type === "stat_percent" ? "ratio" : f.field_type === "stat_diff" ? "différence" : "évolution"})
                             </span>
                           </SelectItem>
                         ))}
