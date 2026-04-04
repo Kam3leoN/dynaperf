@@ -146,7 +146,7 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
         if (catItems.length === 0) continue;
         const catMax = catItems.reduce((s, i) => s + i.maxPoints, 0);
         const catObt = catItems.reduce((s, i) => s + (items[i.id]?.score ?? 0), 0);
-        html += `<div class="cat-header">${escapeHtml(cat.name)} <span style="float:right;font-size:11px;font-weight:600;">${catObt}/${catMax} pts</span></div>`;
+        html += `<div class="cat-header" style="font-size:14px;">${escapeHtml(cat.name)} <span style="float:right;font-size:11px;font-weight:600;">${catObt}/${catMax} pts</span></div>`;
 
         for (const item of catItems) {
           globalIdx++;
