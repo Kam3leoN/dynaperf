@@ -229,6 +229,27 @@ body {
 .detail-block.comment-parvenir .detail-label { color: var(--blue-text); font-weight: 600; }
 .detail-block .detail-label { font-size: 8px; font-weight: 600; display: block; margin-bottom: 1px; }
 
+/* ── HTML riche (TipTap) dans PDF ── */
+.rich-html-inline ul {
+  list-style-type: disc;
+  list-style-position: outside;
+  padding-left: 1.2em;
+  margin: 0.25em 0;
+}
+.rich-html-inline ol {
+  list-style-type: decimal;
+  list-style-position: outside;
+  padding-left: 1.2em;
+  margin: 0.25em 0;
+}
+.rich-html-inline li {
+  display: list-item;
+  margin: 0.1em 0;
+}
+.rich-html-inline p { margin: 0.15em 0; }
+.rich-html-inline p:first-child { margin-top: 0; }
+.rich-html-inline p:last-child { margin-bottom: 0; }
+
 /* ── Checklist ── */
 .checklist-item {
   display: flex;
@@ -468,6 +489,16 @@ export function escapeHtml(str: string): string {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+/** Contenu éditeur riche : HTML brut pour impression ; sinon texte échappé. */
+export function richOrEscapedHtml(str: string): string {
+  const t = (str ?? "").trim();
+  if (!t) return "";
+  if (/<\/?[a-z][a-z0-9]*(?:\s[^>]*)?>/i.test(t)) {
+    return `<div class="rich-html-inline">${t}</div>`;
+  }
+  return escapeHtml(t);
 }
 
 export function formatDateFr(dateStr: string): string {

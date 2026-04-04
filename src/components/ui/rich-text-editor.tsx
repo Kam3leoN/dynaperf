@@ -93,7 +93,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, rows =
     editorProps: {
       attributes: {
         class: cn(
-          "prose prose-sm dark:prose-invert max-w-none focus:outline-none px-3 py-2 text-sm",
+          "rich-text-editor-root prose prose-sm dark:prose-invert max-w-none focus:outline-none px-3 py-2 text-sm",
         ),
         style: `min-height: ${minHeightPx}px`,
       },

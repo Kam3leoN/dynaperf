@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { RichHtmlView } from "@/components/ui/rich-html-view";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
@@ -246,12 +247,12 @@ function AuditItemCardComponent({ item, index, categoryName, answer, onChange, s
         {(item.description || item.condition || tiers) && (
           <div className="rounded-md border border-border bg-muted/30 p-2.5 sm:p-3 space-y-1.5">
             {item.description && (
-              <p className="text-xs sm:text-sm text-muted-foreground whitespace-pre-line leading-relaxed">{item.description}</p>
+              <RichHtmlView content={item.description} className="text-xs sm:text-sm text-muted-foreground" />
             )}
             {item.condition && (
               <div className="flex items-start gap-1.5 text-xs sm:text-sm text-foreground/70 leading-relaxed">
                 <FontAwesomeIcon icon={faCircleInfo} className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                <span className="whitespace-pre-line">{item.condition}</span>
+                <RichHtmlView content={item.condition} className="flex-1 min-w-0" />
               </div>
             )}
             {tiers && (
@@ -260,9 +261,10 @@ function AuditItemCardComponent({ item, index, categoryName, answer, onChange, s
               </p>
             )}
             {!tiers && item.scoringRules && !parseScoringTiers(item.scoringRules) && (
-              <p className="text-xs sm:text-sm text-foreground/70 pt-1.5 border-t border-border whitespace-pre-line leading-relaxed">
-                {item.scoringRules}
-              </p>
+              <RichHtmlView
+                content={item.scoringRules}
+                className="text-xs sm:text-sm text-foreground/70 pt-1.5 border-t border-border"
+              />
             )}
           </div>
         )}

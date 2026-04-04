@@ -15,6 +15,7 @@ import { faCheck, faXmark, faLock, faCircleInfo, faImage } from "@fortawesome/fr
 import { AuditPdfExport } from "@/components/AuditPdfExport";
 import { ReportSignatures } from "@/components/ReportSignatures";
 import { cn } from "@/lib/utils";
+import { RichHtmlView } from "@/components/ui/rich-html-view";
 
 interface AuditDetailViewProps {
   auditId: string;
@@ -281,37 +282,36 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
                             )}
                           </div>
 
-                          {/* Description & condition */}
-                          {(item.description || item.condition) && (
+                          {/* Description, condition, barème */}
+                          {(item.description || item.condition || item.scoringRules) && (
                             <div className="rounded-md border border-border bg-muted/30 p-2.5 sm:p-3 space-y-1.5">
                               {item.description && (
-                                <p className="text-xs sm:text-sm text-muted-foreground whitespace-pre-line leading-relaxed">{item.description}</p>
+                                <RichHtmlView content={item.description} className="text-xs sm:text-sm text-muted-foreground" />
                               )}
                               {item.condition && (
                                 <div className="flex items-start gap-1.5 text-xs sm:text-sm text-foreground/70 leading-relaxed">
                                   <FontAwesomeIcon icon={faCircleInfo} className="h-3 w-3 mt-0.5 flex-shrink-0" />
-                                  <span className="whitespace-pre-line">{item.condition}</span>
+                                  <RichHtmlView content={item.condition} className="flex-1 min-w-0" />
                                 </div>
                               )}
-                          {/* Intérêts & Comment y parvenir */}
+                              {item.scoringRules && (
+                                <RichHtmlView
+                                  content={item.scoringRules}
+                                  className="text-xs sm:text-sm text-foreground/70 pt-1.5 border-t border-border"
+                                />
+                              )}
+                            </div>
+                          )}
                           {item.interets && (
                             <div className="rounded-md border border-border bg-emerald-500/5 p-2.5">
                               <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400 block mb-0.5">Quel intérêt ?</span>
-                              <p className="text-xs sm:text-sm text-foreground/80 whitespace-pre-line">{item.interets}</p>
+                              <RichHtmlView content={item.interets} className="text-xs sm:text-sm text-foreground/80" />
                             </div>
                           )}
                           {item.commentYParvenir && (
                             <div className="rounded-md border border-border bg-blue-500/5 p-2.5">
                               <span className="text-xs font-semibold text-blue-700 dark:text-blue-400 block mb-0.5">Comment y parvenir ?</span>
-                              <p className="text-xs sm:text-sm text-foreground/80 whitespace-pre-line">{item.commentYParvenir}</p>
-                            </div>
-                          )}
-
-                          {item.scoringRules && (
-                                <p className="text-xs sm:text-sm text-foreground/70 pt-1.5 border-t border-border whitespace-pre-line leading-relaxed">
-                                  {item.scoringRules}
-                                </p>
-                              )}
+                              <RichHtmlView content={item.commentYParvenir} className="text-xs sm:text-sm text-foreground/80" />
                             </div>
                           )}
 
@@ -348,7 +348,7 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
                           {answer?.comment && (
                             <div className="rounded-md border border-border bg-muted/20 p-2.5">
                               <span className="text-xs text-muted-foreground block mb-0.5">Commentaire</span>
-                              <p className="text-sm text-foreground">{answer.comment}</p>
+                              <RichHtmlView content={answer.comment} className="text-sm text-foreground" />
                             </div>
                           )}
                         </CardContent>

@@ -3,6 +3,7 @@ import { AuditFormBuilder } from "@/components/AuditFormBuilder";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { stripHtmlForPreview } from "@/components/ui/rich-html-view";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -592,7 +593,7 @@ export default function AdminAuditGridInline() {
                       <FontAwesomeIcon icon={faGripVertical} className="h-3 w-3 text-muted-foreground/50" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{item.title}</p>
-                        <p className="text-xs text-muted-foreground truncate">{item.description.slice(0, 80)}{item.description.length > 80 ? "…" : ""}</p>
+                        <p className="text-xs text-muted-foreground truncate">{stripHtmlForPreview(item.description, 80)}</p>
                       </div>
                       <Badge variant="outline" className="text-xs tabular-nums shrink-0">{item.max_points} pts</Badge>
                       <Badge variant="secondary" className="text-xs shrink-0">{item.input_type}</Badge>

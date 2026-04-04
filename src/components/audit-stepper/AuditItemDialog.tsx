@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { RichHtmlView } from "@/components/ui/rich-html-view";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
@@ -172,7 +173,15 @@ export function AuditItemDialog({
             )}
           </div>
           <DialogTitle className="sr-only">{item.title}</DialogTitle>
-          <DialogDescription className="whitespace-pre-line text-sm leading-relaxed">{item.description}</DialogDescription>
+          <DialogDescription asChild>
+            <div className="text-sm leading-relaxed max-h-[40vh] overflow-y-auto">
+              {item.description ? (
+                <RichHtmlView content={item.description} className="text-muted-foreground" />
+              ) : (
+                <span className="text-muted-foreground/70 italic">Aucune description.</span>
+              )}
+            </div>
+          </DialogDescription>
         </DialogHeader>
 
         {notApplicable && (
@@ -186,7 +195,9 @@ export function AuditItemDialog({
               <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 <FontAwesomeIcon icon={faCircleInfo} className="h-3 w-3" /> Conditions de validation
               </div>
-              <p className="text-sm whitespace-pre-line text-foreground/80">{item.condition}</p>
+              {item.condition && (
+                <RichHtmlView content={item.condition} className="text-sm text-foreground/80" />
+              )}
               {tiers && (
                 <p className="text-sm whitespace-pre-line text-foreground/80 mt-2 pt-2 border-t border-border">
                   {formatTiersDisplay(tiers)}
@@ -204,7 +215,10 @@ export function AuditItemDialog({
                 </p>
               )}
               {!tiers && !incrementConfig && !thresholdConfig && item.scoringRules && (
-                <p className="text-sm whitespace-pre-line text-foreground/80 mt-2 pt-2 border-t border-border">{item.scoringRules}</p>
+                <RichHtmlView
+                  content={item.scoringRules}
+                  className="text-sm text-foreground/80 mt-2 pt-2 border-t border-border"
+                />
               )}
             </div>
 

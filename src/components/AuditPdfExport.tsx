@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import {
   openPrintWindow,
   escapeHtml,
+  richOrEscapedHtml,
   formatDateFr,
   infoFieldHtml,
   statFieldHtml,
@@ -180,23 +181,23 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
 
           if (item.description || item.condition) {
             html += `<div class="detail-block">`;
-            if (item.description) html += `<div>${escapeHtml(item.description)}</div>`;
-            if (item.condition) html += `<div style="margin-top:2px;">ℹ️ ${escapeHtml(item.condition)}</div>`;
-            if (item.scoringRules) html += `<div style="margin-top:3px;padding-top:3px;border-top:1px solid var(--border);">${escapeHtml(item.scoringRules)}</div>`;
+            if (item.description) html += `<div>${richOrEscapedHtml(item.description)}</div>`;
+            if (item.condition) html += `<div style="margin-top:2px;">ℹ️ ${richOrEscapedHtml(item.condition)}</div>`;
+            if (item.scoringRules) html += `<div style="margin-top:3px;padding-top:3px;border-top:1px solid var(--border);">${richOrEscapedHtml(item.scoringRules)}</div>`;
             html += `</div>`;
           }
 
           if (item.interets) {
             html += `<div class="detail-block interet">`;
             html += `<span class="detail-label">Quel intérêt ?</span>`;
-            html += `${escapeHtml(item.interets)}`;
+            html += `${richOrEscapedHtml(item.interets)}`;
             html += `</div>`;
           }
 
           if (item.commentYParvenir) {
             html += `<div class="detail-block comment-parvenir">`;
             html += `<span class="detail-label">Comment y parvenir ?</span>`;
-            html += `${escapeHtml(item.commentYParvenir)}`;
+            html += `${richOrEscapedHtml(item.commentYParvenir)}`;
             html += `</div>`;
           }
 
@@ -220,7 +221,7 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
           if (answer?.comment) {
             html += `<div class="item-comment">`;
             html += `<span class="comment-label">Commentaire</span>`;
-            html += escapeHtml(answer.comment);
+            html += richOrEscapedHtml(answer.comment);
             html += `</div>`;
           }
 
