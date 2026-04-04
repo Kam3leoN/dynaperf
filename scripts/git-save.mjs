@@ -32,8 +32,12 @@ function getMessage() {
 const message = getMessage();
 
 if (!message) {
-  console.error("[git:save] Message requis. Exemples sous Windows PowerShell :\n");
-  console.error('  npm run git:save -- --msg="votre message de commit"\n');
+  console.error("[git:save] Message requis.\n");
+  console.error("Sous PowerShell, ne pas utiliser seul « -- » (il est mangé par le shell).\n");
+  console.error('  npm run git:save \'--\' \'--msg=votre message de commit complet\'\n');
+  console.error("Ou sans argument npm :\n");
+  console.error('  node scripts/git-save.mjs --msg="votre message"\n');
+  console.error("Ou avec variable d’environnement :\n");
   console.error("  $env:GIT_SAVE_MSG = 'votre message'; npm run git:save:env\n");
   process.exit(1);
 }
