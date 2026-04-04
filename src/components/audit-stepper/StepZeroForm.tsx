@@ -553,15 +553,22 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
                   <div style={{ gridColumn: `span ${before} / span ${before}` }} />
                 )}
                 <div style={isMobile ? undefined : { gridColumn: `span ${span} / span ${span}` }}>
-                  <M3Field
-                    label={field.field_label}
-                    required={field.is_required}
-                    filled={isFilled}
-                  >
-                    {renderField(field)}
-                  </M3Field>
-                  {(field.field_type === "stat_percent" || field.field_type === "stat_sum" || field.field_type === "stat_diff") && (
-                    <p className="text-[10px] text-muted-foreground mt-1 ml-1 italic">Calcul automatique</p>
+                  {(field.field_type === "stat_percent" || field.field_type === "stat_sum" || field.field_type === "stat_diff") ? (
+                    <>
+                      <span className="block mb-1 ml-1 text-xs font-medium text-muted-foreground">
+                        {field.field_label}
+                      </span>
+                      {renderField(field)}
+                      <p className="text-[10px] text-muted-foreground mt-1 ml-1 italic">Calcul automatique</p>
+                    </>
+                  ) : (
+                    <M3Field
+                      label={field.field_label}
+                      required={field.is_required}
+                      filled={isFilled}
+                    >
+                      {renderField(field)}
+                    </M3Field>
                   )}
                 </div>
                 {!isMobile && after > 0 && (
