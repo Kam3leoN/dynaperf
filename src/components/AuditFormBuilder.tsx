@@ -55,7 +55,8 @@ const FIELD_TYPES_SMART = [
   { value: "date_picker", label: "🔗 Date (calendrier)" },
   { value: "heure_picker", label: "🔗 Heure (saisie)" },
   { value: "stat_percent", label: "📊 Statistique % (calcul auto)" },
-  { value: "stat_sum", label: "📊 Calcul auto (somme / différence)" },
+  { value: "stat_sum", label: "📊 Évolution (B − A, avec signe)" },
+  { value: "stat_diff", label: "📊 Différence (A − B, valeur absolue)" },
 ];
 
 const ALL_FIELD_TYPES = [...FIELD_TYPES_SMART, ...FIELD_TYPES_STANDARD];
@@ -131,7 +132,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
   const needsOptions = ["select", "radio", "checkbox"].includes(fieldType);
   const isStatPercent = fieldType === "stat_percent";
   const isStatSum = fieldType === "stat_sum";
-  const needsSources = isStatPercent || isStatSum;
+  const isStatDiff = fieldType === "stat_diff";
+  const needsSources = isStatPercent || isStatSum || isStatDiff;
   const numberFields = fields.filter((f) => f.field_type === "number");
 
   const editorFields = useMemo<LayoutEditorField[]>(() =>
@@ -170,9 +172,13 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
       fieldOpts = { options: validOpts };
     } else if (needsSources) {
       if (!sourceNumerator || !sourceDenominator) { toast.error("Sélectionnez les deux champs sources"); return; }
-      fieldOpts = isStatPercent
-        ? { source_numerator: sourceNumerator, source_denominator: sourceDenominator }
-        : { source_a: sourceNumerator, source_b: sourceDenominator };
+      if (isStatPercent) {
+        fieldOpts = { source_numerator: sourceNumerator, source_denominator: sourceDenominator };
+      } else if (isStatDiff) {
+        fieldOpts = { source_a: sourceNumerator, source_b: sourceDenominator };
+      } else {
+        fieldOpts = { source_a: sourceNumerator, source_b: sourceDenominator };
+      }
     }
 
     const payload = {
@@ -368,6 +374,28 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                             ))}
                           </SelectContent>
                         </Select>
+                      </>
+                    ) : isStatDiff ? (
+                      <>
+                        <Label>Champ A (ex: participants)</Label>
+                        <Select value={sourceNumerator} onValueChange={setSourceNumerator}>
+                          <SelectTrigger><SelectValue placeholder="Sélectionner le champ A" /></SelectTrigger>
+                          <SelectContent>
+                            {numberFields.map((nf) => (
+                              <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Label>Champ B (ex: adhérents)</Label>
+                        <Select value={sourceDenominator} onValueChange={setSourceDenominator}>
+                          <SelectTrigger><SelectValue placeholder="Sélectionner le champ B" /></SelectTrigger>
+                          <SelectContent>
+                            {numberFields.map((nf) => (
+                              <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">Résultat = A − B (valeur brute, sans signe +/−).</p>
                       </>
                     ) : (
                       <>

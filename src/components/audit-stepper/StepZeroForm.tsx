@@ -236,6 +236,33 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customFields, data.customFieldValues]);
 
+  // Auto-calculate stat_diff fields (A - B, raw number no sign)
+  useEffect(() => {
+    const diffFields = customFields.filter((f) => f.field_type === "stat_diff");
+    if (diffFields.length === 0) return;
+    setData((prev) => {
+      const cv = { ...prev.customFieldValues };
+      let changed = false;
+      for (const field of diffFields) {
+        const aId = field.field_options?.source_a;
+        const bId = field.field_options?.source_b;
+        if (!aId || !bId) continue;
+        const a = Number(cv[aId]) || 0;
+        const b = Number(cv[bId]) || 0;
+        const result = a - b;
+        if (cv[field.id] !== result) {
+          cv[field.id] = result;
+          changed = true;
+        }
+      }
+      if (!changed) return prev;
+      const next = { ...prev, customFieldValues: cv };
+      if (hideSubmitButton) setTimeout(() => onSubmit(next), 0);
+      return next;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customFields, data.customFieldValues]);
+
   const isValid = customFields
     .filter((f) => f.is_required)
     .every((f) => {
@@ -350,6 +377,23 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
             </span>
             <span className="text-muted-foreground text-xs">
               (B:{b} − A:{a})
+            </span>
+          </div>
+        );
+      }
+      case "stat_diff": {
+        const aId = field.field_options?.source_a;
+        const bId = field.field_options?.source_b;
+        const a = Number(data.customFieldValues?.[aId]) || 0;
+        const b = Number(data.customFieldValues?.[bId]) || 0;
+        const result = a - b;
+        return (
+          <div className="flex items-center gap-2 h-12 px-4 rounded-xl border border-input bg-muted text-sm cursor-not-allowed">
+            <span className="font-semibold text-foreground">
+              {result}
+            </span>
+            <span className="text-muted-foreground text-xs">
+              ({a} − {b})
             </span>
           </div>
         );
@@ -516,7 +560,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
                   >
                     {renderField(field)}
                   </M3Field>
-                  {(field.field_type === "stat_percent" || field.field_type === "stat_sum") && (
+                  {(field.field_type === "stat_percent" || field.field_type === "stat_sum" || field.field_type === "stat_diff") && (
                     <p className="text-[10px] text-muted-foreground mt-1 ml-1 italic">Calcul automatique</p>
                   )}
                 </div>

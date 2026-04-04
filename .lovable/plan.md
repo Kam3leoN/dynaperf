@@ -1,31 +1,19 @@
 
 
-## Plan: Remplacer `auto_no_show` par un champ "Statistique %" générique
+## Plan: Historique des améliorations
 
-### Problème
-Le champ `auto_no_show` fait une soustraction fixe (invités - participants). L'utilisateur veut un champ **statistique avec pourcentage** calculé automatiquement à partir de 2 champs number au choix, avec un libellé personnalisable.
+### Champ stat_diff (Différence A − B)
+- Nouveau type intelligent "📊 Différence (A − B, valeur absolue)" dans le Form Builder
+- Calcul automatique sans signe +/− contrairement à stat_sum
+- Utilisable comme champ source pour le scoring automatique des items
 
-Formule : `(source_1 / source_2) * 100` affichée en `%`
+### Migration PWA vers Serwist
+- Remplacement de vite-plugin-pwa par @serwist/vite + serwist + @serwist/window
+- Service worker personnalisé (src/sw.ts) avec runtime caching optimisé
+- Manifest déplacé vers public/manifest.json
+- Registration conditionnelle (pas en iframe/preview)
 
-Exemple : invités=10, participants=8 → `(8/10)*100 = 80%`
-
-### Modifications
-
-**1. AuditFormBuilder.tsx**
-- Remplacer `auto_no_show` par `stat_percent` dans `FIELD_TYPES_SMART` avec le label "📊 Statistique % (calcul auto)"
-- Renommer les states `sourceInvites`/`sourceParticipants` → `sourceField1`/`sourceField2` avec des labels génériques "Champ numérateur" et "Champ dénominateur"
-- Stocker dans `field_options` : `{ source_numerator: fieldId, source_denominator: fieldId }`
-- Le libellé du champ est libre (ex: "Taux de participation", "Taux de no-show", etc.)
-
-**2. StepZeroForm.tsx**
-- Supprimer le `useEffect` et le rendu `auto_no_show`
-- Ajouter le cas `stat_percent` :
-  - `useEffect` qui surveille les 2 champs sources et calcule `(numerator / denominator) * 100`
-  - Affichage en lecture seule avec le résultat formaté en `XX.X %`
-  - Si le dénominateur est 0, afficher `—`
-- Retirer le mapping `auto_no_show` de `FIELD_TYPE_TO_DATA_KEY`
-
-### Fichiers modifiés
-- `src/components/AuditFormBuilder.tsx`
-- `src/components/audit-stepper/StepZeroForm.tsx`
-
+### Optimisations performances
+- Lazy-loading de toutes les routes (sauf Welcome/Auth)
+- QueryClient configuré avec staleTime 5min, gcTime 30min, refetchOnWindowFocus:false
+- Suspense wrappers dans ProtectedRoute/AdminRoute

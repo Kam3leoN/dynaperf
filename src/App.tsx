@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -10,39 +10,52 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { SplashScreen } from "@/components/SplashScreen";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
-import Index from "./pages/Index";
+
+// Eagerly loaded (critical path)
 import Welcome from "./pages/Welcome";
 import Auth from "./pages/Auth";
-import Registre from "./pages/Registre";
-import NewAudit from "./pages/NewAudit";
-import AuditVersionSelect from "./pages/AuditVersionSelect";
-import AuditForm from "./pages/AuditForm";
-import Admin from "./pages/Admin";
-import AdminAuditGrid from "./pages/AdminAuditGrid";
-import BusinessPlan from "./pages/BusinessPlan";
-import Drive from "./pages/Drive";
-import ResetPassword from "./pages/ResetPassword";
-import NotFound from "./pages/NotFound";
-import SuiviActiviteList from "./pages/SuiviActiviteList";
-import SuiviActiviteForm from "./pages/SuiviActiviteForm";
-import SuiviActiviteVersionSelect from "./pages/SuiviActiviteVersionSelect";
-import SuiviActiviteDashboard from "./pages/SuiviActiviteDashboard";
-import SuiviActiviteDetail from "./pages/SuiviActiviteDetail";
-import Profile from "./pages/Profile";
-import ChangePassword from "./pages/ChangePassword";
-import Reseau from "./pages/Reseau";
-import Partenaires from "./pages/Partenaires";
-import Clubs from "./pages/Clubs";
-import Secteurs from "./pages/Secteurs";
-import Notifications from "./pages/Notifications";
-import Messages from "./pages/Messages";
-import Sondages from "./pages/Sondages";
-import ActivityLog from "./pages/ActivityLog";
-import Preferences from "./pages/Preferences";
-import DashboardHub from "./pages/DashboardHub";
-import Primes from "./pages/Primes";
 
-const queryClient = new QueryClient();
+// Lazy-loaded routes for better code splitting
+const Index = lazy(() => import("./pages/Index"));
+const Registre = lazy(() => import("./pages/Registre"));
+const NewAudit = lazy(() => import("./pages/NewAudit"));
+const AuditVersionSelect = lazy(() => import("./pages/AuditVersionSelect"));
+const AuditForm = lazy(() => import("./pages/AuditForm"));
+const Admin = lazy(() => import("./pages/Admin"));
+const AdminAuditGrid = lazy(() => import("./pages/AdminAuditGrid"));
+const BusinessPlan = lazy(() => import("./pages/BusinessPlan"));
+const Drive = lazy(() => import("./pages/Drive"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const SuiviActiviteList = lazy(() => import("./pages/SuiviActiviteList"));
+const SuiviActiviteForm = lazy(() => import("./pages/SuiviActiviteForm"));
+const SuiviActiviteVersionSelect = lazy(() => import("./pages/SuiviActiviteVersionSelect"));
+const SuiviActiviteDashboard = lazy(() => import("./pages/SuiviActiviteDashboard"));
+const SuiviActiviteDetail = lazy(() => import("./pages/SuiviActiviteDetail"));
+const Profile = lazy(() => import("./pages/Profile"));
+const ChangePassword = lazy(() => import("./pages/ChangePassword"));
+const Reseau = lazy(() => import("./pages/Reseau"));
+const Partenaires = lazy(() => import("./pages/Partenaires"));
+const Clubs = lazy(() => import("./pages/Clubs"));
+const Secteurs = lazy(() => import("./pages/Secteurs"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const Messages = lazy(() => import("./pages/Messages"));
+const Sondages = lazy(() => import("./pages/Sondages"));
+const ActivityLog = lazy(() => import("./pages/ActivityLog"));
+const Preferences = lazy(() => import("./pages/Preferences"));
+const DashboardHub = lazy(() => import("./pages/DashboardHub"));
+const Primes = lazy(() => import("./pages/Primes"));
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,       // 5 min — reduce refetches
+      gcTime: 30 * 60 * 1000,          // 30 min — keep in memory longer
+      refetchOnWindowFocus: false,      // avoid unnecessary network calls
+      retry: 1,
+    },
+  },
+});
 
 function FullPageLoader() {
   return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground">Chargement…</p></div>;
@@ -52,7 +65,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   if (loading) return <FullPageLoader />;
   if (!user) return <Navigate to="/auth" replace />;
-  return <>{children}</>;
+  return <Suspense fallback={<FullPageLoader />}>{children}</Suspense>;
 }
 
 function AdminRoute({ children }: { children: React.ReactNode }) {
@@ -61,7 +74,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   if (loading || adminLoading) return <FullPageLoader />;
   if (!user) return <Navigate to="/auth" replace />;
   if (!isAdmin) return <Navigate to="/" replace />;
-  return <>{children}</>;
+  return <Suspense fallback={<FullPageLoader />}>{children}</Suspense>;
 }
 
 function AuthRoute({ children }: { children: React.ReactNode }) {
@@ -119,8 +132,8 @@ const App = () => {
                 <Route path="/hub" element={<ProtectedRoute><DashboardHub /></ProtectedRoute>} />
                 <Route path="/primes" element={<ProtectedRoute><Primes /></ProtectedRoute>} />
                 <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
-                <Route path="/reset-password" element={<ResetPassword />} />
-                <Route path="*" element={<NotFound />} />
+                <Route path="/reset-password" element={<Suspense fallback={<FullPageLoader />}><ResetPassword /></Suspense>} />
+                <Route path="*" element={<Suspense fallback={<FullPageLoader />}><NotFound /></Suspense>} />
               </Routes>
             </BrowserRouter>
             )}
