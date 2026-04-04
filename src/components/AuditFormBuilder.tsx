@@ -321,10 +321,12 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <Switch checked={isRequired} onCheckedChange={setIsRequired} id="req" />
-                  <Label htmlFor="req">Champ obligatoire</Label>
-                </div>
+                {!needsSources && (
+                  <div className="flex items-center gap-3">
+                    <Switch checked={isRequired} onCheckedChange={setIsRequired} id="req" />
+                    <Label htmlFor="req">Champ obligatoire</Label>
+                  </div>
+                )}
 
                 {needsOptions && (
                   <div className="space-y-2">

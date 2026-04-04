@@ -494,7 +494,9 @@ export function FieldLayoutEditor({ fields, onLayoutChange, onEdit, onDelete, on
 
                     <FontAwesomeIcon icon={faGripVertical} className="h-3 w-3 shrink-0 text-muted-foreground/50 cursor-grab ml-1" />
                     <div className="flex-1 min-w-0 mx-1">
-                      <p className="truncate text-xs font-medium text-foreground leading-tight">{f.field_label}</p>
+                    <p className="truncate text-xs font-medium text-foreground leading-tight">
+                        {f.field_label}{f.is_required && <span className="text-destructive ml-0.5">*</span>}
+                      </p>
                       <p className="text-[10px] text-muted-foreground">{f.col_span}/12</p>
                     </div>
                     <div className="flex gap-0.5 shrink-0">
