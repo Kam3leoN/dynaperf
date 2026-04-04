@@ -4,7 +4,8 @@ import { RootErrorBoundary } from "./components/RootErrorBoundary";
 import "./index.css";
 import { applyDeviceClasses, listenDeviceChanges } from "./lib/deviceClasses";
 
-const RESPONSIVE_VIEWPORT = "width=device-width, initial-scale=1, maximum-scale=5.0, viewport-fit=cover";
+const RESPONSIVE_VIEWPORT =
+  "width=device-width, initial-scale=1.0, minimum-scale=1, maximum-scale=5, viewport-fit=cover, interactive-widget=resizes-content";
 
 function ensureResponsiveViewport() {
   let viewportMeta = document.querySelector('meta[name="viewport"]');

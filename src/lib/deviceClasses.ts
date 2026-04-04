@@ -33,7 +33,8 @@ function detectBrowser(): string {
 
 function detectDeviceType(): string {
   const touch = navigator.maxTouchPoints > 0;
-  const short = Math.min(window.screen.width, window.screen.height);
+  /** innerWidth/innerHeight (CSS px) — aligné sur le layout ; screen.* peut être trompeur sur Android haute densité */
+  const short = Math.min(window.innerWidth, window.innerHeight);
   if (!touch) return "device-desktop";
   if (short >= 600) return "device-tablet";
   return "device-mobile";

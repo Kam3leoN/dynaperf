@@ -153,6 +153,8 @@
     scroll-behavior: smooth;
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+    width: 100%;
+    max-width: 100%;
   }
 
   body {
@@ -160,6 +162,16 @@
     -webkit-tap-highlight-color: transparent;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  #root {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
   }
 
   /* Safe area for bottom nav */
@@ -314,6 +326,13 @@ html.dpi-4x {
 
 /* Samsung Browser: fix occasional font-boosting */
 html.browser-samsung {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Chrome Android + tactile : éviter le zoom / reflow “page desktop miniature” */
+html.os-android.device-mobile,
+html.os-android.device-tablet {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }

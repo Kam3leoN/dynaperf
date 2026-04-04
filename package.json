@@ -15,7 +15,11 @@
     "git:save": "node scripts/git-save.mjs",
     "git:save:env": "node scripts/git-save.mjs",
     "git:push": "git push",
-    "git:setup-win": "git config core.autocrlf false && git config core.longpaths true && git config core.editor notepad"
+    "git:setup-win": "git config core.autocrlf false && git config core.longpaths true && git config core.editor notepad",
+    "db:apply-drive": "node scripts/apply-drive-favorites.mjs",
+    "db:apply-drive:linked": "npx supabase@latest db query --linked -f supabase/migrations/20260404120000_drive_tags_favorites.sql",
+    "db:link": "npx supabase@latest link --project-ref qgvlojeamzfqkntrpnhk",
+    "db:push": "npx supabase@latest db push"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",
