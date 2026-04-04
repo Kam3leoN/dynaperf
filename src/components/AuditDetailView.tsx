@@ -90,6 +90,9 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
     cat.items.map((item) => ({ ...item, categoryName: cat.name }))
   ) ?? [];
 
+  // Helper to check if an item is marked as N/A
+  const isItemNA = (itemId: string) => detail?.items[itemId]?.notApplicable === true;
+
   // Get custom field values from items JSON
   const customFieldValues: Record<string, any> = (detail?.items as any)?.__custom_fields || {};
 
