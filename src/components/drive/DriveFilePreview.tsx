@@ -7,14 +7,13 @@ import "@react-pdf-viewer/core/lib/styles/index.css";
 import "@react-pdf-viewer/default-layout/lib/styles/index.css";
 import Prism from "prismjs";
 import "prismjs/themes/prism-tomorrow.css";
+/* Ordre obligatoire : jsx avant tsx (tsx étend jsx). Sinon extend('jsx', …) casse avec « Cannot set properties of undefined (setting 'comment') ». */
+import "prismjs/components/prism-jsx";
 import "prismjs/components/prism-typescript";
 import "prismjs/components/prism-tsx";
-import "prismjs/components/prism-javascript";
-import "prismjs/components/prism-jsx";
 import "prismjs/components/prism-json";
 import "prismjs/components/prism-css";
 import "prismjs/components/prism-scss";
-import "prismjs/components/prism-markup";
 import "prismjs/components/prism-bash";
 import "prismjs/components/prism-sql";
 import "prismjs/components/prism-yaml";
