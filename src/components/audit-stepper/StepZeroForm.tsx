@@ -543,7 +543,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
                   >
                     {renderField(field)}
                   </M3Field>
-                  {(field.field_type === "stat_percent" || field.field_type === "stat_sum") && (
+                  {(field.field_type === "stat_percent" || field.field_type === "stat_sum" || field.field_type === "stat_diff") && (
                     <p className="text-[10px] text-muted-foreground mt-1 ml-1 italic">Calcul automatique</p>
                   )}
                 </div>
