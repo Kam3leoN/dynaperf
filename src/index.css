@@ -222,6 +222,25 @@
     @apply grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4;
   }
 
+  /* Drive masonry (react-masonry-css) */
+  .drive-masonry-grid {
+    display: flex;
+    margin-left: -1rem;
+    width: auto;
+  }
+  .drive-masonry-grid_column {
+    padding-left: 1rem;
+    background-clip: padding-box;
+  }
+
+  /* epub.js : iframes dans le lecteur Drive */
+  .epub-drive-root iframe {
+    border: none !important;
+    width: 100% !important;
+    height: 100% !important;
+    min-height: 380px;
+  }
+
   /* Compact grid (Drive compact, photo grids) */
   .grid-compact {
     @apply grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-6 gap-3;

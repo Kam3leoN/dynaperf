@@ -701,7 +701,9 @@ export type Database = {
           file_url: string
           id: string
           image_url: string | null
+          is_favorite: boolean
           mime_type: string | null
+          tags: string[]
           title: string
           updated_at: string
           updated_by: string | null
@@ -716,7 +718,9 @@ export type Database = {
           file_url: string
           id?: string
           image_url?: string | null
+          is_favorite?: boolean
           mime_type?: string | null
+          tags?: string[]
           title: string
           updated_at?: string
           updated_by?: string | null
@@ -731,7 +735,9 @@ export type Database = {
           file_url?: string
           id?: string
           image_url?: string | null
+          is_favorite?: boolean
           mime_type?: string | null
+          tags?: string[]
           title?: string
           updated_at?: string
           updated_by?: string | null
