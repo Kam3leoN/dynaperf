@@ -431,7 +431,7 @@ export default function AuditForm() {
                           categoryName={cat.name}
                           answer={answers[item.id]}
                           onChange={(ans) => handleItemChange(item.id, ans)}
-                          stepZeroData={stepZeroData}
+                          stepZeroData={item.autoField ? stepZeroData : undefined}
                         />
                       );
                     })}

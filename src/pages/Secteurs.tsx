@@ -5,8 +5,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import maplibregl from "maplibre-gl";
-import "maplibre-gl/dist/maplibre-gl.css";
+
+type MapLibreModule = typeof import("maplibre-gl").default;
 
 interface Club {
   id: string;
@@ -112,9 +112,25 @@ export default function Secteurs() {
   const [showClubs, setShowClubs] = useState(true);
   const [showPartenaires, setShowPartenaires] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [maplibreReady, setMaplibreReady] = useState(false);
+  const maplibreRef = useRef<MapLibreModule | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  const mapRef = useRef<maplibregl.Map | null>(null);
-  const markersRef = useRef<maplibregl.Marker[]>([]);
+  const mapRef = useRef<InstanceType<MapLibreModule["Map"]> | null>(null);
+  const markersRef = useRef<InstanceType<MapLibreModule["Marker"]>[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      await import("maplibre-gl/dist/maplibre-gl.css");
+      const mod = await import("maplibre-gl");
+      if (cancelled) return;
+      maplibreRef.current = mod.default;
+      setMaplibreReady(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -162,9 +178,11 @@ export default function Secteurs() {
     filteredPartenaires.map(p => ({ ...p, coords: getPartenaireCoords(p, clubs, secteurs) })).filter(p => p.coords !== null) as (Partenaire & { coords: [number, number] })[],
   [filteredPartenaires, clubs, secteurs]);
 
-  // Initialize map
+  // Initialize map (MapLibre chargé à la demande pour alléger le chunk route)
   useEffect(() => {
-    if (loading || !mapContainerRef.current || mapRef.current) return;
+    if (!maplibreReady || loading || !mapContainerRef.current || mapRef.current) return;
+    const maplibregl = maplibreRef.current;
+    if (!maplibregl) return;
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
       style: "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json",
@@ -173,13 +191,17 @@ export default function Secteurs() {
     });
     map.addControl(new maplibregl.NavigationControl(), "top-right");
     mapRef.current = map;
-    return () => { map.remove(); mapRef.current = null; };
-  }, [loading]);
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, [maplibreReady, loading]);
 
   // Update markers
   useEffect(() => {
+    const maplibregl = maplibreRef.current;
     const map = mapRef.current;
-    if (!map) return;
+    if (!map || !maplibregl) return;
 
     markersRef.current.forEach(m => m.remove());
     markersRef.current = [];
@@ -256,7 +278,7 @@ export default function Secteurs() {
         map.fitBounds(bounds, { padding: 60, duration: 800 });
       }
     }
-  }, [clubsWithCoords, partenairesWithCoords, sectorColorMap, secteurs, showClubs, showPartenaires]);
+  }, [maplibreReady, clubsWithCoords, partenairesWithCoords, sectorColorMap, secteurs, showClubs, showPartenaires]);
 
   const totalDisplayed = (showClubs ? clubsWithCoords.length : 0) + (showPartenaires ? partenairesWithCoords.length : 0);
 
@@ -342,8 +364,10 @@ export default function Secteurs() {
         </div>
 
         <div className="bg-card rounded-2xl shadow-soft border border-border/60 overflow-hidden" style={{ height: "calc(100vh - 320px)", minHeight: 400 }}>
-          {loading ? (
-            <div className="flex items-center justify-center h-full text-sm text-muted-foreground">Chargement de la carte…</div>
+          {loading || !maplibreReady ? (
+            <div className="flex items-center justify-center h-full text-sm text-muted-foreground">
+              {loading ? "Chargement des données…" : "Chargement de la carte…"}
+            </div>
           ) : (
             <div ref={mapContainerRef} style={{ height: "100%", width: "100%" }} />
           )}

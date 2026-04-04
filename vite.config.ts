@@ -3,12 +3,30 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 import { serwist } from "@serwist/vite";
+import { visualizer } from "rollup-plugin-visualizer";
+import type { Plugin } from "vite";
+
+/** Le plugin Serwist lance un second Rollup (SW seul) : on ignore ce build pour ne pas écraser le rapport. */
+function visualizerAppBuildOnly(baseOpts: Parameters<typeof visualizer>[0]): Plugin {
+  const p = visualizer(baseOpts) as Plugin & {
+    generateBundle?: (this: unknown, o: unknown, b: Record<string, { type?: string }>) => void | Promise<void>;
+  };
+  const orig = p.generateBundle;
+  if (!orig) return p;
+  p.generateBundle = function (outputOptions, outputBundle) {
+    const chunks = Object.values(outputBundle).filter((x) => x?.type === "chunk");
+    if (chunks.length < 3) return;
+    return orig.call(this, outputOptions, outputBundle);
+  };
+  return p;
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   const isGitHubPagesBuild =
     process.env.GITHUB_ACTIONS === "true" && process.env.GITHUB_PAGES === "true";
   const basePath = isGitHubPagesBuild ? "/dynaperf/" : "/";
+  const analyze = process.env.ANALYZE === "1";
 
   const serwistPlugin = serwist({
     swSrc: "src/sw.ts",
@@ -16,6 +34,9 @@ export default defineConfig(({ mode }) => {
     globDirectory: "dist",
     injectionPoint: "self.__SW_MANIFEST",
     rollupFormat: "iife",
+    /** Évite de precacher des fichiers trop lourds (chunks JS volumineux) — ils restent chargés à la demande. */
+    maximumFileSizeToCacheInBytes: 2 * 1024 * 1024,
+    globIgnores: ["**/*.map", "**/bundle-stats.html"],
   });
 
   return {
@@ -31,10 +52,37 @@ export default defineConfig(({ mode }) => {
         overlay: false,
       },
     },
-    plugins: [react(), mode === "development" && componentTagger(), serwistPlugin].filter(Boolean),
+    plugins: [
+      react(),
+      mode === "development" && componentTagger(),
+      serwistPlugin,
+      analyze &&
+        visualizerAppBuildOnly({
+          filename: path.resolve(__dirname, "bundle-stats.html"),
+          open: false,
+          gzipSize: true,
+          brotliSize: true,
+        }),
+    ].filter(Boolean),
     resolve: {
       alias: {
         "@": path.resolve(__dirname, "./src"),
+      },
+    },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes("node_modules")) return;
+            if (id.includes("maplibre-gl")) return "maplibre";
+            if (id.includes("recharts")) return "recharts";
+            if (id.includes("@tiptap") || id.includes("/tiptap/")) return "tiptap";
+            if (id.includes("xlsx")) return "xlsx";
+            if (id.includes("@supabase")) return "supabase";
+            if (id.includes("framer-motion")) return "framer-motion";
+            if (id.includes("@fortawesome")) return "fontawesome";
+          },
+        },
       },
     },
   };

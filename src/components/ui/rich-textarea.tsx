@@ -58,9 +58,11 @@ interface RichTextareaProps {
   disabled?: boolean;
   /** If true, use minimal toolbar (just emoji) — good for chat/comments */
   minimal?: boolean;
+  /** Appelé lorsque le focus quitte la zone d’édition (hors descendants). */
+  onBlur?: () => void;
 }
 
-export function RichTextarea({ value, onChange, placeholder, className, rows = 3, disabled, minimal }: RichTextareaProps) {
+export function RichTextarea({ value, onChange, placeholder, className, rows = 3, disabled, minimal, onBlur }: RichTextareaProps) {
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [colorOpen, setColorOpen] = useState(false);
   const [highlightOpen, setHighlightOpen] = useState(false);
@@ -142,11 +144,17 @@ export function RichTextarea({ value, onChange, placeholder, className, rows = 3
   );
 
   return (
-    <div className={cn(
+    <div
+      className={cn(
       "rounded-md border border-input bg-background ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors",
       disabled && "opacity-50 cursor-not-allowed",
       className,
-    )}>
+      )}
+      onBlur={(e) => {
+        if (!onBlur) return;
+        if (!e.currentTarget.contains(e.relatedTarget as Node)) onBlur();
+      }}
+    >
       {/* Toolbar */}
       <div className="flex items-center gap-0.5 px-1.5 py-1 border-b border-border/50 flex-wrap">
         {!minimal && (

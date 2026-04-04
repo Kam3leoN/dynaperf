@@ -1,3 +1,8 @@
+/**
+ * Service worker DynaPerf : precache limité côté build (voir vite.config.ts :
+ * `maximumFileSizeToCacheInBytes`) pour ne pas figer d’énormes chunks JS.
+ * API Supabase et tuiles carto : stratégies runtime ci-dessous.
+ */
 import type { PrecacheEntry, SerwistGlobalConfig } from "serwist";
 import { Serwist, CacheFirst, NetworkFirst, ExpirationPlugin, CacheableResponsePlugin } from "serwist";
 

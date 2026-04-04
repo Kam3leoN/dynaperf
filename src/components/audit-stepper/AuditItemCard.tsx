@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, memo } from "react";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -94,7 +94,9 @@ function computeScore(item: AuditItemDef, boolVal: boolean | null, numVal: strin
   return 0;
 }
 
-export function AuditItemCard({ item, index, categoryName, answer, onChange, stepZeroData }: Props) {
+const COMMENT_SYNC_DEBOUNCE_MS = 400;
+
+function AuditItemCardComponent({ item, index, categoryName, answer, onChange, stepZeroData }: Props) {
   const autoValue = getAutoValue(item, stepZeroData);
   const isAutoFilled = autoValue !== undefined;
   const isNoShowAuto = item.autoField === "nbNoShow";
@@ -135,21 +137,57 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
   );
   const [comment, setComment] = useState(answer?.comment ?? "");
   const mountedRef = useRef(false);
+  const commentRef = useRef(comment);
+  commentRef.current = comment;
+  const commentSyncTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
+    setComment(answer?.comment ?? "");
+  }, [item.id, answer?.comment]);
+
+  const emitToParent = (commentStr: string) => {
     const score = notApplicable ? 0 : computeScore(item, boolVal, numVal, checklist, autoValue);
     const isTouched = mountedRef.current || isAutoFilled || notApplicable;
     if (!mountedRef.current) mountedRef.current = true;
     onChange({
       score,
-      comment: comment.trim() || undefined,
+      comment: commentStr.trim() || undefined,
       checklist: item.inputType === "checklist" ? checklist : undefined,
       rawValue: item.inputType === "number" ? parseInt(numVal) || 0 : undefined,
       touched: isTouched,
       notApplicable,
     });
+  };
+
+  useEffect(() => {
+    emitToParent(commentRef.current);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [boolVal, numVal, checklist, comment, notApplicable]);
+  }, [boolVal, numVal, checklist, notApplicable, autoValue]);
+
+  useEffect(() => {
+    if (commentSyncTimerRef.current !== null) {
+      window.clearTimeout(commentSyncTimerRef.current);
+    }
+    commentSyncTimerRef.current = window.setTimeout(() => {
+      commentSyncTimerRef.current = null;
+      emitToParent(comment);
+    }, COMMENT_SYNC_DEBOUNCE_MS);
+    return () => {
+      if (commentSyncTimerRef.current !== null) {
+        window.clearTimeout(commentSyncTimerRef.current);
+        commentSyncTimerRef.current = null;
+      }
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [comment]);
+
+  const handleCommentBlur = () => {
+    if (commentSyncTimerRef.current !== null) {
+      window.clearTimeout(commentSyncTimerRef.current);
+      commentSyncTimerRef.current = null;
+    }
+    emitToParent(comment);
+  };
 
   const currentScore = notApplicable ? 0 : computeScore(item, boolVal, numVal, checklist, autoValue);
   const isMax = !notApplicable && currentScore === item.maxPoints;
@@ -353,7 +391,14 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
           <Label className={cn("text-[11px] sm:text-xs", notApplicable ? "text-destructive font-semibold" : "text-muted-foreground")}>
             Commentaire {notApplicable ? "(obligatoire)" : "(optionnel)"}
           </Label>
-          <RichTextarea value={comment} onChange={setComment} placeholder={notApplicable ? "Justifiez pourquoi cet item n'est pas applicable..." : "Ajouter un commentaire..."} rows={2} className="text-sm" />
+          <RichTextarea
+            value={comment}
+            onChange={setComment}
+            onBlur={handleCommentBlur}
+            placeholder={notApplicable ? "Justifiez pourquoi cet item n'est pas applicable..." : "Ajouter un commentaire..."}
+            rows={2}
+            className="text-sm"
+          />
           {notApplicable && !comment.trim() && (
             <p className="text-[11px] text-destructive">Un commentaire est requis pour les items non applicables.</p>
           )}
@@ -362,3 +407,5 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
     </Card>
   );
 }
+
+export const AuditItemCard = memo(AuditItemCardComponent);

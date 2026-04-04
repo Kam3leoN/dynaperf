@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Input } from "@/components/ui/input";
 import { M3Field } from "@/components/ui/m3-field";
@@ -77,6 +78,14 @@ interface Props {
   hideSubmitButton?: boolean;
 }
 
+const EMPTY_SUGGESTIONS = {
+  partenaires: [] as string[],
+  auditeurs: [] as string[],
+  lieux: [] as string[],
+  typesLieu: [] as string[],
+  referents: [] as string[],
+};
+
 export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitButton }: Props) {
   const isMobile = useIsMobile();
   const [data, setData] = useState<StepZeroData>(
@@ -93,47 +102,48 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
     }
   );
 
-  const [suggestions, setSuggestions] = useState({
-    partenaires: [] as string[],
-    auditeurs: [] as string[],
-    lieux: [] as string[],
-    typesLieu: [] as string[],
-    referents: [] as string[],
-  });
-
-  const [customFields, setCustomFields] = useState<CustomFieldDef[]>([]);
-
-  useEffect(() => {
-    async function loadSuggestions() {
+  const { data: suggestions = EMPTY_SUGGESTIONS } = useQuery({
+    queryKey: ["audit-step-zero", "suggestions", typeEvenement],
+    staleTime: 1000 * 60 * 10,
+    queryFn: async () => {
       const [{ data: audits }, { data: details }, { data: profiles }] = await Promise.all([
-        supabase.from("audits").select("partenaire, auditeur, lieu").limit(500),
-        supabase.from("audit_details").select("partenaire_referent, type_lieu").limit(500),
-        supabase.from("profiles").select("display_name"),
+        supabase
+          .from("audits")
+          .select("partenaire, auditeur, lieu")
+          .eq("type_evenement", typeEvenement)
+          .order("date", { ascending: false })
+          .limit(200),
+        supabase
+          .from("audit_details")
+          .select("partenaire_referent, type_lieu")
+          .order("created_at", { ascending: false })
+          .limit(200),
+        supabase.from("profiles").select("display_name").not("display_name", "is", null).limit(500),
       ]);
       const unique = (arr: (string | null | undefined)[]) =>
         [...new Set(arr.filter((v): v is string => !!v && v.trim() !== ""))].sort();
-      setSuggestions({
+      return {
         partenaires: unique(audits?.map((a) => a.partenaire)),
         auditeurs: unique(profiles?.map((p) => p.display_name)),
         lieux: unique(audits?.map((a) => a.lieu)),
         typesLieu: unique(details?.map((d) => d.type_lieu)),
         referents: unique(details?.map((d) => d.partenaire_referent)),
-      });
-    }
-    loadSuggestions();
-  }, []);
+      };
+    },
+  });
 
-  useEffect(() => {
-    async function loadCustomFields() {
+  const { data: customFields = [] } = useQuery({
+    queryKey: ["audit-step-zero", "custom-fields", typeEvenement],
+    staleTime: 1000 * 60 * 5,
+    queryFn: async () => {
       const { data: fields } = await supabase
         .from("audit_type_custom_fields")
         .select("*")
         .eq("audit_type_key", typeEvenement)
         .order("sort_order");
-      setCustomFields((fields as CustomFieldDef[]) || []);
-    }
-    loadCustomFields();
-  }, [typeEvenement]);
+      return ((fields as CustomFieldDef[]) || []) as CustomFieldDef[];
+    },
+  });
 
   // Backfill customFieldValues from legacy StepZeroData when editing existing audits
   useEffect(() => {
