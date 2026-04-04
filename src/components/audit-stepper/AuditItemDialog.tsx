@@ -140,22 +140,33 @@ export function AuditItemDialog({
 
   const currentScore = getScore();
 
+  const handleToggleNA = () => setNotApplicable((p) => !p);
+  const clearNA = () => setNotApplicable(false);
+
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <div className="flex items-center gap-2 mb-1">
-            <Badge variant="outline" className="text-xs font-mono">{stepIndex}/{totalSteps}</Badge>
-            <span className="text-lg font-semibold text-foreground leading-tight">{item.title}</span>
-            <span className="flex-1" />
-            <Badge className={cn("text-sm",
-              notApplicable ? "bg-muted text-muted-foreground" :
-              currentScore === item.maxPoints ? "bg-emerald-600 text-white" : currentScore > 0 ? "bg-amber-500 text-white" : "bg-muted text-muted-foreground"
-            )}>
+          <div className="flex items-center gap-2 sm:gap-3 mb-1 flex-wrap">
+            <Badge
+              variant="outline"
+              className="shrink-0 flex h-9 min-h-9 items-center justify-center px-2.5 text-sm sm:text-base font-bold tabular-nums border-2 font-mono text-foreground"
+              aria-label={`Étape ${stepIndex} sur ${totalSteps}`}
+            >
+              {stepIndex}/{totalSteps}
+            </Badge>
+            <h2 className="text-base sm:text-lg font-semibold text-foreground leading-snug min-w-0 flex-1">{item.title}</h2>
+            <Badge
+              className={cn(
+                "shrink-0 text-xs sm:text-sm font-semibold tabular-nums h-9 min-h-9 px-2.5 inline-flex items-center",
+                notApplicable ? "bg-muted text-muted-foreground" :
+                currentScore === item.maxPoints ? "bg-emerald-600 text-white" : currentScore > 0 ? "bg-amber-500 text-white" : "bg-muted text-muted-foreground"
+              )}
+            >
               {notApplicable ? "N/A" : `${currentScore}/${item.maxPoints} pts`}
             </Badge>
             {isAutoFilled && !notApplicable && (
-              <Badge variant="outline" className="text-xs gap-1 text-muted-foreground">
+              <Badge variant="outline" className="text-xs gap-1 text-muted-foreground shrink-0">
                 <FontAwesomeIcon icon={faLock} className="h-2.5 w-2.5" /> Auto
               </Badge>
             )}
@@ -164,8 +175,13 @@ export function AuditItemDialog({
           <DialogDescription className="whitespace-pre-line text-sm leading-relaxed">{item.description}</DialogDescription>
         </DialogHeader>
 
-        {!notApplicable && (
-          <>
+        {notApplicable && (
+          <p className="text-xs sm:text-sm text-muted-foreground rounded-lg border border-border bg-muted/50 px-3 py-2.5 leading-relaxed">
+            Cet item est marqué comme non applicable et ne sera pas comptabilisé.
+          </p>
+        )}
+
+        <>
             <div className="rounded-lg border border-border bg-muted/50 p-3 space-y-1">
               <div className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wide">
                 <FontAwesomeIcon icon={faCircleInfo} className="h-3 w-3" /> Conditions de validation
@@ -192,7 +208,7 @@ export function AuditItemDialog({
               )}
             </div>
 
-            <div className="space-y-4 pt-2">
+            <div className={cn("space-y-4 pt-2", notApplicable && "opacity-95")}>
               {isAutoFilled && !isBoolAuto && item.inputType === "number" && (
                 <div className="space-y-2">
                   <Label>Valeur saisie : <span className="font-bold">{autoValue}</span></Label>
@@ -218,16 +234,19 @@ export function AuditItemDialog({
 
               {item.inputType === "boolean" && !isBoolAuto && (
                 <div className="grid grid-cols-3 gap-3">
-                  <Button type="button" variant="outline" onClick={() => setBoolVal(true)}
-                    className={cn("flex-1 transition-colors", boolVal === true ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700" : "hover:bg-accent hover:text-accent-foreground")}>
+                  <Button type="button" variant="outline" onClick={() => { clearNA(); setBoolVal(true); }}
+                    className={cn("flex-1 transition-colors", boolVal === true && !notApplicable ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700" : "hover:bg-accent hover:text-accent-foreground")}>
                     <FontAwesomeIcon icon={faCheck} className="mr-1 h-3 w-3" /> Validé
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => setBoolVal(false)}
-                    className={cn("flex-1 transition-colors", boolVal === false ? "bg-destructive text-destructive-foreground border-destructive hover:bg-destructive/90" : "hover:bg-accent hover:text-accent-foreground")}>
+                  <Button type="button" variant="outline" onClick={() => { clearNA(); setBoolVal(false); }}
+                    className={cn("flex-1 transition-colors", boolVal === false && !notApplicable ? "bg-destructive text-destructive-foreground border-destructive hover:bg-destructive/90" : "hover:bg-accent hover:text-accent-foreground")}>
                     <FontAwesomeIcon icon={faXmark} className="mr-1 h-3 w-3" /> Non validé
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => setNotApplicable(true)}
-                    className="flex-1 transition-colors hover:bg-accent hover:text-accent-foreground">
+                  <Button type="button" variant="outline" onClick={handleToggleNA}
+                    className={cn(
+                      "flex-1 transition-colors hover:bg-accent hover:text-accent-foreground",
+                      notApplicable && "border-primary ring-2 ring-primary/30 bg-primary/5"
+                    )}>
                     <FontAwesomeIcon icon={faBan} className="mr-1 h-3 w-3" /> N/A
                   </Button>
                 </div>
@@ -236,7 +255,16 @@ export function AuditItemDialog({
               {item.inputType === "number" && !isAutoFilled && (
                 <div className="space-y-2">
                   <Label>Nombre</Label>
-                  <Input type="number" min={0} value={numVal} onChange={(e) => setNumVal(e.target.value)} placeholder="Entrez le nombre..." />
+                  <Input
+                    type="number"
+                    min={0}
+                    value={numVal}
+                    onChange={(e) => {
+                      clearNA();
+                      setNumVal(e.target.value);
+                    }}
+                    placeholder="Entrez le nombre..."
+                  />
                   {numVal && tiers && (
                     <p className="text-xs text-muted-foreground">
                       Valeur saisie : <span className="font-bold text-foreground">{numVal}</span>
@@ -250,7 +278,16 @@ export function AuditItemDialog({
                   {item.checklistItems.map((label, idx) => (
                     <label key={idx} className="flex items-start gap-3 rounded-md border border-border p-3 cursor-pointer transition-colors hover:bg-accent/50"
                       style={checklist[idx] ? { borderColor: "hsl(var(--chart-2))", backgroundColor: "hsl(var(--chart-2) / 0.06)" } : {}}>
-                      <Checkbox checked={checklist[idx]} onCheckedChange={(v) => { const next = [...checklist]; next[idx] = !!v; setChecklist(next); }} className="mt-0.5" />
+                      <Checkbox
+                        checked={checklist[idx]}
+                        onCheckedChange={(v) => {
+                          clearNA();
+                          const next = [...checklist];
+                          next[idx] = !!v;
+                          setChecklist(next);
+                        }}
+                        className="mt-0.5"
+                      />
                       <span className="text-sm leading-snug">{label}</span>
                     </label>
                   ))}
@@ -259,23 +296,21 @@ export function AuditItemDialog({
 
               {/* NA button for non-boolean types */}
               {item.inputType !== "boolean" && !isBoolAuto && (
-                <Button type="button" size="sm" variant="outline" onClick={() => setNotApplicable(true)}
-                  className="gap-1.5">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleToggleNA}
+                  className={cn(
+                    "gap-1.5",
+                    notApplicable && "border-primary ring-2 ring-primary/30 bg-primary/5"
+                  )}
+                >
                   <FontAwesomeIcon icon={faBan} className="h-3 w-3" /> Non applicable
                 </Button>
               )}
             </div>
-          </>
-        )}
-
-        {notApplicable && (
-          <div className="space-y-3 py-2">
-            <p className="text-sm text-muted-foreground italic">Cet item est marqué comme non applicable et ne sera pas comptabilisé.</p>
-            <Button type="button" size="sm" variant="outline" onClick={() => setNotApplicable(false)} className="gap-1.5">
-              Rétablir l'item
-            </Button>
-          </div>
-        )}
+        </>
 
         <div className="space-y-2">
           <Label className={cn("text-xs", notApplicable ? "text-destructive font-semibold" : "text-muted-foreground")}>
