@@ -353,7 +353,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
         const denominator = Number(data.customFieldValues?.[denId]) || 0;
         const pct = denominator > 0 ? Math.round((numerator / denominator) * 1000) / 10 : null;
         return (
-          <div className="flex items-center gap-2 h-12 px-4 rounded-xl border border-input bg-muted text-sm cursor-not-allowed">
+          <div className="flex items-center gap-2 h-12 px-4 rounded-xl bg-muted text-sm cursor-not-allowed">
             <span className="font-semibold text-foreground">
               {pct !== null ? `${pct} %` : "—"}
             </span>
