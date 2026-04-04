@@ -142,7 +142,7 @@ export function AuditItemDialog({
         <DialogHeader>
           <div className="flex items-center gap-2 mb-1">
             <Badge variant="outline" className="text-xs font-mono">{stepIndex}/{totalSteps}</Badge>
-            <Badge variant="secondary" className="text-xs">{categoryName}</Badge>
+            <span className="text-lg font-semibold text-foreground leading-tight">{item.title}</span>
             <Badge className={cn("text-xs", currentScore === item.maxPoints ? "bg-emerald-600 text-white" : currentScore > 0 ? "bg-amber-500 text-white" : "bg-muted text-muted-foreground")}>
               {currentScore}/{item.maxPoints} pts
             </Badge>
@@ -152,7 +152,7 @@ export function AuditItemDialog({
               </Badge>
             )}
           </div>
-          <DialogTitle className="text-lg">{item.title}</DialogTitle>
+          <DialogTitle className="sr-only">{item.title}</DialogTitle>
           <DialogDescription className="whitespace-pre-line text-sm leading-relaxed">{item.description}</DialogDescription>
         </DialogHeader>
 

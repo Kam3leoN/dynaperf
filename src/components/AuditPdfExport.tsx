@@ -146,7 +146,7 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
         if (catItems.length === 0) continue;
         const catMax = catItems.reduce((s, i) => s + i.maxPoints, 0);
         const catObt = catItems.reduce((s, i) => s + (items[i.id]?.score ?? 0), 0);
-        html += `<div class="cat-header">${escapeHtml(cat.name)} <span style="float:right;font-size:11px;font-weight:600;">${catObt}/${catMax} pts</span></div>`;
+        html += `<div class="cat-header" style="font-size:14px;">${escapeHtml(cat.name)} <span style="float:right;font-size:11px;font-weight:600;">${catObt}/${catMax} pts</span></div>`;
 
         for (const item of catItems) {
           globalIdx++;
@@ -166,13 +166,12 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
           html += `<div style="flex:1;min-width:0;">`;
           html += `<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:2px;">`;
           html += `<span class="item-number">${globalIdx}.</span>`;
-          html += `<span class="badge badge-secondary">${escapeHtml(item.categoryName)}</span>`;
+          html += `<span class="item-title" style="margin-bottom:0;">${escapeHtml(item.title)}</span>`;
           html += `<span class="badge ${badgeClass}">${score}/${item.maxPoints} pts</span>`;
           if (item.autoField) {
             html += `<span class="badge badge-muted">🔒 Auto</span>`;
           }
           html += `</div>`;
-          html += `<div class="item-title">${escapeHtml(item.title)}</div>`;
           html += `</div>`;
           html += `<div style="flex-shrink:0;font-size:14px;">${isMax ? '<span class="item-icon-ok">✓</span>' : '<span class="item-icon-ko">✗</span>'}</div>`;
           html += `</div>`;
