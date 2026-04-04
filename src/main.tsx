@@ -1,5 +1,6 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
+import { RootErrorBoundary } from "./components/RootErrorBoundary";
 import "./index.css";
 import { applyDeviceClasses, listenDeviceChanges } from "./lib/deviceClasses";
 
@@ -68,6 +69,15 @@ applyDeviceClasses();
 listenDeviceChanges();
 
 cleanupCaches().finally(() => {
-  createRoot(document.getElementById("root")!).render(<App />);
+  const el = document.getElementById("root");
+  if (!el) {
+    console.error("[main] Élément #root introuvable");
+    return;
+  }
+  createRoot(el).render(
+    <RootErrorBoundary>
+      <App />
+    </RootErrorBoundary>,
+  );
   registerSW();
 });

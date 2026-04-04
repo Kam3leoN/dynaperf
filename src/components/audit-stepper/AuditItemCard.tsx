@@ -140,9 +140,12 @@ function AuditItemCardComponent({ item, index, categoryName, answer, onChange, s
   const commentRef = useRef(comment);
   commentRef.current = comment;
   const commentSyncTimerRef = useRef<number | null>(null);
+  /** Évite un emit debouncé « commentaire vide » au montage : à ce moment `mountedRef` est déjà true (effet champs), ce qui forçait `touched` sur toute la grille. */
+  const hasHadNonEmptyCommentRef = useRef(false);
 
   useEffect(() => {
-    setComment(answer?.comment ?? "");
+    const incoming = answer?.comment ?? "";
+    setComment((prev) => (prev === incoming ? prev : incoming));
   }, [item.id, answer?.comment]);
 
   const emitToParent = (commentStr: string) => {
@@ -168,6 +171,11 @@ function AuditItemCardComponent({ item, index, categoryName, answer, onChange, s
     if (commentSyncTimerRef.current !== null) {
       window.clearTimeout(commentSyncTimerRef.current);
     }
+    if (comment.trim() === "" && !hasHadNonEmptyCommentRef.current) {
+      return;
+    }
+    if (comment.trim() !== "") hasHadNonEmptyCommentRef.current = true;
+
     commentSyncTimerRef.current = window.setTimeout(() => {
       commentSyncTimerRef.current = null;
       emitToParent(comment);
@@ -180,14 +188,6 @@ function AuditItemCardComponent({ item, index, categoryName, answer, onChange, s
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [comment]);
-
-  const handleCommentBlur = () => {
-    if (commentSyncTimerRef.current !== null) {
-      window.clearTimeout(commentSyncTimerRef.current);
-      commentSyncTimerRef.current = null;
-    }
-    emitToParent(comment);
-  };
 
   const currentScore = notApplicable ? 0 : computeScore(item, boolVal, numVal, checklist, autoValue);
   const isMax = !notApplicable && currentScore === item.maxPoints;
@@ -394,7 +394,6 @@ function AuditItemCardComponent({ item, index, categoryName, answer, onChange, s
           <RichTextarea
             value={comment}
             onChange={setComment}
-            onBlur={handleCommentBlur}
             placeholder={notApplicable ? "Justifiez pourquoi cet item n'est pas applicable..." : "Ajouter un commentaire..."}
             rows={2}
             className="text-sm"
