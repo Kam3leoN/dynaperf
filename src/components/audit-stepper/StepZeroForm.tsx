@@ -371,7 +371,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
         const result = b - a;
         const displayPrefix = result > 0 ? "+" : "";
         return (
-          <div className="flex items-center gap-2 h-12 px-4 rounded-xl border border-input bg-muted text-sm cursor-not-allowed">
+          <div className="flex items-center gap-2 h-12 px-4 rounded-xl bg-muted text-sm cursor-not-allowed">
             <span className={`font-semibold ${result > 0 ? "text-green-600 dark:text-green-400" : result < 0 ? "text-red-500 dark:text-red-400" : "text-foreground"}`}>
               {displayPrefix}{result}
             </span>
