@@ -144,20 +144,22 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
       for (const cat of config.categories) {
         const catItems = allItems.filter((i) => i.categoryId === cat.id);
         if (catItems.length === 0) continue;
-        const catMax = catItems.reduce((s, i) => s + i.maxPoints, 0);
-        const catObt = catItems.reduce((s, i) => s + (items[i.id]?.score ?? 0), 0);
+        const applicableCatItems = catItems.filter(i => !items[i.id]?.notApplicable);
+        const catMax = applicableCatItems.reduce((s, i) => s + i.maxPoints, 0);
+        const catObt = applicableCatItems.reduce((s, i) => s + (items[i.id]?.score ?? 0), 0);
         html += `<div class="cat-header" style="font-size:14px;">${escapeHtml(cat.name)} <span style="float:right;font-size:11px;font-weight:600;">${catObt}/${catMax} pts</span></div>`;
 
         for (const item of catItems) {
           globalIdx++;
           const answer = items[item.id];
+          const na = answer?.notApplicable === true;
           const score = answer?.score ?? 0;
-          const isMax = score === item.maxPoints;
-          const hasScore = score > 0;
+          const isMax = !na && score === item.maxPoints;
+          const hasScore = !na && score > 0;
           const isTouched = answer !== undefined;
-          const isExplicitZero = isTouched && score === 0;
-          const borderClass = isMax ? "border-emerald" : hasScore ? "border-amber" : isExplicitZero ? "border-red" : "border-muted";
-          const badgeClass = isMax ? "badge-emerald" : hasScore ? "badge-amber" : isExplicitZero ? "badge-red" : "badge-muted";
+          const isExplicitZero = !na && isTouched && score === 0;
+          const borderClass = na ? "border-na" : isMax ? "border-emerald" : hasScore ? "border-amber" : isExplicitZero ? "border-red" : "border-muted";
+          const badgeClass = na ? "badge-na" : isMax ? "badge-emerald" : hasScore ? "badge-amber" : isExplicitZero ? "badge-red" : "badge-muted";
 
           html += `<div class="item-card ${borderClass} avoid-break">`;
           html += `<div class="item-card-inner">`;
