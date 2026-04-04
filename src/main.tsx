@@ -32,8 +32,6 @@ const isPreviewHost =
   window.location.hostname.includes("lovableproject.com");
 
 async function cleanupCaches() {
-  // In Lovable preview/iframe OR on GitHub Pages: purge old SW caches
-  // In production standalone (lovable.app published): keep PWA working
   const isGitHubPages = window.location.hostname.endsWith("github.io");
 
   if (!isGitHubPages && !isPreviewHost && !isInIframe) {
@@ -51,10 +49,25 @@ async function cleanupCaches() {
   }
 }
 
+async function registerSW() {
+  // Only register SW in production, outside iframes and preview hosts
+  if (isPreviewHost || isInIframe) return;
+  if (!("serviceWorker" in navigator)) return;
+
+  try {
+    const { Serwist } = await import("@serwist/window");
+    const sw = new Serwist("/sw.js", { scope: "/", type: "classic" });
+    sw.register();
+  } catch (e) {
+    console.warn("SW registration failed:", e);
+  }
+}
+
 ensureResponsiveViewport();
 applyDeviceClasses();
 listenDeviceChanges();
 
 cleanupCaches().finally(() => {
   createRoot(document.getElementById("root")!).render(<App />);
+  registerSW();
 });
