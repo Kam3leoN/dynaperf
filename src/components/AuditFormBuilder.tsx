@@ -375,6 +375,28 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                           </SelectContent>
                         </Select>
                       </>
+                    ) : isStatDiff ? (
+                      <>
+                        <Label>Champ A (ex: participants)</Label>
+                        <Select value={sourceNumerator} onValueChange={setSourceNumerator}>
+                          <SelectTrigger><SelectValue placeholder="Sélectionner le champ A" /></SelectTrigger>
+                          <SelectContent>
+                            {numberFields.map((nf) => (
+                              <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <Label>Champ B (ex: adhérents)</Label>
+                        <Select value={sourceDenominator} onValueChange={setSourceDenominator}>
+                          <SelectTrigger><SelectValue placeholder="Sélectionner le champ B" /></SelectTrigger>
+                          <SelectContent>
+                            {numberFields.map((nf) => (
+                              <SelectItem key={nf.id} value={nf.id}>{nf.field_label}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-xs text-muted-foreground">Résultat = A − B (valeur brute, sans signe +/−).</p>
+                      </>
                     ) : (
                       <>
                         <Label>Champ A — référence (master)</Label>
