@@ -172,9 +172,13 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
       fieldOpts = { options: validOpts };
     } else if (needsSources) {
       if (!sourceNumerator || !sourceDenominator) { toast.error("Sélectionnez les deux champs sources"); return; }
-      fieldOpts = isStatPercent
-        ? { source_numerator: sourceNumerator, source_denominator: sourceDenominator }
-        : { source_a: sourceNumerator, source_b: sourceDenominator };
+      if (isStatPercent) {
+        fieldOpts = { source_numerator: sourceNumerator, source_denominator: sourceDenominator };
+      } else if (isStatDiff) {
+        fieldOpts = { source_a: sourceNumerator, source_b: sourceDenominator };
+      } else {
+        fieldOpts = { source_a: sourceNumerator, source_b: sourceDenominator };
+      }
     }
 
     const payload = {
