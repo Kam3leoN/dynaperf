@@ -381,6 +381,23 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
           </div>
         );
       }
+      case "stat_diff": {
+        const aId = field.field_options?.source_a;
+        const bId = field.field_options?.source_b;
+        const a = Number(data.customFieldValues?.[aId]) || 0;
+        const b = Number(data.customFieldValues?.[bId]) || 0;
+        const result = a - b;
+        return (
+          <div className="flex items-center gap-2 h-12 px-4 rounded-xl border border-input bg-muted text-sm cursor-not-allowed">
+            <span className="font-semibold text-foreground">
+              {result}
+            </span>
+            <span className="text-muted-foreground text-xs">
+              ({a} − {b})
+            </span>
+          </div>
+        );
+      }
       case "date_picker":
         return (
           <Popover>
