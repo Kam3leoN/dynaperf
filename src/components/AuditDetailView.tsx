@@ -47,9 +47,19 @@ interface DetailData {
   signature_audite: string | null;
 }
 
+interface CustomFieldDef {
+  id: string;
+  field_label: string;
+  field_type: string;
+  field_options: any;
+  sort_order: number;
+  col_span: number;
+}
+
 export function AuditDetailView({ auditId, typeEvenement, open, onClose, partenaire, date, lieu, auditeur, note }: AuditDetailViewProps) {
   const [detail, setDetail] = useState<DetailData | null>(null);
   const [config, setConfig] = useState<AuditTypeConfig | null>(null);
+  const [customFields, setCustomFields] = useState<CustomFieldDef[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -59,7 +69,8 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
     Promise.all([
       supabase.from("audit_details").select("*").eq("audit_id", auditId).single(),
       fetchAuditConfig(typeEvenement),
-    ]).then(async ([{ data: detailRow }, cfg]) => {
+      supabase.from("audit_type_custom_fields").select("*").eq("audit_type_key", typeEvenement).order("sort_order"),
+    ]).then(async ([{ data: detailRow }, cfg, { data: fields }]) => {
       if (detailRow) {
         const rawPhotos = (detailRow.photos as string[]) ?? [];
         const resolvedPhotos = await resolveAuditPhotoUrls(rawPhotos);
@@ -70,6 +81,7 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
         });
       }
       setConfig(cfg);
+      setCustomFields((fields as CustomFieldDef[]) || []);
       setLoading(false);
     });
   }, [open, auditId, typeEvenement]);
@@ -78,14 +90,44 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
     cat.items.map((item) => ({ ...item, categoryName: cat.name }))
   ) ?? [];
 
-  const ratioInvParticipants =
-    detail?.nb_invites && detail?.nb_participants && detail.nb_participants > 0
-      ? ((detail.nb_invites / detail.nb_participants) * 100).toFixed(1)
-      : null;
-  const ratioRdvInvites =
-    detail?.nb_rdv_pris != null && detail?.nb_invites && detail.nb_invites > 0
-      ? ((detail.nb_rdv_pris / detail.nb_invites) * 100).toFixed(1)
-      : null;
+  // Get custom field values from items JSON
+  const customFieldValues: Record<string, any> = (detail?.items as any)?.__custom_fields || {};
+
+  // Helper to get display value for a custom field
+  const getFieldDisplayValue = (field: CustomFieldDef): string | null => {
+    const val = customFieldValues[field.id];
+    if (val === undefined || val === null || val === "") return null;
+
+    switch (field.field_type) {
+      case "qualite_lieu_rating":
+      case "qualite_rating":
+      case "rating": {
+        const n = typeof val === "number" ? val : parseInt(val) || 0;
+        return "★".repeat(n) + "☆".repeat(Math.max(0, 5 - n));
+      }
+      case "stat_percent":
+        return `${val} %`;
+      case "stat_sum": {
+        const prefix = val > 0 ? "+" : "";
+        return `${prefix}${val}`;
+      }
+      case "stat_diff":
+        return `${val}`;
+      case "date_picker":
+        if (val instanceof Date) return val.toLocaleDateString("fr-FR");
+        if (typeof val === "string") {
+          try { return new Date(val).toLocaleDateString("fr-FR"); } catch { return val; }
+        }
+        return String(val);
+      case "checkbox":
+        return Array.isArray(val) ? val.join(", ") : String(val);
+      default:
+        return String(val);
+    }
+  };
+
+  // Determine field display type
+  const isStatField = (ft: string) => ["number", "stat_percent", "stat_sum", "stat_diff"].includes(ft);
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
@@ -115,45 +157,74 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
           </p>
         ) : (
           <div className="space-y-6">
-            {/* ── Informations générales ── */}
+            {/* ── Informations générales (dynamic) ── */}
             <div>
               <h2 className="text-sm font-bold text-foreground uppercase tracking-wider border-b border-border pb-2 mb-4">
                 Informations générales
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-3xl">
-                <InfoField label="Partenaire audité" value={partenaire} />
-                <InfoField label="Partenaire référent" value={detail.partenaire_referent} />
-                <InfoField label="Auditeur" value={auditeur} />
-                <InfoField label="Ville" value={lieu} />
-                <InfoField label="Lieu" value={detail.type_lieu} />
-                <InfoField label="Qualité du lieu" value={detail.qualite_lieu != null ? `${"★".repeat(detail.qualite_lieu)}${"☆".repeat(5 - detail.qualite_lieu)}` : null} />
-                <InfoField label="Date" value={date} />
-                <InfoField label="Heure" value={detail.heure_evenement} />
-                {detail.nom_club && <InfoField label="Club" value={detail.nom_club} />}
-              </div>
 
-              {/* Stats */}
-              {(detail.nb_adherents != null || detail.nb_invites != null || detail.nb_participants != null) && (
-                <div className="mt-4">
-                  <p className="text-sm font-medium text-muted-foreground mb-3">Statistiques de l'événement</p>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
-                    {detail.nb_adherents != null && <StatField label="Adhérents" value={detail.nb_adherents} />}
-                    {detail.nb_invites != null && <StatField label="Invités" value={detail.nb_invites} />}
-                    {detail.nb_no_show != null && <StatField label="No-show" value={detail.nb_no_show} />}
-                    {detail.nb_participants != null && <StatField label="Participants" value={detail.nb_participants} />}
-                    {detail.nb_rdv_pris != null && <StatField label="RDV pris" value={detail.nb_rdv_pris} />}
+              {customFields.length > 0 ? (
+                <>
+                  {/* Info fields (non-stat) */}
+                  {(() => {
+                    const infoFields = customFields.filter(f => !isStatField(f.field_type));
+                    if (infoFields.length === 0) return null;
+                    return (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-3xl">
+                        {infoFields.map(f => {
+                          const displayVal = getFieldDisplayValue(f);
+                          return <InfoField key={f.id} label={f.field_label} value={displayVal} />;
+                        })}
+                      </div>
+                    );
+                  })()}
+
+                  {/* Stat fields */}
+                  {(() => {
+                    const statFields = customFields.filter(f => isStatField(f.field_type));
+                    if (statFields.length === 0) return null;
+                    return (
+                      <div className="mt-4">
+                        <p className="text-sm font-medium text-muted-foreground mb-3">Statistiques de l'événement</p>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
+                          {statFields.map(f => {
+                            const val = customFieldValues[f.id];
+                            if (val === undefined || val === null || val === "") return null;
+                            return <StatField key={f.id} label={f.field_label} value={val} fieldType={f.field_type} />;
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </>
+              ) : (
+                /* Fallback: legacy hardcoded fields for old audits */
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-3xl">
+                    <InfoField label="Partenaire audité" value={partenaire} />
+                    <InfoField label="Partenaire référent" value={detail.partenaire_referent} />
+                    <InfoField label="Auditeur" value={auditeur} />
+                    <InfoField label="Ville" value={lieu} />
+                    <InfoField label="Lieu" value={detail.type_lieu} />
+                    <InfoField label="Qualité du lieu" value={detail.qualite_lieu != null ? `${"★".repeat(detail.qualite_lieu)}${"☆".repeat(5 - detail.qualite_lieu)}` : null} />
+                    <InfoField label="Date" value={date} />
+                    <InfoField label="Heure" value={detail.heure_evenement} />
+                    {detail.nom_club && <InfoField label="Club" value={detail.nom_club} />}
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
-                    <div className="rounded-lg border border-border bg-muted/50 p-3">
-                      <p className="text-xs text-muted-foreground">Ratio invités / participants</p>
-                      <p className="text-lg font-semibold tabular-nums">{ratioInvParticipants ? `${ratioInvParticipants}%` : "—"}</p>
+
+                  {(detail.nb_adherents != null || detail.nb_invites != null || detail.nb_participants != null) && (
+                    <div className="mt-4">
+                      <p className="text-sm font-medium text-muted-foreground mb-3">Statistiques de l'événement</p>
+                      <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
+                        {detail.nb_adherents != null && <StatField label="Adhérents" value={detail.nb_adherents} />}
+                        {detail.nb_invites != null && <StatField label="Invités" value={detail.nb_invites} />}
+                        {detail.nb_no_show != null && <StatField label="No-show" value={detail.nb_no_show} />}
+                        {detail.nb_participants != null && <StatField label="Participants" value={detail.nb_participants} />}
+                        {detail.nb_rdv_pris != null && <StatField label="RDV pris" value={detail.nb_rdv_pris} />}
+                      </div>
                     </div>
-                    <div className="rounded-lg border border-border bg-muted/50 p-3">
-                      <p className="text-xs text-muted-foreground">Ratio RDV pris / invités</p>
-                      <p className="text-lg font-semibold tabular-nums">{ratioRdvInvites ? `${ratioRdvInvites}%` : "—"}</p>
-                    </div>
-                  </div>
-                </div>
+                  )}
+                </>
               )}
 
               {/* Score global */}
@@ -385,10 +456,19 @@ function InfoField({ label, value }: { label: string; value?: string | null }) {
   );
 }
 
-function StatField({ label, value }: { label: string; value: number }) {
+function StatField({ label, value, fieldType }: { label: string; value: number | string; fieldType?: string }) {
+  const isPercent = fieldType === "stat_percent";
+  const isSum = fieldType === "stat_sum";
+  const numVal = typeof value === "number" ? value : parseFloat(String(value)) || 0;
+
   return (
     <div className="rounded-lg border border-border bg-muted/50 p-3 text-center">
-      <p className="text-lg font-bold text-foreground tabular-nums">{value}</p>
+      <p className={cn(
+        "text-lg font-bold tabular-nums",
+        isSum ? (numVal > 0 ? "text-emerald-600 dark:text-emerald-400" : numVal < 0 ? "text-destructive" : "text-foreground") : "text-foreground"
+      )}>
+        {isPercent ? `${value} %` : isSum && numVal > 0 ? `+${value}` : String(value)}
+      </p>
       <p className="text-[11px] text-muted-foreground">{label}</p>
     </div>
   );

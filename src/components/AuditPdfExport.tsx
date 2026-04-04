@@ -9,7 +9,6 @@ import {
   openPrintWindow,
   escapeHtml,
   formatDateFr,
-  formatNow,
   infoFieldHtml,
   statFieldHtml,
   signaturesHtml,
@@ -26,14 +25,23 @@ interface AuditPdfExportProps {
   note?: number | null;
 }
 
+interface CustomFieldDef {
+  id: string;
+  field_label: string;
+  field_type: string;
+  field_options: any;
+  sort_order: number;
+}
+
 export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu, auditeur, note }: AuditPdfExportProps) {
   const handleExport = async () => {
     toast.info("Préparation du rapport…");
 
     try {
-      const [{ data: detail }, config] = await Promise.all([
+      const [{ data: detail }, config, { data: customFields }] = await Promise.all([
         supabase.from("audit_details").select("*").eq("audit_id", auditId).single(),
         fetchAuditConfig(typeEvenement),
+        supabase.from("audit_type_custom_fields").select("*").eq("audit_type_key", typeEvenement).order("sort_order"),
       ]);
 
       if (!detail || !config) {
@@ -41,16 +49,16 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
         return;
       }
 
-      const items = (detail.items as Record<string, { score: number; comment?: string; checklist?: boolean[]; rawValue?: number }>) ?? {};
-      const allItems = config.categories.flatMap((cat, _ci) =>
+      const items = (detail.items as Record<string, any>) ?? {};
+      const customFieldValues: Record<string, any> = items.__custom_fields || {};
+      const fields = (customFields as CustomFieldDef[]) || [];
+      const allItems = config.categories.flatMap((cat) =>
         cat.items.map((item) => ({ ...item, categoryName: cat.name }))
       );
 
-      // Resolve photos then convert to data URLs for print window
       const rawPhotoUrls = await resolveAuditPhotoUrls((detail.photos as string[]) ?? []);
       const photoUrls = await urlsToDataUrls(rawPhotoUrls);
 
-      // Build HTML
       let html = "";
 
       // ── Header ──
@@ -60,40 +68,73 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
         <div class="subtitle">le : ${formatDateFr(date)}${heureEvent}</div>
       </div>`;
 
-      // ── Informations générales ──
+      // ── Informations générales (dynamic) ──
       html += `<div class="section-title">Informations générales</div>`;
-      html += `<div class="info-grid">`;
-      html += infoFieldHtml("Partenaire audité", partenaire);
-      html += infoFieldHtml("Partenaire référent", detail.partenaire_referent);
-      html += infoFieldHtml("Auditeur", auditeur);
-      html += infoFieldHtml("Ville", lieu);
-      html += infoFieldHtml("Lieu", detail.type_lieu);
-      html += infoFieldHtml("Qualité du lieu", detail.qualite_lieu != null ? "★".repeat(detail.qualite_lieu) + "☆".repeat(5 - detail.qualite_lieu) : null);
-      html += infoFieldHtml("Date", formatDateFr(date));
-      html += infoFieldHtml("Heure", detail.heure_evenement);
-      if (detail.nom_club) html += infoFieldHtml("Club", detail.nom_club);
-      html += `</div>`;
 
-      // ── Stats ──
-      const hasStats = detail.nb_adherents != null || detail.nb_invites != null || detail.nb_participants != null;
-      if (hasStats) {
-        html += `<div class="stats-grid">`;
-        if (detail.nb_adherents != null) html += statFieldHtml("Adhérents", detail.nb_adherents);
-        if (detail.nb_invites != null) html += statFieldHtml("Invités", detail.nb_invites);
-        if (detail.nb_no_show != null) html += statFieldHtml("No-show", detail.nb_no_show);
-        if (detail.nb_participants != null) html += statFieldHtml("Participants", detail.nb_participants);
-        if (detail.nb_rdv_pris != null) html += statFieldHtml("RDV pris", detail.nb_rdv_pris);
+      const isStatType = (ft: string) => ["number", "stat_percent", "stat_sum", "stat_diff"].includes(ft);
+      const isRatingType = (ft: string) => ["qualite_lieu_rating", "qualite_rating", "rating"].includes(ft);
+
+      const getDisplayValue = (f: CustomFieldDef): string | null => {
+        const val = customFieldValues[f.id];
+        if (val === undefined || val === null || val === "") return null;
+        if (isRatingType(f.field_type)) {
+          const n = typeof val === "number" ? val : parseInt(val) || 0;
+          return "★".repeat(n) + "☆".repeat(Math.max(0, 5 - n));
+        }
+        if (f.field_type === "stat_percent") return `${val} %`;
+        if (f.field_type === "stat_sum") return `${val > 0 ? "+" : ""}${val}`;
+        if (f.field_type === "date_picker") {
+          try { return new Date(val).toLocaleDateString("fr-FR"); } catch { return String(val); }
+        }
+        if (f.field_type === "checkbox") return Array.isArray(val) ? val.join(", ") : String(val);
+        return String(val);
+      };
+
+      if (fields.length > 0) {
+        // Dynamic fields
+        const infoFields = fields.filter(f => !isStatType(f.field_type));
+        const statFields = fields.filter(f => isStatType(f.field_type));
+
+        if (infoFields.length > 0) {
+          html += `<div class="info-grid">`;
+          for (const f of infoFields) {
+            html += infoFieldHtml(f.field_label, getDisplayValue(f));
+          }
+          html += `</div>`;
+        }
+
+        if (statFields.length > 0) {
+          html += `<div class="stats-grid">`;
+          for (const f of statFields) {
+            const val = customFieldValues[f.id];
+            if (val !== undefined && val !== null && val !== "") {
+              html += statFieldHtml(f.field_label, val);
+            }
+          }
+          html += `</div>`;
+        }
+      } else {
+        // Legacy fallback
+        html += `<div class="info-grid">`;
+        html += infoFieldHtml("Partenaire audité", partenaire);
+        html += infoFieldHtml("Partenaire référent", detail.partenaire_referent);
+        html += infoFieldHtml("Auditeur", auditeur);
+        html += infoFieldHtml("Ville", lieu);
+        html += infoFieldHtml("Lieu", detail.type_lieu);
+        html += infoFieldHtml("Qualité du lieu", detail.qualite_lieu != null ? "★".repeat(detail.qualite_lieu) + "☆".repeat(5 - detail.qualite_lieu) : null);
+        html += infoFieldHtml("Date", formatDateFr(date));
+        html += infoFieldHtml("Heure", detail.heure_evenement);
+        if (detail.nom_club) html += infoFieldHtml("Club", detail.nom_club);
         html += `</div>`;
 
-        // Ratios
-        const ratioInv = detail.nb_invites && detail.nb_participants && detail.nb_participants > 0
-          ? ((detail.nb_invites / detail.nb_participants) * 100).toFixed(1) : null;
-        const ratioRdv = detail.nb_rdv_pris != null && detail.nb_invites && detail.nb_invites > 0
-          ? ((detail.nb_rdv_pris / detail.nb_invites) * 100).toFixed(1) : null;
-        if (ratioInv || ratioRdv) {
-          html += `<div class="info-grid" style="margin-top:6px;">`;
-          if (ratioInv) html += infoFieldHtml("Ratio invités / participants", `${ratioInv}%`);
-          if (ratioRdv) html += infoFieldHtml("Ratio RDV pris / invités", `${ratioRdv}%`);
+        const hasStats = detail.nb_adherents != null || detail.nb_invites != null || detail.nb_participants != null;
+        if (hasStats) {
+          html += `<div class="stats-grid">`;
+          if (detail.nb_adherents != null) html += statFieldHtml("Adhérents", detail.nb_adherents);
+          if (detail.nb_invites != null) html += statFieldHtml("Invités", detail.nb_invites);
+          if (detail.nb_no_show != null) html += statFieldHtml("No-show", detail.nb_no_show);
+          if (detail.nb_participants != null) html += statFieldHtml("Participants", detail.nb_participants);
+          if (detail.nb_rdv_pris != null) html += statFieldHtml("RDV pris", detail.nb_rdv_pris);
           html += `</div>`;
         }
       }
@@ -145,7 +186,6 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
           html += `<div class="item-card ${borderClass} avoid-break">`;
           html += `<div class="item-card-inner">`;
 
-          // Header row
           html += `<div class="item-header">`;
           html += `<div style="flex:1;min-width:0;">`;
           html += `<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:2px;">`;
@@ -161,17 +201,14 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
           html += `<div style="flex-shrink:0;font-size:14px;">${isMax ? '<span class="item-icon-ok">✓</span>' : '<span class="item-icon-ko">✗</span>'}</div>`;
           html += `</div>`;
 
-          // Description / condition
           if (item.description || item.condition) {
             html += `<div class="detail-block">`;
             if (item.description) html += `<div>${escapeHtml(item.description)}</div>`;
             if (item.condition) html += `<div style="margin-top:2px;">ℹ️ ${escapeHtml(item.condition)}</div>`;
-            // Scoring rules inline
             if (item.scoringRules) html += `<div style="margin-top:3px;padding-top:3px;border-top:1px solid var(--border);">${escapeHtml(item.scoringRules)}</div>`;
             html += `</div>`;
           }
 
-          // Intérêts
           if (item.interets) {
             html += `<div class="detail-block interet">`;
             html += `<span class="detail-label">Quel intérêt ?</span>`;
@@ -179,7 +216,6 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
             html += `</div>`;
           }
 
-          // Comment y parvenir
           if (item.commentYParvenir) {
             html += `<div class="detail-block comment-parvenir">`;
             html += `<span class="detail-label">Comment y parvenir ?</span>`;
@@ -187,7 +223,6 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
             html += `</div>`;
           }
 
-          // Number value
           if (item.inputType === "number" && answer?.rawValue !== undefined) {
             html += `<div class="detail-block">`;
             html += `<span style="color:var(--text-muted);">Valeur saisie : </span>`;
@@ -195,7 +230,6 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
             html += `</div>`;
           }
 
-          // Checklist
           if (item.inputType === "checklist" && item.checklistItems && answer?.checklist) {
             for (let ci = 0; ci < item.checklistItems.length; ci++) {
               const checked = answer.checklist[ci] ?? false;
@@ -206,7 +240,6 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
             }
           }
 
-          // Comment
           if (answer?.comment) {
             html += `<div class="item-comment">`;
             html += `<span class="comment-label">Commentaire</span>`;
@@ -214,7 +247,7 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
             html += `</div>`;
           }
 
-          html += `</div></div>`; // close item-card-inner + item-card
+          html += `</div></div>`;
         }
       }
 

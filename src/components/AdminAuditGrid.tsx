@@ -712,10 +712,12 @@ export default function AdminAuditGridInline() {
               <RichTextarea value={itemForm.description} onChange={(val) => setItemForm({ ...itemForm, description: val })} rows={3} />
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <Label>Points max</Label>
-                <Input type="number" min={1} value={itemForm.max_points} onChange={(e) => setItemForm({ ...itemForm, max_points: parseInt(e.target.value) || 1 })} />
-              </div>
+              {itemForm.input_type !== "number" && (
+                <div className="space-y-1.5">
+                  <Label>Points max</Label>
+                  <Input type="number" min={1} value={itemForm.max_points} onChange={(e) => setItemForm({ ...itemForm, max_points: parseInt(e.target.value) || 1 })} />
+                </div>
+              )}
               <div className="space-y-1.5">
                 <Label>Type de saisie</Label>
                 <Select value={itemForm.input_type} onValueChange={(v) => setItemForm({ ...itemForm, input_type: v })}>
