@@ -255,6 +255,7 @@ export default function AuditForm() {
         ...(ans.comment && { comment: ans.comment }),
         ...(ans.checklist && { checklist: ans.checklist }),
         ...(ans.rawValue !== undefined && { rawValue: ans.rawValue }),
+        ...(ans.notApplicable && { notApplicable: true }),
       };
     });
     if (stepZeroData.customFieldValues && Object.keys(stepZeroData.customFieldValues).length > 0) {
