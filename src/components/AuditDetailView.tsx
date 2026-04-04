@@ -377,8 +377,9 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
                 <div className="flex flex-wrap gap-2">
                   {config.categories.map((cat) => {
                     const catItems = allItems.filter((i) => i.categoryId === cat.id);
-                    const catMaxPoints = catItems.reduce((sum, i) => sum + i.maxPoints, 0);
-                    const catObtained = catItems.reduce((sum, i) => sum + (detail.items[i.id]?.score ?? 0), 0);
+                    const applicableCatItems = catItems.filter(i => !isItemNA(i.id));
+                    const catMaxPoints = applicableCatItems.reduce((sum, i) => sum + i.maxPoints, 0);
+                    const catObtained = applicableCatItems.reduce((sum, i) => sum + (detail.items[i.id]?.score ?? 0), 0);
                     const pct = catMaxPoints > 0 ? Math.round((catObtained / catMaxPoints) * 100) : 0;
                     return (
                       <div key={cat.id} className="flex-1 min-w-[140px] rounded-xl border border-border bg-muted/30 p-3 space-y-1.5">
