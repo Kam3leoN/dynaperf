@@ -304,23 +304,46 @@ function AuditItemCardComponent({ item, index, categoryName, answer, onChange, s
 
             {item.inputType === "boolean" && !isBoolAuto && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3">
-                <Button type="button" size="sm" variant="outline" onClick={() => { clearNA(); setBoolVal(true); }}
-                  className={cn("h-10 text-xs sm:text-sm transition-colors",
-                    boolVal === true && !notApplicable ? "bg-emerald-600 text-white border-emerald-600 hover:bg-amber-400 hover:text-black hover:border-amber-400" : "hover:bg-accent"
-                  )}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => { clearNA(); setBoolVal(true); }}
+                  className={cn(
+                    "h-10 text-xs sm:text-sm transition-colors",
+                    boolVal === true && !notApplicable
+                      ? "bg-emerald-600 text-white border-emerald-600 hover:bg-emerald-700 hover:text-white hover:border-emerald-700"
+                      : "hover:bg-emerald-100 hover:border-emerald-300 hover:text-emerald-900 dark:hover:bg-emerald-950/50 dark:hover:text-emerald-100 dark:hover:border-emerald-700",
+                  )}
+                >
                   <FontAwesomeIcon icon={faCheck} className="mr-1 h-3 w-3" /> Validé
                 </Button>
-                <Button type="button" size="sm" variant="outline" onClick={() => { clearNA(); setBoolVal(false); }}
-                  className={cn("h-10 text-xs sm:text-sm transition-colors",
-                    boolVal === false && !notApplicable ? "bg-destructive text-white border-destructive hover:bg-amber-400 hover:text-black hover:border-amber-400" : "hover:bg-accent"
-                  )}>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => { clearNA(); setBoolVal(false); }}
+                  className={cn(
+                    "h-10 text-xs sm:text-sm transition-colors",
+                    boolVal === false && !notApplicable
+                      ? "bg-destructive text-white border-destructive hover:bg-red-700 hover:text-white hover:border-red-700"
+                      : "hover:bg-red-100 hover:border-red-300 hover:text-red-900 dark:hover:bg-red-950/50 dark:hover:text-red-100 dark:hover:border-red-800",
+                  )}
+                >
                   <FontAwesomeIcon icon={faXmark} className="mr-1 h-3 w-3" /> Non validé
                 </Button>
-                <Button type="button" size="sm" variant="outline" onClick={handleToggleNA}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleToggleNA}
                   className={cn(
-                    "h-10 text-xs sm:text-sm transition-colors hover:bg-accent",
-                    notApplicable && "border-primary ring-2 ring-primary/30 bg-primary/5"
-                  )}>
+                    "h-10 text-xs sm:text-sm transition-colors",
+                    notApplicable
+                      ? "bg-amber-500 text-amber-950 border-amber-600 shadow-none ring-0 hover:bg-amber-600 hover:text-amber-950 hover:border-amber-700"
+                      : "hover:bg-amber-100 hover:border-amber-300 hover:text-amber-950 dark:hover:bg-amber-950/40 dark:hover:text-amber-100 dark:hover:border-amber-700",
+                  )}
+                >
                   <FontAwesomeIcon icon={faBan} className="mr-1 h-3 w-3" /> Non applicable
                 </Button>
               </div>
@@ -378,8 +401,10 @@ function AuditItemCardComponent({ item, index, categoryName, answer, onChange, s
                 variant="outline"
                 onClick={handleToggleNA}
                 className={cn(
-                  "h-9 text-xs transition-colors hover:bg-accent gap-1.5",
-                  notApplicable && "border-primary ring-2 ring-primary/30 bg-primary/5"
+                  "h-9 text-xs transition-colors gap-1.5",
+                  notApplicable
+                    ? "bg-amber-500 text-amber-950 border-amber-600 shadow-none ring-0 hover:bg-amber-600 hover:text-amber-950 hover:border-amber-700"
+                    : "hover:bg-amber-100 hover:border-amber-300 hover:text-amber-950 dark:hover:bg-amber-950/40 dark:hover:text-amber-100 dark:hover:border-amber-700",
                 )}
               >
                 <FontAwesomeIcon icon={faBan} className="h-3 w-3" /> Non applicable
