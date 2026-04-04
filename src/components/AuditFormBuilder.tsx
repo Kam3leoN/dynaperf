@@ -144,6 +144,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
       col_span: f.col_span || 6,
       col_offset_before: f.col_offset_before || 0,
       col_offset_after: f.col_offset_after || 0,
+      is_required: f.is_required,
     })),
     [fields]
   );
@@ -185,7 +186,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
       audit_type_key: auditTypeKey,
       field_label: fieldLabel.trim(),
       field_type: fieldType,
-      is_required: isRequired,
+      is_required: needsSources ? false : isRequired,
       field_options: fieldOpts,
       sort_order: editing ? editing.sort_order : fields.length,
       col_span: colSpan,
@@ -283,7 +284,10 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Type de champ</Label>
-                  <Select value={fieldType} onValueChange={setFieldType}>
+                  <Select value={fieldType} onValueChange={(v) => {
+                    setFieldType(v);
+                    if (["stat_percent", "stat_sum", "stat_diff"].includes(v)) setIsRequired(false);
+                  }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
@@ -320,10 +324,12 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-3">
-                  <Switch checked={isRequired} onCheckedChange={setIsRequired} id="req" />
-                  <Label htmlFor="req">Champ obligatoire</Label>
-                </div>
+                {!needsSources && (
+                  <div className="flex items-center gap-3">
+                    <Switch checked={isRequired} onCheckedChange={setIsRequired} id="req" />
+                    <Label htmlFor="req">Champ obligatoire</Label>
+                  </div>
+                )}
 
                 {needsOptions && (
                   <div className="space-y-2">

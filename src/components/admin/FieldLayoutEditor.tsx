@@ -13,6 +13,7 @@ export interface LayoutEditorField {
   col_span: number;
   col_offset_before: number;
   col_offset_after: number;
+  is_required?: boolean;
 }
 
 export interface LayoutDraftItem {
@@ -464,10 +465,10 @@ export function FieldLayoutEditor({ fields, onLayoutChange, onEdit, onDelete, on
                   <div
                     key={f.id}
                     className={cn(
-                      "absolute top-1 bottom-1 flex items-center gap-1 rounded-xl border px-2 transition-all select-none z-10",
+                      "absolute top-1 bottom-1 flex items-center gap-1 rounded-xl px-2 transition-all select-none z-10",
                       resizeId === f.id
-                        ? "border-primary bg-primary/15 shadow-md"
-                        : "border-border bg-card hover:border-primary/40 hover:shadow-sm"
+                        ? "border-2 border-primary bg-primary/15 shadow-md"
+                        : "border-2 border-border bg-card hover:border-primary/40 hover:shadow-sm"
                     )}
                     style={{
                       left: `calc(${((f.startCol - 1) / GRID_COLUMNS) * 100}% + 4px)`,
@@ -493,7 +494,9 @@ export function FieldLayoutEditor({ fields, onLayoutChange, onEdit, onDelete, on
 
                     <FontAwesomeIcon icon={faGripVertical} className="h-3 w-3 shrink-0 text-muted-foreground/50 cursor-grab ml-1" />
                     <div className="flex-1 min-w-0 mx-1">
-                      <p className="truncate text-xs font-medium text-foreground leading-tight">{f.field_label}</p>
+                    <p className="truncate text-xs font-medium text-foreground leading-tight">
+                        {f.field_label}{f.is_required && <span className="text-destructive ml-0.5">*</span>}
+                      </p>
                       <p className="text-[10px] text-muted-foreground">{f.col_span}/12</p>
                     </div>
                     <div className="flex gap-0.5 shrink-0">
