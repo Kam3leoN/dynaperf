@@ -465,10 +465,10 @@ export function FieldLayoutEditor({ fields, onLayoutChange, onEdit, onDelete, on
                   <div
                     key={f.id}
                     className={cn(
-                      "absolute top-1 bottom-1 flex items-center gap-1 rounded-xl border px-2 transition-all select-none z-10",
+                      "absolute top-1 bottom-1 flex items-center gap-1 rounded-xl px-2 transition-all select-none z-10",
                       resizeId === f.id
-                        ? "border-primary bg-primary/15 shadow-md"
-                        : "border-border bg-card hover:border-primary/40 hover:shadow-sm"
+                        ? "border-2 border-primary bg-primary/15 shadow-md"
+                        : "border-2 border-border bg-card hover:border-primary/40 hover:shadow-sm"
                     )}
                     style={{
                       left: `calc(${((f.startCol - 1) / GRID_COLUMNS) * 100}% + 4px)`,
