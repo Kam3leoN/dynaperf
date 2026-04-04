@@ -247,45 +247,38 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
                   </h2>
                   {catItems.map((item) => {
                     const answer = detail.items[item.id];
+                    const na = answer?.notApplicable === true;
                     const score = answer?.score ?? 0;
-                    const isMax = score === item.maxPoints;
-                    const hasScore = score > 0;
+                    const isMax = !na && score === item.maxPoints;
+                    const hasScore = !na && score > 0;
                     const isAutoFilled = !!item.autoField;
 
                     return (
                       <Card key={item.id} className={cn(
                         "transition-all border-l-4",
+                        na ? "border-l-border opacity-60" :
                         isMax ? "border-l-emerald-500" : hasScore ? "border-l-amber-500" : "border-l-border"
                       )}>
                         <CardContent className="p-3 sm:p-4 space-y-3">
                           {/* Header */}
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
-                                <span className="text-[11px] sm:text-xs text-muted-foreground font-mono">
-                                  {allItems.findIndex((i) => i.id === item.id) + 1}.
-                                </span>
-                                <span className="text-sm sm:text-base font-semibold text-foreground leading-tight">{item.title}</span>
-                                <Badge className={cn(
-                                  "text-[10px]",
-                                  isMax ? "bg-emerald-600 text-white" : hasScore ? "bg-amber-500 text-white" : "bg-muted text-muted-foreground"
-                                )}>
-                                  {score}/{item.maxPoints} pts
-                                </Badge>
-                                {isAutoFilled && (
-                                  <Badge variant="outline" className="text-[10px] gap-1 text-muted-foreground">
-                                    <FontAwesomeIcon icon={faLock} className="h-2 w-2" /> Auto
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex-shrink-0">
-                              {isMax ? (
-                                <FontAwesomeIcon icon={faCheck} className="h-4 w-4 text-emerald-500" />
-                              ) : (
-                                <FontAwesomeIcon icon={faXmark} className="h-4 w-4 text-destructive" />
-                              )}
-                            </div>
+                          <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
+                            <span className="text-sm sm:text-base font-semibold text-muted-foreground font-mono">
+                              {allItems.findIndex((i) => i.id === item.id) + 1}.
+                            </span>
+                            <span className="text-sm sm:text-base font-semibold text-foreground leading-tight">{item.title}</span>
+                            <span className="flex-1" />
+                            <Badge className={cn(
+                              "text-xs sm:text-sm",
+                              na ? "bg-muted text-muted-foreground" :
+                              isMax ? "bg-emerald-600 text-white" : hasScore ? "bg-amber-500 text-white" : "bg-muted text-muted-foreground"
+                            )}>
+                              {na ? "N/A" : `${score}/${item.maxPoints} pts`}
+                            </Badge>
+                            {isAutoFilled && !na && (
+                              <Badge variant="outline" className="text-[10px] gap-1 text-muted-foreground">
+                                <FontAwesomeIcon icon={faLock} className="h-2 w-2" /> Auto
+                              </Badge>
+                            )}
                           </div>
 
                           {/* Description & condition */}
