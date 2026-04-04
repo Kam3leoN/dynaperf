@@ -91,7 +91,7 @@ body {
 .cat-header {
   background: var(--mineral);
   color: white;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.04em;
