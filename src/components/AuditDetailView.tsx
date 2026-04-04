@@ -237,7 +237,7 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
               const catObtained = catItems.reduce((sum, i) => sum + (detail.items[i.id]?.score ?? 0), 0);
               return (
                 <div key={cat.id} className="space-y-3">
-                  <h2 className="text-sm font-bold text-foreground uppercase tracking-wider border-b border-border pb-2 flex items-center justify-between gap-2">
+                  <h2 className="text-base sm:text-lg font-bold text-foreground uppercase tracking-wider border-b border-border pb-2 flex items-center justify-between gap-2">
                     <span>{cat.name}</span>
                     <Badge variant="outline" className="text-[11px] tabular-nums font-semibold">{catObtained}/{catMaxPoints} pts</Badge>
                   </h2>
