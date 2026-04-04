@@ -238,8 +238,9 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
       for (const cat of config.categories) {
         const catItems2 = allItems.filter((i) => i.categoryId === cat.id);
         if (catItems2.length === 0) continue;
-        const catMax2 = catItems2.reduce((s, i) => s + i.maxPoints, 0);
-        const catObt2 = catItems2.reduce((s, i) => s + (items[i.id]?.score ?? 0), 0);
+        const applicableItems2 = catItems2.filter(i => !items[i.id]?.notApplicable);
+        const catMax2 = applicableItems2.reduce((s, i) => s + i.maxPoints, 0);
+        const catObt2 = applicableItems2.reduce((s, i) => s + (items[i.id]?.score ?? 0), 0);
         const pct2 = catMax2 > 0 ? Math.round((catObt2 / catMax2) * 100) : 0;
         const color2 = pct2 >= 80 ? "#22c55e" : pct2 >= 50 ? "#f59e0b" : "#ef4444";
         html += `<div style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 8px;">`;
