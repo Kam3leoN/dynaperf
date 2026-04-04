@@ -421,6 +421,47 @@ export default function AuditForm() {
               })}
             </div>
 
+            {/* ── Score live par catégorie ── */}
+            {config && categories.length > 0 && (
+              <div className="space-y-3">
+                <h2 className="text-sm font-bold text-foreground uppercase tracking-wider border-b border-border pb-2">
+                  Résultats
+                </h2>
+                <div className="flex gap-3 flex-wrap mb-2">
+                  <Badge variant="secondary" className="text-sm px-3 py-1 tabular-nums">
+                    Total : {Object.values(answers).reduce((s, a) => s + a.score, 0)} / {config.maxPoints} pts
+                  </Badge>
+                  <Badge variant="secondary" className="text-sm px-3 py-1 tabular-nums">
+                    Note : {config.maxPoints > 0 ? ((Object.values(answers).reduce((s, a) => s + a.score, 0) / config.maxPoints) * 10).toFixed(1) : "—"}/10
+                  </Badge>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((cat) => {
+                    const catItems = allItems.filter((i) => i.categoryId === cat.id);
+                    if (catItems.length === 0) return null;
+                    const catMaxPoints = catItems.reduce((sum, i) => sum + i.maxPoints, 0);
+                    const catObtained = catItems.reduce((sum, i) => sum + (answers[i.id]?.score ?? 0), 0);
+                    const pct = catMaxPoints > 0 ? Math.round((catObtained / catMaxPoints) * 100) : 0;
+                    return (
+                      <div key={cat.id} className="flex-1 min-w-[140px] rounded-xl border border-border bg-muted/30 p-3 space-y-1.5">
+                        <p className="text-[11px] font-medium text-muted-foreground truncate">{cat.name}</p>
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-lg font-bold tabular-nums text-foreground">{catObtained}</span>
+                          <span className="text-xs text-muted-foreground">/ {catMaxPoints} pts</span>
+                        </div>
+                        <div className="h-1.5 rounded-full bg-border overflow-hidden">
+                          <div
+                            className={`h-full rounded-full transition-all ${pct >= 80 ? "bg-emerald-500" : pct >= 50 ? "bg-amber-500" : "bg-destructive"}`}
+                            style={{ width: `${pct}%` }}
+                          />
+                        </div>
+                        <p className="text-[11px] tabular-nums text-muted-foreground text-right">{pct}%</p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
             <div className="pt-4 border-t border-border">
               <Button
                 onClick={handleGoToPhotos}
