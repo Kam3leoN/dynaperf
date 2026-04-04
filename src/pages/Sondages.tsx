@@ -25,7 +25,7 @@ import {
   faPlus, faPen, faTrash, faEllipsisVertical, faChartBar, faSquarePollVertical,
   faXmark, faCheck,
 } from "@fortawesome/free-solid-svg-icons";
-import { RichTextarea } from "@/components/ui/rich-textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -324,7 +324,7 @@ export default function Sondages() {
             </div>
             <div className="space-y-1.5">
               <Label>Description</Label>
-              <RichTextarea value={description} onChange={setDescription} placeholder="Contexte ou détails…" />
+              <RichTextEditor value={description} onChange={setDescription} placeholder="Contexte ou détails…" />
             </div>
             <div className="flex items-center gap-3">
               <Switch checked={isMultiple} onCheckedChange={setIsMultiple} id="multi" />

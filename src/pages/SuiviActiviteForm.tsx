@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { RichTextarea } from "@/components/ui/rich-textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Card, CardContent } from "@/components/ui/card";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -345,7 +345,7 @@ export default function SuiviActiviteForm() {
                       {/* Observation */}
                       <div className="space-y-1.5">
                         <Label className="text-[11px] sm:text-xs text-muted-foreground">Observation de l'agence (optionnel)</Label>
-                        <RichTextarea
+                        <RichTextEditor
                           value={ans.observation ?? ""}
                           onChange={(val) => setAnswer(item.id, { observation: val })}
                           placeholder="Ajouter une observation..."

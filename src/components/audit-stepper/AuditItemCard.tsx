@@ -4,7 +4,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RichTextarea } from "@/components/ui/rich-textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
@@ -340,8 +340,8 @@ function AuditItemCardComponent({ item, index, categoryName, answer, onChange, s
                   className={cn(
                     "h-10 text-xs sm:text-sm transition-colors",
                     notApplicable
-                      ? "bg-amber-500 text-amber-950 border-amber-600 shadow-none ring-0 hover:bg-amber-600 hover:text-amber-950 hover:border-amber-700"
-                      : "hover:bg-amber-100 hover:border-amber-300 hover:text-amber-950 dark:hover:bg-amber-950/40 dark:hover:text-amber-100 dark:hover:border-amber-700",
+                      ? "bg-[#ffc107] text-neutral-900 border-[#e6ac00] shadow-none ring-0 hover:bg-[#ffcd38] hover:text-neutral-900 hover:border-[#ffc107]"
+                      : "hover:bg-[#fff8e1] hover:border-[#ffe082] hover:text-neutral-900 dark:hover:bg-[#ffc107]/15 dark:hover:border-[#ffc107]/45 dark:hover:text-[#ffe082]",
                   )}
                 >
                   <FontAwesomeIcon icon={faBan} className="mr-1 h-3 w-3" /> Non applicable
@@ -403,8 +403,8 @@ function AuditItemCardComponent({ item, index, categoryName, answer, onChange, s
                 className={cn(
                   "h-9 text-xs transition-colors gap-1.5",
                   notApplicable
-                    ? "bg-amber-500 text-amber-950 border-amber-600 shadow-none ring-0 hover:bg-amber-600 hover:text-amber-950 hover:border-amber-700"
-                    : "hover:bg-amber-100 hover:border-amber-300 hover:text-amber-950 dark:hover:bg-amber-950/40 dark:hover:text-amber-100 dark:hover:border-amber-700",
+                    ? "bg-[#ffc107] text-neutral-900 border-[#e6ac00] shadow-none ring-0 hover:bg-[#ffcd38] hover:text-neutral-900 hover:border-[#ffc107]"
+                    : "hover:bg-[#fff8e1] hover:border-[#ffe082] hover:text-neutral-900 dark:hover:bg-[#ffc107]/15 dark:hover:border-[#ffc107]/45 dark:hover:text-[#ffe082]",
                 )}
               >
                 <FontAwesomeIcon icon={faBan} className="h-3 w-3" /> Non applicable
@@ -416,7 +416,7 @@ function AuditItemCardComponent({ item, index, categoryName, answer, onChange, s
           <Label className={cn("text-[11px] sm:text-xs", notApplicable ? "text-destructive font-semibold" : "text-muted-foreground")}>
             Commentaire {notApplicable ? "(obligatoire)" : "(optionnel)"}
           </Label>
-          <RichTextarea
+          <RichTextEditor
             value={comment}
             onChange={setComment}
             placeholder={notApplicable ? "Justifiez pourquoi cet item n'est pas applicable..." : "Ajouter un commentaire..."}

@@ -6,7 +6,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
-import { RichTextarea } from "@/components/ui/rich-textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import {
@@ -316,7 +316,7 @@ export function AuditItemDialog({
           <Label className={cn("text-xs", notApplicable ? "text-destructive font-semibold" : "text-muted-foreground")}>
             Commentaire {notApplicable ? "(obligatoire)" : "(optionnel)"}
           </Label>
-          <RichTextarea value={comment} onChange={setComment} placeholder={notApplicable ? "Justifiez pourquoi cet item n'est pas applicable..." : "Ajouter un commentaire..."} rows={2} />
+          <RichTextEditor value={comment} onChange={setComment} placeholder={notApplicable ? "Justifiez pourquoi cet item n'est pas applicable..." : "Ajouter un commentaire..."} rows={2} />
           {notApplicable && !comment.trim() && (
             <p className="text-xs text-destructive">Un commentaire est requis pour les items non applicables.</p>
           )}

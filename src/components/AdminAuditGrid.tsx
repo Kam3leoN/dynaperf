@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { AuditFormBuilder } from "@/components/AuditFormBuilder";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RichTextarea } from "@/components/ui/rich-textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -709,7 +709,7 @@ export default function AdminAuditGridInline() {
             </div>
             <div className="space-y-1.5">
               <Label>Description</Label>
-              <RichTextarea value={itemForm.description} onChange={(val) => setItemForm({ ...itemForm, description: val })} rows={3} />
+              <RichTextEditor value={itemForm.description} onChange={(val) => setItemForm({ ...itemForm, description: val })} rows={3} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               {itemForm.input_type !== "number" && (
@@ -879,26 +879,26 @@ export default function AdminAuditGridInline() {
 
             <div className="space-y-1.5">
               <Label>Conditions de validation</Label>
-              <RichTextarea value={itemForm.condition} onChange={(val) => setItemForm({ ...itemForm, condition: val })} rows={2} />
+              <RichTextEditor value={itemForm.condition} onChange={(val) => setItemForm({ ...itemForm, condition: val })} rows={2} />
             </div>
             {scoringMode === "none" && (
               <div className="space-y-1.5">
                 <Label>Règles de scoring (optionnel)</Label>
-                <RichTextarea value={itemForm.scoring_rules} onChange={(val) => setItemForm({ ...itemForm, scoring_rules: val })} rows={2} />
+                <RichTextEditor value={itemForm.scoring_rules} onChange={(val) => setItemForm({ ...itemForm, scoring_rules: val })} rows={2} />
               </div>
             )}
             <div className="space-y-1.5">
               <Label>Quel intérêt ?</Label>
-              <RichTextarea value={itemForm.interets} onChange={(val) => setItemForm({ ...itemForm, interets: val })} rows={2} placeholder="Expliquez l'intérêt de ce critère…" />
+              <RichTextEditor value={itemForm.interets} onChange={(val) => setItemForm({ ...itemForm, interets: val })} rows={2} placeholder="Expliquez l'intérêt de ce critère…" />
             </div>
             <div className="space-y-1.5">
               <Label>Comment y parvenir ?</Label>
-              <RichTextarea value={itemForm.comment_y_parvenir} onChange={(val) => setItemForm({ ...itemForm, comment_y_parvenir: val })} rows={2} placeholder="Conseils pour atteindre ce critère…" />
+              <RichTextEditor value={itemForm.comment_y_parvenir} onChange={(val) => setItemForm({ ...itemForm, comment_y_parvenir: val })} rows={2} placeholder="Conseils pour atteindre ce critère…" />
             </div>
             {itemForm.input_type === "checklist" && (
               <div className="space-y-1.5">
                 <Label>Éléments de la checklist (1 par ligne)</Label>
-                <RichTextarea value={itemForm.checklist_items} onChange={(val) => setItemForm({ ...itemForm, checklist_items: val })} rows={6} placeholder={"Ordinateur, micro, sono...\nLa présentation officielle (PPT)\nLe logiciel Dynamatch"} />
+                <RichTextEditor value={itemForm.checklist_items} onChange={(val) => setItemForm({ ...itemForm, checklist_items: val })} rows={6} placeholder={"Ordinateur, micro, sono...\nLa présentation officielle (PPT)\nLe logiciel Dynamatch"} />
               </div>
             )}
           </div>

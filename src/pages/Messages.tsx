@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { RichTextarea } from "@/components/ui/rich-textarea";
+import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Input } from "@/components/ui/input";
@@ -470,7 +470,7 @@ export default function Messages() {
 
   const InputArea = () => (
     <div className="px-3 py-2.5 border-t border-border bg-card flex items-end gap-2 shrink-0">
-      <RichTextarea
+      <RichTextEditor
         value={newMsg}
         onChange={setNewMsg}
         placeholder="Écrivez un message…"
@@ -621,7 +621,7 @@ export default function Messages() {
         <Dialog open={!!editingMsg} onOpenChange={(o) => !o && setEditingMsg(null)}>
           <DialogContent>
             <DialogHeader><DialogTitle>Modifier le message</DialogTitle></DialogHeader>
-            <RichTextarea value={editContent} onChange={setEditContent} rows={3} />
+            <RichTextEditor value={editContent} onChange={setEditContent} rows={3} />
             <DialogFooter>
               <Button variant="outline" onClick={() => setEditingMsg(null)}>Annuler</Button>
               <Button onClick={handleEditMsg} disabled={!editContent.trim()}>Enregistrer</Button>
