@@ -10,7 +10,11 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "git:save": "node scripts/git-save.mjs",
+    "git:save:env": "node scripts/git-save.mjs",
+    "git:push": "git push",
+    "git:setup-win": "git config core.autocrlf false && git config core.longpaths true && git config core.editor notepad"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",

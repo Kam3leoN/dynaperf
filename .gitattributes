@@ -1,0 +1,17 @@
+# Normalisation des fins de ligne : moins d’avertissements Git sur Windows,
+# même comportement que la plupart des projets JS (LF dans le dépôt).
+* text=auto
+
+*.{ts,tsx,js,jsx,mjs,cjs,json,css,scss,html,md,yml,yaml,vue,svelte} text eol=lf
+*.{cmd,bat,ps1} text eol=crlf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
+*.lockb binary

@@ -357,22 +357,37 @@ export default function AuditForm() {
 
   return (
     <AppLayout>
-      {/* Sticky progress bar */}
-      <div className="sticky top-16 z-30 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-2.5 -mx-4 lg:-mx-6 mb-6">
-        <div className="flex items-center gap-3 mb-1.5">
-          <Badge variant="outline" className="text-xs">
-            {typeEvenement}
-          </Badge>
-          <span className="text-xs text-muted-foreground">
-            {totalFilled} / {totalExpected} champs renseignés
-          </span>
-          <span className="ml-auto text-xs font-semibold text-foreground tabular-nums">
-            {Math.round(progress)}%
-          </span>
+      <div className="min-w-0">
+        {/* Bandeau progression : fixed sous l’AppBar — visible sur tout le défilement (formulaire, photos, etc.) */}
+        <div
+          role="region"
+          aria-label="Progression du formulaire d'audit"
+          className="fixed left-0 right-0 top-16 z-[35] w-full border-b border-border bg-background/95 backdrop-blur-md lg:top-[4.25rem]"
+        >
+          <Progress
+            value={progress}
+            max={100}
+            className="h-2.5 w-full rounded-none bg-secondary/80"
+            aria-label={`Progression de l'audit : ${Math.round(progress)} pour cent`}
+          />
+          <div className="mx-auto flex w-full max-w-[1440px] min-w-0 flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 lg:px-6">
+            <Badge variant="outline" className="shrink-0 text-xs">
+              {typeEvenement}
+            </Badge>
+            <span className="hidden min-w-0 text-xs text-muted-foreground sm:inline">
+              {totalFilled} / {totalExpected} champs renseignés
+            </span>
+            <span className="text-xs text-muted-foreground sm:hidden">{totalFilled}/{totalExpected}</span>
+            <span className="ml-auto shrink-0 text-xs font-semibold tabular-nums text-foreground">
+              {Math.round(progress)}%
+            </span>
+          </div>
         </div>
-        <Progress value={progress} className="h-2" />
-      </div>
-      <div className="px-0">
+
+        {/* Hauteur du bandeau fixed pour ne pas recouvrir le titre */}
+        <div className="h-14 shrink-0 sm:h-[3.625rem]" aria-hidden />
+
+        <div className="px-0">
         <h1 className="text-xl font-semibold text-foreground mb-6">
           {phase === "photos"
             ? "Photos de l'audit"
@@ -512,6 +527,7 @@ export default function AuditForm() {
             </p>
           </div>
         )}
+        </div>
       </div>
     </AppLayout>
   );

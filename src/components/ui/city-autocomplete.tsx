@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { cnDropdownListRow } from "@/lib/dropdownListItem";
 import { supabase } from "@/integrations/supabase/client";
 
 interface CityResult {
@@ -113,15 +114,17 @@ export function CityAutocomplete({ value, onChange, placeholder, className }: Pr
         autoComplete="off"
       />
       {open && results.length > 0 && (
-        <div ref={listRef} className="absolute z-50 top-full left-0 right-0 mt-1 rounded-md border border-border bg-popover shadow-md max-h-56 overflow-y-auto">
+        <div
+          ref={listRef}
+          className="absolute left-0 right-0 top-full z-50 mt-1 flex max-h-56 flex-col gap-0.5 overflow-y-auto rounded-md border border-border bg-popover p-1 shadow-md"
+        >
           {results.map((city, i) => (
             <button
               key={`${city.postal_code}-${i}`}
               type="button"
               className={cn(
-                "w-full text-left px-3 py-2 text-sm hover:bg-accent/50 transition-colors",
-                "focus:bg-accent/50 focus:outline-none flex items-center justify-between",
-                highlightIdx === i && "bg-accent/50"
+                "flex w-full items-center justify-between px-3 py-2.5 text-left focus:outline-none",
+                cnDropdownListRow(highlightIdx === i)
               )}
               onMouseDown={(e) => {
                 e.preventDefault();

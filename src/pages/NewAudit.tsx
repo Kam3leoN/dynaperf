@@ -1,70 +1,105 @@
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
-import { auditTypeIcons } from "@/lib/auditTypeVisuals";
+import { AUDIT_TYPE_OPTIONS } from "@/data/auditTypes";
+import { AuditTypeSearchCombobox } from "@/components/audit/AuditTypeSearchCombobox";
 
-import iconRDPresentiel from "@/assets/rencontre-presentiel.svg";
-import iconRDDistanciel from "@/assets/rencontre-distanciel.svg";
-import iconClubAffaires from "@/assets/club-affaires.svg";
-import iconRDVCommercial from "@/assets/rdv-business.svg";
-import iconMiseEnPlace from "@/assets/mise-en-place.svg";
-import iconEvenementiel from "@/assets/evenementiel.svg";
-
-const auditTypes: { label: string; color: string; icon: string; key: string; desktopLabel?: React.ReactNode }[] = [
-  {
-    label: "Rencontre Dirigeants Présentiel",
-    color: "#ee4540",
-    icon: iconRDPresentiel,
-    key: "RD Présentiel",
-  },
-  {
-    label: "Rencontre Dirigeants Distanciel",
-    color: "#234653",
-    icon: iconRDDistanciel,
-    key: "RD Distanciel",
-  },
-  {
-    label: "Club d'Affaires",
-    color: "#ffbd23",
-    icon: iconClubAffaires,
-    key: "Club Affaires",
-    desktopLabel: <>Club<br />d'Affaires</>,
-  },
-  {
-    label: "Rendez-Vous Commercial",
-    color: "#5dbcb9",
-    icon: iconRDVCommercial,
-    key: "RDV Commercial",
-  },
-  {
-    label: "Mise en Place",
-    color: "#8b5cf6",
-    icon: iconMiseEnPlace,
-    key: "Mise en Place",
-  },
-  {
-    label: "RD Événementiel",
-    color: "#e67e22",
-    icon: iconEvenementiel,
-    key: "RD Événementiel",
-    desktopLabel: <>RD<br />Événementiel</>,
-  },
-];
+/** Colonnes de la grille `.grid-action` : 2 &lt; sm, 3 à partir de sm (640px). */
+function useAuditTypeGridColumns() {
+  const [cols, setCols] = useState(() =>
+    typeof window !== "undefined" && window.matchMedia("(min-width: 640px)").matches ? 3 : 2
+  );
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 640px)");
+    const update = () => setCols(mq.matches ? 3 : 2);
+    update();
+    mq.addEventListener("change", update);
+    return () => mq.removeEventListener("change", update);
+  }, []);
+  return cols;
+}
 
 export default function NewAudit() {
   const navigate = useNavigate();
+  const cols = useAuditTypeGridColumns();
+  const buttonsRef = useRef<(HTMLButtonElement | null)[]>([]);
+
+  const goToType = useCallback(
+    (typeKey: string) => {
+      navigate(`/audits/new/version?type=${encodeURIComponent(typeKey)}`);
+    },
+    [navigate]
+  );
+
+  const focusButton = (index: number) => {
+    const el = buttonsRef.current[index];
+    el?.focus();
+  };
+
+  const onTypeCardKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
+    const n = AUDIT_TYPE_OPTIONS.length;
+    let next: number | null = null;
+    const col = index % cols;
+
+    switch (e.key) {
+      case "ArrowRight":
+        e.preventDefault();
+        if (col < cols - 1 && index + 1 < n) next = index + 1;
+        break;
+      case "ArrowLeft":
+        e.preventDefault();
+        if (col > 0) next = index - 1;
+        break;
+      case "ArrowDown":
+        e.preventDefault();
+        if (index + cols < n) next = index + cols;
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        if (index - cols >= 0) next = index - cols;
+        break;
+      case "Home":
+        e.preventDefault();
+        next = 0;
+        break;
+      case "End":
+        e.preventDefault();
+        next = n - 1;
+        break;
+      default:
+        break;
+    }
+    if (next !== null) focusButton(next);
+  };
 
   return (
     <AppLayout>
-      <div className="py-10 sm:py-16">
-        <div className="text-center mb-10">
+      <div className="py-10 sm:py-16 px-4">
+        <div className="text-center mb-8">
           <h2 className="text-xl font-semibold text-foreground">Nouvel audit</h2>
-          <p className="text-muted-foreground text-sm mt-1">Sélectionnez le type d'événement</p>
+          <p className="text-muted-foreground text-sm mt-1">Sélectionnez le type d&apos;événement</p>
         </div>
-        <div className="grid-action max-w-3xl mx-auto">
-          {auditTypes.map((type) => (
+
+        <AuditTypeSearchCombobox types={AUDIT_TYPE_OPTIONS} onSelectType={goToType} className="mb-10" />
+
+        <p className="text-center text-xs text-muted-foreground mb-4 hidden sm:block">
+          Ou choisissez une carte — utilisez Tab et les flèches pour naviguer
+        </p>
+
+        <div
+          className="grid-action max-w-3xl mx-auto"
+          role="toolbar"
+          aria-label="Types d'événement"
+        >
+          {AUDIT_TYPE_OPTIONS.map((type, index) => (
             <button
               key={type.key}
-              onClick={() => navigate(`/audits/new/version?type=${encodeURIComponent(type.key)}`)}
+              ref={(el) => {
+                buttonsRef.current[index] = el;
+              }}
+              type="button"
+              onClick={() => goToType(type.key)}
+              onKeyDown={(e) => onTypeCardKeyDown(e, index)}
               className="group flex flex-col items-center gap-3 rounded-2xl border border-border/60 bg-card p-5 shadow-soft transition-all hover:shadow-hover hover:-translate-y-0.5 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               style={{ "--card-accent": type.color } as React.CSSProperties}
             >
