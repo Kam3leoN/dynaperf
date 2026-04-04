@@ -144,6 +144,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
       col_span: f.col_span || 6,
       col_offset_before: f.col_offset_before || 0,
       col_offset_after: f.col_offset_after || 0,
+      is_required: f.is_required,
     })),
     [fields]
   );
