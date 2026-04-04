@@ -257,11 +257,11 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
                           {/* Header */}
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap mb-1.5">
+                              <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
                                 <span className="text-[11px] sm:text-xs text-muted-foreground font-mono">
                                   {allItems.findIndex((i) => i.id === item.id) + 1}.
                                 </span>
-                                <Badge variant="secondary" className="text-[10px]">{item.categoryName}</Badge>
+                                <span className="text-sm sm:text-base font-semibold text-foreground leading-tight">{item.title}</span>
                                 <Badge className={cn(
                                   "text-[10px]",
                                   isMax ? "bg-emerald-600 text-white" : hasScore ? "bg-amber-500 text-white" : "bg-muted text-muted-foreground"
@@ -274,7 +274,6 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
                                   </Badge>
                                 )}
                               </div>
-                              <h3 className="text-sm sm:text-base font-semibold text-foreground leading-tight">{item.title}</h3>
                             </div>
                             <div className="flex-shrink-0">
                               {isMax ? (

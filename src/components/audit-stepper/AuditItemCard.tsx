@@ -166,9 +166,9 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
       <CardContent className="p-3 sm:p-4 space-y-3 sm:space-y-4">
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap mb-1.5">
+            <div className="flex items-center gap-1.5 sm:gap-2 flex-wrap">
               <span className="text-[11px] sm:text-xs text-muted-foreground font-mono">{index + 1}.</span>
-              <Badge variant="secondary" className="text-[10px]">{categoryName}</Badge>
+              <span className="text-sm sm:text-base font-semibold text-foreground leading-tight">{item.title}</span>
               <Badge className={cn("text-[10px]", isMax ? "bg-emerald-600 text-white" : currentScore > 0 ? "bg-amber-500 text-white" : isExplicitZero ? "bg-destructive text-white" : "bg-muted text-muted-foreground")}>
                 {currentScore}/{item.maxPoints} pts
               </Badge>
@@ -178,7 +178,6 @@ export function AuditItemCard({ item, index, categoryName, answer, onChange, ste
                 </Badge>
               )}
             </div>
-            <h3 className="text-sm sm:text-base font-semibold text-foreground leading-tight">{item.title}</h3>
           </div>
         </div>
 

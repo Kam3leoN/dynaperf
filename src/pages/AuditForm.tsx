@@ -399,7 +399,7 @@ export default function AuditForm() {
                 if (catItems.length === 0) return null;
                 return (
                   <div key={cat.id} className="space-y-3">
-                    <h2 className="text-sm font-bold text-foreground uppercase tracking-wider border-b border-border pb-2">
+                    <h2 className="text-base sm:text-lg font-bold text-foreground uppercase tracking-wider border-b border-border pb-2">
                       {cat.name}
                     </h2>
                     {catItems.map((item) => {
