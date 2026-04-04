@@ -388,7 +388,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
         const b = Number(data.customFieldValues?.[bId]) || 0;
         const result = a - b;
         return (
-          <div className="flex items-center gap-2 h-12 px-4 rounded-xl border border-input bg-muted text-sm cursor-not-allowed">
+          <div className="flex items-center gap-2 h-12 px-4 rounded-xl bg-muted text-sm cursor-not-allowed">
             <span className="font-semibold text-foreground">
               {result}
             </span>

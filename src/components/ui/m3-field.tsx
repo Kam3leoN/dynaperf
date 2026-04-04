@@ -59,10 +59,10 @@ export const M3Field = React.forwardRef<HTMLDivElement, M3FieldProps>(
             "rounded-xl border bg-transparent transition-all duration-200 min-h-[2.75rem]",
             "flex items-center",
             focused
-              ? "border-primary border-2 shadow-[0_0_0_1px_hsl(var(--primary)/0.08)]"
+              ? "border-primary border-[3px] shadow-[0_0_0_1px_hsl(var(--primary)/0.08)]"
               : error
-                ? "border-destructive border-2"
-                : "border-input hover:border-foreground/40",
+                ? "border-destructive border-[3px]"
+                : "border-input border-2 hover:border-foreground/40",
             disabled && "opacity-50 pointer-events-none bg-muted/30"
           )}
         >
