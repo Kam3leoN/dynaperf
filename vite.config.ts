@@ -16,9 +16,6 @@ export default defineConfig(({ mode }) => {
     globDirectory: "dist",
     injectionPoint: "self.__SW_MANIFEST",
     rollupFormat: "iife",
-    devOptions: {
-      enabled: false,
-    },
   });
 
   return {
