@@ -103,6 +103,7 @@ export default function AuditForm() {
               comment: ans.comment,
               checklist: ans.checklist,
               rawValue: ans.rawValue,
+              notApplicable: ans.notApplicable ?? false,
             };
           });
           setAnswers(loadedAnswers);
@@ -187,8 +188,10 @@ export default function AuditForm() {
   const saveAudit = async (finalAnswers: Record<string, ItemAnswer>) => {
     if (!stepZeroData || !config) return;
 
-    const totalPoints = Object.values(finalAnswers).reduce((s, a) => s + a.score, 0);
-    const noteSur10 = +((totalPoints / config.maxPoints) * 10).toFixed(2);
+    const applicableAnswers = Object.entries(finalAnswers).filter(([, a]) => !a.notApplicable);
+    const totalPoints = applicableAnswers.reduce((s, [, a]) => s + a.score, 0);
+    const applicableMaxPoints = allItems.filter(i => !finalAnswers[i.id]?.notApplicable).reduce((s, i) => s + i.maxPoints, 0);
+    const noteSur10 = applicableMaxPoints > 0 ? +((totalPoints / applicableMaxPoints) * 10).toFixed(2) : 0;
 
     const dateStr = stepZeroData.dateEvenement
       ? format(stepZeroData.dateEvenement, "yyyy-MM-dd")
@@ -253,6 +256,7 @@ export default function AuditForm() {
         ...(ans.comment && { comment: ans.comment }),
         ...(ans.checklist && { checklist: ans.checklist }),
         ...(ans.rawValue !== undefined && { rawValue: ans.rawValue }),
+        ...(ans.notApplicable && { notApplicable: true }),
       };
     });
     if (stepZeroData.customFieldValues && Object.keys(stepZeroData.customFieldValues).length > 0) {
@@ -429,18 +433,22 @@ export default function AuditForm() {
                 </h2>
                 <div className="flex gap-3 flex-wrap mb-2">
                   <Badge variant="secondary" className="text-sm px-3 py-1 tabular-nums">
-                    Total : {Object.values(answers).reduce((s, a) => s + a.score, 0)} / {config.maxPoints} pts
+                    Total : {Object.entries(answers).filter(([,a]) => !a.notApplicable).reduce((s, [,a]) => s + a.score, 0)} / {allItems.filter(i => !answers[i.id]?.notApplicable).reduce((s, i) => s + i.maxPoints, 0)} pts
                   </Badge>
                   <Badge variant="secondary" className="text-sm px-3 py-1 tabular-nums">
-                    Note : {config.maxPoints > 0 ? ((Object.values(answers).reduce((s, a) => s + a.score, 0) / config.maxPoints) * 10).toFixed(1) : "—"}/10
+                    Note : {(() => {
+                      const appMax = allItems.filter(i => !answers[i.id]?.notApplicable).reduce((s, i) => s + i.maxPoints, 0);
+                      const appScore = Object.entries(answers).filter(([,a]) => !a.notApplicable).reduce((s, [,a]) => s + a.score, 0);
+                      return appMax > 0 ? ((appScore / appMax) * 10).toFixed(1) : "—";
+                    })()}/10
                   </Badge>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {categories.map((cat) => {
                     const catItems = allItems.filter((i) => i.categoryId === cat.id);
                     if (catItems.length === 0) return null;
-                    const catMaxPoints = catItems.reduce((sum, i) => sum + i.maxPoints, 0);
-                    const catObtained = catItems.reduce((sum, i) => sum + (answers[i.id]?.score ?? 0), 0);
+                    const catMaxPoints = catItems.filter(i => !answers[i.id]?.notApplicable).reduce((sum, i) => sum + i.maxPoints, 0);
+                    const catObtained = catItems.filter(i => !answers[i.id]?.notApplicable).reduce((sum, i) => sum + (answers[i.id]?.score ?? 0), 0);
                     const pct = catMaxPoints > 0 ? Math.round((catObtained / catMaxPoints) * 100) : 0;
                     return (
                       <div key={cat.id} className="flex-1 min-w-[140px] rounded-xl border border-border bg-muted/30 p-3 space-y-1.5">

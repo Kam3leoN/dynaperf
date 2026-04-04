@@ -144,36 +144,38 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
       for (const cat of config.categories) {
         const catItems = allItems.filter((i) => i.categoryId === cat.id);
         if (catItems.length === 0) continue;
-        const catMax = catItems.reduce((s, i) => s + i.maxPoints, 0);
-        const catObt = catItems.reduce((s, i) => s + (items[i.id]?.score ?? 0), 0);
+        const applicableCatItems = catItems.filter(i => !items[i.id]?.notApplicable);
+        const catMax = applicableCatItems.reduce((s, i) => s + i.maxPoints, 0);
+        const catObt = applicableCatItems.reduce((s, i) => s + (items[i.id]?.score ?? 0), 0);
         html += `<div class="cat-header" style="font-size:14px;">${escapeHtml(cat.name)} <span style="float:right;font-size:11px;font-weight:600;">${catObt}/${catMax} pts</span></div>`;
 
         for (const item of catItems) {
           globalIdx++;
           const answer = items[item.id];
+          const na = answer?.notApplicable === true;
           const score = answer?.score ?? 0;
-          const isMax = score === item.maxPoints;
-          const hasScore = score > 0;
+          const isMax = !na && score === item.maxPoints;
+          const hasScore = !na && score > 0;
           const isTouched = answer !== undefined;
-          const isExplicitZero = isTouched && score === 0;
-          const borderClass = isMax ? "border-emerald" : hasScore ? "border-amber" : isExplicitZero ? "border-red" : "border-muted";
-          const badgeClass = isMax ? "badge-emerald" : hasScore ? "badge-amber" : isExplicitZero ? "badge-red" : "badge-muted";
+          const isExplicitZero = !na && isTouched && score === 0;
+          const borderClass = na ? "border-na" : isMax ? "border-emerald" : hasScore ? "border-amber" : isExplicitZero ? "border-red" : "border-muted";
+          const badgeClass = na ? "badge-na" : isMax ? "badge-emerald" : hasScore ? "badge-amber" : isExplicitZero ? "badge-red" : "badge-muted";
 
-          html += `<div class="item-card ${borderClass} avoid-break">`;
+          html += `<div class="item-card ${borderClass} avoid-break"${na ? ' style="opacity:0.6;"' : ''}>`;
           html += `<div class="item-card-inner">`;
 
           html += `<div class="item-header">`;
           html += `<div style="flex:1;min-width:0;">`;
           html += `<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin-bottom:2px;">`;
-          html += `<span class="item-number">${globalIdx}.</span>`;
+          html += `<span class="item-number" style="font-size:10px;font-weight:600;">${globalIdx}.</span>`;
           html += `<span class="item-title" style="margin-bottom:0;">${escapeHtml(item.title)}</span>`;
-          html += `<span class="badge ${badgeClass}">${score}/${item.maxPoints} pts</span>`;
-          if (item.autoField) {
+          html += `<span style="flex:1;"></span>`;
+          html += `<span class="badge ${badgeClass}" style="font-size:10px;">${na ? "N/A" : `${score}/${item.maxPoints} pts`}</span>`;
+          if (item.autoField && !na) {
             html += `<span class="badge badge-muted">🔒 Auto</span>`;
           }
           html += `</div>`;
           html += `</div>`;
-          html += `<div style="flex-shrink:0;font-size:14px;">${isMax ? '<span class="item-icon-ok">✓</span>' : '<span class="item-icon-ko">✗</span>'}</div>`;
           html += `</div>`;
 
           if (item.description || item.condition) {
@@ -236,8 +238,9 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
       for (const cat of config.categories) {
         const catItems2 = allItems.filter((i) => i.categoryId === cat.id);
         if (catItems2.length === 0) continue;
-        const catMax2 = catItems2.reduce((s, i) => s + i.maxPoints, 0);
-        const catObt2 = catItems2.reduce((s, i) => s + (items[i.id]?.score ?? 0), 0);
+        const applicableItems2 = catItems2.filter(i => !items[i.id]?.notApplicable);
+        const catMax2 = applicableItems2.reduce((s, i) => s + i.maxPoints, 0);
+        const catObt2 = applicableItems2.reduce((s, i) => s + (items[i.id]?.score ?? 0), 0);
         const pct2 = catMax2 > 0 ? Math.round((catObt2 / catMax2) * 100) : 0;
         const color2 = pct2 >= 80 ? "#22c55e" : pct2 >= 50 ? "#f59e0b" : "#ef4444";
         html += `<div style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 8px;">`;
