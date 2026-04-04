@@ -227,6 +227,29 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
         }
       }
 
+      // ── Score global + par catégorie (en fin d'audit) ──
+      html += `<div class="section-title" style="margin-top:16px;">Résultats</div>`;
+      html += `<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">`;
+      html += `<span class="badge badge-secondary">Total : ${detail.total_points ?? "—"} pts</span>`;
+      html += `<span class="badge badge-secondary">Note : ${detail.note_sur_10 ?? note ?? "—"}/10</span>`;
+      html += `</div>`;
+      html += `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:6px;margin-bottom:12px;">`;
+      for (const cat of config.categories) {
+        const catItems2 = allItems.filter((i) => i.categoryId === cat.id);
+        if (catItems2.length === 0) continue;
+        const catMax2 = catItems2.reduce((s, i) => s + i.maxPoints, 0);
+        const catObt2 = catItems2.reduce((s, i) => s + (items[i.id]?.score ?? 0), 0);
+        const pct2 = catMax2 > 0 ? Math.round((catObt2 / catMax2) * 100) : 0;
+        const color2 = pct2 >= 80 ? "#22c55e" : pct2 >= 50 ? "#f59e0b" : "#ef4444";
+        html += `<div style="border:1px solid #e5e7eb;border-radius:8px;padding:6px 8px;">`;
+        html += `<div style="font-size:9px;color:#6b7280;margin-bottom:2px;">${escapeHtml(cat.name)}</div>`;
+        html += `<div style="font-size:13px;font-weight:700;">${catObt2}<span style="font-size:10px;color:#9ca3af;font-weight:400;"> / ${catMax2} pts</span></div>`;
+        html += `<div style="height:4px;border-radius:2px;background:#e5e7eb;margin-top:3px;"><div style="height:100%;border-radius:2px;width:${pct2}%;background:${color2};"></div></div>`;
+        html += `<div style="font-size:9px;color:#6b7280;text-align:right;margin-top:1px;">${pct2}%</div>`;
+        html += `</div>`;
+      }
+      html += `</div>`;
+
       // ── Photos ──
       if (photoUrls.length > 0) {
         html += `<div class="section-title" style="margin-top:16px;">📷 Photos (${photoUrls.length})</div>`;
