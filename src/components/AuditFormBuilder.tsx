@@ -132,7 +132,8 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
   const needsOptions = ["select", "radio", "checkbox"].includes(fieldType);
   const isStatPercent = fieldType === "stat_percent";
   const isStatSum = fieldType === "stat_sum";
-  const needsSources = isStatPercent || isStatSum;
+  const isStatDiff = fieldType === "stat_diff";
+  const needsSources = isStatPercent || isStatSum || isStatDiff;
   const numberFields = fields.filter((f) => f.field_type === "number");
 
   const editorFields = useMemo<LayoutEditorField[]>(() =>
