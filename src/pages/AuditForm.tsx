@@ -103,6 +103,7 @@ export default function AuditForm() {
               comment: ans.comment,
               checklist: ans.checklist,
               rawValue: ans.rawValue,
+              notApplicable: ans.notApplicable ?? false,
             };
           });
           setAnswers(loadedAnswers);

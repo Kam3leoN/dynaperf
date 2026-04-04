@@ -189,6 +189,8 @@ body {
 .border-amber { border-left: 3px solid var(--amber); }
 .border-muted { border-left: 3px solid var(--border); }
 .border-red { border-left: 3px solid var(--red); }
+.border-na { border-left: 3px solid var(--border); }
+.badge-na { background: #f1f5f9; color: var(--text-muted); font-style: italic; }
 
 .item-header {
   display: flex;
