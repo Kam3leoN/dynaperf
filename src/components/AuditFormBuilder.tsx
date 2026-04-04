@@ -284,7 +284,10 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
                 </div>
                 <div className="space-y-1.5">
                   <Label>Type de champ</Label>
-                  <Select value={fieldType} onValueChange={setFieldType}>
+                  <Select value={fieldType} onValueChange={(v) => {
+                    setFieldType(v);
+                    if (["stat_percent", "stat_sum", "stat_diff"].includes(v)) setIsRequired(false);
+                  }}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectGroup>
