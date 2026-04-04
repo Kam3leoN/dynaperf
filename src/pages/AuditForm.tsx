@@ -432,10 +432,14 @@ export default function AuditForm() {
                 </h2>
                 <div className="flex gap-3 flex-wrap mb-2">
                   <Badge variant="secondary" className="text-sm px-3 py-1 tabular-nums">
-                    Total : {Object.values(answers).reduce((s, a) => s + a.score, 0)} / {config.maxPoints} pts
+                    Total : {Object.entries(answers).filter(([,a]) => !a.notApplicable).reduce((s, [,a]) => s + a.score, 0)} / {allItems.filter(i => !answers[i.id]?.notApplicable).reduce((s, i) => s + i.maxPoints, 0)} pts
                   </Badge>
                   <Badge variant="secondary" className="text-sm px-3 py-1 tabular-nums">
-                    Note : {config.maxPoints > 0 ? ((Object.values(answers).reduce((s, a) => s + a.score, 0) / config.maxPoints) * 10).toFixed(1) : "—"}/10
+                    Note : {(() => {
+                      const appMax = allItems.filter(i => !answers[i.id]?.notApplicable).reduce((s, i) => s + i.maxPoints, 0);
+                      const appScore = Object.entries(answers).filter(([,a]) => !a.notApplicable).reduce((s, [,a]) => s + a.score, 0);
+                      return appMax > 0 ? ((appScore / appMax) * 10).toFixed(1) : "—";
+                    })()}/10
                   </Badge>
                 </div>
                 <div className="flex flex-wrap gap-2">
