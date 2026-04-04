@@ -186,7 +186,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
       audit_type_key: auditTypeKey,
       field_label: fieldLabel.trim(),
       field_type: fieldType,
-      is_required: isRequired,
+      is_required: needsSources ? false : isRequired,
       field_options: fieldOpts,
       sort_order: editing ? editing.sort_order : fields.length,
       col_span: colSpan,
