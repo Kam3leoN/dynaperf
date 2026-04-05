@@ -11,8 +11,12 @@ export async function readEdgeFunctionErrorMessage(result: {
     const e = (result.data as { error?: unknown }).error;
     if (typeof e === "string" && e.trim()) return e;
   }
-  const res = result.response;
-  if (!res) return null;
+  const errCtx = result.error as { context?: Response; message?: string } | undefined;
+  const res = result.response ?? errCtx?.context;
+  if (!res) {
+    const m = typeof errCtx?.message === "string" ? errCtx.message.trim() : "";
+    return m && m !== "Edge Function returned a non-2xx status code" ? m : null;
+  }
   try {
     const text = await res.clone().text();
     if (!text?.trim()) return null;

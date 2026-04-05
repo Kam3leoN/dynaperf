@@ -9,6 +9,7 @@ export function useAdmin(providedUser?: User | null) {
   const user = usesProvidedUser ? providedUser : auth.user;
   const authLoading = usesProvidedUser ? false : auth.loading;
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export function useAdmin(providedUser?: User | null) {
 
     if (!user) {
       setIsAdmin(false);
+      setIsSuperAdmin(false);
       setLoading(false);
       return () => {
         cancelled = true;
@@ -33,24 +35,27 @@ export function useAdmin(providedUser?: User | null) {
 
     const check = async () => {
       try {
-        // Check for admin role (has_role now handles super_admin → admin mapping)
-        const { data, error } = await supabase.rpc("has_role", {
-          _user_id: user.id,
-          _role: "admin" as any,
-        });
+        const { data: roleRows, error } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id);
 
         if (cancelled) return;
 
         if (error) {
           console.error("Admin check error:", error);
           setIsAdmin(false);
+          setIsSuperAdmin(false);
         } else {
-          setIsAdmin(Boolean(data));
+          const roles = roleRows?.map((r) => r.role) ?? [];
+          setIsSuperAdmin(roles.includes("super_admin"));
+          setIsAdmin(roles.includes("super_admin") || roles.includes("admin"));
         }
       } catch (e) {
         if (!cancelled) {
           console.error("Admin check failed:", e);
           setIsAdmin(false);
+          setIsSuperAdmin(false);
         }
       } finally {
         if (!cancelled) {
@@ -66,5 +71,5 @@ export function useAdmin(providedUser?: User | null) {
     };
   }, [authLoading, user?.id]);
 
-  return { isAdmin, loading };
+  return { isAdmin, isSuperAdmin, loading };
 }

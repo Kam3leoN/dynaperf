@@ -320,11 +320,11 @@ export default function Sondages() {
           <div className="space-y-4">
             <div className="space-y-1.5">
               <Label>Titre *</Label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Votre question…" />
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Votre question…" onEnterSubmit={() => void save()} />
             </div>
             <div className="space-y-1.5">
               <Label>Description</Label>
-              <RichTextEditor value={description} onChange={setDescription} placeholder="Contexte ou détails…" />
+              <RichTextEditor value={description} onChange={setDescription} placeholder="Contexte ou détails…" onEnterSubmit={() => void save()} />
             </div>
             <div className="flex items-center gap-3">
               <Switch checked={isMultiple} onCheckedChange={setIsMultiple} id="multi" />
@@ -332,7 +332,7 @@ export default function Sondages() {
             </div>
             <div className="space-y-1.5">
               <Label>Date de fin (optionnel)</Label>
-              <Input type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
+              <Input type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} onEnterSubmit={() => void save()} />
             </div>
             <div className="space-y-2">
               <Label>Options *</Label>
@@ -346,6 +346,7 @@ export default function Sondages() {
                       setOptionLabels(next);
                     }}
                     placeholder={`Option ${i + 1}`}
+                    onEnterSubmit={() => void save()}
                   />
                   {optionLabels.length > 2 && (
                     <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" onClick={() => setOptionLabels(optionLabels.filter((_, j) => j !== i))}>

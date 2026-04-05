@@ -69,10 +69,12 @@ export function GamificationWidget({ streaks, earnedBadges, allBadges }: Props) 
                       {badge.icon}
                     </motion.div>
                   </TooltipTrigger>
-                  <TooltipContent side="top" className="text-xs">
-                    <p className="font-semibold">{badge.label}</p>
-                    <p className="text-muted-foreground">{badge.description}</p>
-                    {!earned && <p className="text-primary text-[10px] mt-0.5">Non débloqué</p>}
+                  <TooltipContent side="top">
+                    <p>{badge.label}</p>
+                    <p className="mt-0.5 font-normal text-white/70">{badge.description}</p>
+                    {!earned && (
+                      <p className="mt-0.5 text-[10px] font-semibold text-primary">Non débloqué</p>
+                    )}
                   </TooltipContent>
                 </Tooltip>
               );

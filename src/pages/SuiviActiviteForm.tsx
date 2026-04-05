@@ -153,6 +153,10 @@ export default function SuiviActiviteForm() {
     navigate("/activite");
   };
 
+  const enterSaveSuivi = () => {
+    void handleSave();
+  };
+
   if (loading) {
     return (
       <AppLayout>
@@ -194,6 +198,7 @@ export default function SuiviActiviteForm() {
                   onChange={setPartenaire}
                   suggestions={partenaires.map((p) => `${p.prenom} ${p.nom.toUpperCase()}`)}
                   placeholder="ex: Émilie BLAISE"
+                  onEnterSubmit={enterSaveSuivi}
                 />
               </M3Field>
               <M3Field label="Partenaire référent (Prénom NOM)" filled={!!accompagnePar}>
@@ -202,6 +207,7 @@ export default function SuiviActiviteForm() {
                   onChange={setAccompagnePar}
                   suggestions={partenaires.map((p) => `${p.prenom} ${p.nom.toUpperCase()}`)}
                   placeholder="ex: Marie DUPONT"
+                  onEnterSubmit={enterSaveSuivi}
                 />
               </M3Field>
               <M3Field label="Suivi réalisé par" required filled={!!suiviPar}>
@@ -217,7 +223,7 @@ export default function SuiviActiviteForm() {
                     </SelectContent>
                   </Select>
                 ) : (
-                  <Input value={suiviPar} onChange={(e) => setSuiviPar(e.target.value)} placeholder="ex: Cédric MALZAT" />
+                  <Input value={suiviPar} onChange={(e) => setSuiviPar(e.target.value)} placeholder="ex: Cédric MALZAT" onEnterSubmit={enterSaveSuivi} />
                 )}
               </M3Field>
               <M3Field label="Date de l'entretien" required filled={!!dateEntretien}>
@@ -234,10 +240,10 @@ export default function SuiviActiviteForm() {
                 </Popover>
               </M3Field>
               <M3Field label="Nb contrats total depuis début d'année" filled={!!nbContratsTotal}>
-                <Input type="number" min={0} value={nbContratsTotal} onChange={(e) => setNbContratsTotal(e.target.value)} />
+                <Input type="number" min={0} value={nbContratsTotal} onChange={(e) => setNbContratsTotal(e.target.value)} onEnterSubmit={enterSaveSuivi} />
               </M3Field>
               <M3Field label="Nb contrats depuis dernier entretien" filled={!!nbContratsDernier}>
-                <Input type="number" min={0} value={nbContratsDernier} onChange={(e) => setNbContratsDernier(e.target.value)} />
+                <Input type="number" min={0} value={nbContratsDernier} onChange={(e) => setNbContratsDernier(e.target.value)} onEnterSubmit={enterSaveSuivi} />
               </M3Field>
             </div>
           </div>

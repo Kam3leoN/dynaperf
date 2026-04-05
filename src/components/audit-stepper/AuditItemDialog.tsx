@@ -330,7 +330,16 @@ export function AuditItemDialog({
           <Label className={cn("text-xs", notApplicable ? "text-destructive font-semibold" : "text-muted-foreground")}>
             Commentaire {notApplicable ? "(obligatoire)" : "(optionnel)"}
           </Label>
-          <RichTextEditor value={comment} onChange={setComment} placeholder={notApplicable ? "Justifiez pourquoi cet item n'est pas applicable..." : "Ajouter un commentaire..."} rows={2} />
+          <RichTextEditor
+            value={comment}
+            onChange={setComment}
+            placeholder={notApplicable ? "Justifiez pourquoi cet item n'est pas applicable..." : "Ajouter un commentaire..."}
+            rows={2}
+            onEnterSubmit={() => {
+              if (notApplicable && !comment.trim()) return;
+              handleSubmit();
+            }}
+          />
           {notApplicable && !comment.trim() && (
             <p className="text-xs text-destructive">Un commentaire est requis pour les items non applicables.</p>
           )}

@@ -349,6 +349,16 @@ export default function AdminAuditGridInline() {
     loadData();
   };
 
+  const enterSaveType = () => {
+    if (typeKey.trim() && typeLabel.trim()) void saveType();
+  };
+  const enterSaveCat = () => {
+    if (catName.trim()) void saveCat();
+  };
+  const enterSaveItem = () => {
+    if (itemForm.title.trim()) void saveItem();
+  };
+
   const deleteItem = async (id: string) => {
     if (!confirm("Supprimer cet item ?")) return;
     const { error } = await supabase.from("audit_items_config").delete().eq("id", id);
@@ -658,14 +668,14 @@ export default function AdminAuditGridInline() {
             <DialogDescription>{editingType ? "Modifiez la clé et le libellé." : "Créez un nouveau type d'événement à auditer."}</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
-            <div className="space-y-1.5"><Label>Clé (identifiant)</Label><Input value={typeKey} onChange={(e) => setTypeKey(e.target.value)} placeholder="ex: RD Présentiel" /></div>
-            <div className="space-y-1.5"><Label>Libellé</Label><Input value={typeLabel} onChange={(e) => setTypeLabel(e.target.value)} placeholder="ex: Rencontre Dirigeants Présentiel" /></div>
-            <div className="space-y-1.5"><Label>Label de version</Label><Input value={typeVersionLabel} onChange={(e) => setTypeVersionLabel(e.target.value)} placeholder="ex: V1, v3.0, 2026-Q1…" /></div>
+            <div className="space-y-1.5"><Label>Clé (identifiant)</Label><Input value={typeKey} onChange={(e) => setTypeKey(e.target.value)} placeholder="ex: RD Présentiel" onEnterSubmit={enterSaveType} /></div>
+            <div className="space-y-1.5"><Label>Libellé</Label><Input value={typeLabel} onChange={(e) => setTypeLabel(e.target.value)} placeholder="ex: Rencontre Dirigeants Présentiel" onEnterSubmit={enterSaveType} /></div>
+            <div className="space-y-1.5"><Label>Label de version</Label><Input value={typeVersionLabel} onChange={(e) => setTypeVersionLabel(e.target.value)} placeholder="ex: V1, v3.0, 2026-Q1…" onEnterSubmit={enterSaveType} /></div>
             <div className="space-y-1.5">
               <Label>Couleur</Label>
               <div className="flex items-center gap-2">
                 <input type="color" value={typeColor || "#6b7280"} onChange={(e) => setTypeColor(e.target.value)} className="w-10 h-10 rounded-lg border border-border cursor-pointer" />
-                <Input value={typeColor} onChange={(e) => setTypeColor(e.target.value)} placeholder="#ee4540" className="flex-1" />
+                <Input value={typeColor} onChange={(e) => setTypeColor(e.target.value)} placeholder="#ee4540" className="flex-1" onEnterSubmit={enterSaveType} />
               </div>
             </div>
           </div>
@@ -686,7 +696,7 @@ export default function AdminAuditGridInline() {
           </DialogHeader>
           <div className="space-y-3 py-2">
             <Label>Nom</Label>
-            <Input value={catName} onChange={(e) => setCatName(e.target.value)} placeholder="ex: Préparation" />
+            <Input value={catName} onChange={(e) => setCatName(e.target.value)} placeholder="ex: Préparation" onEnterSubmit={enterSaveCat} />
           </div>
           <DialogFooter>
             <Button onClick={saveCat} disabled={!catName.trim()} className="gap-1.5">
@@ -706,17 +716,17 @@ export default function AdminAuditGridInline() {
           <div className="space-y-4 py-2">
             <div className="space-y-1.5">
               <Label>Titre *</Label>
-              <Input value={itemForm.title} onChange={(e) => setItemForm({ ...itemForm, title: e.target.value })} />
+              <Input value={itemForm.title} onChange={(e) => setItemForm({ ...itemForm, title: e.target.value })} onEnterSubmit={enterSaveItem} />
             </div>
             <div className="space-y-1.5">
               <Label>Description</Label>
-              <RichTextEditor value={itemForm.description} onChange={(val) => setItemForm({ ...itemForm, description: val })} rows={3} />
+              <RichTextEditor value={itemForm.description} onChange={(val) => setItemForm({ ...itemForm, description: val })} rows={3} onEnterSubmit={enterSaveItem} />
             </div>
             <div className="grid grid-cols-2 gap-4">
               {itemForm.input_type !== "number" && (
                 <div className="space-y-1.5">
                   <Label>Points max</Label>
-                  <Input type="number" min={1} value={itemForm.max_points} onChange={(e) => setItemForm({ ...itemForm, max_points: parseInt(e.target.value) || 1 })} />
+                  <Input type="number" min={1} value={itemForm.max_points} onChange={(e) => setItemForm({ ...itemForm, max_points: parseInt(e.target.value) || 1 })} onEnterSubmit={enterSaveItem} />
                 </div>
               )}
               <div className="space-y-1.5">
@@ -806,15 +816,15 @@ export default function AdminAuditGridInline() {
                     <div className="flex items-center gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs">Valeur min.</Label>
-                        <Input type="number" min={0} value={incrementMin} onChange={(e) => setIncrementMin(parseInt(e.target.value) || 0)} className="w-20 h-9 text-xs" />
+                        <Input type="number" min={0} value={incrementMin} onChange={(e) => setIncrementMin(parseInt(e.target.value) || 0)} className="w-20 h-9 text-xs" onEnterSubmit={enterSaveItem} />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs">Max points</Label>
-                        <Input type="number" min={1} value={itemForm.max_points} onChange={(e) => setItemForm({ ...itemForm, max_points: parseInt(e.target.value) || 1 })} className="w-20 h-9 text-xs" />
+                        <Input type="number" min={1} value={itemForm.max_points} onChange={(e) => setItemForm({ ...itemForm, max_points: parseInt(e.target.value) || 1 })} className="w-20 h-9 text-xs" onEnterSubmit={enterSaveItem} />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs">Pas (incrément)</Label>
-                        <Input type="number" min={1} value={incrementStep} onChange={(e) => setIncrementStep(parseInt(e.target.value) || 1)} className="w-20 h-9 text-xs" />
+                        <Input type="number" min={1} value={incrementStep} onChange={(e) => setIncrementStep(parseInt(e.target.value) || 1)} className="w-20 h-9 text-xs" onEnterSubmit={enterSaveItem} />
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground italic">
@@ -842,11 +852,11 @@ export default function AdminAuditGridInline() {
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs">Seuil</Label>
-                        <Input type="number" value={thresholdValue} onChange={(e) => setThresholdValue(parseInt(e.target.value) || 0)} className="w-20 h-9 text-xs" />
+                        <Input type="number" value={thresholdValue} onChange={(e) => setThresholdValue(parseInt(e.target.value) || 0)} className="w-20 h-9 text-xs" onEnterSubmit={enterSaveItem} />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs">Points si validé</Label>
-                        <Input type="number" min={1} value={itemForm.max_points} onChange={(e) => setItemForm({ ...itemForm, max_points: parseInt(e.target.value) || 1 })} className="w-20 h-9 text-xs" />
+                        <Input type="number" min={1} value={itemForm.max_points} onChange={(e) => setItemForm({ ...itemForm, max_points: parseInt(e.target.value) || 1 })} className="w-20 h-9 text-xs" onEnterSubmit={enterSaveItem} />
                       </div>
                     </div>
                     <p className="text-xs text-muted-foreground italic">
@@ -859,11 +869,11 @@ export default function AdminAuditGridInline() {
                   <div className="space-y-2">
                     {scoringTiers.map((tier, idx) => (
                       <div key={idx} className="flex items-center gap-2">
-                        <Input type="number" min={0} value={tier.min} onChange={(e) => updateTier(idx, "min", parseInt(e.target.value) || 0)} className="w-20 h-9 text-xs" placeholder="Min" />
+                        <Input type="number" min={0} value={tier.min} onChange={(e) => updateTier(idx, "min", parseInt(e.target.value) || 0)} className="w-20 h-9 text-xs" placeholder="Min" onEnterSubmit={enterSaveItem} />
                         <span className="text-xs text-muted-foreground">à</span>
-                        <Input type="number" min={0} value={tier.max ?? ""} onChange={(e) => updateTier(idx, "max", e.target.value === "" ? null : parseInt(e.target.value) || 0)} className="w-20 h-9 text-xs" placeholder="∞" />
+                        <Input type="number" min={0} value={tier.max ?? ""} onChange={(e) => updateTier(idx, "max", e.target.value === "" ? null : parseInt(e.target.value) || 0)} className="w-20 h-9 text-xs" placeholder="∞" onEnterSubmit={enterSaveItem} />
                         <span className="text-xs text-muted-foreground">→</span>
-                        <Input type="number" min={0} value={tier.points} onChange={(e) => updateTier(idx, "points", parseInt(e.target.value) || 0)} className="w-16 h-9 text-xs" placeholder="Pts" />
+                        <Input type="number" min={0} value={tier.points} onChange={(e) => updateTier(idx, "points", parseInt(e.target.value) || 0)} className="w-16 h-9 text-xs" placeholder="Pts" onEnterSubmit={enterSaveItem} />
                         <span className="text-xs text-muted-foreground">pts</span>
                         <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => removeTier(idx)}>
                           <FontAwesomeIcon icon={faXmark} className="h-3 w-3 text-muted-foreground" />
@@ -880,26 +890,26 @@ export default function AdminAuditGridInline() {
 
             <div className="space-y-1.5">
               <Label>Conditions de validation</Label>
-              <RichTextEditor value={itemForm.condition} onChange={(val) => setItemForm({ ...itemForm, condition: val })} rows={2} />
+              <RichTextEditor value={itemForm.condition} onChange={(val) => setItemForm({ ...itemForm, condition: val })} rows={2} onEnterSubmit={enterSaveItem} />
             </div>
             {scoringMode === "none" && (
               <div className="space-y-1.5">
                 <Label>Règles de scoring (optionnel)</Label>
-                <RichTextEditor value={itemForm.scoring_rules} onChange={(val) => setItemForm({ ...itemForm, scoring_rules: val })} rows={2} />
+                <RichTextEditor value={itemForm.scoring_rules} onChange={(val) => setItemForm({ ...itemForm, scoring_rules: val })} rows={2} onEnterSubmit={enterSaveItem} />
               </div>
             )}
             <div className="space-y-1.5">
               <Label>Quel intérêt ?</Label>
-              <RichTextEditor value={itemForm.interets} onChange={(val) => setItemForm({ ...itemForm, interets: val })} rows={2} placeholder="Expliquez l'intérêt de ce critère…" />
+              <RichTextEditor value={itemForm.interets} onChange={(val) => setItemForm({ ...itemForm, interets: val })} rows={2} placeholder="Expliquez l'intérêt de ce critère…" onEnterSubmit={enterSaveItem} />
             </div>
             <div className="space-y-1.5">
               <Label>Comment y parvenir ?</Label>
-              <RichTextEditor value={itemForm.comment_y_parvenir} onChange={(val) => setItemForm({ ...itemForm, comment_y_parvenir: val })} rows={2} placeholder="Conseils pour atteindre ce critère…" />
+              <RichTextEditor value={itemForm.comment_y_parvenir} onChange={(val) => setItemForm({ ...itemForm, comment_y_parvenir: val })} rows={2} placeholder="Conseils pour atteindre ce critère…" onEnterSubmit={enterSaveItem} />
             </div>
             {itemForm.input_type === "checklist" && (
               <div className="space-y-1.5">
                 <Label>Éléments de la checklist (1 par ligne)</Label>
-                <RichTextEditor value={itemForm.checklist_items} onChange={(val) => setItemForm({ ...itemForm, checklist_items: val })} rows={6} placeholder={"Ordinateur, micro, sono...\nLa présentation officielle (PPT)\nLe logiciel Dynamatch"} />
+                <RichTextEditor value={itemForm.checklist_items} onChange={(val) => setItemForm({ ...itemForm, checklist_items: val })} rows={6} placeholder={"Ordinateur, micro, sono...\nLa présentation officielle (PPT)\nLe logiciel Dynamatch"} onEnterSubmit={enterSaveItem} />
               </div>
             )}
           </div>

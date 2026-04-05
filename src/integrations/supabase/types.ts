@@ -629,6 +629,8 @@ export type Database = {
           created_at: string
           created_by: string
           id: string
+          is_public: boolean
+          kind: string
           name: string
           updated_at: string
         }
@@ -637,6 +639,8 @@ export type Database = {
           created_at?: string
           created_by: string
           id?: string
+          is_public?: boolean
+          kind?: string
           name: string
           updated_at?: string
         }
@@ -645,6 +649,8 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
+          is_public?: boolean
+          kind?: string
           name?: string
           updated_at?: string
         }
@@ -776,7 +782,10 @@ export type Database = {
           content: string
           created_at: string
           group_id: string | null
+          group_send_id: string | null
           id: string
+          pinned_at: string | null
+          pinned_by: string | null
           read: boolean
           recipient_id: string
           sender_id: string
@@ -785,7 +794,10 @@ export type Database = {
           content: string
           created_at?: string
           group_id?: string | null
+          group_send_id?: string | null
           id?: string
+          pinned_at?: string | null
+          pinned_by?: string | null
           read?: boolean
           recipient_id: string
           sender_id: string
@@ -794,7 +806,10 @@ export type Database = {
           content?: string
           created_at?: string
           group_id?: string | null
+          group_send_id?: string | null
           id?: string
+          pinned_at?: string | null
+          pinned_by?: string | null
           read?: boolean
           recipient_id?: string
           sender_id?: string
@@ -808,6 +823,59 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_presence: {
+        Row: {
+          expires_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          expires_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -1432,6 +1500,10 @@ export type Database = {
       record_activity: {
         Args: { p_score?: number; p_type: string }
         Returns: Json
+      }
+      set_message_pin_state: {
+        Args: { p_message_id: string; p_pinned: boolean }
+        Returns: undefined
       }
     }
     Enums: {

@@ -10,6 +10,7 @@ import { useAdmin } from "@/hooks/useAdmin";
 import { SplashScreen } from "@/components/SplashScreen";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
+import { MessagingSidebarProvider } from "@/contexts/MessagingSidebarContext";
 
 // Eagerly loaded (critical path)
 import Welcome from "./pages/Welcome";
@@ -101,6 +102,7 @@ const App = () => {
             {!splashDone && <SplashScreen onFinished={() => setSplashDone(true)} />}
             {splashDone && (
             <BrowserRouter basename={routerBase}>
+              <MessagingSidebarProvider>
               <Routes>
                 <Route path="/" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
                 <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
@@ -135,6 +137,7 @@ const App = () => {
                 <Route path="/reset-password" element={<Suspense fallback={<FullPageLoader />}><ResetPassword /></Suspense>} />
                 <Route path="*" element={<Suspense fallback={<FullPageLoader />}><NotFound /></Suspense>} />
               </Routes>
+              </MessagingSidebarProvider>
             </BrowserRouter>
             )}
           </TooltipProvider>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
+import type { Database } from "@/integrations/supabase/types";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faChevronDown, faChevronUp, faCamera, faEye, faEyeSlash, faDownload, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
@@ -242,6 +244,7 @@ function BackupButton() {
 export default function Admin() {
   const navigate = useNavigate();
   const { user: currentUser } = useAuth();
+  const { isSuperAdmin, loading: adminRolesLoading } = useAdmin(currentUser);
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -299,6 +302,50 @@ export default function Admin() {
 
   useEffect(() => { loadUsers(); }, [loadUsers]);
 
+  /** Rôle via PostgREST (RLS admin) ; repli Edge si refus / erreur (ex. déploiement Pages). */
+  const applySetUserRole = useCallback(
+    async (userId: string, role: string): Promise<boolean> => {
+      if (adminRolesLoading) {
+        toast.error("Veuillez patienter, vérification des droits…");
+        return false;
+      }
+      const viewerIsSuperAdmin = isSuperAdmin;
+      const target = users.find((u) => u.id === userId);
+      const targetTopRole = target ? getUserRole(target) : "";
+      if (targetTopRole === "super_admin" && !viewerIsSuperAdmin) {
+        toast.error("Seul un super admin peut modifier le rôle d'un super admin.");
+        return false;
+      }
+      if (role === "super_admin" && !viewerIsSuperAdmin) {
+        toast.error("Seul un super admin peut attribuer ce rôle.");
+        return false;
+      }
+
+      const { error: delErr } = await supabase.from("user_roles").delete().eq("user_id", userId);
+      if (delErr) {
+        const res = await supabase.functions.invoke("create-user", {
+          body: { action: "set-role", userId, role },
+        });
+        return !(await toastEdgeInvokeFailure(res, "Erreur lors du changement de rôle"));
+      }
+
+      if (role !== "none") {
+        const { error: insErr } = await supabase.from("user_roles").insert({
+          user_id: userId,
+          role: role as Database["public"]["Enums"]["app_role"],
+        });
+        if (insErr) {
+          const res = await supabase.functions.invoke("create-user", {
+            body: { action: "set-role", userId, role },
+          });
+          return !(await toastEdgeInvokeFailure(res, "Erreur lors du changement de rôle"));
+        }
+      }
+      return true;
+    },
+    [users, currentUser?.id, isSuperAdmin, adminRolesLoading],
+  );
+
   const resetCreateForm = () => {
     setEmail(""); setPassword(""); setNewFirstName(""); setNewLastName("");
     setNewRole("lecteur");
@@ -342,16 +389,17 @@ export default function Admin() {
     } else {
       // Upload avatar if provided
       if (avatarFile && res.data?.user?.id) {
-        const up = await uploadUserAvatarToBucket(res.data.user.id, avatarFile);
+        const newId = res.data.user.id;
+        const up = await uploadUserAvatarToBucket(newId, avatarFile);
         if (up.ok) {
-          const sav = await supabase.functions.invoke("create-user", {
-            body: {
-              action: "save-avatar",
-              userId: res.data.user.id,
-              avatar_url: withAvatarCacheBust(up.publicUrl),
-            },
-          });
-          await toastEdgeInvokeFailure(sav, "Impossible d'enregistrer l'URL de l'avatar");
+          const url = withAvatarCacheBust(up.publicUrl);
+          const { error: dbErr } = await supabase.from("profiles").update({ avatar_url: url }).eq("user_id", newId);
+          if (dbErr) {
+            const sav = await supabase.functions.invoke("create-user", {
+              body: { action: "save-avatar", userId: newId, avatar_url: url },
+            });
+            await toastEdgeInvokeFailure(sav, "Impossible d'enregistrer l'URL de l'avatar");
+          }
         } else {
           toast.error(up.message);
         }
@@ -378,12 +426,8 @@ export default function Admin() {
   };
 
   const handleSetRole = async (userId: string, role: string) => {
-    const res = await supabase.functions.invoke("create-user", {
-      body: { action: "set-role", userId, role },
-    });
-    if (await toastEdgeInvokeFailure(res, "Erreur lors du changement de rôle")) {
-      /* */
-    } else {
+    const ok = await applySetUserRole(userId, role);
+    if (ok) {
       toast.success("Rôle mis à jour");
       loadUsers();
     }
@@ -395,8 +439,15 @@ export default function Admin() {
       toast.error(up.message);
       return;
     }
+    const url = withAvatarCacheBust(up.publicUrl);
+    const { error: dbErr } = await supabase.from("profiles").update({ avatar_url: url }).eq("user_id", userId);
+    if (!dbErr) {
+      toast.success("Avatar mis à jour");
+      loadUsers();
+      return;
+    }
     const sav = await supabase.functions.invoke("create-user", {
-      body: { action: "save-avatar", userId, avatar_url: withAvatarCacheBust(up.publicUrl) },
+      body: { action: "save-avatar", userId, avatar_url: url },
     });
     if (await toastEdgeInvokeFailure(sav, "Impossible d'enregistrer l'avatar")) return;
     toast.success("Avatar mis à jour");
@@ -434,10 +485,8 @@ export default function Admin() {
 
     // Update role if changed and not admin
     if (editRole !== role) {
-      const roleRes = await supabase.functions.invoke("create-user", {
-        body: { action: "set-role", userId: editUser.id, role: editRole },
-      });
-      if (await toastEdgeInvokeFailure(roleRes, "Erreur lors du changement de rôle")) {
+      const roleOk = await applySetUserRole(editUser.id, editRole);
+      if (!roleOk) {
         setEditSaving(false);
         return;
       }
@@ -487,13 +536,15 @@ export default function Admin() {
     setEditSaving(false);
   };
 
-  const currentUserRole = users.find(u => u.id === currentUser?.id);
-  const isSuperAdmin = currentUserRole ? getUserRole(currentUserRole) === "super_admin" : false;
+  /** Liste / mobile : un admin classique ne modifie pas les rôles admin/super ; un super admin peut tout changer. */
+  const canChangeUserRoleFromList = (u: ManagedUser) => {
+    const r = getUserRole(u);
+    return !((r === "admin" || r === "super_admin") && !isSuperAdmin);
+  };
   const filtered = users.filter((u) => matchesSearch(u, searchQuery));
 
   const MobileCard = ({ u }: { u: ManagedUser }) => {
     const role = getUserRole(u);
-    const isAdminOrAbove = role === "admin" || role === "super_admin";
     const isSuperAdminUser = role === "super_admin";
     const isExpanded = expandedUser === u.id;
     return (
@@ -530,8 +581,7 @@ export default function Admin() {
           </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <RoleBadge role={role} />
-          {!isAdminOrAbove && (
+          {canChangeUserRoleFromList(u) ? (
             <Select value={role} onValueChange={(v) => handleSetRole(u.id, v)}>
               <SelectTrigger className="w-[120px] h-7 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -541,6 +591,8 @@ export default function Admin() {
                 {isSuperAdmin && <SelectItem value="super_admin">Super Admin</SelectItem>}
               </SelectContent>
             </Select>
+          ) : (
+            <RoleBadge role={role} />
           )}
         </div>
         {isExpanded && (
@@ -559,7 +611,7 @@ export default function Admin() {
             <TabsTrigger value="audits">Audits</TabsTrigger>
             <TabsTrigger value="secteurs">Secteurs</TabsTrigger>
           </TabsList>
-          {currentUser && users.find(u => u.id === currentUser.id)?.roles.includes("super_admin") && (
+          {currentUser && isSuperAdmin && (
             <BackupButton />
           )}
         </div>
@@ -634,6 +686,8 @@ export default function Admin() {
                       <SelectContent>
                         <SelectItem value="lecteur">Lecteur</SelectItem>
                         <SelectItem value="redacteur">Rédacteur</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                        {isSuperAdmin && <SelectItem value="super_admin">Super Admin</SelectItem>}
                       </SelectContent>
                     </Select>
                   </div>
@@ -707,7 +761,6 @@ export default function Admin() {
                   <AnimatePresence>
                     {filtered.map((u) => {
                       const role = getUserRole(u);
-                      const isAdminOrAbove = role === "admin" || role === "super_admin";
                       const isSuperAdminUser = role === "super_admin";
                       const isExpanded = expandedUser === u.id;
                       return (
@@ -724,11 +777,7 @@ export default function Admin() {
                           <TableCell className="text-sm font-medium">{u.displayName}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
                           <TableCell>
-                            {isAdminOrAbove && !isSuperAdmin ? (
-                              <RoleBadge role={role} />
-                            ) : isSuperAdminUser ? (
-                              <RoleBadge role={role} />
-                            ) : (
+                            {canChangeUserRoleFromList(u) ? (
                               <Select value={role} onValueChange={(v) => handleSetRole(u.id, v)}>
                                 <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue /></SelectTrigger>
                                 <SelectContent>
@@ -738,6 +787,8 @@ export default function Admin() {
                                   {isSuperAdmin && <SelectItem value="super_admin">Super Admin</SelectItem>}
                                 </SelectContent>
                               </Select>
+                            ) : (
+                              <RoleBadge role={role} />
                             )}
                           </TableCell>
                           <TableCell className="text-sm tabular-nums text-muted-foreground">

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -58,14 +58,30 @@ export interface RichTextEditorProps {
   disabled?: boolean;
   /** If true, use minimal toolbar (just emoji) — good for chat/comments */
   minimal?: boolean;
+  /**
+   * Messagerie : la zone grandit avec les lignes (plafond + défilement), type Discord.
+   * N’a d’effet qu’avec `minimal`.
+   */
+  autoGrow?: boolean;
+  /**
+   * Entrée seule déclenche l’action (ex. envoyer / enregistrer) ; Maj+Entrée conserve un saut de ligne.
+   */
+  onEnterSubmit?: () => void;
 }
 
-export function RichTextEditor({ value, onChange, placeholder, className, rows = 3, disabled, minimal }: RichTextEditorProps) {
+/** Barre de formatage : émoticônes toujours à droite. Usages recensés : Messages, Sondages, SuiviActiviteForm, AdminAuditGrid, StepZeroForm, AuditItemDialog, AuditItemCard, rich-textarea. */
+export function RichTextEditor({ value, onChange, placeholder, className, rows = 3, disabled, minimal, autoGrow, onEnterSubmit }: RichTextEditorProps) {
   const [emojiOpen, setEmojiOpen] = useState(false);
   const [colorOpen, setColorOpen] = useState(false);
   const [highlightOpen, setHighlightOpen] = useState(false);
 
-  const minHeightPx = Math.max(rows * 24, 48);
+  const onEnterSubmitRef = useRef(onEnterSubmit);
+  useEffect(() => {
+    onEnterSubmitRef.current = onEnterSubmit;
+  }, [onEnterSubmit]);
+
+  /** Mode chat compact : 48px mini ; avec `autoGrow` la hauteur suit le contenu jusqu’au cap parent. */
+  const minHeightPx = minimal ? Math.max(rows * 26, 48) : Math.max(rows * 24, 48);
 
   const editor = useEditor({
     extensions: [
@@ -93,12 +109,26 @@ export function RichTextEditor({ value, onChange, placeholder, className, rows =
     editorProps: {
       attributes: {
         class: cn(
-          "rich-text-editor-root prose prose-sm dark:prose-invert max-w-none focus:outline-none px-3 py-2 text-sm",
+          "rich-text-editor-root dark:prose-invert max-w-none focus:outline-none",
+          minimal && autoGrow
+            ? "prose min-h-[48px] w-full px-2 py-0 text-[15px] leading-snug [&_p]:m-0 [&_p]:my-2 [&_p]:min-h-0 [&_p]:text-[15px] [&_p]:leading-snug first:[&_p]:mt-0 last:[&_p]:mb-0 [&_.ProseMirror>p.is-editor-empty:first-child::before]:text-[15px]"
+            : minimal
+              ? "prose flex min-h-[48px] max-h-12 items-center px-2 py-0 text-[15px] leading-snug [&_p]:m-0 [&_p]:min-h-0 [&_p]:text-[15px] [&_p]:leading-snug first:[&_p]:mt-0 last:[&_p]:mb-0 [&_.ProseMirror>p.is-editor-empty:first-child::before]:text-[15px]"
+              : "prose prose-sm px-3 py-2 text-sm",
         ),
         style: `min-height: ${minHeightPx}px`,
       },
+      handleKeyDown: (_view, event) => {
+        if (!onEnterSubmitRef.current) return false;
+        if (event.key === "Enter" && !event.shiftKey) {
+          event.preventDefault();
+          onEnterSubmitRef.current();
+          return true;
+        }
+        return false;
+      },
     },
-  }, []);
+  }, [minimal, autoGrow, rows, placeholder]);
 
   const lastValueRef = useRef(value);
   if (editor && value !== lastValueRef.current) {
@@ -140,15 +170,79 @@ export function RichTextEditor({ value, onChange, placeholder, className, rows =
     </button>
   );
 
+  const emojiPopover = (
+    <Popover open={emojiOpen} onOpenChange={setEmojiOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md p-1 transition-colors hover:bg-accent"
+          title="Émoticône"
+        >
+          <FontAwesomeIcon icon={faFaceSmile} className={minimal ? "h-7 w-7" : "h-6 w-6"} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[22rem] p-2.5" align="end" sideOffset={8}>
+        <div className="grid grid-cols-8 gap-1 sm:grid-cols-10">
+          {EMOJI_LIST.map((emoji) => (
+            <button
+              key={emoji}
+              type="button"
+              onClick={() => insertEmoji(emoji)}
+              className="box-border flex aspect-square h-10 w-full min-w-0 max-h-10 items-center justify-center rounded-md p-1 text-[26px] leading-none transition-colors hover:bg-accent"
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+
+  if (minimal) {
+    if (autoGrow) {
+      return (
+        <div
+          className={cn(
+            "flex min-h-12 w-full min-w-0 flex-col overflow-hidden rounded-md border-2 border-input bg-background ring-offset-background transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+            disabled && "cursor-not-allowed opacity-50",
+            className,
+          )}
+        >
+          <div className="flex w-full min-w-0 items-end gap-1 px-0">
+            <div className="min-h-[48px] max-h-[min(45vh,22rem)] min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain [&_.ProseMirror]:block [&_.ProseMirror]:min-h-[3rem] [&_.ProseMirror]:max-w-full [&_.ProseMirror]:py-2 [&_.ProseMirror]:text-[15px] [&_.ProseMirror]:leading-snug">
+              <EditorContent editor={editor} />
+            </div>
+            <div className="flex shrink-0 self-end pb-1">{emojiPopover}</div>
+          </div>
+        </div>
+      );
+    }
+    return (
+      <div
+        className={cn(
+          "h-12 max-h-12 min-h-12 overflow-hidden rounded-md border-2 border-input bg-background ring-offset-background transition-colors focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2",
+          disabled && "cursor-not-allowed opacity-50",
+          className,
+        )}
+      >
+        <div className="flex h-12 w-full max-h-12 min-h-12 items-center gap-1 px-0">
+          <div className="min-h-0 min-w-0 flex-1 [&_.ProseMirror]:flex [&_.ProseMirror]:min-h-0 [&_.ProseMirror]:max-h-12 [&_.ProseMirror]:items-center [&_.ProseMirror]:overflow-y-auto [&_.ProseMirror]:py-0 [&_.ProseMirror]:text-[15px] [&_.ProseMirror]:leading-snug">
+            <EditorContent editor={editor} />
+          </div>
+          <div className="flex shrink-0 items-center">{emojiPopover}</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={cn(
       "rounded-md border border-input bg-background ring-offset-background focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 transition-colors",
       disabled && "opacity-50 cursor-not-allowed",
       className,
     )}>
-      <div className="flex items-center gap-0.5 px-1.5 py-1 border-b border-border/50 flex-wrap">
-        {!minimal && (
-          <>
+      <div className="flex w-full min-h-8 items-center gap-0.5 border-b border-border/50 px-1.5 py-1">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-0.5">
             <ToolBtn onClick={() => editor.chain().focus().toggleBold().run()} active={editor.isActive("bold")} icon={faBold} title="Gras" />
             <ToolBtn onClick={() => editor.chain().focus().toggleItalic().run()} active={editor.isActive("italic")} icon={faItalic} title="Italique" />
             <ToolBtn onClick={() => editor.chain().focus().toggleUnderline().run()} active={editor.isActive("underline")} icon={faUnderline} title="Souligné" />
@@ -216,33 +310,8 @@ export function RichTextEditor({ value, onChange, placeholder, className, rows =
             <ToolBtn onClick={setLink} active={editor.isActive("link")} icon={faLink} title="Lien" />
 
             <div className="w-px h-5 bg-border/50 mx-0.5" />
-          </>
-        )}
-        <Popover open={emojiOpen} onOpenChange={setEmojiOpen}>
-          <PopoverTrigger asChild>
-            <button
-              type="button"
-              className="h-7 w-7 rounded flex items-center justify-center text-xs transition-colors hover:bg-accent"
-              title="Émoticône"
-            >
-              <FontAwesomeIcon icon={faFaceSmile} className="h-3.5 w-3.5" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent className="w-72 p-2" align="start">
-            <div className="grid grid-cols-10 gap-0.5">
-              {EMOJI_LIST.map((emoji) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  onClick={() => insertEmoji(emoji)}
-                  className="h-8 w-full rounded hover:bg-accent flex items-center justify-center text-lg transition-colors"
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          </PopoverContent>
-        </Popover>
+        </div>
+        <div className="flex shrink-0 items-center border-l border-border/40 pl-1.5">{emojiPopover}</div>
       </div>
       <EditorContent editor={editor} />
     </div>

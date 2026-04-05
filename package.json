@@ -21,6 +21,7 @@
     "db:sync-project": "node scripts/write-supabase-project-id.mjs",
     "db:link": "node scripts/supabase-link.mjs",
     "db:push": "npx supabase@latest db push",
+    "db:push:all": "npx supabase@latest db push --include-all",
     "db:reimport": "node scripts/supabase-reimport-all.mjs",
     "db:reimport:dry": "node scripts/supabase-reimport-all.mjs --dry-run",
     "db:import-backup": "node scripts/import-backup-json.mjs",

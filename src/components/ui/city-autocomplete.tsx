@@ -15,9 +15,11 @@ interface Props {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
+  /** Quand la liste est fermée, Entrée déclenche cette action (ex. enregistrer le formulaire). */
+  onEnterSubmit?: () => void;
 }
 
-export function CityAutocomplete({ value, onChange, placeholder, className }: Props) {
+export function CityAutocomplete({ value, onChange, placeholder, className, onEnterSubmit }: Props) {
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<CityResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -83,6 +85,12 @@ export function CityAutocomplete({ value, onChange, placeholder, className }: Pr
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !open && onEnterSubmit) {
+      e.preventDefault();
+      onEnterSubmit();
+      return;
+    }
+
     if (!open || results.length === 0) return;
 
     if (e.key === "ArrowDown") {

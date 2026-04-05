@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { Input } from "@/components/ui/input";
@@ -281,6 +281,14 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
       return val !== undefined && val !== null && val !== "";
     });
 
+  const dataRef = useRef(data);
+  dataRef.current = data;
+
+  const onFormEnterSubmit = () => {
+    if (!isValid) return;
+    onSubmit(dataRef.current);
+  };
+
   const renderField = (field: CustomFieldDef) => {
     const val = data.customFieldValues?.[field.id] ?? "";
     const options: string[] = field.field_options?.options || [];
@@ -293,6 +301,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
             onChange={(v) => setFieldValue(field.id, field.field_type, v)}
             suggestions={suggestions.partenaires}
             placeholder="ex: Émilie BLAISE"
+            onEnterSubmit={onFormEnterSubmit}
           />
         );
       case "referent_autocomplete":
@@ -302,6 +311,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
             onChange={(v) => setFieldValue(field.id, field.field_type, v)}
             suggestions={suggestions.referents}
             placeholder="ex: Marie DUPONT"
+            onEnterSubmit={onFormEnterSubmit}
           />
         );
       case "auditeur_select":
@@ -321,6 +331,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
             value={val}
             onChange={(e) => setFieldValue(field.id, field.field_type, e.target.value)}
             placeholder="ex: Cédric MALZAT"
+            onEnterSubmit={onFormEnterSubmit}
           />
         );
       case "city_autocomplete":
@@ -329,6 +340,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
             value={val}
             onChange={(v) => setFieldValue(field.id, field.field_type, v)}
             placeholder="ex: Troyes ou 10000"
+            onEnterSubmit={onFormEnterSubmit}
           />
         );
       case "lieu_autocomplete":
@@ -338,6 +350,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
             onChange={(v) => setFieldValue(field.id, field.field_type, v)}
             suggestions={suggestions.typesLieu}
             placeholder="ex: Hôtel, Restaurant..."
+            onEnterSubmit={onFormEnterSubmit}
           />
         );
       case "qualite_lieu_rating":
@@ -354,6 +367,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
             type="time"
             value={val}
             onChange={(e) => setFieldValue(field.id, field.field_type, e.target.value)}
+            onEnterSubmit={onFormEnterSubmit}
           />
         );
       case "stat_percent": {
@@ -447,6 +461,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
             value={val}
             onChange={(e) => setFieldValue(field.id, field.field_type, e.target.value)}
             placeholder={field.field_label}
+            onEnterSubmit={onFormEnterSubmit}
           />
         );
       case "textarea":
@@ -456,6 +471,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
             onChange={(v) => setFieldValue(field.id, field.field_type, v)}
             placeholder={field.field_label}
             rows={3}
+            onEnterSubmit={onFormEnterSubmit}
           />
         );
       case "number":
@@ -465,15 +481,16 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
             value={val}
             onChange={(e) => setFieldValue(field.id, field.field_type, e.target.value)}
             placeholder={field.field_label}
+            onEnterSubmit={onFormEnterSubmit}
           />
         );
       case "date":
         return (
-          <Input type="date" value={val} onChange={(e) => setFieldValue(field.id, field.field_type, e.target.value)} />
+          <Input type="date" value={val} onChange={(e) => setFieldValue(field.id, field.field_type, e.target.value)} onEnterSubmit={onFormEnterSubmit} />
         );
       case "time":
         return (
-          <Input type="time" value={val} onChange={(e) => setFieldValue(field.id, field.field_type, e.target.value)} />
+          <Input type="time" value={val} onChange={(e) => setFieldValue(field.id, field.field_type, e.target.value)} onEnterSubmit={onFormEnterSubmit} />
         );
       case "select":
         return (
@@ -532,6 +549,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
             value={val}
             onChange={(e) => setFieldValue(field.id, field.field_type, e.target.value)}
             placeholder={field.field_label}
+            onEnterSubmit={onFormEnterSubmit}
           />
         );
     }

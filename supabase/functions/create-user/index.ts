@@ -134,12 +134,11 @@ Deno.serve(async (req) => {
       const { data: targetRoles } = await adminClient.from("user_roles").select("role").eq("user_id", userId);
       const targetIsSuperAdmin = targetRoles?.some((r: any) => r.role === "super_admin");
       if (targetIsSuperAdmin && !callerIsSuperAdmin) return jsonError("Seul un super admin peut modifier le rôle d'un super admin", 403);
-      await adminClient.from("user_roles").delete().eq("user_id", userId);
+      const { error: delRoleErr } = await adminClient.from("user_roles").delete().eq("user_id", userId);
+      if (delRoleErr) return jsonError(delRoleErr.message, 400);
       if (role !== "none") {
-        const { error } = await adminClient.from("user_roles").upsert(
-          { user_id: userId, role }, { onConflict: "user_id,role" }
-        );
-        if (error) return jsonError(error.message, 400);
+        const { error: insErr } = await adminClient.from("user_roles").insert({ user_id: userId, role });
+        if (insErr) return jsonError(insErr.message, 400);
       }
       return jsonOk({ success: true });
     }
@@ -206,10 +205,12 @@ Deno.serve(async (req) => {
         if (error) return jsonError(error.message, 400);
       }
       if (displayName !== undefined) {
-        await adminClient.from("profiles").update({ display_name: displayName }).eq("user_id", userId);
+        const { error: dnErr } = await adminClient.from("profiles").update({ display_name: displayName }).eq("user_id", userId);
+        if (dnErr) return jsonError(dnErr.message, 400);
       }
       if (title !== undefined) {
-        await adminClient.from("profiles").update({ title }).eq("user_id", userId);
+        const { error: titleErr } = await adminClient.from("profiles").update({ title }).eq("user_id", userId);
+        if (titleErr) return jsonError(titleErr.message, 400);
       }
       return jsonOk({ success: true });
     }
@@ -299,6 +300,9 @@ Deno.serve(async (req) => {
     // CREATE USER (default action)
     const { email: newEmail, password: newPassword, displayName, role, config } = body;
     if (!newEmail || !newPassword) return jsonError("Email et mot de passe requis", 400);
+    if (role === "super_admin" && !callerIsSuperAdmin) {
+      return jsonError("Seul un super admin peut attribuer le rôle super admin", 403);
+    }
 
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
       email: newEmail,

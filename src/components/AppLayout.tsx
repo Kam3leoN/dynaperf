@@ -1,38 +1,20 @@
 import { useState, useEffect, lazy, Suspense } from "react";
 import { AiAssistant } from "@/components/AiAssistant";
-import { NavLink, useLocation, Link, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faClipboardList,
+  faBars,
   faRightFromBracket,
   faSliders,
-  faUserShield,
-  faChartLine,
-  faPlus,
-  faChevronDown,
-  faListCheck,
-  faEye,
   faUser,
   faKey,
   faEnvelope,
-  faHandshake,
   faBell,
   faUsers,
-  faBriefcase,
-  faMapLocationDot,
-  faClockRotateLeft,
   faGear,
-  faCalendarPlus,
   faMoneyBill,
-  faFolder,
-  faUpload,
-  faComments,
-  faSquarePollVertical,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
-import { useTheme } from "next-themes";
-import logoDark from "@/assets/DynaPerf_dark.svg";
-import logoLight from "@/assets/DynaPerf_light.svg";
 import { FiltersBar } from "./FiltersBar";
 import { Button } from "./ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
@@ -42,34 +24,60 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuLabel,
 } from "./ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
+import { useMyPresence } from "@/hooks/useMyPresence";
+import { PresenceAvatarBadge } from "./PresenceAvatarBadge";
+import {
+  DURATION_OPTIONS,
+  PRESENCE_COLORS,
+  PRESENCE_LABELS,
+  expiresAtForDuration,
+  presenceLabelFor,
+  type PresenceStatus,
+  type DurationKey,
+} from "@/lib/presence";
 import type { Filters } from "@/hooks/useAuditData";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BottomNav } from "./BottomNav";
 import { useNotifications } from "@/hooks/useNotifications";
+import { MembersDirectoryPanel } from "./MembersDirectoryPanel";
+import { AppNavRail } from "./AppNavRail";
+import { DesktopUserDock } from "./DesktopUserDock";
+import { AppSecondaryNav, AppSecondaryNavPanel } from "./AppSecondaryNav";
+import { getActiveRailSection, getRailSections } from "@/config/appNavigation";
+import { cn } from "@/lib/utils";
 
 interface AppLayoutProps {
   children: React.ReactNode;
   filters?: Filters;
   setFilters?: (f: Filters) => void;
   availableYears?: number[];
+  /** Surcharge des classes du `<main>` (ex. messagerie pleine hauteur sans padding). */
+  mainClassName?: string;
 }
 
-export function AppLayout({ children, filters, setFilters, availableYears }: AppLayoutProps) {
+export function AppLayout({ children, filters, setFilters, availableYears, mainClassName }: AppLayoutProps) {
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin(user);
-  const { resolvedTheme } = useTheme();
   const isMobile = useIsMobile();
   const location = useLocation();
-  const navigate = useNavigate();
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [secondaryNavSheetOpen, setSecondaryNavSheetOpen] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [unreadMessages, setUnreadMessages] = useState(0);
   const { unreadCount: unreadNotifications } = useNotifications();
+  const { row: presenceRow, setPresence } = useMyPresence(user?.id);
+  const [membersSheetOpen, setMembersSheetOpen] = useState(false);
+
+  const railSection = getActiveRailSection(location.pathname, getRailSections(isAdmin));
 
   useEffect(() => {
     if (!user) return;
@@ -111,10 +119,9 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
     return () => { supabase.removeChannel(channel); };
   }, [user]);
 
-  const isAuditSection = ["/dashboard", "/audits", "/audits/new", "/audits/new/version", "/audits/new/form"].includes(location.pathname);
-  const isActiviteSection = ["/activite", "/activite/new", "/activite/new/version", "/activite/dashboard"].includes(location.pathname);
-  const isReseauSection = ["/reseau", "/reseau/partenaires", "/reseau/clubs", "/reseau/secteurs", "/business-plan"].includes(location.pathname);
-  const isCommunauteSection = ["/messages", "/sondages"].includes(location.pathname);
+  useEffect(() => {
+    setSecondaryNavSheetOpen(false);
+  }, [location.pathname]);
 
   const handleForgotPassword = async () => {
     if (!user?.email) return;
@@ -132,13 +139,6 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
     .toUpperCase()
     .slice(0, 2);
 
-  const navPill = (active: boolean) =>
-    `flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all ${
-      active
-        ? "bg-primary/12 text-primary"
-        : "text-foreground/60 hover:text-foreground hover:bg-secondary/60"
-    }`;
-
   const iconBadge = (icon: typeof faBell, to: string, count: number, title: string) => (
     <Link to={to} className="relative h-10 w-10 rounded-full flex items-center justify-center hover:bg-secondary/60 transition-colors" title={title}>
       <FontAwesomeIcon icon={icon} className="h-5 w-5 text-foreground/60" />
@@ -150,14 +150,60 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
     </Link>
   );
 
+  const presenceStatusRow = (st: PresenceStatus) =>
+    st === "invisible" ? (
+      <span
+        className="mr-2.5 h-2.5 w-2.5 shrink-0 rounded-full box-border bg-transparent border-2 border-border/80"
+        style={{ borderColor: PRESENCE_COLORS.invisible }}
+        aria-hidden
+      />
+    ) : st === "dnd" ? (
+      <span
+        className="mr-2.5 h-2.5 w-2.5 shrink-0 rounded-full box-border border border-border/70 flex items-center justify-center"
+        style={{ backgroundColor: PRESENCE_COLORS.dnd }}
+        aria-hidden
+      >
+        <span className="block w-[7px] h-[2px] bg-white rounded-full shrink-0" />
+      </span>
+    ) : (
+      <span
+        className="mr-2.5 h-2.5 w-2.5 shrink-0 rounded-full box-border border border-border/70"
+        style={{ backgroundColor: PRESENCE_COLORS[st] }}
+        aria-hidden
+      />
+    );
+
+  const setPresenceWithDuration = (status: PresenceStatus, key: DurationKey) => {
+    void setPresence(status, expiresAtForDuration(new Date(), key));
+  };
+
   const profileButton = () => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="h-10 w-10 rounded-full overflow-hidden border-2 border-border hover:border-primary/40 transition-all flex items-center justify-center shrink-0" title="Profil">
-          {avatarUrl ? (
-            <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-          ) : (
-            <span className="text-xs font-semibold text-primary">{initials}</span>
+        <button
+          type="button"
+          className="flex items-center gap-2 rounded-full border border-transparent pl-0.5 pr-2 py-0 hover:bg-secondary/70 hover:border-border/60 transition-all shrink-0 max-w-[200px] md:max-w-[220px]"
+          title="Profil et statut"
+        >
+          <div className="relative h-10 w-10 shrink-0">
+            <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-border flex items-center justify-center bg-secondary/30">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <span className="text-xs font-semibold text-primary">{initials}</span>
+              )}
+            </div>
+            <PresenceAvatarBadge presence={presenceRow} />
+          </div>
+          {!isMobile && (
+            <div className="hidden sm:flex flex-col items-start min-w-0 text-left leading-tight pr-0.5">
+              <span className="text-sm font-semibold text-foreground truncate max-w-[140px]">
+                {displayName || "Utilisateur"}
+              </span>
+              <span className="text-[11px] text-muted-foreground truncate max-w-[140px]">
+                {presenceLabelFor(presenceRow)}
+              </span>
+            </div>
           )}
         </button>
       </DropdownMenuTrigger>
@@ -165,7 +211,55 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
         <div className="px-3 py-2.5 border-b border-border">
           <p className="text-sm font-semibold text-foreground truncate">{displayName || "Utilisateur"}</p>
           <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+          <p className="text-[11px] text-muted-foreground mt-1">{presenceLabelFor(presenceRow)}</p>
         </div>
+        <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">
+          Statut
+        </DropdownMenuLabel>
+        <DropdownMenuItem className="cursor-pointer" onClick={() => void setPresence("online", null)}>
+          {presenceStatusRow("online")}
+          {PRESENCE_LABELS.online}
+        </DropdownMenuItem>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="cursor-pointer">
+            {presenceStatusRow("idle")}
+            {PRESENCE_LABELS.idle}
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="rounded-xl">
+            {DURATION_OPTIONS.map((d) => (
+              <DropdownMenuItem key={d.key} className="cursor-pointer" onClick={() => setPresenceWithDuration("idle", d.key)}>
+                {d.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="cursor-pointer">
+            {presenceStatusRow("dnd")}
+            {PRESENCE_LABELS.dnd}
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="rounded-xl">
+            {DURATION_OPTIONS.map((d) => (
+              <DropdownMenuItem key={d.key} className="cursor-pointer" onClick={() => setPresenceWithDuration("dnd", d.key)}>
+                {d.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="cursor-pointer">
+            {presenceStatusRow("invisible")}
+            {PRESENCE_LABELS.invisible}
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="rounded-xl">
+            {DURATION_OPTIONS.map((d) => (
+              <DropdownMenuItem key={d.key} className="cursor-pointer" onClick={() => setPresenceWithDuration("invisible", d.key)}>
+                {d.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
           <Link to="/profile" className="flex items-center gap-2.5 cursor-pointer">
             <FontAwesomeIcon icon={faUser} className="h-4 w-4 text-muted-foreground" />
@@ -203,108 +297,35 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
     </DropdownMenu>
   );
 
-  const desktopNav = () => (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className={navPill(isAuditSection)}>
-            <FontAwesomeIcon icon={faClipboardList} className="h-4 w-4" />
-            <span>Audits</span>
-            <FontAwesomeIcon icon={faChevronDown} className="h-2.5 w-2.5 opacity-50" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56 rounded-2xl">
-          <DropdownMenuItem asChild><Link to="/dashboard" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-muted-foreground" />Tableau de bord</Link></DropdownMenuItem>
-          <DropdownMenuItem asChild><Link to="/audits" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faClipboardList} className="h-4 w-4 text-muted-foreground" />Tous les audits</Link></DropdownMenuItem>
-          <DropdownMenuItem asChild><Link to="/audits/new" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faPlus} className="h-4 w-4 text-muted-foreground" />Nouvel audit</Link></DropdownMenuItem>
-          <DropdownMenuItem asChild><Link to="/audits?plan=1" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faCalendarPlus} className="h-4 w-4 text-amber-500" />Planifier un audit</Link></DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className={navPill(isActiviteSection)}>
-            <FontAwesomeIcon icon={faListCheck} className="h-4 w-4" />
-            <span>Activité</span>
-            <FontAwesomeIcon icon={faChevronDown} className="h-2.5 w-2.5 opacity-50" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56 rounded-2xl">
-          <DropdownMenuItem asChild><Link to="/activite/dashboard" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-muted-foreground" />Tableau de bord</Link></DropdownMenuItem>
-          <DropdownMenuItem asChild><Link to="/activite" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faEye} className="h-4 w-4 text-muted-foreground" />Tous les suivis</Link></DropdownMenuItem>
-          <DropdownMenuItem asChild><Link to="/activite/new/version" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faPlus} className="h-4 w-4 text-muted-foreground" />Nouveau suivi</Link></DropdownMenuItem>
-          <DropdownMenuItem asChild><Link to="/activite?plan=1" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faCalendarPlus} className="h-4 w-4 text-amber-500" />Planifier un suivi</Link></DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className={navPill(isReseauSection)}>
-            <FontAwesomeIcon icon={faHandshake} className="h-4 w-4" />
-            <span>Réseau</span>
-            <FontAwesomeIcon icon={faChevronDown} className="h-2.5 w-2.5 opacity-50" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56 rounded-2xl">
-          <DropdownMenuItem asChild><Link to="/reseau/partenaires" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faUsers} className="h-4 w-4 text-muted-foreground" />Partenaires</Link></DropdownMenuItem>
-          <DropdownMenuItem asChild><Link to="/reseau/clubs" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faBriefcase} className="h-4 w-4 text-muted-foreground" />Clubs d'affaires</Link></DropdownMenuItem>
-          <DropdownMenuItem asChild><Link to="/reseau/secteurs" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faMapLocationDot} className="h-4 w-4 text-muted-foreground" />Secteurs / Zones</Link></DropdownMenuItem>
-          <DropdownMenuItem asChild><Link to="/business-plan" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faChartLine} className="h-4 w-4 text-muted-foreground" />Business Plan</Link></DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <Link to="/drive" className={navPill(location.pathname === "/drive")}>
-        <FontAwesomeIcon icon={faFolder} className="h-4 w-4" />
-        <span>Drive</span>
-      </Link>
-
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <button className={navPill(isCommunauteSection)}>
-            <FontAwesomeIcon icon={faComments} className="h-4 w-4" />
-            <span>Communauté</span>
-            <FontAwesomeIcon icon={faChevronDown} className="h-2.5 w-2.5 opacity-50" />
-          </button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56 rounded-2xl">
-          <DropdownMenuItem asChild><Link to="/messages" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faEnvelope} className="h-4 w-4 text-muted-foreground" />Messagerie</Link></DropdownMenuItem>
-          <DropdownMenuItem asChild><Link to="/sondages" className="flex items-center gap-2.5 cursor-pointer"><FontAwesomeIcon icon={faSquarePollVertical} className="h-4 w-4 text-muted-foreground" />Sondages</Link></DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <NavLink to="/historique" className={() => navPill(location.pathname === "/historique")}>
-        <FontAwesomeIcon icon={faClockRotateLeft} className="h-4 w-4" /><span>Historique</span>
-      </NavLink>
-
-      {isAdmin && (
-        <NavLink to="/admin" className={() => navPill(location.pathname === "/admin")}>
-          <FontAwesomeIcon icon={faUserShield} className="h-4 w-4" /><span>Admin</span>
-        </NavLink>
-      )}
-    </>
-  );
-
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Top app bar */}
-      <header className="sticky top-0 z-40 bg-card/85 backdrop-blur-2xl border-b border-border/30 px-4 lg:px-6">
-        <div className="max-w-[1440px] mx-auto flex items-center justify-between h-16 lg:h-[4.25rem]">
-          <div className="flex items-center gap-5">
-            <Link to="/" className="shrink-0">
-              <img
-                src={resolvedTheme === "dark" ? logoDark : logoLight}
-                alt="DynaPerf"
-                className="h-7 lg:h-8"
-              />
-            </Link>
-            {!isMobile && (
-              <nav className="flex items-center gap-1">
-                {desktopNav()}
-              </nav>
-            )}
-          </div>
+      <header className="sticky top-0 z-40 bg-card/85 backdrop-blur-2xl border-b border-border/30 shrink-0 px-4 lg:px-0">
+        <div className="w-full flex items-stretch justify-between h-16 lg:h-[4.25rem] lg:pl-[360px] lg:pr-[260px]">
+          <div className="flex flex-1 items-center justify-between min-w-0 gap-2 pl-4 pr-4 lg:pl-6 lg:pr-6">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="lg:hidden h-10 w-10 rounded-full shrink-0"
+                title="Menu de la section"
+                aria-label="Ouvrir le menu de la section"
+                onClick={() => setSecondaryNavSheetOpen(true)}
+              >
+                <FontAwesomeIcon icon={faBars} className="h-[18px] w-[18px] text-foreground/70" />
+              </Button>
+              {railSection && (
+                <span
+                  className="hidden sm:inline font-semibold text-foreground truncate max-w-[140px] md:max-w-[220px] shrink-0 text-[1.09375rem] leading-tight"
+                  title={railSection.label}
+                >
+                  {railSection.label}
+                </span>
+              )}
+            </div>
 
-          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2">
             {filters && setFilters && (
               <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full" onClick={() => setFiltersOpen(true)} title="Filtres">
                 <FontAwesomeIcon icon={faSliders} className="h-[18px] w-[18px]" />
@@ -314,14 +335,23 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
             {iconBadge(faBell, "/notifications", unreadNotifications, "Notifications")}
             {iconBadge(faEnvelope, "/messages", unreadMessages, "Messages")}
 
-            {/* Gear icon only on desktop */}
-            {!isMobile && (
-              <Link to="/preferences" className="h-10 w-10 rounded-full flex items-center justify-center hover:bg-secondary/60 transition-colors" title="Préférences">
-                <FontAwesomeIcon icon={faGear} className="h-[18px] w-[18px] text-foreground/60" />
-              </Link>
+            {isMobile && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 rounded-full shrink-0"
+                title="Membres"
+                aria-label="Ouvrir la liste des membres"
+                onClick={() => setMembersSheetOpen(true)}
+              >
+                <FontAwesomeIcon icon={faUsers} className="h-[18px] w-[18px] text-foreground/60" />
+              </Button>
             )}
 
-            {profileButton()}
+            {/* Gear icon only on desktop */}
+            {isMobile && profileButton()}
+            </div>
           </div>
         </div>
       </header>
@@ -343,13 +373,54 @@ export function AppLayout({ children, filters, setFilters, availableYears }: App
         </Sheet>
       )}
 
-      {/* Main content */}
-      <main className="max-w-[1440px] mx-auto px-4 lg:px-6 py-5 lg:py-6 space-y-5 lg:space-y-6 pb-28 lg:pb-6">
-        {children}
-      </main>
+      <div className="flex flex-1 min-h-0 w-full overflow-x-auto lg:pl-[360px] lg:pr-[260px]">
+        <AppNavRail isAdmin={isAdmin} unreadMessages={unreadMessages} />
+        <AppSecondaryNav isAdmin={isAdmin} />
+        <div className="flex flex-1 flex-col min-w-0 min-h-0">
+          <main
+            className={cn(
+              "w-full max-w-[1440px] lg:max-w-none mx-auto px-4 lg:px-6 py-5 lg:py-6 space-y-5 lg:space-y-6 pb-28 lg:pb-6 flex-1 min-h-0 overflow-y-auto",
+              mainClassName,
+            )}
+          >
+            {children}
+          </main>
+          {isMobile && <BottomNav />}
+        </div>
 
-      {/* Bottom navigation (mobile only) */}
-      {isMobile && <BottomNav />}
+        <aside
+          className="hidden lg:flex fixed right-0 top-0 bottom-0 z-[45] w-[260px] flex-col border-l border-border/40 bg-muted/10 min-h-0"
+          aria-label="Annuaire des membres"
+        >
+          <MembersDirectoryPanel className="flex-1 min-h-0" />
+        </aside>
+      </div>
+
+      <Sheet open={secondaryNavSheetOpen} onOpenChange={setSecondaryNavSheetOpen}>
+        <SheetContent side="left" className="w-[min(100vw-1rem,280px)] p-0 flex flex-col">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Navigation de la section</SheetTitle>
+          </SheetHeader>
+          <AppSecondaryNavPanel
+            isAdmin={isAdmin}
+            className="flex-1 min-h-0 overflow-y-auto"
+          />
+        </SheetContent>
+      </Sheet>
+
+      <Sheet open={membersSheetOpen} onOpenChange={setMembersSheetOpen}>
+        <SheetContent side="right" className="w-[min(100vw-1rem,260px)] p-0 flex flex-col">
+          <SheetHeader className="sr-only">
+            <SheetTitle>Membres</SheetTitle>
+          </SheetHeader>
+          <MembersDirectoryPanel
+            className="flex-1 min-h-0 border-0"
+            onPickMember={() => setMembersSheetOpen(false)}
+          />
+        </SheetContent>
+      </Sheet>
+
+      <DesktopUserDock profileSlot={profileButton()} />
 
       {/* AI Assistant FAB */}
       <AiAssistant />

@@ -2,8 +2,23 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
-  ({ className, type, ...props }, ref) => {
+export interface InputProps extends Omit<React.ComponentProps<"input">, "onKeyDown"> {
+  /** Entrée déclenche l’action (en plus du comportement clavier existant). */
+  onEnterSubmit?: () => void;
+  onKeyDown?: React.KeyboardEventHandler<HTMLInputElement>;
+}
+
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, onEnterSubmit, onKeyDown, ...props }, ref) => {
+    const handleKeyDown: React.KeyboardEventHandler<HTMLInputElement> = (e) => {
+      onKeyDown?.(e);
+      if (e.defaultPrevented) return;
+      if (onEnterSubmit && e.key === "Enter") {
+        e.preventDefault();
+        onEnterSubmit();
+      }
+    };
+
     return (
       <input
         type={type}
@@ -12,6 +27,7 @@ const Input = React.forwardRef<HTMLInputElement, React.ComponentProps<"input">>(
           className,
         )}
         ref={ref}
+        onKeyDown={onEnterSubmit || onKeyDown ? handleKeyDown : onKeyDown}
         {...props}
       />
     );

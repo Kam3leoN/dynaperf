@@ -11,6 +11,8 @@ interface Props {
   className?: string;
   type?: string;
   min?: number;
+  /** Quand la liste est fermée, Entrée déclenche cette action (ex. enregistrer le formulaire). */
+  onEnterSubmit?: () => void;
 }
 
 export function AutocompleteInput({
@@ -21,6 +23,7 @@ export function AutocompleteInput({
   className,
   type = "text",
   min,
+  onEnterSubmit,
 }: Props) {
   const baseId = useId();
   const [open, setOpen] = useState(false);
@@ -75,6 +78,12 @@ export function AutocompleteInput({
   );
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && !open && onEnterSubmit) {
+      e.preventDefault();
+      onEnterSubmit();
+      return;
+    }
+
     if (!open && (e.key === "ArrowDown" || e.key === "ArrowUp") && filtered.length > 0) {
       e.preventDefault();
       setOpen(true);

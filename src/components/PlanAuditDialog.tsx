@@ -122,6 +122,10 @@ export function PlanAuditDialog({ open, onOpenChange, onCreated, editAuditId }: 
     setSaving(false);
   };
 
+  const enterSavePlanAudit = () => {
+    void handleSave();
+  };
+
   const partSuggestions = partenaires.map(p => `${p.prenom} ${p.nom.toUpperCase()}`);
 
   return (
@@ -140,19 +144,19 @@ export function PlanAuditDialog({ open, onOpenChange, onCreated, editAuditId }: 
             <div className="grid gap-3 py-3">
               <div>
                 <Label className="text-xs">Date prévue *</Label>
-                <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-9 text-sm" />
+                <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-9 text-sm" onEnterSubmit={enterSavePlanAudit} />
               </div>
               <div>
                 <Label className="text-xs">Partenaire (Prénom NOM) *</Label>
-                <AutocompleteInput value={partenaire} onChange={setPartenaire} suggestions={partSuggestions} placeholder="ex: Émilie BLAISE" />
+                <AutocompleteInput value={partenaire} onChange={setPartenaire} suggestions={partSuggestions} placeholder="ex: Émilie BLAISE" onEnterSubmit={enterSavePlanAudit} />
               </div>
               <div>
                 <Label className="text-xs">Partenaire Référent (Prénom NOM)</Label>
-                <AutocompleteInput value={referent} onChange={setReferent} suggestions={partSuggestions} placeholder="ex: Marie DUPONT" />
+                <AutocompleteInput value={referent} onChange={setReferent} suggestions={partSuggestions} placeholder="ex: Marie DUPONT" onEnterSubmit={enterSavePlanAudit} />
               </div>
               <div>
                 <Label className="text-xs">Ville (Lieu)</Label>
-                <CityAutocomplete value={lieu} onChange={setLieu} />
+                <CityAutocomplete value={lieu} onChange={setLieu} onEnterSubmit={enterSavePlanAudit} />
               </div>
               <div>
                 <Label className="text-xs">Auditeur</Label>
@@ -164,7 +168,7 @@ export function PlanAuditDialog({ open, onOpenChange, onCreated, editAuditId }: 
                     </SelectContent>
                   </Select>
                 ) : (
-                  <Input value={auditeur} onChange={e => setAuditeur(e.target.value)} className="h-9 text-sm" placeholder="Auditeur" />
+                  <Input value={auditeur} onChange={e => setAuditeur(e.target.value)} className="h-9 text-sm" placeholder="Auditeur" onEnterSubmit={enterSavePlanAudit} />
                 )}
               </div>
               <div>

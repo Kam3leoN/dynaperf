@@ -78,6 +78,10 @@ export function PlanActiviteDialog({ open, onOpenChange, onCreated }: PlanActivi
     setSaving(false);
   };
 
+  const enterSavePlan = () => {
+    void handleSave();
+  };
+
   const partSuggestions = partenaires.map(p => `${p.prenom} ${p.nom.toUpperCase()}`);
 
   return (
@@ -92,15 +96,15 @@ export function PlanActiviteDialog({ open, onOpenChange, onCreated }: PlanActivi
         <div className="grid gap-3 py-3">
           <div>
             <Label className="text-xs">Date prévue *</Label>
-            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-9 text-sm" />
+            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="h-9 text-sm" onEnterSubmit={enterSavePlan} />
           </div>
           <div>
             <Label className="text-xs">Partenaire (Prénom NOM) *</Label>
-            <AutocompleteInput value={partenaire} onChange={setPartenaire} suggestions={partSuggestions} placeholder="ex: Émilie BLAISE" />
+            <AutocompleteInput value={partenaire} onChange={setPartenaire} suggestions={partSuggestions} placeholder="ex: Émilie BLAISE" onEnterSubmit={enterSavePlan} />
           </div>
           <div>
             <Label className="text-xs">Partenaire Référent (Prénom NOM)</Label>
-            <AutocompleteInput value={referent} onChange={setReferent} suggestions={partSuggestions} placeholder="ex: Marie DUPONT" />
+            <AutocompleteInput value={referent} onChange={setReferent} suggestions={partSuggestions} placeholder="ex: Marie DUPONT" onEnterSubmit={enterSavePlan} />
           </div>
           <div>
             <Label className="text-xs">Suivi par *</Label>
@@ -112,7 +116,7 @@ export function PlanActiviteDialog({ open, onOpenChange, onCreated }: PlanActivi
                 </SelectContent>
               </Select>
             ) : (
-              <Input value={suiviPar} onChange={e => setSuiviPar(e.target.value)} className="h-9 text-sm" placeholder="Suivi par" />
+              <Input value={suiviPar} onChange={e => setSuiviPar(e.target.value)} className="h-9 text-sm" placeholder="Suivi par" onEnterSubmit={enterSavePlan} />
             )}
           </div>
           <div>
