@@ -24,7 +24,24 @@ bundle-stats.html
 *.sln
 *.sw?
 
-# Local env files
+# -----------------------------------------------------------------------------
+# Secrets & environnement — ne jamais committer (CI / hôte : variables dédiées)
+# -----------------------------------------------------------------------------
 .env
-.env.local
-.env.*.local
+.env.*
+!.env.example
+!.env.sample
+
+# Mapping UUID ancien → nouveau projet (données sensibles / spécifiques machine)
+user-id-map.json
+user-id-map.*.json
+
+# Fichiers Supabase CLI locaux (tokens, état link)
+.supabase/
+
+# Dumps / sauvegardes JSON (peuvent contenir PII ou clés dans les URLs)
+# NB : scripts/ reste versionné ; pas de secrets dans le repo (variables .env).
+.tmp-db-reimport
+*.backup.json
+backups/
+backup_*.json

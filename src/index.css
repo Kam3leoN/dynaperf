@@ -155,6 +155,7 @@
     text-size-adjust: 100%;
     width: 100%;
     max-width: 100%;
+    min-height: 100%;
   }
 
   body {
@@ -164,6 +165,8 @@
     -moz-osx-font-smoothing: grayscale;
     width: 100%;
     max-width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
     overflow-x: clip;
   }
 

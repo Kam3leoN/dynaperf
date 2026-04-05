@@ -1379,6 +1379,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_auth_users_preview: {
+        Args: never
+        Returns: {
+          id: string
+          email: string
+          created_at: string
+        }[]
+      }
       get_my_config: {
         Args: never
         Returns: {

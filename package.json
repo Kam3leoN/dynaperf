@@ -18,8 +18,15 @@
     "git:setup-win": "git config core.autocrlf false && git config core.longpaths true && git config core.editor notepad",
     "db:apply-drive": "node scripts/apply-drive-favorites.mjs",
     "db:apply-drive:linked": "npx supabase@latest db query --linked -f supabase/migrations/20260404120000_drive_tags_favorites.sql",
-    "db:link": "npx supabase@latest link --project-ref qgvlojeamzfqkntrpnhk",
-    "db:push": "npx supabase@latest db push"
+    "db:link": "npx supabase@latest link --project-ref vexydidjcunyeymlbawz",
+    "db:push": "npx supabase@latest db push",
+    "db:reimport": "node scripts/supabase-reimport-all.mjs",
+    "db:reimport:dry": "node scripts/supabase-reimport-all.mjs --dry-run",
+    "db:import-backup": "node scripts/import-backup-json.mjs",
+    "db:import-backup:dry": "node scripts/import-backup-json.mjs --dry-run",
+    "db:import-backup:auth": "node scripts/run-import-auth.mjs",
+    "db:backup-user-ids": "node scripts/backup-user-ids-template.mjs",
+    "db:list-auth-users": "node scripts/list-auth-users.mjs"
   },
   "dependencies": {
     "@emoji-mart/data": "^1.2.1",

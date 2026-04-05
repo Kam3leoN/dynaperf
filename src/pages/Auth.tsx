@@ -125,7 +125,11 @@ export default function Auth() {
       password,
     });
     if (error) {
-      toast.error(error.message);
+      const msg =
+        error.message === "Invalid login credentials"
+          ? "Identifiants incorrects ou compte absent sur ce projet Supabase."
+          : error.message;
+      toast.error(msg);
     } else {
       toast.success("Connexion réussie");
       markAppSessionUnlocked();
@@ -151,8 +155,8 @@ export default function Auth() {
   };
 
   return (
-    <div className="min-h-[100dvh] bg-background flex items-center justify-center px-5">
-      <div className="absolute top-4 right-4">
+    <div className="relative grid min-h-screen min-h-[100dvh] w-full place-items-center bg-background px-5 py-8 box-border">
+      <div className="absolute top-4 right-4 z-10">
         <ThemeToggle />
       </div>
       <div className="bg-card rounded-3xl shadow-elevated border border-border/30 p-7 sm:p-8 w-full max-w-md">

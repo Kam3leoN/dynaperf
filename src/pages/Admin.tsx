@@ -152,6 +152,47 @@ function matchesSearch(user: ManagedUser, search: string) {
   return term.split(/\s+/).every(word => haystack.includes(word));
 }
 
+function normUid(s: string) {
+  return s.trim().toLowerCase();
+}
+
+/**
+ * Repli si la Edge Function `create-user` renvoie une liste vide (ex. listUsers sans pagination en prod)
+ * alors que les lignes profiles / user_roles existent déjà.
+ */
+async function fetchManagedUsersViaRpc(): Promise<ManagedUser[] | null> {
+  const { data: authRows, error: rpcErr } = await supabase.rpc("admin_auth_users_preview");
+  if (rpcErr || !authRows?.length) return null;
+
+  const [rolesRes, profilesRes, configsRes, primesRes] = await Promise.all([
+    supabase.from("user_roles").select("*"),
+    supabase.from("profiles").select("*"),
+    supabase.from("collaborateur_config").select("*"),
+    supabase.from("user_custom_primes").select("*").order("created_at"),
+  ]);
+
+  const allRoles = rolesRes.data;
+  const allProfiles = profilesRes.data;
+  const allConfigs = configsRes.data;
+  const allCustomPrimes = primesRes.data;
+
+  return authRows.map((u) => {
+    const uid = normUid(u.id);
+    const profile = allProfiles?.find((p) => normUid(p.user_id) === uid);
+    return {
+      id: u.id,
+      email: u.email ?? "",
+      displayName: profile?.display_name || u.email || "",
+      avatarUrl: profile?.avatar_url ?? null,
+      title: profile?.title ?? null,
+      roles: allRoles?.filter((r) => normUid(r.user_id) === uid).map((r) => r.role) ?? [],
+      config: allConfigs?.find((c) => normUid(c.user_id) === uid) ?? null,
+      customPrimes: allCustomPrimes?.filter((cp) => normUid(cp.user_id) === uid) ?? [],
+      createdAt: u.created_at,
+    };
+  });
+}
+
 function BackupButton() {
   const [loading, setLoading] = useState(false);
   const handleBackup = async () => {
@@ -215,7 +256,24 @@ export default function Admin() {
     const res = await supabase.functions.invoke("create-user", {
       body: { action: "list" },
     });
-    if (res.data?.users) setUsers(res.data.users);
+
+    const edgeUsers = !res.error && !res.data?.error && Array.isArray(res.data?.users) ? res.data.users : null;
+    let next: ManagedUser[] = [];
+
+    if (edgeUsers && edgeUsers.length > 0) {
+      next = edgeUsers;
+    } else {
+      const viaRpc = await fetchManagedUsersViaRpc();
+      if (viaRpc?.length) {
+        next = viaRpc;
+      } else if (res.error) {
+        toast.error(res.error.message || "Erreur chargement utilisateurs");
+      } else if (res.data?.error) {
+        toast.error(typeof res.data.error === "string" ? res.data.error : "Erreur chargement utilisateurs");
+      }
+    }
+
+    setUsers(next);
     setUsersLoading(false);
   }, []);
 

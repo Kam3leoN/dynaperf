@@ -17,6 +17,51 @@ function jsonError(msg: string, status: number) {
   });
 }
 
+/**
+ * Récupère tous les utilisateurs Auth avec pagination explicite.
+ * Sans `page` / `perPage`, l’API peut recevoir des query vides et renvoyer une liste vide
+ * alors que des comptes existent (comportement observé vs. listUsers({ page: 1, perPage: 200 })).
+ */
+async function listAllAuthUsers(adminClient: ReturnType<typeof createClient>) {
+  const perPage = 200;
+  const users: any[] = [];
+  let page = 1;
+  for (;;) {
+    const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage });
+    if (error) return { users: null as any[] | null, error };
+    const batch = data?.users ?? [];
+    users.push(...batch);
+    if (batch.length < perPage) break;
+    page += 1;
+  }
+  return { users, error: null as null };
+}
+
+function normUuidStr(s: string | undefined | null): string {
+  if (typeof s !== "string") return "";
+  return s.trim().toLowerCase();
+}
+
+/**
+ * Repli si `listUsers` renvoie un tableau vide côté Edge (bundle Deno / API),
+ * alors que `profiles` référence bien des lignes dans auth.users (FK).
+ */
+async function hydrateAuthUsersFromProfiles(adminClient: ReturnType<typeof createClient>): Promise<any[]> {
+  const { data: profRows, error: profErr } = await adminClient.from("profiles").select("user_id");
+  if (profErr || !profRows?.length) return [];
+  const ids = [
+    ...new Set(
+      (profRows as { user_id: string }[]).map((p) => p.user_id).filter(Boolean),
+    ),
+  ];
+  const out: any[] = [];
+  for (const uid of ids) {
+    const { data, error } = await adminClient.auth.admin.getUserById(uid);
+    if (!error && data?.user) out.push(data.user);
+  }
+  return out;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -151,24 +196,30 @@ Deno.serve(async (req) => {
 
     // LIST USERS
     if (action === "list") {
-      const { data: { users }, error } = await adminClient.auth.admin.listUsers();
-      if (error) return jsonError(error.message, 400);
+      const { users: listed, error: listErr } = await listAllAuthUsers(adminClient);
+      if (listErr) return jsonError(listErr.message, 400);
+      if (!listed) return jsonError("Impossible de charger les utilisateurs Auth", 400);
+      let authUsers = listed;
+      if (authUsers.length === 0) {
+        authUsers = await hydrateAuthUsersFromProfiles(adminClient);
+      }
       const { data: allRoles } = await adminClient.from("user_roles").select("*");
       const { data: allProfiles } = await adminClient.from("profiles").select("*");
       const { data: allConfigs } = await adminClient.from("collaborateur_config").select("*");
       const { data: allCustomPrimes } = await adminClient.from("user_custom_primes").select("*").order("created_at");
 
-      const result = users.map((u: any) => {
-        const profile = allProfiles?.find((p: any) => p.user_id === u.id);
+      const result = authUsers.map((u: any) => {
+        const uid = normUuidStr(u.id);
+        const profile = allProfiles?.find((p: any) => normUuidStr(p.user_id) === uid);
         return {
           id: u.id,
           email: u.email,
           displayName: profile?.display_name || u.email,
           avatarUrl: profile?.avatar_url || null,
           title: profile?.title || null,
-          roles: allRoles?.filter((r: any) => r.user_id === u.id).map((r: any) => r.role) || [],
-          config: allConfigs?.find((c: any) => c.user_id === u.id) || null,
-          customPrimes: allCustomPrimes?.filter((cp: any) => cp.user_id === u.id) || [],
+          roles: allRoles?.filter((r: any) => normUuidStr(r.user_id) === uid).map((r: any) => r.role) || [],
+          config: allConfigs?.find((c: any) => normUuidStr(c.user_id) === uid) || null,
+          customPrimes: allCustomPrimes?.filter((cp: any) => normUuidStr(cp.user_id) === uid) || [],
           createdAt: u.created_at,
         };
       });
