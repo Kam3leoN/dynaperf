@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import type { Database } from "@/integrations/supabase/types";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -8,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faChevronDown, faChevronUp, faCamera, faEye, faEyeSlash, faDownload, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faChevronDown, faChevronUp, faCamera, faEye, faEyeSlash, faDownload, faSpinner, faKey } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -19,7 +18,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminSecteurs from "@/components/AdminSecteurs";
 import AdminAuditGridInline from "@/components/AdminAuditGrid";
 import { readEdgeFunctionErrorMessage } from "@/lib/readEdgeFunctionError";
+import { cn } from "@/lib/utils";
 import { uploadUserAvatarToBucket, withAvatarCacheBust } from "@/lib/avatarStorage";
+import { ORG_TITLE_LABELS } from "@/lib/memberDirectory";
+import { useStaffRolesCatalog } from "@/hooks/useStaffRolesCatalog";
 
 /** Toast le détail JSON `{ error }` si la Edge Function répond en non-2xx. */
 async function toastEdgeInvokeFailure(
@@ -103,35 +105,75 @@ interface ManagedUser {
   displayName: string;
   avatarUrl: string | null;
   title: string | null;
+  orgTitles: string[];
   roles: string[];
   config: UserConfig | null;
   customPrimes: CustomPrime[];
   createdAt: string;
 }
 
+const STAFF_ROLE_PRIORITY = [
+  "super_admin",
+  "admin",
+  "super_moderator",
+  "moderator",
+  "bot",
+  "member",
+] as const;
+
+const LEGACY_ROLE_TO_MEMBER = new Set(["lecteur", "user", "redacteur"]);
+
 const ROLE_LABELS: Record<string, string> = {
-  super_admin: "Super Admin",
-  admin: "Admin",
-  redacteur: "Rédacteur",
-  lecteur: "Lecteur",
+  super_admin: "Super administrateur",
+  admin: "Administrateur",
+  super_moderator: "Super modérateur",
+  moderator: "Modérateur",
+  bot: "Bot",
+  member: "Utilisateur",
 };
 
 function getUserRole(u: ManagedUser) {
-  if (u.roles.includes("super_admin")) return "super_admin";
-  if (u.roles.includes("admin")) return "admin";
-  if (u.roles.includes("redacteur")) return "redacteur";
-  return "lecteur";
+  if (u.roles.some((r) => LEGACY_ROLE_TO_MEMBER.has(r))) return "member";
+  for (const r of STAFF_ROLE_PRIORITY) {
+    if (u.roles.includes(r)) return r;
+  }
+  return "member";
+}
+
+function StaffRoleSelectItems({ isSuperAdmin }: { isSuperAdmin: boolean }) {
+  const { roles, loading } = useStaffRolesCatalog(true);
+  if (loading) {
+    return (
+      <SelectItem value="member" disabled>
+        Chargement des rôles…
+      </SelectItem>
+    );
+  }
+  return (
+    <>
+      {roles
+        .filter((r) => r.role_key !== "super_admin" || isSuperAdmin)
+        .map((r) => (
+          <SelectItem key={r.role_key} value={r.role_key}>
+            {r.label}
+          </SelectItem>
+        ))}
+    </>
+  );
 }
 
 function RoleBadge({ role }: { role: string }) {
   const styles: Record<string, string> = {
     super_admin: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
     admin: "bg-primary/10 text-primary",
-    redacteur: "bg-accent/20 text-accent-foreground",
-    lecteur: "bg-secondary text-muted-foreground",
+    super_moderator: "bg-violet-500/15 text-violet-700 dark:text-violet-400",
+    moderator: "bg-sky-500/15 text-sky-800 dark:text-sky-300",
+    bot: "bg-muted text-muted-foreground",
+    member: "bg-secondary text-muted-foreground",
   };
+  const fallback = styles.member;
   return (
-    <span className={`text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full ${styles[role] || styles.lecteur}`}>
+    <span className={`text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full ${styles[role] || fallback}`}>
       {ROLE_LABELS[role] || role}
     </span>
   );
@@ -190,7 +232,7 @@ async function fetchManagedUsersViaRpc(): Promise<ManagedUser[] | null> {
 
   const [rolesRes, profilesRes, configsRes, primesRes] = await Promise.all([
     supabase.from("user_roles").select("*"),
-    supabase.from("profiles").select("*"),
+    supabase.from("profiles").select("user_id, display_name, avatar_url, title, org_titles"),
     supabase.from("collaborateur_config").select("*"),
     supabase.from("user_custom_primes").select("*").order("created_at"),
   ]);
@@ -209,6 +251,7 @@ async function fetchManagedUsersViaRpc(): Promise<ManagedUser[] | null> {
       displayName: profile?.display_name || u.email || "",
       avatarUrl: profile?.avatar_url ?? null,
       title: profile?.title ?? null,
+      orgTitles: Array.isArray(profile?.org_titles) ? profile.org_titles : [],
       roles: allRoles?.filter((r) => normUid(r.user_id) === uid).map((r) => r.role) ?? [],
       config: allConfigs?.find((c) => normUid(c.user_id) === uid) ?? null,
       customPrimes: allCustomPrimes?.filter((cp) => normUid(cp.user_id) === uid) ?? [],
@@ -255,11 +298,14 @@ export default function Admin() {
   const [editFirstName, setEditFirstName] = useState("");
   const [editLastName, setEditLastName] = useState("");
   const [editEmail, setEditEmail] = useState("");
-  const [editRole, setEditRole] = useState("lecteur");
+  const [editRole, setEditRole] = useState("member");
   const [editPalier1, setEditPalier1] = useState("");
   const [editPalier2, setEditPalier2] = useState("");
   const [editPalier3, setEditPalier3] = useState("");
   const [editTitle, setEditTitle] = useState("");
+  const [editOrgTitles, setEditOrgTitles] = useState<string[]>([]);
+  const [editPermOverride, setEditPermOverride] = useState<Record<string, "inherit" | "allow" | "deny">>({});
+  const [appPermissionCatalog, setAppPermissionCatalog] = useState<{ key: string; description: string }[]>([]);
   const [editSaving, setEditSaving] = useState(false);
 
   // Create dialog
@@ -268,7 +314,7 @@ export default function Admin() {
   const [password, setPassword] = useState("");
   const [newFirstName, setNewFirstName] = useState("");
   const [newLastName, setNewLastName] = useState("");
-  const [newRole, setNewRole] = useState("lecteur");
+  const [newRole, setNewRole] = useState("member");
   const [newPalier1, setNewPalier1] = useState("");
   const [newPalier2, setNewPalier2] = useState("");
   const [newPalier3, setNewPalier3] = useState("");
@@ -302,6 +348,16 @@ export default function Admin() {
 
   useEffect(() => { loadUsers(); }, [loadUsers]);
 
+  useEffect(() => {
+    void supabase
+      .from("app_permissions")
+      .select("key, description")
+      .order("key")
+      .then(({ data }) => {
+        if (data?.length) setAppPermissionCatalog(data);
+      });
+  }, []);
+
   /** Rôle via PostgREST (RLS admin) ; repli Edge si refus / erreur (ex. déploiement Pages). */
   const applySetUserRole = useCallback(
     async (userId: string, role: string): Promise<boolean> => {
@@ -332,7 +388,7 @@ export default function Admin() {
       if (role !== "none") {
         const { error: insErr } = await supabase.from("user_roles").insert({
           user_id: userId,
-          role: role as Database["public"]["Enums"]["app_role"],
+          role,
         });
         if (insErr) {
           const res = await supabase.functions.invoke("create-user", {
@@ -348,7 +404,7 @@ export default function Admin() {
 
   const resetCreateForm = () => {
     setEmail(""); setPassword(""); setNewFirstName(""); setNewLastName("");
-    setNewRole("lecteur");
+    setNewRole("member");
     setNewPalier1(""); setNewPalier2(""); setNewPalier3("");
     setAvatarFile(null); setAvatarPreview(null);
   };
@@ -467,6 +523,29 @@ export default function Admin() {
     setEditPalier2(u.config?.palier_2?.toString() ?? "");
     setEditPalier3(u.config?.palier_3?.toString() ?? "");
     setEditTitle(u.title || "");
+    setEditOrgTitles(Array.isArray(u.orgTitles) ? [...u.orgTitles] : []);
+
+    const loadOverrides = async () => {
+      let cat = appPermissionCatalog;
+      if (!cat.length) {
+        const { data: fresh } = await supabase.from("app_permissions").select("key, description").order("key");
+        cat = fresh ?? [];
+        if (cat.length) setAppPermissionCatalog(cat);
+      }
+      const { data: ovs } = await supabase
+        .from("user_permission_overrides")
+        .select("permission_key, allowed")
+        .eq("user_id", u.id);
+      const next: Record<string, "inherit" | "allow" | "deny"> = {};
+      for (const row of cat) next[row.key] = "inherit";
+      for (const o of ovs ?? []) {
+        if (next[o.permission_key] !== undefined) {
+          next[o.permission_key] = o.allowed ? "allow" : "deny";
+        }
+      }
+      setEditPermOverride(next);
+    };
+    void loadOverrides();
   };
 
   const handleEditSave = async () => {
@@ -530,6 +609,41 @@ export default function Admin() {
       return;
     }
 
+    const { error: orgTitlesErr } = await supabase
+      .from("profiles")
+      .update({ org_titles: editOrgTitles })
+      .eq("user_id", editUser.id);
+    if (orgTitlesErr) {
+      toast.error(orgTitlesErr.message);
+      setEditSaving(false);
+      return;
+    }
+
+    for (const row of appPermissionCatalog) {
+      const mode = editPermOverride[row.key] ?? "inherit";
+      if (mode === "inherit") {
+        await supabase
+          .from("user_permission_overrides")
+          .delete()
+          .eq("user_id", editUser.id)
+          .eq("permission_key", row.key);
+      } else {
+        const { error: upErr } = await supabase.from("user_permission_overrides").upsert(
+          {
+            user_id: editUser.id,
+            permission_key: row.key,
+            allowed: mode === "allow",
+          },
+          { onConflict: "user_id,permission_key" },
+        );
+        if (upErr) {
+          toast.error(upErr.message);
+          setEditSaving(false);
+          return;
+        }
+      }
+    }
+
     toast.success("Utilisateur mis à jour");
     setEditUser(null);
     loadUsers();
@@ -585,10 +699,7 @@ export default function Admin() {
             <Select value={role} onValueChange={(v) => handleSetRole(u.id, v)}>
               <SelectTrigger className="w-[120px] h-7 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="lecteur">Lecteur</SelectItem>
-                <SelectItem value="redacteur">Rédacteur</SelectItem>
-                <SelectItem value="admin">Admin</SelectItem>
-                {isSuperAdmin && <SelectItem value="super_admin">Super Admin</SelectItem>}
+                <StaffRoleSelectItems isSuperAdmin={isSuperAdmin} />
               </SelectContent>
             </Select>
           ) : (
@@ -611,9 +722,15 @@ export default function Admin() {
             <TabsTrigger value="audits">Audits</TabsTrigger>
             <TabsTrigger value="secteurs">Secteurs</TabsTrigger>
           </TabsList>
-          {currentUser && isSuperAdmin && (
-            <BackupButton />
-          )}
+          <div className="flex items-center gap-2 shrink-0">
+            <Button variant="outline" size="sm" className="rounded-md gap-1.5" asChild>
+              <Link to="/admin/roles">
+                <FontAwesomeIcon icon={faKey} className="h-3.5 w-3.5" />
+                <span className="hidden sm:inline">Rôles & droits</span>
+              </Link>
+            </Button>
+            {currentUser && isSuperAdmin && <BackupButton />}
+          </div>
         </div>
         <TabsContent value="collaborateurs">
       <div className="space-y-4">
@@ -684,10 +801,7 @@ export default function Admin() {
                     <Select value={newRole} onValueChange={setNewRole}>
                       <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="lecteur">Lecteur</SelectItem>
-                        <SelectItem value="redacteur">Rédacteur</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        {isSuperAdmin && <SelectItem value="super_admin">Super Admin</SelectItem>}
+                        <StaffRoleSelectItems isSuperAdmin={isSuperAdmin} />
                       </SelectContent>
                     </Select>
                   </div>
@@ -721,7 +835,7 @@ export default function Admin() {
                   </div>
                 </form>
                 <p className="text-xs text-muted-foreground">
-                  L'utilisateur pourra se connecter immédiatement. Rôle par défaut : Lecteur.
+                  L&apos;utilisateur pourra se connecter immédiatement. Rôle par défaut : Utilisateur.
                 </p>
               </DialogContent>
             </Dialog>
@@ -781,10 +895,7 @@ export default function Admin() {
                               <Select value={role} onValueChange={(v) => handleSetRole(u.id, v)}>
                                 <SelectTrigger className="w-[130px] h-8 text-xs"><SelectValue /></SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="lecteur">Lecteur</SelectItem>
-                                  <SelectItem value="redacteur">Rédacteur</SelectItem>
-                                  <SelectItem value="admin">Admin</SelectItem>
-                                  {isSuperAdmin && <SelectItem value="super_admin">Super Admin</SelectItem>}
+                                  <StaffRoleSelectItems isSuperAdmin={isSuperAdmin} />
                                 </SelectContent>
                               </Select>
                             ) : (
@@ -911,6 +1022,11 @@ export default function Admin() {
                 <p className="text-sm font-semibold text-foreground">{viewUser.displayName}</p>
                 <p className="text-xs text-muted-foreground">{viewUser.email}</p>
                 <div className="mt-1"><RoleBadge role={getUserRole(viewUser)} /></div>
+                {viewUser.orgTitles?.length ? (
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    {viewUser.orgTitles.map((t) => ORG_TITLE_LABELS[t] ?? t).join(" · ")}
+                  </p>
+                ) : null}
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
@@ -1017,12 +1133,67 @@ export default function Admin() {
                 <Select value={editRole} onValueChange={setEditRole}>
                   <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="lecteur">Lecteur</SelectItem>
-                    <SelectItem value="redacteur">Rédacteur</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                    {isSuperAdmin && <SelectItem value="super_admin">Super Admin</SelectItem>}
+                    <StaffRoleSelectItems isSuperAdmin={isSuperAdmin} />
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Titres organisationnels</label>
+                <p className="text-[10px] text-muted-foreground mb-2">Réservés aux rôles staff ; badges d&apos;annuaire.</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {(Object.keys(ORG_TITLE_LABELS) as (keyof typeof ORG_TITLE_LABELS)[]).map((key) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() =>
+                        setEditOrgTitles((prev) =>
+                          prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+                        )
+                      }
+                      className={cn(
+                        "text-xs px-2 py-1 rounded-full border transition-colors",
+                        editOrgTitles.includes(key)
+                          ? "bg-primary/15 border-primary text-foreground"
+                          : "border-border text-muted-foreground hover:bg-secondary/80",
+                      )}
+                    >
+                      {ORG_TITLE_LABELS[key]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Surcharges de droits</label>
+                <p className="text-[10px] text-muted-foreground mb-2">
+                  Défaut = matrice par rôle staff ; Forcer oui / non remplace pour cet utilisateur.
+                </p>
+                <div className="max-h-48 overflow-y-auto space-y-2 rounded-md border border-border/60 p-2">
+                  {appPermissionCatalog.map((row) => (
+                    <div key={row.key} className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
+                      <span className="text-xs font-mono text-foreground shrink-0">{row.key}</span>
+                      <Select
+                        value={editPermOverride[row.key] ?? "inherit"}
+                        onValueChange={(v) =>
+                          setEditPermOverride((prev) => ({
+                            ...prev,
+                            [row.key]: v as "inherit" | "allow" | "deny",
+                          }))
+                        }
+                      >
+                        <SelectTrigger className="h-8 text-xs w-full sm:w-[140px]">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="inherit">Défaut</SelectItem>
+                          <SelectItem value="allow">Forcer oui</SelectItem>
+                          <SelectItem value="deny">Forcer non</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {/* Objectifs paliers */}

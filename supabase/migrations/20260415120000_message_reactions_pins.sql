@@ -52,12 +52,14 @@ $$;
 REVOKE ALL ON FUNCTION public.user_can_read_message (uuid) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.user_can_read_message (uuid) TO authenticated;
 
+DROP POLICY IF EXISTS "Read reactions if can read message" ON public.message_reactions;
 CREATE POLICY "Read reactions if can read message"
   ON public.message_reactions
   FOR SELECT
   TO authenticated
   USING (public.user_can_read_message (message_id));
 
+DROP POLICY IF EXISTS "Add own reaction if can read message" ON public.message_reactions;
 CREATE POLICY "Add own reaction if can read message"
   ON public.message_reactions
   FOR INSERT
@@ -69,6 +71,7 @@ CREATE POLICY "Add own reaction if can read message"
     AND length(emoji) <= 32
   );
 
+DROP POLICY IF EXISTS "Remove own reaction" ON public.message_reactions;
 CREATE POLICY "Remove own reaction"
   ON public.message_reactions
   FOR DELETE
@@ -111,4 +114,16 @@ $$;
 REVOKE ALL ON FUNCTION public.set_message_pin_state (uuid, boolean) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.set_message_pin_state (uuid, boolean) TO authenticated;
 
-ALTER PUBLICATION supabase_realtime ADD TABLE public.message_reactions;
+DO $pub$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_publication_tables
+    WHERE pubname = 'supabase_realtime'
+      AND schemaname = 'public'
+      AND tablename = 'message_reactions'
+  ) THEN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.message_reactions;
+  END IF;
+END
+$pub$;

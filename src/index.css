@@ -158,6 +158,19 @@
     min-height: 100%;
   }
 
+  /*
+   * Téléphone / tablette : légère montée du rem racine pour rapprocher l’échelle
+   * de ce qu’on voit en mode responsive bureau (où la fenêtre est souvent plus large).
+   * Les utilitaires Tailwind en rem suivent automatiquement.
+   */
+  html.device-mobile {
+    font-size: min(18px, calc(16px + 0.55vw));
+  }
+
+  html.device-tablet {
+    font-size: min(17.5px, calc(16px + 0.3vw));
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased leading-relaxed;
     -webkit-tap-highlight-color: transparent;
@@ -200,6 +213,11 @@
 @layer utilities {
   .tabular-nums {
     font-variant-numeric: tabular-nums;
+  }
+
+  /* Contenu page : pleine largeur sur téléphone, pas de double contrainte max-width */
+  .app-page-shell {
+    @apply w-full max-w-full mx-auto px-0 sm:px-1 md:max-w-[56rem] md:px-4;
   }
 
   /* M3 touch target enforcement */

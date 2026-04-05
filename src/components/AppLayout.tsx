@@ -9,6 +9,7 @@ import {
   faUser,
   faKey,
   faEnvelope,
+  faThumbtack,
   faBell,
   faUsers,
   faGear,
@@ -51,7 +52,9 @@ import { MembersDirectoryPanel } from "./MembersDirectoryPanel";
 import { AppNavRail } from "./AppNavRail";
 import { DesktopUserDock } from "./DesktopUserDock";
 import { AppSecondaryNav, AppSecondaryNavPanel } from "./AppSecondaryNav";
-import { getActiveRailSection, getRailSections } from "@/config/appNavigation";
+import { getActiveRailSection, RAIL_SECTIONS_ALL } from "@/config/appNavigation";
+import { usePermissionGate } from "@/contexts/PermissionsContext";
+import { useOptionalMessagingSidebarHost } from "@/contexts/MessagingSidebarContext";
 import { cn } from "@/lib/utils";
 
 interface AppLayoutProps {
@@ -66,6 +69,7 @@ interface AppLayoutProps {
 export function AppLayout({ children, filters, setFilters, availableYears, mainClassName }: AppLayoutProps) {
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin(user);
+  const { hasPermission } = usePermissionGate();
   const isMobile = useIsMobile();
   const location = useLocation();
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -77,7 +81,8 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
   const { row: presenceRow, setPresence } = useMyPresence(user?.id);
   const [membersSheetOpen, setMembersSheetOpen] = useState(false);
 
-  const railSection = getActiveRailSection(location.pathname, getRailSections(isAdmin));
+  const railSection = getActiveRailSection(location.pathname, RAIL_SECTIONS_ALL);
+  const messagingSidebarHost = useOptionalMessagingSidebarHost();
 
   useEffect(() => {
     if (!user) return;
@@ -298,9 +303,9 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
   );
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Top app bar */}
-      <header className="sticky top-0 z-40 bg-card/85 backdrop-blur-2xl border-b border-border/30 shrink-0 px-4 lg:px-0">
+    <div className="flex h-dvh min-h-0 flex-col bg-background">
+      {/* Top app bar — le shell est en h-dvh + overflow-hidden sur la zone centrale : pas de scroll document */}
+      <header className="z-40 shrink-0 bg-card/85 backdrop-blur-2xl border-b border-border/30 px-4 lg:px-0">
         <div className="w-full flex items-stretch justify-between h-16 lg:h-[4.25rem] lg:pl-[360px] lg:pr-[260px]">
           <div className="flex flex-1 items-center justify-between min-w-0 gap-2 pl-4 pr-4 lg:pl-6 lg:pr-6">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -333,6 +338,26 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
             )}
 
             {iconBadge(faBell, "/notifications", unreadNotifications, "Notifications")}
+            {location.pathname.startsWith("/messages") && messagingSidebarHost?.headerChrome && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="relative h-10 w-10 shrink-0 rounded-full"
+                title="Messages épinglés"
+                aria-label="Ouvrir les messages épinglés"
+                onClick={() => messagingSidebarHost.headerChrome?.onOpenPinned()}
+              >
+                <FontAwesomeIcon icon={faThumbtack} className="h-[18px] w-[18px] text-foreground/60" />
+                {messagingSidebarHost.headerChrome.pinnedCount > 0 && (
+                  <span className="absolute top-0 right-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                    {messagingSidebarHost.headerChrome.pinnedCount > 99
+                      ? "99+"
+                      : messagingSidebarHost.headerChrome.pinnedCount}
+                  </span>
+                )}
+              </Button>
+            )}
             {iconBadge(faEnvelope, "/messages", unreadMessages, "Messages")}
 
             {isMobile && (
@@ -373,13 +398,13 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
         </Sheet>
       )}
 
-      <div className="flex flex-1 min-h-0 w-full overflow-x-auto lg:pl-[360px] lg:pr-[260px]">
-        <AppNavRail isAdmin={isAdmin} unreadMessages={unreadMessages} />
-        <AppSecondaryNav isAdmin={isAdmin} />
+      <div className="flex min-h-0 flex-1 flex-row overflow-x-auto overflow-y-hidden lg:pl-[360px] lg:pr-[260px]">
+        <AppNavRail isAdmin={isAdmin} hasPermission={hasPermission} />
+        <AppSecondaryNav isAdmin={isAdmin} hasPermission={hasPermission} />
         <div className="flex flex-1 flex-col min-w-0 min-h-0">
           <main
             className={cn(
-              "w-full max-w-[1440px] lg:max-w-none mx-auto px-4 lg:px-6 py-5 lg:py-6 space-y-5 lg:space-y-6 pb-28 lg:pb-6 flex-1 min-h-0 overflow-y-auto",
+              "mx-auto w-full max-w-[1440px] flex-1 min-h-0 space-y-5 py-5 pb-28 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] overflow-y-auto lg:max-w-none lg:space-y-6 lg:px-6 lg:py-6 lg:pb-6",
               mainClassName,
             )}
           >
@@ -403,6 +428,7 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
           </SheetHeader>
           <AppSecondaryNavPanel
             isAdmin={isAdmin}
+            hasPermission={hasPermission}
             className="flex-1 min-h-0 overflow-y-auto"
           />
         </SheetContent>

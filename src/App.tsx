@@ -11,6 +11,7 @@ import { SplashScreen } from "@/components/SplashScreen";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { MessagingSidebarProvider } from "@/contexts/MessagingSidebarContext";
+import { PermissionsProvider, usePermissionGate } from "@/contexts/PermissionsContext";
 
 // Eagerly loaded (critical path)
 import Welcome from "./pages/Welcome";
@@ -24,6 +25,7 @@ const AuditVersionSelect = lazy(() => import("./pages/AuditVersionSelect"));
 const AuditForm = lazy(() => import("./pages/AuditForm"));
 const Admin = lazy(() => import("./pages/Admin"));
 const AdminAuditGrid = lazy(() => import("./pages/AdminAuditGrid"));
+const AdminRoles = lazy(() => import("./pages/AdminRoles"));
 const BusinessPlan = lazy(() => import("./pages/BusinessPlan"));
 const Drive = lazy(() => import("./pages/Drive"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
@@ -72,9 +74,19 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin(user);
-  if (loading || adminLoading) return <FullPageLoader />;
+  const { hasPermission, loading: permLoading } = usePermissionGate();
+  if (loading || adminLoading || permLoading) return <FullPageLoader />;
   if (!user) return <Navigate to="/auth" replace />;
-  if (!isAdmin) return <Navigate to="/" replace />;
+  if (!isAdmin || !hasPermission("nav.admin")) return <Navigate to="/" replace />;
+  return <Suspense fallback={<FullPageLoader />}>{children}</Suspense>;
+}
+
+function PermissionRoute({ permission, children }: { permission: string; children: React.ReactNode }) {
+  const { user, loading } = useAuth();
+  const { hasPermission, loading: permLoading } = usePermissionGate();
+  if (loading || permLoading) return <FullPageLoader />;
+  if (!user) return <Navigate to="/auth" replace />;
+  if (!hasPermission(permission)) return <Navigate to="/" replace />;
   return <Suspense fallback={<FullPageLoader />}>{children}</Suspense>;
 }
 
@@ -103,40 +115,43 @@ const App = () => {
             {splashDone && (
             <BrowserRouter basename={routerBase}>
               <MessagingSidebarProvider>
-              <Routes>
-                <Route path="/" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
-                <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-                <Route path="/audits" element={<ProtectedRoute><Registre /></ProtectedRoute>} />
-                <Route path="/audits/new" element={<ProtectedRoute><NewAudit /></ProtectedRoute>} />
-                <Route path="/audits/new/version" element={<ProtectedRoute><AuditVersionSelect /></ProtectedRoute>} />
-                <Route path="/audits/new/form" element={<ProtectedRoute><AuditForm /></ProtectedRoute>} />
-                <Route path="/audits/edit/:auditId" element={<ProtectedRoute><AuditForm /></ProtectedRoute>} />
-                <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
-                <Route path="/admin/audit-grid" element={<AdminRoute><AdminAuditGrid /></AdminRoute>} />
-                <Route path="/business-plan" element={<ProtectedRoute><BusinessPlan /></ProtectedRoute>} />
-                <Route path="/drive" element={<ProtectedRoute><Drive /></ProtectedRoute>} />
-                <Route path="/activite/dashboard" element={<ProtectedRoute><SuiviActiviteDashboard /></ProtectedRoute>} />
-                <Route path="/activite/:id" element={<ProtectedRoute><SuiviActiviteDetail /></ProtectedRoute>} />
-                <Route path="/activite" element={<ProtectedRoute><SuiviActiviteList /></ProtectedRoute>} />
-                <Route path="/activite/new/version" element={<ProtectedRoute><SuiviActiviteVersionSelect /></ProtectedRoute>} />
-                <Route path="/activite/new" element={<ProtectedRoute><SuiviActiviteForm /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-                <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
-                <Route path="/reseau" element={<ProtectedRoute><Reseau /></ProtectedRoute>} />
-                <Route path="/reseau/partenaires" element={<ProtectedRoute><Partenaires /></ProtectedRoute>} />
-                <Route path="/reseau/clubs" element={<ProtectedRoute><Clubs /></ProtectedRoute>} />
-                <Route path="/reseau/secteurs" element={<ProtectedRoute><Secteurs /></ProtectedRoute>} />
-                <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
-                <Route path="/messages" element={<ProtectedRoute><Messages /></ProtectedRoute>} />
-                <Route path="/sondages" element={<ProtectedRoute><Sondages /></ProtectedRoute>} />
-                <Route path="/historique" element={<ProtectedRoute><ActivityLog /></ProtectedRoute>} />
-                <Route path="/preferences" element={<ProtectedRoute><Preferences /></ProtectedRoute>} />
-                <Route path="/hub" element={<ProtectedRoute><DashboardHub /></ProtectedRoute>} />
-                <Route path="/primes" element={<ProtectedRoute><Primes /></ProtectedRoute>} />
-                <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
-                <Route path="/reset-password" element={<Suspense fallback={<FullPageLoader />}><ResetPassword /></Suspense>} />
-                <Route path="*" element={<Suspense fallback={<FullPageLoader />}><NotFound /></Suspense>} />
-              </Routes>
+                <PermissionsProvider>
+                  <Routes>
+                    <Route path="/" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
+                    <Route path="/dashboard" element={<PermissionRoute permission="nav.audits"><Index /></PermissionRoute>} />
+                    <Route path="/audits" element={<PermissionRoute permission="nav.audits"><Registre /></PermissionRoute>} />
+                    <Route path="/audits/new" element={<PermissionRoute permission="nav.audits"><NewAudit /></PermissionRoute>} />
+                    <Route path="/audits/new/version" element={<PermissionRoute permission="nav.audits"><AuditVersionSelect /></PermissionRoute>} />
+                    <Route path="/audits/new/form" element={<PermissionRoute permission="nav.audits"><AuditForm /></PermissionRoute>} />
+                    <Route path="/audits/edit/:auditId" element={<PermissionRoute permission="nav.audits"><AuditForm /></PermissionRoute>} />
+                    <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+                    <Route path="/admin/audit-grid" element={<AdminRoute><AdminAuditGrid /></AdminRoute>} />
+                    <Route path="/admin/roles" element={<AdminRoute><AdminRoles /></AdminRoute>} />
+                    <Route path="/business-plan" element={<PermissionRoute permission="nav.reseau"><BusinessPlan /></PermissionRoute>} />
+                    <Route path="/drive" element={<PermissionRoute permission="nav.drive"><Drive /></PermissionRoute>} />
+                    <Route path="/activite/dashboard" element={<PermissionRoute permission="nav.activite"><SuiviActiviteDashboard /></PermissionRoute>} />
+                    <Route path="/activite/:id" element={<PermissionRoute permission="nav.activite"><SuiviActiviteDetail /></PermissionRoute>} />
+                    <Route path="/activite" element={<PermissionRoute permission="nav.activite"><SuiviActiviteList /></PermissionRoute>} />
+                    <Route path="/activite/new/version" element={<PermissionRoute permission="nav.activite"><SuiviActiviteVersionSelect /></PermissionRoute>} />
+                    <Route path="/activite/new" element={<PermissionRoute permission="nav.activite"><SuiviActiviteForm /></PermissionRoute>} />
+                    <Route path="/profile" element={<PermissionRoute permission="nav.hub"><Profile /></PermissionRoute>} />
+                    <Route path="/change-password" element={<PermissionRoute permission="nav.hub"><ChangePassword /></PermissionRoute>} />
+                    <Route path="/reseau" element={<PermissionRoute permission="nav.reseau"><Reseau /></PermissionRoute>} />
+                    <Route path="/reseau/partenaires" element={<PermissionRoute permission="nav.reseau"><Partenaires /></PermissionRoute>} />
+                    <Route path="/reseau/clubs" element={<PermissionRoute permission="nav.reseau"><Clubs /></PermissionRoute>} />
+                    <Route path="/reseau/secteurs" element={<PermissionRoute permission="nav.reseau"><Secteurs /></PermissionRoute>} />
+                    <Route path="/notifications" element={<PermissionRoute permission="nav.hub"><Notifications /></PermissionRoute>} />
+                    <Route path="/messages" element={<PermissionRoute permission="nav.messages"><Messages /></PermissionRoute>} />
+                    <Route path="/sondages" element={<PermissionRoute permission="nav.sondages"><Sondages /></PermissionRoute>} />
+                    <Route path="/historique" element={<PermissionRoute permission="nav.historique"><ActivityLog /></PermissionRoute>} />
+                    <Route path="/preferences" element={<PermissionRoute permission="nav.hub"><Preferences /></PermissionRoute>} />
+                    <Route path="/hub" element={<PermissionRoute permission="nav.hub"><DashboardHub /></PermissionRoute>} />
+                    <Route path="/primes" element={<PermissionRoute permission="nav.hub"><Primes /></PermissionRoute>} />
+                    <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
+                    <Route path="/reset-password" element={<Suspense fallback={<FullPageLoader />}><ResetPassword /></Suspense>} />
+                    <Route path="*" element={<Suspense fallback={<FullPageLoader />}><NotFound /></Suspense>} />
+                  </Routes>
+                </PermissionsProvider>
               </MessagingSidebarProvider>
             </BrowserRouter>
             )}

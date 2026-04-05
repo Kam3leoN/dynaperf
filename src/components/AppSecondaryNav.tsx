@@ -1,25 +1,33 @@
 import { NavLink, useLocation } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import logoDark from "@/assets/DynaPerf_dark.svg";
-import logoLight from "@/assets/DynaPerf_light.svg";
 import { cn } from "@/lib/utils";
-import { getActiveRailSection, getRailSections } from "@/config/appNavigation";
+import {
+  filterSecondaryNavItems,
+  getActiveRailSection,
+  RAIL_SECTIONS_ALL,
+} from "@/config/appNavigation";
 import { MessagingSecondaryNav } from "@/components/messaging/MessagingSecondaryNav";
+import { publicAssetUrl } from "@/lib/basePath";
+
+const SECONDARY_LOGO_LIGHT = publicAssetUrl("DynaPerf_light_simple.svg");
+const SECONDARY_LOGO_DARK = publicAssetUrl("DynaPerf_dark_simple.svg");
 
 interface AppSecondaryNavPanelProps {
   isAdmin: boolean;
+  hasPermission: (key: string) => boolean;
   className?: string;
 }
 
 /**
  * Contenu de la colonne secondaire ~280px type Discord (réutilisable dans le sheet mobile).
  */
-export function AppSecondaryNavPanel({ isAdmin, className }: AppSecondaryNavPanelProps) {
+export function AppSecondaryNavPanel({ isAdmin, hasPermission, className }: AppSecondaryNavPanelProps) {
   const { pathname } = useLocation();
   const { resolvedTheme } = useTheme();
-  const sections = getRailSections(isAdmin);
-  const active = getActiveRailSection(pathname, sections);
+  const active = getActiveRailSection(pathname, RAIL_SECTIONS_ALL);
+  const secondaryLogoSrc =
+    resolvedTheme === "dark" ? SECONDARY_LOGO_DARK : SECONDARY_LOGO_LIGHT;
 
   if (!active) {
     return (
@@ -32,11 +40,14 @@ export function AppSecondaryNavPanel({ isAdmin, className }: AppSecondaryNavPane
       className={cn("flex flex-col bg-muted/10 min-h-0 h-full", className)}
       aria-label={`Sous-navigation ${active.label}`}
     >
-      <div className="flex h-[4.25rem] shrink-0 items-center justify-center px-3">
+      <div className="flex h-[4.25rem] shrink-0 items-center justify-start px-4">
         <img
-          src={resolvedTheme === "dark" ? logoDark : logoLight}
+          src={secondaryLogoSrc}
           alt="DynaPerf"
-          className="h-14 w-auto max-w-full object-contain"
+          className="h-10 w-auto max-w-[min(100%,220px)] object-contain object-left"
+          width={220}
+          height={42}
+          decoding="async"
         />
       </div>
 
@@ -46,7 +57,7 @@ export function AppSecondaryNavPanel({ isAdmin, className }: AppSecondaryNavPane
         </div>
       ) : (
         <nav className="flex flex-col gap-0.5 p-2 overflow-y-auto flex-1 min-h-0">
-          {active.children.map((item) => (
+          {filterSecondaryNavItems(active.children, hasPermission).map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
@@ -69,15 +80,16 @@ export function AppSecondaryNavPanel({ isAdmin, className }: AppSecondaryNavPane
 
 interface AppSecondaryNavProps {
   isAdmin: boolean;
+  hasPermission: (key: string) => boolean;
 }
 
 /**
  * Colonne secondaire desktop (~280px) : sous-menus de la section active.
  */
-export function AppSecondaryNav({ isAdmin }: AppSecondaryNavProps) {
+export function AppSecondaryNav({ isAdmin, hasPermission }: AppSecondaryNavProps) {
   return (
     <aside className="hidden lg:flex fixed left-[80px] top-0 bottom-0 z-[45] w-[280px] flex-col border-r border-border/40 bg-muted/10 min-h-0">
-      <AppSecondaryNavPanel isAdmin={isAdmin} className="flex-1 min-h-0" />
+      <AppSecondaryNavPanel isAdmin={isAdmin} hasPermission={hasPermission} className="flex-1 min-h-0" />
     </aside>
   );
 }

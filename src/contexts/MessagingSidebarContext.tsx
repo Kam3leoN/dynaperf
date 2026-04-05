@@ -51,13 +51,21 @@ export interface MessagingSidebarApi {
 
 }
 
-
+/** Actions / badges dans la barre app (ex. épingle) — renseigné par la page Messages. */
+export interface MessagingHeaderChrome {
+  pinnedCount: number;
+  onOpenPinned: () => void;
+}
 
 interface HostValue {
 
   api: MessagingSidebarApi | null;
 
   setApi: (a: MessagingSidebarApi | null) => void;
+
+  headerChrome: MessagingHeaderChrome | null;
+
+  setHeaderChrome: (h: MessagingHeaderChrome | null) => void;
 
 }
 
@@ -71,7 +79,9 @@ export function MessagingSidebarProvider({ children }: { children: ReactNode }) 
 
   const [api, setApi] = useState<MessagingSidebarApi | null>(null);
 
-  const value = useMemo(() => ({ api, setApi }), [api]);
+  const [headerChrome, setHeaderChrome] = useState<MessagingHeaderChrome | null>(null);
+
+  const value = useMemo(() => ({ api, setApi, headerChrome, setHeaderChrome }), [api, headerChrome]);
 
   return <MessagingSidebarContext.Provider value={value}>{children}</MessagingSidebarContext.Provider>;
 

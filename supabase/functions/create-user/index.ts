@@ -42,6 +42,34 @@ function normUuidStr(s: string | undefined | null): string {
   return s.trim().toLowerCase();
 }
 
+/** Repli si la table catalogue n’existe pas encore (migration non appliquée). */
+const LEGACY_STAFF_ROLE_KEYS = new Set([
+  "member",
+  "bot",
+  "moderator",
+  "super_moderator",
+  "admin",
+  "super_admin",
+]);
+
+/**
+ * Vérifie que `roleKey` existe dans `app_roles_catalog` (rôles dynamiques).
+ */
+async function isKnownStaffRole(
+  adminClient: ReturnType<typeof createClient>,
+  roleKey: string,
+): Promise<boolean> {
+  const { data, error } = await adminClient
+    .from("app_roles_catalog")
+    .select("role_key")
+    .eq("role_key", roleKey)
+    .maybeSingle();
+  if (error) {
+    return LEGACY_STAFF_ROLE_KEYS.has(roleKey);
+  }
+  return !!data;
+}
+
 /**
  * Repli si `listUsers` renvoie un tableau vide côté Edge (bundle Deno / API),
  * alors que `profiles` référence bien des lignes dans auth.users (FK).
@@ -130,6 +158,10 @@ Deno.serve(async (req) => {
     if (action === "set-role") {
       const { userId, role } = body;
       if (!userId || !role) return jsonError("userId et role requis", 400);
+      if (role !== "none") {
+        const ok = await isKnownStaffRole(adminClient, role as string);
+        if (!ok) return jsonError("Rôle inconnu ou non autorisé", 400);
+      }
       if (role === "super_admin" && !callerIsSuperAdmin) return jsonError("Seul un super admin peut attribuer ce rôle", 403);
       const { data: targetRoles } = await adminClient.from("user_roles").select("role").eq("user_id", userId);
       const targetIsSuperAdmin = targetRoles?.some((r: any) => r.role === "super_admin");
@@ -254,6 +286,7 @@ Deno.serve(async (req) => {
           displayName: profile?.display_name || u.email,
           avatarUrl: profile?.avatar_url || null,
           title: profile?.title || null,
+          orgTitles: Array.isArray(profile?.org_titles) ? profile.org_titles : [],
           roles: allRoles?.filter((r: any) => normUuidStr(r.user_id) === uid).map((r: any) => r.role) || [],
           config: allConfigs?.find((c: any) => normUuidStr(c.user_id) === uid) || null,
           customPrimes: allCustomPrimes?.filter((cp: any) => normUuidStr(cp.user_id) === uid) || [],
@@ -313,7 +346,13 @@ Deno.serve(async (req) => {
     if (createError) return jsonError(createError.message, 400);
 
     if (role && role !== "none") {
-      await adminClient.from("user_roles").insert({ user_id: newUser.user.id, role });
+      const ok = await isKnownStaffRole(adminClient, role as string);
+      if (!ok) return jsonError("Rôle inconnu ou non autorisé", 400);
+      const { error: upsertRoleErr } = await adminClient.from("user_roles").upsert(
+        { user_id: newUser.user.id, role },
+        { onConflict: "user_id" },
+      );
+      if (upsertRoleErr) return jsonError(upsertRoleErr.message, 400);
     }
     if (config) {
       await adminClient.from("collaborateur_config").upsert({

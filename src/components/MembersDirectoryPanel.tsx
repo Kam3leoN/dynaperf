@@ -1,6 +1,6 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useDirectoryMembers } from "@/hooks/useDirectoryMembers";
-import { PRIMARY_ROLE_ORDER, PRIMARY_ROLE_SECTION_LABELS } from "@/lib/memberDirectory";
+import { ORG_TITLE_LABELS, sectionTitleForRole } from "@/lib/memberDirectory";
 import { presenceLabelFor } from "@/lib/presence";
 import { PresenceAvatarBadge } from "@/components/PresenceAvatarBadge";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -28,7 +28,7 @@ function getInitials(name: string) {
 export function MembersDirectoryPanel({ className, onPickMember }: MembersDirectoryPanelProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { bySection, loading, error } = useDirectoryMembers(!!user);
+  const { bySection, sectionLabels, rolePriorityOrder, loading, error } = useDirectoryMembers(!!user);
 
   return (
     <div className={cn("flex flex-col min-h-0 h-full bg-muted/15", className)}>
@@ -42,13 +42,13 @@ export function MembersDirectoryPanel({ className, onPickMember }: MembersDirect
           )}
           {!loading &&
             !error &&
-            PRIMARY_ROLE_ORDER.map((roleKey) => {
+            rolePriorityOrder.map((roleKey) => {
               const list = bySection.get(roleKey) ?? [];
               if (list.length === 0) return null;
               return (
                 <section key={roleKey} className="mb-3">
                   <h3 className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
-                    {PRIMARY_ROLE_SECTION_LABELS[roleKey]} — {list.length}
+                    {sectionTitleForRole(roleKey, sectionLabels)} — {list.length}
                   </h3>
                   <ul className="space-y-0.5">
                     {list.map((m) => (
@@ -78,7 +78,14 @@ export function MembersDirectoryPanel({ className, onPickMember }: MembersDirect
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-foreground truncate leading-tight">{m.displayName}</p>
                             <p className="text-[11px] text-muted-foreground truncate leading-tight mt-0.5">
-                              {m.title?.trim() || presenceLabelFor(m.presence)}
+                              {[
+                                m.orgTitles.length
+                                  ? m.orgTitles.map((t) => ORG_TITLE_LABELS[t] ?? t).join(" · ")
+                                  : null,
+                                m.title?.trim() || null,
+                              ]
+                                .filter(Boolean)
+                                .join(" · ") || presenceLabelFor(m.presence)}
                             </p>
                           </div>
                         </button>

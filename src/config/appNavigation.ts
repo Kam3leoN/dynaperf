@@ -37,12 +37,17 @@ export interface RailSection {
   children: SecondaryNavItem[];
   /** Masquée si non admin. */
   requireAdmin?: boolean;
+  /** Clé `app_permissions` (ex. nav.audits) ; absente du menu si refusé. */
+  requiredPermission?: string;
+  /** Absente du rail vertical (lg) ; reste dans getRailSections pour mobile / résolution d’URL. */
+  hideFromRail?: boolean;
 }
 
 export interface SecondaryNavItem {
   label: string;
   to: string;
   icon: IconDefinition;
+  requiredPermission?: string;
 }
 
 const home: RailSection = {
@@ -50,6 +55,7 @@ const home: RailSection = {
   label: "Accueil",
   icon: faHouse,
   to: "/",
+  requiredPermission: "nav.hub",
   /** Inclut compte / préférences pour que la colonne secondaire (logo + liens) reste visible. */
   pathPrefixes: [
     "/hub",
@@ -61,13 +67,15 @@ const home: RailSection = {
   ],
   children: [
     { label: "Hub", to: "/hub", icon: faChartLine },
-    { label: "Tableau de bord audits", to: "/dashboard", icon: faClipboardList },
+    { label: "Tableau de bord audits", to: "/dashboard", icon: faClipboardList, requiredPermission: "nav.audits" },
     { label: "Préférences", to: "/preferences", icon: faGear },
     { label: "Profil", to: "/profile", icon: faUser },
     { label: "Mot de passe", to: "/change-password", icon: faKey },
     { label: "Mes primes", to: "/primes", icon: faMoneyBill },
     { label: "Notifications", to: "/notifications", icon: faBell },
   ],
+  /** Raccourci maison retiré du rail : le logo en bandeau joue le rôle d’accueil. */
+  hideFromRail: true,
 };
 
 const messagerie: RailSection = {
@@ -77,6 +85,8 @@ const messagerie: RailSection = {
   to: "/messages",
   pathPrefixes: ["/messages"],
   children: [],
+  requiredPermission: "nav.messages",
+  hideFromRail: true,
 };
 
 const audits: RailSection = {
@@ -84,6 +94,7 @@ const audits: RailSection = {
   label: "Audits",
   icon: faClipboardList,
   to: "/dashboard",
+  requiredPermission: "nav.audits",
   pathPrefixes: ["/dashboard", "/audits"],
   children: [
     { label: "Tableau de bord", to: "/dashboard", icon: faChartLine },
@@ -98,6 +109,7 @@ const suivis: RailSection = {
   label: "Suivis",
   icon: faListCheck,
   to: "/activite/dashboard",
+  requiredPermission: "nav.activite",
   pathPrefixes: ["/activite"],
   children: [
     { label: "Tableau de bord", to: "/activite/dashboard", icon: faChartLine },
@@ -112,6 +124,7 @@ const reseau: RailSection = {
   label: "Réseau",
   icon: faHandshake,
   to: "/reseau/partenaires",
+  requiredPermission: "nav.reseau",
   pathPrefixes: ["/reseau", "/business-plan"],
   children: [
     { label: "Partenaires", to: "/reseau/partenaires", icon: faUsers },
@@ -126,6 +139,7 @@ const drive: RailSection = {
   label: "Drive",
   icon: faFolder,
   to: "/drive",
+  requiredPermission: "nav.drive",
   pathPrefixes: ["/drive"],
   children: [{ label: "Mon Drive", to: "/drive", icon: faFolder }],
 };
@@ -135,6 +149,7 @@ const sondages: RailSection = {
   label: "Sondages",
   icon: faSquarePollVertical,
   to: "/sondages",
+  requiredPermission: "nav.sondages",
   pathPrefixes: ["/sondages"],
   children: [{ label: "Sondages", to: "/sondages", icon: faSquarePollVertical }],
 };
@@ -144,6 +159,7 @@ const historique: RailSection = {
   label: "Historique",
   icon: faClockRotateLeft,
   to: "/historique",
+  requiredPermission: "nav.historique",
   pathPrefixes: ["/historique"],
   children: [{ label: "Historique", to: "/historique", icon: faClockRotateLeft }],
 };
@@ -155,15 +171,17 @@ const admin: RailSection = {
   to: "/admin",
   pathPrefixes: ["/admin"],
   requireAdmin: true,
+  requiredPermission: "nav.admin",
   children: [
     { label: "Administration", to: "/admin", icon: faUserShield },
+    { label: "Rôles & droits", to: "/admin/roles", icon: faKey },
     { label: "Grille audits", to: "/admin/audit-grid", icon: faTableCells },
   ],
 };
 
 const ALL_RAIL_SECTIONS: RailSection[] = [
-  messagerie,
   home,
+  messagerie,
   audits,
   suivis,
   reseau,
@@ -173,19 +191,41 @@ const ALL_RAIL_SECTIONS: RailSection[] = [
   admin,
 ];
 
+/** Registre complet (résolution d’URL / section active) — indépendant des droits d’affichage. */
+export const RAIL_SECTIONS_ALL: RailSection[] = ALL_RAIL_SECTIONS;
+
 /**
- * Sections du rail filtrées (admin). L’ordre est personnalisable plus tard via localStorage.
+ * Sections du rail filtrées (admin + permissions).
+ * @param hasPermission - si absent, toutes les permissions sont considérées accordées (repli).
  */
-export function getRailSections(isAdmin: boolean): RailSection[] {
-  return ALL_RAIL_SECTIONS.filter((s) => !s.requireAdmin || isAdmin);
+export function getRailSections(isAdmin: boolean, hasPermission?: (key: string) => boolean): RailSection[] {
+  const can = hasPermission ?? (() => true);
+  return ALL_RAIL_SECTIONS.filter((s) => {
+    if (s.requireAdmin && !isAdmin) return false;
+    if (s.requiredPermission && !can(s.requiredPermission)) return false;
+    return true;
+  });
 }
 
-/** Section épinglée en tête du rail (hauteur = bande logo, au-dessus du défilement). */
-export const RAIL_PINNED_TOP_SECTION_ID = "messages";
+/**
+ * Section épinglée en tête du rail (icône NavLink). `null` = bande réservée au logo marque.
+ */
+export const RAIL_PINNED_TOP_SECTION_ID: string | null = null;
 
-/** Sections du rail qui défilent sous la zone fixe (sans la messagerie). */
-export function getRailScrollSections(isAdmin: boolean): RailSection[] {
-  return getRailSections(isAdmin).filter((s) => s.id !== RAIL_PINNED_TOP_SECTION_ID);
+/** Sections du rail sous la bande logo (toutes les entrées quand rien n’est épinglé). */
+export function getRailScrollSections(isAdmin: boolean, hasPermission?: (key: string) => boolean): RailSection[] {
+  const list = getRailSections(isAdmin, hasPermission).filter((s) => !s.hideFromRail);
+  if (!RAIL_PINNED_TOP_SECTION_ID) return list;
+  return list.filter((s) => s.id !== RAIL_PINNED_TOP_SECTION_ID);
+}
+
+/** Filtre les liens secondaires selon les permissions. */
+export function filterSecondaryNavItems(
+  items: SecondaryNavItem[],
+  hasPermission?: (key: string) => boolean,
+): SecondaryNavItem[] {
+  const can = hasPermission ?? (() => true);
+  return items.filter((item) => !item.requiredPermission || can(item.requiredPermission));
 }
 
 /**

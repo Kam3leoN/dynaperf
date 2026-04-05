@@ -6,29 +6,30 @@ import {
   getRailSections,
   getRailScrollSections,
   RAIL_PINNED_TOP_SECTION_ID,
+  RAIL_SECTIONS_ALL,
   type RailSection,
 } from "@/config/appNavigation";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { publicAssetUrl } from "@/lib/basePath";
+
+const RAIL_LOGO_SRC = publicAssetUrl("pwaDynaperf.svg");
 
 interface AppNavRailProps {
   isAdmin: boolean;
-  unreadMessages: number;
+  hasPermission: (key: string) => boolean;
 }
 
 interface RailItemProps {
   section: RailSection;
   isActive: boolean;
-  unreadMessages: number;
-  /** true = zone fixe messagerie (hauteur alignée sur la bande logo colonne secondaire) */
+  /** true = zone fixe (hauteur alignée sur la bande logo colonne secondaire) */
   pinned?: boolean;
 }
 
 /** Même hauteur que la bande logo `AppSecondaryNav` et le header `AppLayout` (lg). */
 const RAIL_TOP_STRIP_H = "h-[4.25rem]";
 
-function RailNavItem({ section, isActive, unreadMessages, pinned }: RailItemProps) {
-  const showMsgBadge = section.id === "messages" && unreadMessages > 0;
-
+function RailNavItem({ section, isActive, pinned }: RailItemProps) {
   return (
     <Tooltip delayDuration={200}>
       <TooltipTrigger asChild>
@@ -58,11 +59,6 @@ function RailNavItem({ section, isActive, unreadMessages, pinned }: RailItemProp
             )}
           >
             <FontAwesomeIcon icon={section.icon} className="size-6 shrink-0" />
-            {showMsgBadge && (
-              <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-background bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                {unreadMessages > 99 ? "99+" : unreadMessages}
-              </span>
-            )}
           </span>
         </NavLink>
       </TooltipTrigger>
@@ -74,14 +70,17 @@ function RailNavItem({ section, isActive, unreadMessages, pinned }: RailItemProp
 }
 
 /**
- * Rail 80px : messagerie fixe (hauteur = bande logo) au-dessus ; le reste défile en dessous.
+ * Rail 80px : logo marque fixe (hauteur = bande logo colonne secondaire) ; le reste défile en dessous.
  */
-export function AppNavRail({ isAdmin, unreadMessages }: AppNavRailProps) {
+export function AppNavRail({ isAdmin, hasPermission }: AppNavRailProps) {
   const { pathname } = useLocation();
-  const sections = getRailSections(isAdmin);
-  const scrollSections = getRailScrollSections(isAdmin);
-  const active = getActiveRailSection(pathname, sections);
-  const pinnedSection = sections.find((s) => s.id === RAIL_PINNED_TOP_SECTION_ID);
+  const visibleSections = getRailSections(isAdmin, hasPermission);
+  const scrollSections = getRailScrollSections(isAdmin, hasPermission);
+  const active = getActiveRailSection(pathname, RAIL_SECTIONS_ALL);
+  const pinnedSection =
+    RAIL_PINNED_TOP_SECTION_ID &&
+    visibleSections.find((s) => s.id === RAIL_PINNED_TOP_SECTION_ID && !s.hideFromRail);
+  const logoIsHomeActive = active?.id === "home";
 
   return (
     <nav
@@ -89,39 +88,79 @@ export function AppNavRail({ isAdmin, unreadMessages }: AppNavRailProps) {
       aria-label="Navigation principale"
     >
       <div className="relative flex min-h-0 flex-1 flex-col">
-        {/* Liste qui défile ; spacer = hauteur bande messagerie (alignée logo) */}
+        {/* Liste qui défile ; spacer = hauteur bande logo (alignée AppSecondaryNav) */}
         <div className="flex-1 overflow-y-auto overflow-x-hidden px-1 pb-1.5 pt-0 [scrollbar-gutter:stable]">
           <div className={cn(RAIL_TOP_STRIP_H, "w-full shrink-0")} aria-hidden />
           {scrollSections.map((s) => (
             <div key={s.id} className="flex justify-center">
-              <RailNavItem
-                section={s}
-                isActive={active?.id === s.id}
-                unreadMessages={unreadMessages}
-              />
+              <RailNavItem section={s} isActive={active?.id === s.id} />
             </div>
           ))}
         </div>
 
-        {/* Messagerie : fixe par-dessus le scroll, même hauteur que la bande logo à droite */}
-        {pinnedSection && (
-          <div
-            className={cn(
-              "pointer-events-none absolute left-0 right-0 top-0 z-10 flex w-[80px] items-center justify-center border-b border-border/30 bg-muted/95 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-muted/80",
-              RAIL_TOP_STRIP_H,
-            )}
-            role="presentation"
-          >
-            <div className="pointer-events-auto flex justify-center">
+        {/* Bande logo (remplace l’ancienne entrée messagerie épinglée) ou section épinglée si configurée */}
+        <div
+          className={cn(
+            "pointer-events-none absolute left-0 right-0 top-0 z-10 flex w-[80px] items-center justify-center border-b border-border/30 bg-muted/95 shadow-sm backdrop-blur-md supports-[backdrop-filter]:bg-muted/80",
+            RAIL_TOP_STRIP_H,
+          )}
+          role="presentation"
+        >
+          <div className="pointer-events-auto flex justify-center">
+            {pinnedSection ? (
               <RailNavItem
                 section={pinnedSection}
                 isActive={active?.id === pinnedSection.id}
-                unreadMessages={unreadMessages}
                 pinned
               />
-            </div>
+            ) : (
+              <Tooltip delayDuration={200}>
+                <TooltipTrigger asChild>
+                  <NavLink
+                    to="/"
+                    aria-label="DynaPerf — Accueil"
+                    aria-current={logoIsHomeActive ? "page" : undefined}
+                    className={cn(
+                      "group relative flex shrink-0 items-center justify-center outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/40",
+                      RAIL_TOP_STRIP_H,
+                      "w-20",
+                    )}
+                  >
+                    {logoIsHomeActive && (
+                      <span
+                        className="absolute -left-1 top-1/2 h-8 w-[4px] -translate-y-1/2 rounded-r-full bg-primary"
+                        aria-hidden
+                      />
+                    )}
+                    <span
+                      className={cn(
+                        "relative flex size-12 items-center justify-center rounded-[28%] transition-colors",
+                        logoIsHomeActive
+                          ? "bg-primary/20 ring-1 ring-primary/25"
+                          : "group-hover:bg-secondary/60",
+                      )}
+                    >
+                      <img
+                        src={RAIL_LOGO_SRC}
+                        alt=""
+                        className={cn(
+                          "h-9 w-auto max-w-[52px] object-contain",
+                          logoIsHomeActive ? "opacity-100" : "opacity-95 group-hover:opacity-100",
+                        )}
+                        width={52}
+                        height={36}
+                        decoding="async"
+                      />
+                    </span>
+                  </NavLink>
+                </TooltipTrigger>
+                <TooltipContent side="right" align="center" sideOffset={10}>
+                  Accueil
+                </TooltipContent>
+              </Tooltip>
+            )}
           </div>
-        )}
+        </div>
       </div>
     </nav>
   );

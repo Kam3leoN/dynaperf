@@ -3,7 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useAdmin } from "@/hooks/useAdmin";
+import { usePermissionGate } from "@/contexts/PermissionsContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
@@ -20,6 +20,7 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faComments, faArrowLeft, faCheck, faCheckDouble,
@@ -428,6 +429,13 @@ interface MessagesInputBarProps {
  * Composant de module : ne pas le définir dans `Messages`, sinon React remonte la barre à chaque
  * frappe (nouveau type de composant à chaque rendu du parent) → une lettre puis perte de focus.
  */
+/** Aperçu texte brut pour la liste des messages épinglés (contenu riche HTML). */
+function stripHtmlPreview(html: string, maxLen: number): string {
+  const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
+  if (text.length <= maxLen) return text;
+  return `${text.slice(0, maxLen)}…`;
+}
+
 function MessagesInputBar({ value, onChange, onSend, sendDisabled }: MessagesInputBarProps) {
   const isMobile = useIsMobile();
   const editor = (
@@ -471,10 +479,10 @@ function MessagesInputBar({ value, onChange, onSend, sendDisabled }: MessagesInp
 
 export default function Messages() {
   const { user } = useAuth();
-  const { isAdmin } = useAdmin(user);
-  const canManageSalons = isAdmin;
+  const { hasPermission } = usePermissionGate();
+  const canManageSalons = hasPermission("messaging.manage_salons");
   const isMobile = useIsMobile();
-  const { setApi } = useMessagingSidebarHost();
+  const { setApi, setHeaderChrome } = useMessagingSidebarHost();
   const [searchParams, setSearchParams] = useSearchParams();
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
@@ -492,6 +500,7 @@ export default function Messages() {
   const [editingMsg, setEditingMsg] = useState<Message | null>(null);
   const [editContent, setEditContent] = useState("");
   const [deletingMsg, setDeletingMsg] = useState<Message | null>(null);
+  const [pinnedSheetOpen, setPinnedSheetOpen] = useState(false);
 
   // Group / salon CRUD
   const [groupDialogOpen, setGroupDialogOpen] = useState(false);
@@ -685,6 +694,25 @@ export default function Messages() {
         ? sortMessagesByTime(rawConversation)
         : mergeGroupMessageRows(rawConversation, user.id)
       : sortMessagesByTime(rawConversation);
+
+  const openPinnedSheet = useCallback(() => setPinnedSheetOpen(true), []);
+  const pinnedCount = conversation.filter((m) => m.pinned_at).length;
+
+  useEffect(() => {
+    if (!target) {
+      setHeaderChrome(null);
+      return;
+    }
+    setHeaderChrome({ pinnedCount, onOpenPinned: openPinnedSheet });
+    return () => setHeaderChrome(null);
+  }, [target, pinnedCount, openPinnedSheet, setHeaderChrome]);
+
+  const scrollToPinnedMessage = useCallback((messageId: string) => {
+    setPinnedSheetOpen(false);
+    requestAnimationFrame(() => {
+      document.getElementById(`message-${messageId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    });
+  }, []);
 
   const getUnreadCount = (t: ConversationTarget) => {
     if (t.type === "group") {
@@ -1075,6 +1103,7 @@ export default function Messages() {
 
     return (
       <div
+        id={`message-${m.id}`}
         className={cn(
           "group/msg relative flex gap-3 px-4 pr-28",
           showHeader ? "mt-[15px]" : "mt-[2px]",
@@ -1260,16 +1289,26 @@ export default function Messages() {
     );
   };
 
+  /** Suffixe après le titre (pas de répétition du nom : déjà affiché à gauche). */
+  const conversationHeaderMetaSuffix =
+    !target
+      ? null
+      : target.type === "user"
+        ? `| ${presenceLabelFor(presenceByUser[target.id])}`
+        : activeGroup?.is_public === true
+          ? `| Salon public · ${allProfiles.length} membres`
+          : `| Groupe privé · ${groupMembers.filter((gm) => gm.group_id === target.id).length} membres`;
+
   const ConversationHeader = ({ onBack }: { onBack?: () => void }) => (
-    <div className="flex items-center gap-3 px-4 py-3 border-b border-border/60 bg-background shrink-0">
+    <div className="flex h-16 w-full shrink-0 items-center gap-2 px-4 lg:h-[4.25rem] lg:gap-3 lg:px-6">
       {onBack && (
-        <button onClick={onBack} className="text-muted-foreground hover:text-foreground">
+        <button type="button" onClick={onBack} className="text-muted-foreground hover:text-foreground">
           <FontAwesomeIcon icon={faArrowLeft} className="h-4 w-4" />
         </button>
       )}
       {target?.type === "user" ? (
-        <div className="relative h-9 w-9 shrink-0">
-          <Avatar className="h-9 w-9">
+        <div className="relative h-8 w-8 shrink-0 lg:h-9 lg:w-9">
+          <Avatar className="h-8 w-8 lg:h-9 lg:w-9">
             {targetAvatar && <AvatarImage src={targetAvatar} />}
             <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
               {getInitials(targetName)}
@@ -1278,35 +1317,27 @@ export default function Messages() {
           <PresenceAvatarBadge presence={presenceByUser[target.id]} className="scale-90" />
         </div>
       ) : activeGroup?.is_public ? (
-        <div className="h-9 w-9 shrink-0 rounded-lg bg-muted/80 flex items-center justify-center text-muted-foreground">
-          <FontAwesomeIcon icon={faHashtag} className="h-4 w-4" />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/80 text-muted-foreground lg:h-9 lg:w-9">
+          <FontAwesomeIcon icon={faHashtag} className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
         </div>
       ) : (
-        <Avatar className="h-9 w-9 shrink-0">
+        <Avatar className="h-8 w-8 shrink-0 lg:h-9 lg:w-9">
           {targetAvatar && <AvatarImage src={targetAvatar} />}
           <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
             <FontAwesomeIcon icon={faUsers} className="h-4 w-4" />
           </AvatarFallback>
         </Avatar>
       )}
-      <div className="flex-1 min-w-0">
-        <p className="text-base font-semibold text-foreground truncate">{targetName}</p>
-        {target?.type === "user" && (
-          <p className="text-xs text-muted-foreground">{presenceLabelFor(presenceByUser[target.id])}</p>
-        )}
-        {target?.type === "group" && activeGroup?.is_public && (
-          <p className="text-xs text-muted-foreground">Salon public · {allProfiles.length} membres</p>
-        )}
-        {target?.type === "group" && !activeGroup?.is_public && (
-          <p className="text-xs text-muted-foreground">
-            {groupMembers.filter(gm => gm.group_id === target.id).length} membres
-          </p>
+      <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+        <span className="min-w-0 max-w-full truncate text-base font-semibold leading-tight text-foreground">{targetName}</span>
+        {conversationHeaderMetaSuffix && (
+          <span className="min-w-0 text-sm font-normal text-muted-foreground sm:truncate">{conversationHeaderMetaSuffix}</span>
         )}
       </div>
       {target?.type === "group" && activeGroup?.is_public && canManageSalons && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 lg:h-10 lg:w-10">
               <FontAwesomeIcon icon={faEllipsisVertical} className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -1326,7 +1357,7 @@ export default function Messages() {
       {target?.type === "group" && isGroupCreator && !activeGroup?.is_public && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-8 w-8">
+            <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 lg:h-10 lg:w-10">
               <FontAwesomeIcon icon={faEllipsisVertical} className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -1353,13 +1384,12 @@ export default function Messages() {
     <div
       ref={scrollRef}
       className={cn(
-        "min-h-0 flex-1 overflow-y-auto py-2",
-        "bg-[#ebecef] dark:bg-[#313338]",
+        "min-h-0 min-w-0 w-full flex-1 overflow-y-auto overscroll-y-contain",
         "pb-4 lg:pb-[min(48vh,18rem)]",
       )}
     >
       {groupedMessages.length === 0 && (
-        <div className="flex h-full flex-col items-center justify-center gap-2 py-12 text-center">
+        <div className="flex h-full min-h-[12rem] flex-col items-center justify-start gap-2 px-4 pt-16 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
             <FontAwesomeIcon icon={faComments} className="h-7 w-7 text-primary/40" />
           </div>
@@ -1369,11 +1399,11 @@ export default function Messages() {
       {groupedMessages.map((group) => (
         <div key={group.date}>
           <div className="my-4 flex items-center gap-3 px-4">
-            <div className="h-px flex-1 bg-border dark:bg-white/[0.08]" />
+            <div className="h-[2px] flex-1 self-center bg-border dark:bg-white/[0.08]" />
             <span className="shrink-0 text-[11px] font-semibold text-muted-foreground dark:text-[#949ba4]">
               {formatMessageDate(group.msgs[0].created_at)}
             </span>
-            <div className="h-px flex-1 bg-border dark:bg-white/[0.08]" />
+            <div className="h-[2px] flex-1 self-center bg-border dark:bg-white/[0.08]" />
           </div>
           {group.msgs.map((m, i) => (
             <MessageBubble key={m.id} m={m} i={i} group={group.msgs} />
@@ -1456,7 +1486,43 @@ export default function Messages() {
   );
 
   const messagesMainClassName =
-    "flex flex-col min-h-0 flex-1 !space-y-0 px-0 py-0 pb-28 lg:pb-0 lg:overflow-hidden lg:min-h-0";
+    "flex min-h-0 min-w-0 w-full max-w-none flex-1 flex-col !mx-0 !max-w-none !space-y-0 !justify-start !overflow-hidden !overflow-y-hidden px-0 pt-0 pb-28 lg:!px-0 lg:!py-0 lg:min-h-0";
+
+  const pinnedMessagesOrdered = [...conversation]
+    .filter((m) => m.pinned_at)
+    .sort((a, b) => new Date(b.pinned_at!).getTime() - new Date(a.pinned_at!).getTime());
+
+  const pinnedMessagesSheet = (
+    <Sheet open={pinnedSheetOpen} onOpenChange={setPinnedSheetOpen}>
+      <SheetContent side="right" className="flex w-[min(100vw-1rem,380px)] flex-col sm:max-w-[380px]">
+        <SheetHeader>
+          <SheetTitle>Messages épinglés</SheetTitle>
+        </SheetHeader>
+        <div className="mt-4 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
+          {pinnedMessagesOrdered.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Aucun message épinglé dans cette conversation.</p>
+          ) : (
+            pinnedMessagesOrdered.map((m) => {
+              const who = getProfileById(m.sender_id)?.display_name?.trim() || "Utilisateur";
+              return (
+                <button
+                  key={m.id}
+                  type="button"
+                  className="rounded-lg border border-border/60 bg-card/30 p-3 text-left transition-colors hover:bg-muted/50"
+                  onClick={() => scrollToPinnedMessage(m.id)}
+                >
+                  <div className="text-xs font-semibold text-muted-foreground">
+                    {who} · {format(new Date(m.created_at), "Pp", { locale: fr })}
+                  </div>
+                  <div className="mt-1 line-clamp-3 text-sm text-foreground">{stripHtmlPreview(m.content, 200)}</div>
+                </button>
+              );
+            })
+          )}
+        </div>
+      </SheetContent>
+    </Sheet>
+  );
 
   const messagesDialogs = (
     <MessagesDialogs
@@ -1496,8 +1562,10 @@ export default function Messages() {
   if (isMobile && target) {
     return (
       <AppLayout mainClassName={messagesMainClassName}>
-        <div className="fixed inset-0 top-16 bottom-[68px] z-30 flex flex-col bg-background">
-          <ConversationHeader onBack={() => setTarget(null)} />
+        <div className="fixed inset-0 top-16 bottom-[68px] z-30 flex w-full min-w-0 flex-col overflow-hidden bg-background">
+          <div className="relative z-40 shrink-0 border-b border-border/30 bg-background/90 backdrop-blur-sm supports-[backdrop-filter]:bg-background/85">
+            <ConversationHeader onBack={() => setTarget(null)} />
+          </div>
           <MessagesArea />
           <MessagesInputBar
             value={newMsg}
@@ -1506,6 +1574,7 @@ export default function Messages() {
             sendDisabled={!newMsg.trim() || sending}
           />
         </div>
+        {pinnedMessagesSheet}
         {messagesDialogs}
       </AppLayout>
     );
@@ -1513,12 +1582,14 @@ export default function Messages() {
 
   return (
     <AppLayout mainClassName={messagesMainClassName}>
-      <div className="flex flex-1 flex-col min-h-0 min-h-[calc(100dvh-4rem-1px)] lg:min-h-[calc(100dvh-4.25rem-1px)]">
+      <div className="flex min-h-0 min-w-0 w-full max-w-none flex-1 flex-col justify-start overflow-hidden">
         {isMobile && <GroupsToolbar />}
         {target ? (
           <>
-            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden lg:overflow-hidden">
-              <ConversationHeader />
+            <div className="relative flex min-h-0 min-w-0 w-full flex-1 flex-col overflow-hidden">
+              <div className="relative z-30 shrink-0 border-b border-border/30 bg-background/90 backdrop-blur-sm supports-[backdrop-filter]:bg-background/85">
+                <ConversationHeader />
+              </div>
               <MessagesArea />
             </div>
             <MessagesInputBar
@@ -1550,6 +1621,7 @@ export default function Messages() {
           </div>
         )}
       </div>
+      {pinnedMessagesSheet}
       {messagesDialogs}
     </AppLayout>
   );

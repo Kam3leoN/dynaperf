@@ -7,7 +7,7 @@ import { GamificationWidget } from "@/components/GamificationWidget";
 import { useGamification } from "@/hooks/useGamification";
 import { BadgeReward } from "@/components/BadgeReward";
 import { QRCodeSVG } from "qrcode.react";
-import PwaIcon from "/pwaDynaperf.svg";
+import { absoluteAppBaseUrl, publicAssetUrl } from "@/lib/basePath";
 
 export default function Welcome() {
   const { user } = useAuth();
@@ -29,7 +29,9 @@ export default function Welcome() {
 
   const greeting = firstName ?? user?.email?.split("@")[0] ?? "Utilisateur";
 
-  const appUrl = "https://dynaperf.lovable.app/";
+  /** Déploiement courant (GitHub Pages, Lovable, etc.) — correct avec `base` Vite. */
+  const appUrl = absoluteAppBaseUrl();
+  const pwaIconUrl = publicAssetUrl("pwaDynaperf.svg");
 
   return (
     <AppLayout>
@@ -57,7 +59,7 @@ export default function Welcome() {
                 size={160}
                 level="M"
                 imageSettings={{
-                  src: PwaIcon,
+                  src: pwaIconUrl,
                   x: undefined,
                   y: undefined,
                   height: 28,

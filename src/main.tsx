@@ -58,7 +58,10 @@ async function registerSW() {
 
   try {
     const { Serwist } = await import("@serwist/window");
-    const sw = new Serwist("/sw.js", { scope: "/", type: "classic" });
+    const base = import.meta.env.BASE_URL;
+    const normalizedBase = base.endsWith("/") ? base : `${base}/`;
+    const swUrl = `${normalizedBase}sw.js`;
+    const sw = new Serwist(swUrl, { scope: normalizedBase, type: "classic" });
     sw.register();
   } catch (e) {
     console.warn("SW registration failed:", e);

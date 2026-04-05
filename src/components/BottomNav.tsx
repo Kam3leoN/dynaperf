@@ -6,8 +6,10 @@ import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "./ui/sheet";
 import { MobileMoreMenu } from "./MobileMoreMenu";
 import { getRailSections } from "@/config/appNavigation";
+import { usePermissionGate } from "@/contexts/PermissionsContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/hooks/useAuth";
+import { publicAssetUrl } from "@/lib/basePath";
 
 /**
  * Barre inférieure mobile : entrées alignées sur le rail (config centrale).
@@ -17,9 +19,10 @@ export function BottomNav() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isAdmin } = useAdmin(user);
+  const { hasPermission } = usePermissionGate();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const sections = getRailSections(isAdmin);
+  const sections = getRailSections(isAdmin, hasPermission);
   const messagesSection = sections.find((s) => s.id === "messages");
   const driveSection = sections.find((s) => s.id === "drive");
   const hubPath = "/hub";
@@ -81,7 +84,7 @@ export function BottomNav() {
             style={{ backgroundColor: "#212121" }}
             aria-label="Accueil"
           >
-            <img src="/pwaDynaperf.svg" alt="DynaPerf" className="h-8 w-8" />
+            <img src={publicAssetUrl("pwaDynaperf.svg")} alt="DynaPerf" className="h-8 w-8" />
           </button>
 
           {driveSection && (
@@ -115,34 +118,36 @@ export function BottomNav() {
             </button>
           )}
 
-          <button
-            type="button"
-            onClick={() => navigate(hubPath)}
-            className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 touch-target"
-          >
-            <div
-              className={cn(
-                "flex items-center justify-center w-16 h-8 rounded-2xl transition-all duration-200",
-                isHubActive ? "bg-primary/12 scale-105" : "bg-transparent",
-              )}
+          {hasPermission("nav.hub") && (
+            <button
+              type="button"
+              onClick={() => navigate(hubPath)}
+              className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 touch-target"
             >
-              <FontAwesomeIcon
-                icon={faChartLine}
+              <div
                 className={cn(
-                  "h-[22px] w-[22px] transition-colors",
+                  "flex items-center justify-center w-16 h-8 rounded-2xl transition-all duration-200",
+                  isHubActive ? "bg-primary/12 scale-105" : "bg-transparent",
+                )}
+              >
+                <FontAwesomeIcon
+                  icon={faChartLine}
+                  className={cn(
+                    "h-[22px] w-[22px] transition-colors",
+                    isHubActive ? "text-primary" : "text-muted-foreground",
+                  )}
+                />
+              </div>
+              <span
+                className={cn(
+                  "text-[11px] font-semibold transition-colors",
                   isHubActive ? "text-primary" : "text-muted-foreground",
                 )}
-              />
-            </div>
-            <span
-              className={cn(
-                "text-[11px] font-semibold transition-colors",
-                isHubActive ? "text-primary" : "text-muted-foreground",
-              )}
-            >
-              Hub
-            </span>
-          </button>
+              >
+                Hub
+              </span>
+            </button>
+          )}
         </div>
       </nav>
 

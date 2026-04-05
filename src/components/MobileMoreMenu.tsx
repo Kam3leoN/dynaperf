@@ -11,7 +11,8 @@ import {
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/hooks/useAuth";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
-import { getRailSections } from "@/config/appNavigation";
+import { filterSecondaryNavItems, getRailSections } from "@/config/appNavigation";
+import { usePermissionGate } from "@/contexts/PermissionsContext";
 
 interface Props {
   onClose: () => void;
@@ -61,9 +62,10 @@ function MenuItem({
  * Grille « Plus » : mêmes sections que le rail (config appNavigation).
  */
 export function MobileMoreMenu({ onClose }: Props) {
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const { isAdmin } = useAdmin(user);
-  const sections = getRailSections(isAdmin);
+  const { hasPermission } = usePermissionGate();
+  const sections = getRailSections(isAdmin, hasPermission);
 
   return (
     <div className="overflow-y-auto max-h-[60vh] pb-6">
@@ -72,7 +74,7 @@ export function MobileMoreMenu({ onClose }: Props) {
           {section.id === "messages" ? (
             <MenuItem icon={section.icon} label="Messagerie" to="/messages" onClick={onClose} />
           ) : (
-            section.children.map((item) => (
+            filterSecondaryNavItems(section.children, hasPermission).map((item) => (
               <MenuItem key={item.to} icon={item.icon} label={item.label} to={item.to} onClick={onClose} />
             ))
           )}
@@ -80,8 +82,12 @@ export function MobileMoreMenu({ onClose }: Props) {
       ))}
 
       <MenuGroup title="Plus">
-        <MenuItem icon={faUpload} label="Uploader" to="/drive" onClick={onClose} />
-        <MenuItem icon={faBell} label="Notifications" to="/notifications" onClick={onClose} />
+        {hasPermission("nav.drive") && (
+          <MenuItem icon={faUpload} label="Uploader" to="/drive" onClick={onClose} />
+        )}
+        {hasPermission("nav.hub") && (
+          <MenuItem icon={faBell} label="Notifications" to="/notifications" onClick={onClose} />
+        )}
       </MenuGroup>
 
       <div className="border-t border-border my-2" />
