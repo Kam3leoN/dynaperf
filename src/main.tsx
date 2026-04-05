@@ -62,8 +62,13 @@ async function applySwResetFromQuery(): Promise<boolean> {
 
 async function cleanupCaches() {
   const isGitHubPages = window.location.hostname.endsWith("github.io");
+  const isLocalhost =
+    window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  /** Domaine personnalisé (ex. GitHub Pages en CNAME) ou hébergement type cPanel : sans ça, shouldRunCleanup restait false et un vieux SW pouvait figer l’UI. */
+  const shouldRunCleanup =
+    isGitHubPages || isPreviewHost || isInIframe || (import.meta.env.PROD && !isLocalhost);
 
-  if (!isGitHubPages && !isPreviewHost && !isInIframe) {
+  if (!shouldRunCleanup) {
     return;
   }
 
@@ -90,6 +95,7 @@ async function registerSW() {
     const swUrl = `${normalizedBase}sw.js`;
     const sw = new Serwist(swUrl, { scope: normalizedBase, type: "classic" });
     await sw.register();
+
     /** Forcer une relecture du script SW au retour sur l’onglet (navigateur ne vérifie pas tout seul souvent). */
     const pingSwUpdate = () => {
       void sw.update();
