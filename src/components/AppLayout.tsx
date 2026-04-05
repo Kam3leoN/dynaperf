@@ -43,7 +43,6 @@ import {
   type DurationKey,
 } from "@/lib/presence";
 import type { Filters } from "@/hooks/useAuditData";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BottomNav } from "./BottomNav";
@@ -70,7 +69,6 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin(user);
   const { hasPermission } = usePermissionGate();
-  const isMobile = useIsMobile();
   const location = useLocation();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [secondaryNavSheetOpen, setSecondaryNavSheetOpen] = useState(false);
@@ -182,7 +180,7 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
     void setPresence(status, expiresAtForDuration(new Date(), key));
   };
 
-  const profileButton = () => (
+  const profileButton = (opts?: { compact?: boolean }) => (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <button
@@ -200,7 +198,7 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
             </div>
             <PresenceAvatarBadge presence={presenceRow} />
           </div>
-          {!isMobile && (
+          {!opts?.compact && (
             <div className="hidden sm:flex flex-col items-start min-w-0 text-left leading-tight pr-0.5">
               <span className="text-sm font-semibold text-foreground truncate max-w-[140px]">
                 {displayName || "Utilisateur"}
@@ -360,22 +358,19 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
             )}
             {iconBadge(faEnvelope, "/messages", unreadMessages, "Messages")}
 
-            {isMobile && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-10 w-10 rounded-full shrink-0"
-                title="Membres"
-                aria-label="Ouvrir la liste des membres"
-                onClick={() => setMembersSheetOpen(true)}
-              >
-                <FontAwesomeIcon icon={faUsers} className="h-[18px] w-[18px] text-foreground/60" />
-              </Button>
-            )}
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-10 w-10 shrink-0 rounded-full lg:hidden"
+              title="Membres"
+              aria-label="Ouvrir la liste des membres"
+              onClick={() => setMembersSheetOpen(true)}
+            >
+              <FontAwesomeIcon icon={faUsers} className="h-[18px] w-[18px] text-foreground/60" />
+            </Button>
 
-            {/* Gear icon only on desktop */}
-            {isMobile && profileButton()}
+            <div className="shrink-0 lg:hidden">{profileButton({ compact: true })}</div>
             </div>
           </div>
         </div>
@@ -410,7 +405,7 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
           >
             {children}
           </main>
-          {isMobile && <BottomNav />}
+          <BottomNav />
         </div>
 
         <aside

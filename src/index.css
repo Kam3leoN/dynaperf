@@ -158,19 +158,6 @@
     min-height: 100%;
   }
 
-  /*
-   * Téléphone / tablette : légère montée du rem racine pour rapprocher l’échelle
-   * de ce qu’on voit en mode responsive bureau (où la fenêtre est souvent plus large).
-   * Les utilitaires Tailwind en rem suivent automatiquement.
-   */
-  html.device-mobile {
-    font-size: min(18px, calc(16px + 0.55vw));
-  }
-
-  html.device-tablet {
-    font-size: min(17.5px, calc(16px + 0.3vw));
-  }
-
   body {
     @apply bg-background text-foreground font-sans antialiased leading-relaxed;
     -webkit-tap-highlight-color: transparent;
@@ -193,6 +180,22 @@
   /* Safe area for bottom nav */
   .safe-area-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
+/*
+ * Échelle rem alignée sur le breakpoint lg (1024px), pas sur la détection tactile :
+ * fenêtre étroite ou téléphone obtient la même typo que l’ancien device-mobile.
+ */
+@media (max-width: 1023.98px) {
+  html {
+    font-size: min(18px, calc(16px + 0.55vw));
+  }
+}
+
+@media (min-width: 1024px) and (max-width: 1279.98px) {
+  html {
+    font-size: min(17.5px, calc(16px + 0.3vw));
   }
 }
 
