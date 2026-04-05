@@ -378,7 +378,7 @@ export default function AdminRoles() {
 
   return (
     <AppLayout>
-      <div className="app-page-shell space-y-5 pb-8 sm:space-y-6">
+      <div className="app-page-shell min-w-0 w-full max-w-full space-y-5 overflow-x-clip pb-8 sm:space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
             <Button variant="outline" size="sm" className="rounded-md gap-2 min-h-11 sm:min-h-10 shrink-0" asChild>

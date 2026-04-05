@@ -184,8 +184,8 @@
 }
 
 /*
- * Échelle rem alignée sur le breakpoint lg (1024px), pas sur la détection tactile :
- * fenêtre étroite ou téléphone obtient la même typo que l’ancien device-mobile.
+ * Échelle rem alignée sur `SHELL_MAX_WIDTH_MEDIA_QUERY` / `src/config/layoutBreakpoints.ts`
+ * (max-width: 1023.98px = vue « shell étroit », même seuil que Tailwind `shell` / bottom nav).
  */
 @media (max-width: 1023.98px) {
   html {
@@ -193,6 +193,7 @@
   }
 }
 
+/* Bande intermédiaire (shell large mais pas XL) : typo légèrement relevée. */
 @media (min-width: 1024px) and (max-width: 1279.98px) {
   html {
     font-size: min(17.5px, calc(16px + 0.3vw));

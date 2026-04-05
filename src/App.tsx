@@ -12,6 +12,7 @@ import { InstallPrompt } from "@/components/InstallPrompt";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { MessagingSidebarProvider } from "@/contexts/MessagingSidebarContext";
 import { PermissionsProvider, usePermissionGate } from "@/contexts/PermissionsContext";
+import { ResponsiveShellProvider } from "@/contexts/ResponsiveShellContext";
 
 // Eagerly loaded (critical path)
 import Welcome from "./pages/Welcome";
@@ -114,6 +115,7 @@ const App = () => {
             {!splashDone && <SplashScreen onFinished={() => setSplashDone(true)} />}
             {splashDone && (
             <BrowserRouter basename={routerBase}>
+              <ResponsiveShellProvider>
               <MessagingSidebarProvider>
                 <PermissionsProvider>
                   <Routes>
@@ -153,6 +155,7 @@ const App = () => {
                   </Routes>
                 </PermissionsProvider>
               </MessagingSidebarProvider>
+              </ResponsiveShellProvider>
             </BrowserRouter>
             )}
           </TooltipProvider>

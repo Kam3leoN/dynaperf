@@ -88,7 +88,7 @@ interface AppSecondaryNavProps {
  */
 export function AppSecondaryNav({ isAdmin, hasPermission }: AppSecondaryNavProps) {
   return (
-    <aside className="hidden lg:flex fixed left-[80px] top-0 bottom-0 z-[45] w-[280px] flex-col border-r border-border/40 bg-muted/10 min-h-0">
+    <aside className="hidden shell:flex fixed left-[80px] top-0 bottom-0 z-[45] w-[280px] flex-col border-r border-border/40 bg-muted/10 min-h-0">
       <AppSecondaryNavPanel isAdmin={isAdmin} hasPermission={hasPermission} className="flex-1 min-h-0" />
     </aside>
   );

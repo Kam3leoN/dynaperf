@@ -29,7 +29,7 @@ import {
 } from "@fortawesome/free-solid-svg-icons";
 import { format, isToday, isYesterday } from "date-fns";
 import { fr } from "date-fns/locale";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useShellNarrow } from "@/contexts/ResponsiveShellContext";
 import { useMessagingSidebarHost } from "@/contexts/MessagingSidebarContext";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -437,7 +437,7 @@ function stripHtmlPreview(html: string, maxLen: number): string {
 }
 
 function MessagesInputBar({ value, onChange, onSend, sendDisabled }: MessagesInputBarProps) {
-  const isMobile = useIsMobile();
+  const isMobile = useShellNarrow();
   const editor = (
     <RichTextEditor
       value={value}
@@ -471,7 +471,7 @@ function MessagesInputBar({ value, onChange, onSend, sendDisabled }: MessagesInp
   }
 
   return (
-    <div className="pointer-events-none fixed bottom-0 left-0 right-0 z-[42] p-2 pb-3 lg:left-[360px] lg:right-[260px]">
+    <div className="pointer-events-none fixed bottom-0 left-0 right-0 z-[42] p-2 pb-3 shell:left-[360px] shell:right-[260px]">
       <div className="pointer-events-auto w-full">{chrome}</div>
     </div>
   );
@@ -481,7 +481,7 @@ export default function Messages() {
   const { user } = useAuth();
   const { hasPermission } = usePermissionGate();
   const canManageSalons = hasPermission("messaging.manage_salons");
-  const isMobile = useIsMobile();
+  const isMobile = useShellNarrow();
   const { setApi, setHeaderChrome } = useMessagingSidebarHost();
   const [searchParams, setSearchParams] = useSearchParams();
   const [profiles, setProfiles] = useState<Profile[]>([]);
@@ -1300,15 +1300,15 @@ export default function Messages() {
           : `| Groupe privé · ${groupMembers.filter((gm) => gm.group_id === target.id).length} membres`;
 
   const ConversationHeader = ({ onBack }: { onBack?: () => void }) => (
-    <div className="flex h-16 w-full shrink-0 items-center gap-2 px-4 lg:h-[4.25rem] lg:gap-3 lg:px-6">
+    <div className="flex h-16 w-full shrink-0 items-center gap-2 px-4 shell:h-[4.25rem] shell:gap-3 shell:px-6">
       {onBack && (
         <button type="button" onClick={onBack} className="text-muted-foreground hover:text-foreground">
           <FontAwesomeIcon icon={faArrowLeft} className="h-4 w-4" />
         </button>
       )}
       {target?.type === "user" ? (
-        <div className="relative h-8 w-8 shrink-0 lg:h-9 lg:w-9">
-          <Avatar className="h-8 w-8 lg:h-9 lg:w-9">
+        <div className="relative h-8 w-8 shrink-0 shell:h-9 shell:w-9">
+          <Avatar className="h-8 w-8 shell:h-9 shell:w-9">
             {targetAvatar && <AvatarImage src={targetAvatar} />}
             <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
               {getInitials(targetName)}
@@ -1317,11 +1317,11 @@ export default function Messages() {
           <PresenceAvatarBadge presence={presenceByUser[target.id]} className="scale-90" />
         </div>
       ) : activeGroup?.is_public ? (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/80 text-muted-foreground lg:h-9 lg:w-9">
-          <FontAwesomeIcon icon={faHashtag} className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/80 text-muted-foreground shell:h-9 shell:w-9">
+          <FontAwesomeIcon icon={faHashtag} className="h-3.5 w-3.5 shell:h-4 shell:w-4" />
         </div>
       ) : (
-        <Avatar className="h-8 w-8 shrink-0 lg:h-9 lg:w-9">
+        <Avatar className="h-8 w-8 shrink-0 shell:h-9 shell:w-9">
           {targetAvatar && <AvatarImage src={targetAvatar} />}
           <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
             <FontAwesomeIcon icon={faUsers} className="h-4 w-4" />
@@ -1337,7 +1337,7 @@ export default function Messages() {
       {target?.type === "group" && activeGroup?.is_public && canManageSalons && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 lg:h-10 lg:w-10">
+            <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 shell:h-10 shell:w-10">
               <FontAwesomeIcon icon={faEllipsisVertical} className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -1357,7 +1357,7 @@ export default function Messages() {
       {target?.type === "group" && isGroupCreator && !activeGroup?.is_public && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 lg:h-10 lg:w-10">
+            <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 shell:h-10 shell:w-10">
               <FontAwesomeIcon icon={faEllipsisVertical} className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -1385,7 +1385,7 @@ export default function Messages() {
       ref={scrollRef}
       className={cn(
         "min-h-0 min-w-0 w-full flex-1 overflow-y-auto overscroll-y-contain",
-        "pb-4 lg:pb-[min(48vh,18rem)]",
+        "pb-4 shell:pb-[min(48vh,18rem)]",
       )}
     >
       {groupedMessages.length === 0 && (
@@ -1486,7 +1486,7 @@ export default function Messages() {
   );
 
   const messagesMainClassName =
-    "flex min-h-0 min-w-0 w-full max-w-none flex-1 flex-col !mx-0 !max-w-none !space-y-0 !justify-start !overflow-hidden !overflow-y-hidden px-0 pt-0 pb-28 lg:!px-0 lg:!py-0 lg:min-h-0";
+    "flex min-h-0 min-w-0 w-full max-w-none flex-1 flex-col !mx-0 !max-w-none !space-y-0 !justify-start !overflow-hidden !overflow-y-hidden px-0 pt-0 pb-28 shell:!px-0 shell:!py-0 shell:min-h-0";
 
   const pinnedMessagesOrdered = [...conversation]
     .filter((m) => m.pinned_at)

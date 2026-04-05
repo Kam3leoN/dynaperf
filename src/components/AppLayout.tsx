@@ -303,15 +303,15 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
   return (
     <div className="flex h-dvh min-h-0 flex-col bg-background">
       {/* Top app bar — le shell est en h-dvh + overflow-hidden sur la zone centrale : pas de scroll document */}
-      <header className="z-40 shrink-0 bg-card/85 backdrop-blur-2xl border-b border-border/30 px-4 lg:px-0">
-        <div className="w-full flex items-stretch justify-between h-16 lg:h-[4.25rem] lg:pl-[360px] lg:pr-[260px]">
-          <div className="flex flex-1 items-center justify-between min-w-0 gap-2 pl-4 pr-4 lg:pl-6 lg:pr-6">
+      <header className="z-40 shrink-0 bg-card/85 backdrop-blur-2xl border-b border-border/30 px-4 shell:px-0">
+        <div className="w-full flex items-stretch justify-between h-16 shell:h-[4.25rem] shell:pl-[360px] shell:pr-[260px]">
+          <div className="flex flex-1 items-center justify-between min-w-0 gap-2 pl-4 pr-4 shell:pl-6 shell:pr-6">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="lg:hidden h-10 w-10 rounded-full shrink-0"
+                className="shell:hidden h-10 w-10 rounded-full shrink-0"
                 title="Menu de la section"
                 aria-label="Ouvrir le menu de la section"
                 onClick={() => setSecondaryNavSheetOpen(true)}
@@ -362,7 +362,7 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
               type="button"
               variant="ghost"
               size="icon"
-              className="h-10 w-10 shrink-0 rounded-full lg:hidden"
+              className="h-10 w-10 shrink-0 rounded-full shell:hidden"
               title="Membres"
               aria-label="Ouvrir la liste des membres"
               onClick={() => setMembersSheetOpen(true)}
@@ -370,7 +370,7 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
               <FontAwesomeIcon icon={faUsers} className="h-[18px] w-[18px] text-foreground/60" />
             </Button>
 
-            <div className="shrink-0 lg:hidden">{profileButton({ compact: true })}</div>
+            <div className="shrink-0 shell:hidden">{profileButton({ compact: true })}</div>
             </div>
           </div>
         </div>
@@ -393,13 +393,13 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
         </Sheet>
       )}
 
-      <div className="flex min-h-0 flex-1 flex-row overflow-x-auto overflow-y-hidden lg:pl-[360px] lg:pr-[260px]">
+      <div className="flex min-h-0 flex-1 flex-row overflow-x-auto overflow-y-hidden shell:pl-[360px] shell:pr-[260px]">
         <AppNavRail isAdmin={isAdmin} hasPermission={hasPermission} />
         <AppSecondaryNav isAdmin={isAdmin} hasPermission={hasPermission} />
         <div className="flex flex-1 flex-col min-w-0 min-h-0">
           <main
             className={cn(
-              "mx-auto w-full max-w-[1440px] flex-1 min-h-0 space-y-5 py-5 pb-28 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] overflow-y-auto lg:max-w-none lg:space-y-6 lg:px-6 lg:py-6 lg:pb-6",
+              "mx-auto w-full max-w-[1440px] flex-1 min-h-0 space-y-5 py-5 pb-28 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] overflow-y-auto shell:max-w-none shell:space-y-6 shell:px-6 shell:py-6 shell:pb-6",
               mainClassName,
             )}
           >
@@ -409,7 +409,7 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
         </div>
 
         <aside
-          className="hidden lg:flex fixed right-0 top-0 bottom-0 z-[45] w-[260px] flex-col border-l border-border/40 bg-muted/10 min-h-0"
+          className="hidden shell:flex fixed right-0 top-0 bottom-0 z-[45] w-[260px] flex-col border-l border-border/40 bg-muted/10 min-h-0"
           aria-label="Annuaire des membres"
         >
           <MembersDirectoryPanel className="flex-1 min-h-0" />

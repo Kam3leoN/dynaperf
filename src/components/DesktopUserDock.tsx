@@ -35,7 +35,7 @@ export function DesktopUserDock({ profileSlot }: DesktopUserDockProps) {
 
   return (
     <div
-      className="pointer-events-none hidden lg:block fixed bottom-0 left-0 z-[52] w-[360px] p-2 pb-3"
+      className="pointer-events-none hidden shell:block fixed bottom-0 left-0 z-[52] w-[360px] p-2 pb-3"
       role="presentation"
     >
       <div

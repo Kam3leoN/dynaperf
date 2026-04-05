@@ -118,10 +118,10 @@ export default function NewAudit() {
               </div>
               {type.desktopLabel ? (
                 <>
-                  <span className="text-sm font-medium text-foreground text-center leading-snug lg:hidden">
+                  <span className="text-sm font-medium text-foreground text-center leading-snug shell:hidden">
                     {type.label}
                   </span>
-                  <span className="text-sm font-medium text-foreground text-center leading-snug hidden lg:block">
+                  <span className="text-sm font-medium text-foreground text-center leading-snug hidden shell:block">
                     {type.desktopLabel}
                   </span>
                 </>

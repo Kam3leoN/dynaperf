@@ -26,7 +26,7 @@ interface RailItemProps {
   pinned?: boolean;
 }
 
-/** Même hauteur que la bande logo `AppSecondaryNav` et le header `AppLayout` (lg). */
+/** Même hauteur que la bande logo `AppSecondaryNav` et le header `AppLayout` (breakpoint shell / 1024px). */
 const RAIL_TOP_STRIP_H = "h-[4.25rem]";
 
 function RailNavItem({ section, isActive, pinned }: RailItemProps) {
@@ -84,7 +84,7 @@ export function AppNavRail({ isAdmin, hasPermission }: AppNavRailProps) {
 
   return (
     <nav
-      className="hidden lg:flex fixed left-0 top-0 bottom-0 z-[45] w-[80px] flex-col border-r border-border/40 bg-muted/20"
+      className="hidden shell:flex fixed left-0 top-0 bottom-0 z-[45] w-[80px] flex-col border-r border-border/40 bg-muted/20"
       aria-label="Navigation principale"
     >
       <div className="relative flex min-h-0 flex-1 flex-col">

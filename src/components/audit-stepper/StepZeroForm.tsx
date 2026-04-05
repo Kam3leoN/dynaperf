@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useShellNarrow } from "@/contexts/ResponsiveShellContext";
 import { Input } from "@/components/ui/input";
 import { M3Field } from "@/components/ui/m3-field";
 import { Label } from "@/components/ui/label";
@@ -87,7 +87,7 @@ const EMPTY_SUGGESTIONS = {
 };
 
 export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitButton }: Props) {
-  const isMobile = useIsMobile();
+  const isMobile = useShellNarrow();
   const [data, setData] = useState<StepZeroData>(
     initialData ?? {
       partenaireAudite: "",

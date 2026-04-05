@@ -13,6 +13,10 @@ export default {
       },
     },
     extend: {
+      /** Aligné sur `SHELL_BREAKPOINT_PX` / `layoutBreakpoints.ts` — utilitaires `shell:*` pour le chrome app. */
+      screens: {
+        shell: "1024px",
+      },
       fontFamily: {
         sans: ["Plus Jakarta Sans", "Lexend", "sans-serif"],
         display: ["Plus Jakarta Sans", "Lexend", "sans-serif"],

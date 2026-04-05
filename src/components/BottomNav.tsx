@@ -33,7 +33,7 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 inset-x-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border/40 safe-area-bottom lg:hidden">
+      <nav className="fixed bottom-0 inset-x-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border/40 safe-area-bottom shell:hidden">
         <div className="flex items-end justify-around px-2 pt-2 pb-2">
           <button
             type="button"

@@ -2,7 +2,7 @@ import { useState, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCloudArrowUp, faCamera, faXmark, faChevronLeft } from "@fortawesome/free-solid-svg-icons";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useShellNarrow } from "@/contexts/ResponsiveShellContext";
 import { SignaturePad } from "@/components/ui/signature-pad";
 
 interface Props {
@@ -25,7 +25,7 @@ export function AuditPhotoUpload({
   signatureAuditeur, onSignatureAuditeurChange,
   signatureAudite, onSignatureAuditeChange,
 }: Props) {
-  const isMobile = useIsMobile();
+  const isMobile = useShellNarrow();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
 
