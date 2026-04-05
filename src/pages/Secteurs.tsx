@@ -139,9 +139,9 @@ export default function Secteurs() {
       supabase.from("secteurs").select("*").order("nom"),
       supabase.from("partenaires").select("id, prenom, nom, societe, secteurs, statut, genre, telephone, email").eq("statut", "actif").order("nom"),
     ]);
-    if (clubsRes.data) setClubs(clubsRes.data as any);
-    if (secteursRes.data) setSecteurs(secteursRes.data as any);
-    if (partenairesRes.data) setPartenaires(partenairesRes.data as any);
+    if (clubsRes.data) setClubs(clubsRes.data as Club[]);
+    if (secteursRes.data) setSecteurs(secteursRes.data as Secteur[]);
+    if (partenairesRes.data) setPartenaires(partenairesRes.data as Partenaire[]);
     setLoading(false);
   }, []);
 

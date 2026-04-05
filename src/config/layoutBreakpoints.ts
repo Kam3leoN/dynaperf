@@ -1,6 +1,13 @@
 /**
  * Breakpoints du **shell application** (rail 80px, navigation secondaire, aside membres,
- * dock profil, bottom nav). Doit rester aligné avec :
+ * dock profil, bottom nav).
+ *
+ * **Téléphone réel vs DevTools** : les media queries et `shell:` utilisent des **px CSS**
+ * (viewport logique), pas le `devicePixelRatio`. Un Pixel 9 Pro en portrait ≈ 400px de large
+ * logique ; si tu vois un rendu « bureau », vérifie **Chrome → menu du site → désactiver
+ * « Version pour ordinateur »**, taille du texte système, et cache / SW (`?dp-sw-reset=1`).
+ *
+ * Doit rester aligné avec :
  * - le screen Tailwind `shell` / `lg` à **1024px** (`tailwind.config.ts`) ;
  * - `@media (max-width: 1023.98px)` dans `src/index.css` ;
  * - `matchMedia` dans `ResponsiveShellContext` et `use-mobile`.

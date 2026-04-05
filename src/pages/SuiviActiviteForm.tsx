@@ -3,6 +3,7 @@ import { SignaturePad } from "@/components/ui/signature-pad";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database, Json } from "@/integrations/supabase/types";
 import { fetchSuiviItemsConfig, SuiviItemConfig } from "@/data/suiviActiviteItems";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
@@ -118,7 +119,7 @@ export default function SuiviActiviteForm() {
 
     setSaving(true);
 
-    const itemsJson: Record<string, any> = {};
+    const itemsJson: Record<string, { status: string; observation?: string }> = {};
     Object.entries(answers).forEach(([id, ans]) => {
       itemsJson[id] = {
         status: ans.status,
@@ -128,19 +129,20 @@ export default function SuiviActiviteForm() {
 
     const valides = Object.values(answers).filter((a) => a.status === "fait").length;
 
-    const { error } = await supabase.from("suivi_activite").insert({
+    const row: Database["public"]["Tables"]["suivi_activite"]["Insert"] = {
       date: format(dateEntretien, "yyyy-MM-dd"),
       agence: partenaire.trim(),
       agence_referente: accompagnePar.trim() || null,
       suivi_par: suiviPar.trim(),
       nb_contrats_total: parseInt(nbContratsTotal) || 0,
       nb_contrats_depuis_dernier: parseInt(nbContratsDernier) || 0,
-      items: itemsJson,
+      items: itemsJson as Json,
       total_items_valides: valides,
       total_items: totalItems,
       signature_auditeur: signatureAuditeur,
       signature_audite: signatureAudite,
-    } as any);
+    };
+    const { error } = await supabase.from("suivi_activite").insert(row);
 
     if (error) {
       toast.error("Erreur lors de l'enregistrement");

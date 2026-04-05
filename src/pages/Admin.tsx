@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faChevronDown, faChevronUp, faCamera, faEye, faEyeSlash, faDownload, faSpinner, faKey } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faChevronDown, faChevronUp, faCamera, faEye, faEyeSlash, faDownload, faSpinner, faKey, faDatabase } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -269,7 +269,9 @@ function BackupButton() {
       if (res.data?.success) {
         toast.success(`Sauvegarde réussie : ${res.data.file}`);
       } else {
-        toast.error(res.data?.error || "Erreur de sauvegarde");
+        if (!(await toastEdgeInvokeFailure(res, "Erreur de sauvegarde"))) {
+          toast.error((res.data as { error?: string } | null)?.error || "Erreur de sauvegarde");
+        }
       }
     } catch {
       toast.error("Erreur de sauvegarde");
@@ -280,6 +282,33 @@ function BackupButton() {
     <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleBackup} disabled={loading}>
       <FontAwesomeIcon icon={loading ? faSpinner : faDownload} className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
       <span className="hidden sm:inline">Sauvegarder</span>
+    </Button>
+  );
+}
+
+function SqlBackupButton() {
+  const [loading, setLoading] = useState(false);
+  const handleSqlBackup = async () => {
+    setLoading(true);
+    try {
+      const res = await supabase.functions.invoke("sql-backup");
+      if (res.data && typeof res.data === "object" && (res.data as { success?: boolean }).success) {
+        const d = res.data as { file?: string; path?: string };
+        toast.success(`Dump SQL créé : ${d.file ?? d.path ?? "OK"}`);
+      } else {
+        if (!(await toastEdgeInvokeFailure(res, "Erreur dump SQL"))) {
+          toast.error((res.data as { error?: string } | null)?.error || "Erreur dump SQL");
+        }
+      }
+    } catch {
+      toast.error("Erreur dump SQL");
+    }
+    setLoading(false);
+  };
+  return (
+    <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleSqlBackup} disabled={loading} title="Dump SQL (INSERT) vers Storage backups/sql/">
+      <FontAwesomeIcon icon={loading ? faSpinner : faDatabase} className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
+      <span className="hidden sm:inline">Dump SQL</span>
     </Button>
   );
 }
@@ -729,7 +758,12 @@ export default function Admin() {
                 <span className="hidden sm:inline">Rôles & droits</span>
               </Link>
             </Button>
-            {currentUser && isSuperAdmin && <BackupButton />}
+            {currentUser && isSuperAdmin && (
+              <>
+                <BackupButton />
+                <SqlBackupButton />
+              </>
+            )}
           </div>
         </div>
         <TabsContent value="collaborateurs">
@@ -1381,10 +1415,11 @@ function UserConfigPanel({
     setSaving(false);
   };
 
-  const visibleFormats = FORMATS.filter(f => {
-    const v1 = (primes as any)[f.k1];
-    const v2 = (primes as any)[f.k2];
-    const v3 = (primes as any)[f.k3];
+  const primeByKey = primes as Record<string, number>;
+  const visibleFormats = FORMATS.filter((f) => {
+    const v1 = primeByKey[f.k1];
+    const v2 = primeByKey[f.k2];
+    const v3 = primeByKey[f.k3];
     return !(v1 === 0 && v2 === 0 && v3 === 0);
   });
 
@@ -1422,9 +1457,9 @@ function UserConfigPanel({
           {visibleFormats.map(({ label, k1, k2, k3 }) => (
             <div key={k1} className="flex items-center gap-2">
               <span className="text-xs text-muted-foreground w-28 shrink-0">{label}</span>
-              <Input type="number" min={0} step={1} value={(primes as any)[k1]} onChange={(e) => updatePrime(k1, parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" />
-              <Input type="number" min={0} step={1} value={(primes as any)[k2]} onChange={(e) => updatePrime(k2, parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" />
-              <Input type="number" min={0} step={1} value={(primes as any)[k3]} onChange={(e) => updatePrime(k3, parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" />
+              <Input type="number" min={0} step={1} value={primeByKey[k1]} onChange={(e) => updatePrime(k1, parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" />
+              <Input type="number" min={0} step={1} value={primeByKey[k2]} onChange={(e) => updatePrime(k2, parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" />
+              <Input type="number" min={0} step={1} value={primeByKey[k3]} onChange={(e) => updatePrime(k3, parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" />
               <button
                 type="button"
                 onClick={() => handleDeleteFormat(k1, k2, k3)}

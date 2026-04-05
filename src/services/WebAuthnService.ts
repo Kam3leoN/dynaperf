@@ -177,8 +177,9 @@ export async function registerWebAuthnCredential(
       credential = (await navigator.credentials.create({
         publicKey: platformFirstOptions,
       })) as PublicKeyCredential | null;
-    } catch (firstError: any) {
-      const shouldRetry = ["NotAllowedError", "ConstraintError", "NotSupportedError"].includes(firstError?.name);
+    } catch (firstError: unknown) {
+      const n = firstError instanceof Error ? firstError.name : "";
+      const shouldRetry = ["NotAllowedError", "ConstraintError", "NotSupportedError"].includes(n);
       if (!shouldRetry) throw firstError;
 
       credential = (await navigator.credentials.create({
@@ -199,20 +200,22 @@ export async function registerWebAuthnCredential(
     localStorage.setItem(USER_EMAIL_STORAGE_KEY, userEmail);
 
     return { credentialId, publicKey, success: true };
-  } catch (error: any) {
-    if (error.name === "NotAllowedError") {
+  } catch (error: unknown) {
+    const name = error instanceof Error ? error.name : "";
+    const message = error instanceof Error ? error.message : "";
+    if (name === "NotAllowedError") {
       if (window.top !== window.self) {
         throw new Error("Windows Hello est bloqué dans la prévisualisation intégrée. Ouvrez l'app dans un onglet direct puis réessayez.");
       }
       throw new Error("Validation Windows Hello non confirmée. Vérifiez que la fenêtre est active puis réessayez.");
     }
-    if (error.name === "InvalidStateError") {
+    if (name === "InvalidStateError") {
       throw new Error("Un credential existe déjà pour cet appareil.");
     }
-    if (error.name === "SecurityError") {
+    if (name === "SecurityError") {
       throw new Error("Contexte de sécurité invalide pour la biométrie. Utilisez l'URL sécurisée de l'application.");
     }
-    throw new Error(`Erreur lors de l'enregistrement biométrique : ${error.message}`);
+    throw new Error(`Erreur lors de l'enregistrement biométrique : ${message}`);
   }
 }
 
@@ -266,8 +269,9 @@ export async function authenticateWithWebAuthn(): Promise<{
       assertion = (await navigator.credentials.get({
         publicKey: strictRequest,
       })) as PublicKeyCredential | null;
-    } catch (firstError: any) {
-      const shouldRetry = ["NotAllowedError", "ConstraintError"].includes(firstError?.name);
+    } catch (firstError: unknown) {
+      const n = firstError instanceof Error ? firstError.name : "";
+      const shouldRetry = ["NotAllowedError", "ConstraintError"].includes(n);
       if (!shouldRetry) throw firstError;
 
       assertion = (await navigator.credentials.get({
@@ -281,11 +285,13 @@ export async function authenticateWithWebAuthn(): Promise<{
 
     const credentialId = bufferToBase64url(assertion.rawId);
     return { success: true, credentialId };
-  } catch (error: any) {
-    if (error.name === "NotAllowedError") {
+  } catch (error: unknown) {
+    const name = error instanceof Error ? error.name : "";
+    const message = error instanceof Error ? error.message : "";
+    if (name === "NotAllowedError") {
       throw new Error("Authentification biométrique non confirmée.");
     }
-    throw new Error(`Erreur lors de l'authentification biométrique : ${error.message}`);
+    throw new Error(`Erreur lors de l'authentification biométrique : ${message}`);
   }
 }
 

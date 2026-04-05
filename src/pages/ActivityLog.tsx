@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faClockRotateLeft, faPlus, faPenToSquare, faTrash, faClipboardList, faHandshake, faBriefcase, faListCheck } from "@fortawesome/free-solid-svg-icons";
 import { format } from "date-fns";
@@ -17,7 +18,7 @@ interface ActivityEntry {
   entity_type: string;
   entity_id: string | null;
   entity_label: string | null;
-  details: any;
+  details: unknown;
   created_at: string;
 }
 
@@ -26,13 +27,13 @@ interface Profile {
   display_name: string | null;
 }
 
-const ACTION_CONFIG: Record<string, { label: string; icon: any; color: string }> = {
+const ACTION_CONFIG: Record<string, { label: string; icon: IconDefinition; color: string }> = {
   create: { label: "Création", icon: faPlus, color: "text-green-600" },
   update: { label: "Modification", icon: faPenToSquare, color: "text-blue-600" },
   delete: { label: "Suppression", icon: faTrash, color: "text-destructive" },
 };
 
-const ENTITY_CONFIG: Record<string, { label: string; icon: any }> = {
+const ENTITY_CONFIG: Record<string, { label: string; icon: IconDefinition }> = {
   audit: { label: "Audit", icon: faClipboardList },
   partenaire: { label: "Partenaire", icon: faHandshake },
   club: { label: "Club", icon: faBriefcase },
@@ -52,8 +53,8 @@ export default function ActivityLog() {
       supabase.from("activity_log").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("profiles").select("user_id, display_name"),
     ]);
-    if (logRes.data) setEntries(logRes.data as any);
-    if (profilesRes.data) setProfiles(profilesRes.data as any);
+    if (logRes.data) setEntries(logRes.data as ActivityEntry[]);
+    if (profilesRes.data) setProfiles(profilesRes.data as Profile[]);
     setLoading(false);
   }, []);
 

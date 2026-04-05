@@ -96,34 +96,35 @@ export function primeForNthVisit(nth: number, typeEvenement: string, config: Pri
 }
 
 /** Parse config from get_my_config RPC result */
-export function parsePrimeConfig(d: any): PrimeConfig {
+export function parsePrimeConfig(d: unknown): PrimeConfig {
+  const row = d !== null && typeof d === "object" ? (d as Record<string, unknown>) : {};
   const toAmount = (value: unknown, fallback: number) => {
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : fallback;
   };
 
   return {
-    prime_audit_1: toAmount(d?.prime_audit_1, DEFAULT_PRIME_CONFIG.prime_audit_1),
-    prime_audit_2: toAmount(d?.prime_audit_2, DEFAULT_PRIME_CONFIG.prime_audit_2),
-    prime_audit_3_plus: toAmount(d?.prime_audit_3_plus, DEFAULT_PRIME_CONFIG.prime_audit_3_plus),
-    prime_distanciel_1: toAmount(d?.prime_distanciel_1, DEFAULT_PRIME_CONFIG.prime_distanciel_1),
-    prime_distanciel_2: toAmount(d?.prime_distanciel_2, DEFAULT_PRIME_CONFIG.prime_distanciel_2),
-    prime_distanciel_3_plus: toAmount(d?.prime_distanciel_3_plus, DEFAULT_PRIME_CONFIG.prime_distanciel_3_plus),
-    prime_club_1: toAmount(d?.prime_club_1, DEFAULT_PRIME_CONFIG.prime_club_1),
-    prime_club_2: toAmount(d?.prime_club_2, DEFAULT_PRIME_CONFIG.prime_club_2),
-    prime_club_3_plus: toAmount(d?.prime_club_3_plus, DEFAULT_PRIME_CONFIG.prime_club_3_plus),
-    prime_rdv_1: toAmount(d?.prime_rdv_1, DEFAULT_PRIME_CONFIG.prime_rdv_1),
-    prime_rdv_2: toAmount(d?.prime_rdv_2, DEFAULT_PRIME_CONFIG.prime_rdv_2),
-    prime_rdv_3_plus: toAmount(d?.prime_rdv_3_plus, DEFAULT_PRIME_CONFIG.prime_rdv_3_plus),
-    prime_suivi_1: toAmount(d?.prime_suivi_1, DEFAULT_PRIME_CONFIG.prime_suivi_1),
-    prime_suivi_2: toAmount(d?.prime_suivi_2, DEFAULT_PRIME_CONFIG.prime_suivi_2),
-    prime_suivi_3_plus: toAmount(d?.prime_suivi_3_plus, DEFAULT_PRIME_CONFIG.prime_suivi_3_plus),
-    prime_mep_1: toAmount(d?.prime_mep_1, DEFAULT_PRIME_CONFIG.prime_mep_1),
-    prime_mep_2: toAmount(d?.prime_mep_2, DEFAULT_PRIME_CONFIG.prime_mep_2),
-    prime_mep_3_plus: toAmount(d?.prime_mep_3_plus, DEFAULT_PRIME_CONFIG.prime_mep_3_plus),
-    prime_evenementiel_1: toAmount(d?.prime_evenementiel_1, DEFAULT_PRIME_CONFIG.prime_evenementiel_1),
-    prime_evenementiel_2: toAmount(d?.prime_evenementiel_2, DEFAULT_PRIME_CONFIG.prime_evenementiel_2),
-    prime_evenementiel_3_plus: toAmount(d?.prime_evenementiel_3_plus, DEFAULT_PRIME_CONFIG.prime_evenementiel_3_plus),
+    prime_audit_1: toAmount(row.prime_audit_1, DEFAULT_PRIME_CONFIG.prime_audit_1),
+    prime_audit_2: toAmount(row.prime_audit_2, DEFAULT_PRIME_CONFIG.prime_audit_2),
+    prime_audit_3_plus: toAmount(row.prime_audit_3_plus, DEFAULT_PRIME_CONFIG.prime_audit_3_plus),
+    prime_distanciel_1: toAmount(row.prime_distanciel_1, DEFAULT_PRIME_CONFIG.prime_distanciel_1),
+    prime_distanciel_2: toAmount(row.prime_distanciel_2, DEFAULT_PRIME_CONFIG.prime_distanciel_2),
+    prime_distanciel_3_plus: toAmount(row.prime_distanciel_3_plus, DEFAULT_PRIME_CONFIG.prime_distanciel_3_plus),
+    prime_club_1: toAmount(row.prime_club_1, DEFAULT_PRIME_CONFIG.prime_club_1),
+    prime_club_2: toAmount(row.prime_club_2, DEFAULT_PRIME_CONFIG.prime_club_2),
+    prime_club_3_plus: toAmount(row.prime_club_3_plus, DEFAULT_PRIME_CONFIG.prime_club_3_plus),
+    prime_rdv_1: toAmount(row.prime_rdv_1, DEFAULT_PRIME_CONFIG.prime_rdv_1),
+    prime_rdv_2: toAmount(row.prime_rdv_2, DEFAULT_PRIME_CONFIG.prime_rdv_2),
+    prime_rdv_3_plus: toAmount(row.prime_rdv_3_plus, DEFAULT_PRIME_CONFIG.prime_rdv_3_plus),
+    prime_suivi_1: toAmount(row.prime_suivi_1, DEFAULT_PRIME_CONFIG.prime_suivi_1),
+    prime_suivi_2: toAmount(row.prime_suivi_2, DEFAULT_PRIME_CONFIG.prime_suivi_2),
+    prime_suivi_3_plus: toAmount(row.prime_suivi_3_plus, DEFAULT_PRIME_CONFIG.prime_suivi_3_plus),
+    prime_mep_1: toAmount(row.prime_mep_1, DEFAULT_PRIME_CONFIG.prime_mep_1),
+    prime_mep_2: toAmount(row.prime_mep_2, DEFAULT_PRIME_CONFIG.prime_mep_2),
+    prime_mep_3_plus: toAmount(row.prime_mep_3_plus, DEFAULT_PRIME_CONFIG.prime_mep_3_plus),
+    prime_evenementiel_1: toAmount(row.prime_evenementiel_1, DEFAULT_PRIME_CONFIG.prime_evenementiel_1),
+    prime_evenementiel_2: toAmount(row.prime_evenementiel_2, DEFAULT_PRIME_CONFIG.prime_evenementiel_2),
+    prime_evenementiel_3_plus: toAmount(row.prime_evenementiel_3_plus, DEFAULT_PRIME_CONFIG.prime_evenementiel_3_plus),
   };
 }
 

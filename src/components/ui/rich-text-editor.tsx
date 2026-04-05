@@ -2,6 +2,7 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import {
   faBold, faItalic, faUnderline, faListUl, faListOl,
   faFaceSmile, faAlignLeft, faAlignCenter, faAlignRight, faAlignJustify,
@@ -159,7 +160,7 @@ export function RichTextEditor({ value, onChange, placeholder, className, rows =
 
   if (!editor) return null;
 
-  const ToolBtn = ({ active, onClick, icon, title }: { active?: boolean; onClick: () => void; icon: any; title: string }) => (
+  const ToolBtn = ({ active, onClick, icon, title }: { active?: boolean; onClick: () => void; icon: IconDefinition; title: string }) => (
     <button
       type="button"
       onClick={onClick}
@@ -261,7 +262,11 @@ export function RichTextEditor({ value, onChange, placeholder, className, rows =
                     <button
                       key={c.value || "default"}
                       type="button"
-                      onClick={() => { c.value ? editor.chain().focus().setColor(c.value).run() : editor.chain().focus().unsetColor().run(); setColorOpen(false); }}
+                      onClick={() => {
+                        if (c.value) editor.chain().focus().setColor(c.value).run();
+                        else editor.chain().focus().unsetColor().run();
+                        setColorOpen(false);
+                      }}
                       className="h-6 w-6 rounded-full border border-border hover:scale-110 transition-transform"
                       style={{ backgroundColor: c.value || "hsl(var(--foreground))" }}
                       title={c.label}
@@ -283,7 +288,11 @@ export function RichTextEditor({ value, onChange, placeholder, className, rows =
                     <button
                       key={c.value || "none"}
                       type="button"
-                      onClick={() => { c.value ? editor.chain().focus().toggleHighlight({ color: c.value }).run() : editor.chain().focus().unsetHighlight().run(); setHighlightOpen(false); }}
+                      onClick={() => {
+                        if (c.value) editor.chain().focus().toggleHighlight({ color: c.value }).run();
+                        else editor.chain().focus().unsetHighlight().run();
+                        setHighlightOpen(false);
+                      }}
                       className="h-6 w-6 rounded-full border border-border hover:scale-110 transition-transform"
                       style={{ backgroundColor: c.value || "transparent" }}
                       title={c.label}

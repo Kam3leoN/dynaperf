@@ -23,7 +23,17 @@ export interface Filters {
   annee: string;
 }
 
-function dbToAudit(row: any): Audit {
+function dbToAudit(row: {
+  id: string;
+  date: string;
+  partenaire: string;
+  lieu?: string | null;
+  auditeur: string;
+  type_evenement: string;
+  note: number | null;
+  mois_versement: string;
+  statut: string;
+}): Audit {
   return {
     id: row.id,
     date: row.date,
@@ -129,7 +139,9 @@ export function useAuditData() {
       const cap = month.charAt(0).toUpperCase() + month.slice(1);
       if (map[cap] !== undefined) map[cap]++;
     });
-    return MOIS_ORDRE.map((m) => ({ mois: m.slice(0, 3), total: map[m] })).filter((m) => m.total > 0 || MOIS_ORDRE.indexOf(m.mois as any) < 7);
+    return MOIS_ORDRE.map((m, index) => ({ mois: m.slice(0, 3), total: map[m], index }))
+      .filter((m) => m.total > 0 || m.index < 7)
+      .map(({ mois, total }) => ({ mois, total }));
   }, [filtered]);
 
   // Per-type averages for each partner
@@ -205,7 +217,7 @@ export function useAuditData() {
   }, []);
 
   const updateAudit = useCallback(async (id: string, updates: Partial<Audit>) => {
-    const dbUpdates: any = {};
+    const dbUpdates: Record<string, string | number | null> = {};
     if (updates.date !== undefined) dbUpdates.date = updates.date;
     if (updates.partenaire !== undefined) dbUpdates.partenaire = updates.partenaire;
     if (updates.lieu !== undefined) dbUpdates.lieu = updates.lieu;

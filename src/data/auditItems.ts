@@ -81,9 +81,9 @@ export async function fetchAuditConfig(typeKey: string): Promise<AuditTypeConfig
           : undefined,
         sortOrder: i.sort_order,
         categoryId: c.id,
-        autoField: (i as any).auto_field ?? undefined,
-        interets: (i as any).interets ?? undefined,
-        commentYParvenir: (i as any).comment_y_parvenir ?? undefined,
+        autoField: (i as Record<string, unknown>).auto_field as string | undefined ?? undefined,
+        interets: (i as Record<string, unknown>).interets as string | undefined ?? undefined,
+        commentYParvenir: (i as Record<string, unknown>).comment_y_parvenir as string | undefined ?? undefined,
       })),
   }));
 
@@ -141,9 +141,9 @@ export async function fetchAuditConfigById(typeId: string): Promise<AuditTypeCon
         checklistItems: i.checklist_items ? (i.checklist_items as string[]) : undefined,
         sortOrder: i.sort_order,
         categoryId: c.id,
-        autoField: (i as any).auto_field ?? undefined,
-        interets: (i as any).interets ?? undefined,
-        commentYParvenir: (i as any).comment_y_parvenir ?? undefined,
+        autoField: (i as Record<string, unknown>).auto_field as string | undefined ?? undefined,
+        interets: (i as Record<string, unknown>).interets as string | undefined ?? undefined,
+        commentYParvenir: (i as Record<string, unknown>).comment_y_parvenir as string | undefined ?? undefined,
       })),
   }));
 
@@ -194,7 +194,9 @@ export function parseIncrementConfig(scoringRules: string | null | undefined): I
   try {
     const parsed = JSON.parse(scoringRules);
     if (parsed && parsed.type === "increment") return parsed as IncrementConfig;
-  } catch {}
+  } catch {
+    /* JSON invalide */
+  }
   return null;
 }
 
@@ -209,7 +211,9 @@ export function parseThresholdConfig(scoringRules: string | null | undefined): T
   try {
     const parsed = JSON.parse(scoringRules);
     if (parsed && parsed.type === "threshold") return parsed as ThresholdConfig;
-  } catch {}
+  } catch {
+    /* JSON invalide */
+  }
   return null;
 }
 

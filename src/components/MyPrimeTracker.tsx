@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -50,8 +51,9 @@ export function MyPrimeTracker() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.rpc("get_my_config").then(({ data }: any) => {
-      setConfig(data && data.length > 0 ? parsePrimeConfig(data[0]) : DEFAULT_PRIME_CONFIG);
+    supabase.rpc("get_my_config").then(({ data }) => {
+      const rows = data as Database["public"]["Functions"]["get_my_config"]["Returns"] | null;
+      setConfig(rows && rows.length > 0 ? parsePrimeConfig(rows[0]) : DEFAULT_PRIME_CONFIG);
     });
     supabase.from("user_custom_primes").select("id, label, prime_1, prime_2, prime_3_plus").eq("user_id", user.id)
       .then(({ data }) => setCustomPrimes((data ?? []) as UserCustomPrime[]));

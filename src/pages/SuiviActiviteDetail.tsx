@@ -44,7 +44,7 @@ export default function SuiviActiviteDetail() {
       fetchSuiviItemsConfig(),
     ]).then(([{ data }, config]) => {
       if (data) {
-        setSuivi({ ...data, items: (data.items as any) ?? {} });
+        setSuivi({ ...data, items: (data.items as SuiviRow["items"]) ?? {} });
       }
       setItemsConfig(config);
       setLoading(false);

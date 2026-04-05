@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import type { TooltipProps } from "recharts";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
 import { getTypeColorTriad } from "@/lib/eventTypeColors";
 
@@ -7,7 +8,7 @@ interface ScoresByTypeChartProps {
   index: number;
 }
 
-const CustomTooltip = ({ active, payload }: any) => {
+const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
   if (!active || !payload?.length) return null;
   const d = payload[0].payload;
   return (

@@ -707,6 +707,7 @@ export type Database = {
           is_public: boolean
           kind: string
           name: string
+          nav_sort_order: number
           salon_access_rule: string
           salon_min_staff_rank: number | null
           salon_required_permission: string | null
@@ -720,6 +721,7 @@ export type Database = {
           is_public?: boolean
           kind?: string
           name: string
+          nav_sort_order?: number
           salon_access_rule?: string
           salon_min_staff_rank?: number | null
           salon_required_permission?: string | null
@@ -733,6 +735,7 @@ export type Database = {
           is_public?: boolean
           kind?: string
           name?: string
+          nav_sort_order?: number
           salon_access_rule?: string
           salon_min_staff_rank?: number | null
           salon_required_permission?: string | null
@@ -1602,6 +1605,10 @@ export type Database = {
       record_activity: {
         Args: { p_score?: number; p_type: string }
         Returns: Json
+      }
+      reorder_messaging_channels: {
+        Args: { p_private_group_ids: string[]; p_public_salon_ids: string[] }
+        Returns: undefined
       }
       set_message_pin_state: {
         Args: { p_message_id: string; p_pinned: boolean }

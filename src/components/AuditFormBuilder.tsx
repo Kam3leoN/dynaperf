@@ -21,7 +21,7 @@ interface CustomField {
   audit_type_key: string;
   field_label: string;
   field_type: string;
-  field_options: any;
+  field_options: unknown;
   is_required: boolean;
   sort_order: number;
   col_span: number;
@@ -168,7 +168,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     const validOpts = selectOptions.filter((o) => o.trim());
     if (needsOptions && validOpts.length < 2) { toast.error("Au moins 2 options requises"); return; }
 
-    let fieldOpts: any = null;
+    let fieldOpts: Record<string, unknown> | null = null;
     if (needsOptions) {
       fieldOpts = { options: validOpts };
     } else if (needsSources) {

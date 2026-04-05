@@ -52,7 +52,7 @@ interface CustomFieldDef {
   id: string;
   field_label: string;
   field_type: string;
-  field_options: any;
+  field_options: unknown;
   sort_order: number;
   col_span: number;
 }
@@ -77,7 +77,7 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
         const resolvedPhotos = await resolveAuditPhotoUrls(rawPhotos);
         setDetail({
           ...detailRow,
-          items: (detailRow.items as any) ?? {},
+          items: (detailRow.items as DetailData["items"]) ?? {},
           photos: resolvedPhotos,
         });
       }
@@ -95,7 +95,9 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
   const isItemNA = (itemId: string) => detail?.items[itemId]?.notApplicable === true;
 
   // Get custom field values from items JSON
-  const customFieldValues: Record<string, any> = (detail?.items as any)?.__custom_fields || {};
+  const itemsPayload = detail?.items as Record<string, unknown> | undefined;
+  const customFieldValues: Record<string, unknown> =
+    (itemsPayload?.__custom_fields as Record<string, unknown> | undefined) || {};
 
   // Helper to get display value for a custom field
   const getFieldDisplayValue = (field: CustomFieldDef): string | null => {

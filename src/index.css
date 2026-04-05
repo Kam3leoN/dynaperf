@@ -342,7 +342,7 @@
    Device-adaptive utilities (via deviceClasses.ts)
    ═══════════════════════════════════════════════ */
 
-/* High-DPI: slightly tighter spacing on very dense screens */
+/* DPR élevé : stabilité du texte (ne modifie pas les breakpoints shell / largeur viewport). */
 html.dpi-3x,
 html.dpi-4x {
   -webkit-text-size-adjust: 100%;
@@ -355,9 +355,11 @@ html.browser-samsung {
   text-size-adjust: 100%;
 }
 
-/* Chrome Android + tactile : éviter le zoom / reflow “page desktop miniature” */
-html.os-android.device-mobile,
-html.os-android.device-tablet {
+/*
+ * Chrome Android : éviter l’inflation de texte (rendu ≠ émulateur, texte qui casse les grilles).
+ * S’applique à tout Android, y compris si deviceClasses a classé `device-desktop` (cas rare).
+ */
+html.os-android {
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }

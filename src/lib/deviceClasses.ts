@@ -1,10 +1,14 @@
 /**
- * Détecte le système, le navigateur et la résolution (DPI)
- * et pose des classes CSS sur <html> pour un styling adaptatif.
+ * Détecte le système, le navigateur et la densité d’écran (DPR)
+ * et pose des classes CSS sur `<html>` pour un styling adaptatif.
+ *
+ * **DPI / DPR** : les classes `dpi-*` reflètent `devicePixelRatio` (assets, finesse d’écran).
+ * Elles **ne remplacent pas** les breakpoints du shell (`layoutBreakpoints`, Tailwind `shell:`),
+ * qui sont basés sur la **largeur du viewport en px CSS** — comme en responsive DevTools.
  *
  * Classes ajoutées :
  *   OS:         os-android | os-ios | os-windows | os-macos | os-linux
- *   Type:       device-mobile | device-tablet | device-desktop
+ *   Type:       device-mobile | device-tablet | device-desktop (heuristique `innerWidth`/`innerHeight`, pas le DPR)
  *   Navigateur: browser-chrome | browser-safari | browser-firefox | browser-edge | browser-samsung
  *   DPI:        dpi-1x | dpi-2x | dpi-3x | dpi-4x
  *   Standalone: pwa-standalone (si lancé en mode PWA)
@@ -51,7 +55,7 @@ function detectDPI(): string {
 function detectStandalone(): string | null {
   const isStandalone =
     window.matchMedia("(display-mode: standalone)").matches ||
-    (navigator as any).standalone === true;
+    (navigator as Navigator & { standalone?: boolean }).standalone === true;
   return isStandalone ? "pwa-standalone" : null;
 }
 
@@ -99,10 +103,20 @@ export function listenDeviceChanges() {
 
   window.addEventListener("resize", update);
   window.addEventListener("orientationchange", update);
-  window.matchMedia("(display-mode: standalone)").addEventListener("change", update);
+  const standaloneMql = window.matchMedia("(display-mode: standalone)");
+  standaloneMql.addEventListener("change", update);
+
+  const vv = window.visualViewport;
+  if (vv) {
+    vv.addEventListener("resize", update);
+  }
 
   return () => {
     window.removeEventListener("resize", update);
     window.removeEventListener("orientationchange", update);
+    standaloneMql.removeEventListener("change", update);
+    if (vv) {
+      vv.removeEventListener("resize", update);
+    }
   };
 }

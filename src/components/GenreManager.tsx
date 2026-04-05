@@ -30,8 +30,8 @@ export default function GenreManager({ open, onOpenChange, onUpdate }: GenreMana
 
   const load = useCallback(async () => {
     setLoading(true);
-    const { data } = await supabase.from("prenoms_genre" as any).select("*").order("prenom");
-    if (data) setItems(data as any);
+    const { data } = await supabase.from("prenoms_genre").select("*").order("prenom");
+    if (data) setItems(data as PrenomGenre[]);
     setLoading(false);
   }, []);
 
@@ -42,7 +42,7 @@ export default function GenreManager({ open, onOpenChange, onUpdate }: GenreMana
     if (!prenom) return;
     // Title case
     const formatted = prenom.charAt(0).toUpperCase() + prenom.slice(1).toLowerCase();
-    const { error } = await supabase.from("prenoms_genre" as any).insert({ prenom: formatted, genre: newGenre } as any);
+    const { error } = await supabase.from("prenoms_genre").insert({ prenom: formatted, genre: newGenre });
     if (error) {
       if (error.code === "23505") toast.error("Ce prénom existe déjà");
       else toast.error("Erreur : " + error.message);
@@ -55,7 +55,7 @@ export default function GenreManager({ open, onOpenChange, onUpdate }: GenreMana
   };
 
   const handleDelete = async (item: PrenomGenre) => {
-    const { error } = await supabase.from("prenoms_genre" as any).delete().eq("id", item.id);
+    const { error } = await supabase.from("prenoms_genre").delete().eq("id", item.id);
     if (error) { toast.error("Erreur : " + error.message); return; }
     toast.success(`${item.prenom} supprimé`);
     load();
@@ -64,7 +64,7 @@ export default function GenreManager({ open, onOpenChange, onUpdate }: GenreMana
 
   const handleToggleGenre = async (item: PrenomGenre) => {
     const newG = item.genre === "M" ? "F" : "M";
-    const { error } = await supabase.from("prenoms_genre" as any).update({ genre: newG } as any).eq("id", item.id);
+    const { error } = await supabase.from("prenoms_genre").update({ genre: newG }).eq("id", item.id);
     if (error) { toast.error("Erreur : " + error.message); return; }
     load();
     onUpdate();

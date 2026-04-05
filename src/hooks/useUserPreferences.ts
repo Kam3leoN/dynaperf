@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Json } from "@/integrations/supabase/types";
 import { useAuth } from "./useAuth";
 
 export interface NotifPref {
@@ -47,7 +48,7 @@ export function useUserPreferences() {
         .eq("user_id", user.id)
         .maybeSingle();
       if (data?.preferences) {
-        const stored = data.preferences as any;
+        const stored = data.preferences as unknown as Partial<UserPreferences>;
         setPreferences({
           notifications: stored.notifications || defaults.notifications,
           biometricEnabled: stored.biometricEnabled ?? defaults.biometricEnabled,
@@ -69,12 +70,12 @@ export function useUserPreferences() {
     if (existing) {
       await supabase
         .from("user_preferences")
-        .update({ preferences: prefs as any, updated_at: new Date().toISOString() } as any)
+        .update({ preferences: prefs as unknown as Json, updated_at: new Date().toISOString() })
         .eq("user_id", user.id);
     } else {
       await supabase
         .from("user_preferences")
-        .insert({ user_id: user.id, preferences: prefs as any } as any);
+        .insert({ user_id: user.id, preferences: prefs as unknown as Json });
     }
   }, [user]);
 

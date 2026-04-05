@@ -36,7 +36,7 @@ export function ExcelExport({ audits }: ExcelExportProps) {
     XLSX.utils.book_append_sheet(wb, ws, "Audits");
 
     const colWidths = Object.keys(rows[0] || {}).map((key) => ({
-      wch: Math.max(key.length, ...rows.map((r) => String((r as any)[key]).length)) + 2,
+      wch: Math.max(key.length, ...rows.map((r) => String((r as Record<string, unknown>)[key]).length)) + 2,
     }));
     ws["!cols"] = colWidths;
 

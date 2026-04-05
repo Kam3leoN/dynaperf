@@ -30,7 +30,7 @@ interface CustomFieldDef {
   id: string;
   field_label: string;
   field_type: string;
-  field_options: any;
+  field_options: unknown;
   sort_order: number;
 }
 
@@ -50,8 +50,8 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
         return;
       }
 
-      const items = (detail.items as Record<string, any>) ?? {};
-      const customFieldValues: Record<string, any> = items.__custom_fields || {};
+      const items = (detail.items as Record<string, unknown>) ?? {};
+      const customFieldValues = (items.__custom_fields as Record<string, unknown> | undefined) || {};
       const fields = (customFields as CustomFieldDef[]) || [];
       const allItems = config.categories.flatMap((cat) =>
         cat.items.map((item) => ({ ...item, categoryName: cat.name }))
@@ -266,9 +266,9 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
       // ── Signatures ──
       html += signaturesHtml(
         auditeur,
-        (detail as any).signature_auditeur,
+        detail.signature_auditeur,
         partenaire,
-        (detail as any).signature_audite,
+        detail.signature_audite,
       );
 
       // ── Footer ──

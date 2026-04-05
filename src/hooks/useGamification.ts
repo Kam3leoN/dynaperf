@@ -55,7 +55,7 @@ export function useGamification() {
     }
     if (earnedRes.data) {
       setEarnedBadges(
-        earnedRes.data.map((e: any) => ({
+        earnedRes.data.map((e: { earned_at: string; badge: Badge }) => ({
           ...e.badge,
           earned_at: e.earned_at,
         }))

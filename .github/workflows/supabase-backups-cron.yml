@@ -1,0 +1,45 @@
+# Déclenche quotidiennement les Edge Functions de sauvegarde (JSON + dump SQL).
+# Secrets GitHub requis :
+#   SUPABASE_URL           — ex. https://xxxx.supabase.co
+#   SUPABASE_ANON_KEY      — clé anon (header apikey)
+#   BACKUP_CRON_SECRET     — même valeur que le secret Edge BACKUP_CRON_SECRET
+#
+# Sur Supabase : déployer backup-all et sql-backup, définir BACKUP_CRON_SECRET,
+# SUPABASE_DB_URL (sql-backup), et config.toml verify_jwt = false pour ces fonctions.
+
+name: Supabase backups (CRON)
+
+on:
+  schedule:
+    # 04:15 UTC tous les jours — ajuster si besoin
+    - cron: "15 4 * * *"
+  workflow_dispatch:
+
+jobs:
+  trigger-backups:
+    runs-on: ubuntu-latest
+    steps:
+      - name: backup-all (JSON)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          BACKUP_CRON_SECRET: ${{ secrets.BACKUP_CRON_SECRET }}
+        run: |
+          set -e
+          test -n "$SUPABASE_URL" && test -n "$SUPABASE_ANON_KEY" && test -n "$BACKUP_CRON_SECRET"
+          curl -sfS -X POST \
+            -H "Authorization: Bearer ${BACKUP_CRON_SECRET}" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            "${SUPABASE_URL%/}/functions/v1/backup-all"
+
+      - name: sql-backup (SQL)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          BACKUP_CRON_SECRET: ${{ secrets.BACKUP_CRON_SECRET }}
+        run: |
+          set -e
+          curl -sfS -X POST \
+            -H "Authorization: Bearer ${BACKUP_CRON_SECRET}" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            "${SUPABASE_URL%/}/functions/v1/sql-backup"

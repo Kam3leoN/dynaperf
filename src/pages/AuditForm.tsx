@@ -6,6 +6,7 @@ import { AuditItemCard, ItemAnswer } from "@/components/audit-stepper/AuditItemC
 import { AuditPhotoUpload } from "@/components/audit-stepper/AuditPhotoUpload";
 import { fetchAuditConfig, fetchAuditConfigById, AuditTypeConfig } from "@/data/auditItems";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database, Json } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
@@ -68,7 +69,9 @@ export default function AuditForm() {
       ]);
 
       if (audit) {
-        const customFieldValues = (detail?.items as any)?.__custom_fields || {};
+        const detailItems = detail?.items as Record<string, unknown> | undefined;
+        const customFieldValues =
+          (detailItems?.__custom_fields as Record<string, unknown> | undefined) || {};
         
         setStepZeroData({
           partenaireAudite: audit.partenaire,
@@ -93,17 +96,24 @@ export default function AuditForm() {
         });
 
         if (detail?.items) {
-          const itemsData = detail.items as Record<string, any>;
+          const itemsData = detail.items as Record<string, unknown>;
           const loadedAnswers: Record<string, ItemAnswer> = {};
           Object.entries(itemsData).forEach(([id, ans]) => {
             if (id === "__custom_fields") return;
+            const a = ans as {
+              score?: number;
+              comment?: string;
+              checklist?: boolean[];
+              rawValue?: number;
+              notApplicable?: boolean;
+            };
             loadedAnswers[id] = {
-              score: ans.score ?? 0,
+              score: a.score ?? 0,
               touched: true,
-              comment: ans.comment,
-              checklist: ans.checklist,
-              rawValue: ans.rawValue,
-              notApplicable: ans.notApplicable ?? false,
+              comment: a.comment,
+              checklist: a.checklist,
+              rawValue: a.rawValue,
+              notApplicable: a.notApplicable ?? false,
             };
           });
           setAnswers(loadedAnswers);
@@ -112,8 +122,8 @@ export default function AuditForm() {
         if (detail?.photos) {
           setExistingPhotos(detail.photos as string[]);
         }
-        if ((detail as any)?.signature_auditeur) setSignatureAuditeur((detail as any).signature_auditeur);
-        if ((detail as any)?.signature_audite) setSignatureAudite((detail as any).signature_audite);
+        if (detail?.signature_auditeur) setSignatureAuditeur(detail.signature_auditeur);
+        if (detail?.signature_audite) setSignatureAudite(detail.signature_audite);
       }
       setEditLoaded(true);
     };
@@ -249,7 +259,7 @@ export default function AuditForm() {
       photoUrls = [...photoUrls, ...newUrls];
     }
 
-    const itemsJson: Record<string, any> = {};
+    const itemsJson: Record<string, unknown> = {};
     Object.entries(finalAnswers).forEach(([id, ans]) => {
       itemsJson[id] = {
         score: ans.score,
@@ -263,7 +273,7 @@ export default function AuditForm() {
       itemsJson["__custom_fields"] = stepZeroData.customFieldValues;
     }
 
-    const detailPayload = {
+    const detailPayload: Database["public"]["Tables"]["audit_details"]["Insert"] = {
       audit_id: targetAuditId,
       partenaire_referent: stepZeroData.partenaireReferent || null,
       type_lieu: stepZeroData.typeLieu || null,
@@ -279,13 +289,13 @@ export default function AuditForm() {
       nb_no_show: stepZeroData.nbNoShow ?? null,
       nb_participants: stepZeroData.nbParticipants ?? null,
       nb_rdv_pris: stepZeroData.nbRdvPris ?? null,
-      items: itemsJson,
+      items: itemsJson as Json,
       total_points: totalPoints,
       note_sur_10: noteSur10,
       photos: photoUrls,
       signature_auditeur: signatureAuditeur,
       signature_audite: signatureAudite,
-    } as any;
+    };
 
     if (isEditMode) {
       const { data: existingDetail } = await supabase

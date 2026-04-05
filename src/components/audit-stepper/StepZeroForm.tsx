@@ -42,7 +42,7 @@ export interface StepZeroData {
   nbNoShow?: number;
   nbParticipants?: number;
   nbRdvPris?: number;
-  customFieldValues?: Record<string, any>;
+  customFieldValues?: Record<string, unknown>;
 }
 
 // Maps special field types to StepZeroData keys so audit save logic still works
@@ -63,7 +63,7 @@ interface CustomFieldDef {
   id: string;
   field_label: string;
   field_type: string;
-  field_options: any;
+  field_options: unknown;
   is_required: boolean;
   sort_order: number;
   col_span: number;
@@ -171,16 +171,16 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [customFields]);
 
-  const setFieldValue = (fieldId: string, fieldType: string, value: any) => {
+  const setFieldValue = (fieldId: string, fieldType: string, value: unknown) => {
     setData((prev) => {
-      const next: StepZeroData = {
+      let next: StepZeroData = {
         ...prev,
         customFieldValues: { ...prev.customFieldValues, [fieldId]: value },
       };
       // Map to legacy keys for backward-compatible save
       const dataKey = FIELD_TYPE_TO_DATA_KEY[fieldType];
       if (dataKey) {
-        (next as any)[dataKey] = value;
+        next = { ...next, [dataKey]: value } as StepZeroData;
       }
       if (fieldType === "time") {
         next.heureEvenement = value;

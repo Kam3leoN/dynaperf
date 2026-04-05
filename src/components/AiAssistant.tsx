@@ -106,9 +106,11 @@ export function AiAssistant() {
         onDone: () => setLoading(false),
         signal: controller.signal,
       });
-    } catch (e: any) {
-      if (e.name !== "AbortError") {
-        setMessages((p) => [...p, { role: "assistant", content: `❌ ${e.message}` }]);
+    } catch (e: unknown) {
+      const name = e instanceof Error ? e.name : "";
+      const message = e instanceof Error ? e.message : "Erreur";
+      if (name !== "AbortError") {
+        setMessages((p) => [...p, { role: "assistant", content: `❌ ${message}` }]);
       }
       setLoading(false);
     }
@@ -258,13 +260,15 @@ export function AiObservationButton({
             const parsed = JSON.parse(json);
             const c = parsed.choices?.[0]?.delta?.content;
             if (c) result += c;
-          } catch {}
+          } catch {
+            /* chunk JSON invalide */
+          }
         }
       }
 
       onResult(result);
-    } catch (e: any) {
-      onResult(`❌ ${e.message}`);
+    } catch (e: unknown) {
+      onResult(`❌ ${e instanceof Error ? e.message : "Erreur"}`);
     } finally {
       setLoading(false);
     }

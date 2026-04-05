@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/AppLayout";
 import { MyPrimeTracker } from "@/components/MyPrimeTracker";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -73,8 +74,9 @@ export default function Primes() {
 
   useEffect(() => {
     if (!user) return;
-    supabase.rpc("get_my_config").then(({ data }: any) => {
-      setConfig(data && data.length > 0 ? parsePrimeConfig(data[0]) : DEFAULT_PRIME_CONFIG);
+    supabase.rpc("get_my_config").then(({ data }) => {
+      const rows = data as Database["public"]["Functions"]["get_my_config"]["Returns"] | null;
+      setConfig(rows && rows.length > 0 ? parsePrimeConfig(rows[0]) : DEFAULT_PRIME_CONFIG);
     });
     supabase.from("profiles").select("display_name").eq("user_id", user.id).maybeSingle()
       .then(({ data }) => setDisplayName(data?.display_name || user.email?.split("@")[0] || ""));

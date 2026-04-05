@@ -33,8 +33,8 @@ export function OnlineAvatars() {
       .on("presence", { event: "sync" }, () => {
         const state = channel.presenceState();
         const ids = new Set<string>();
-        Object.values(state).forEach((presences: any[]) => {
-          presences.forEach((p) => ids.add(p.user_id));
+        Object.values(state).forEach((presences) => {
+          (presences as { user_id: string }[]).forEach((p) => ids.add(p.user_id));
         });
         setOnlineIds(ids);
       })

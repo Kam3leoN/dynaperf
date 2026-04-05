@@ -47,7 +47,7 @@ export default function AdminSecteurs() {
   const load = useCallback(async () => {
     setLoading(true);
     const { data } = await supabase.from("secteurs").select("*").order("nom");
-    if (data) setSecteurs(data as any);
+    if (data) setSecteurs(data as Secteur[]);
     setLoading(false);
   }, []);
 
@@ -57,7 +57,7 @@ export default function AdminSecteurs() {
     e.preventDefault();
     if (!newNom.trim()) return;
     setCreating(true);
-    const { error } = await supabase.from("secteurs").insert({ nom: newNom.trim() } as any);
+    const { error } = await supabase.from("secteurs").insert({ nom: newNom.trim() });
     if (error) toast.error("Erreur : " + error.message);
     else { toast.success("Secteur créé"); setNewNom(""); setCreateOpen(false); load(); }
     setCreating(false);
@@ -65,7 +65,7 @@ export default function AdminSecteurs() {
 
   const handleUpdate = async (id: string) => {
     if (!editNom.trim()) return;
-    const { error } = await supabase.from("secteurs").update({ nom: editNom.trim() } as any).eq("id", id);
+    const { error } = await supabase.from("secteurs").update({ nom: editNom.trim() }).eq("id", id);
     if (error) toast.error("Erreur : " + error.message);
     else { toast.success("Secteur mis à jour"); setEditId(null); load(); }
   };
@@ -122,7 +122,7 @@ export default function AdminSecteurs() {
     setSavingDepts(true);
     let hasError = false;
     for (const s of localSecteurs) {
-      const { error } = await supabase.from("secteurs").update({ departements: s.departements } as any).eq("id", s.id);
+      const { error } = await supabase.from("secteurs").update({ departements: s.departements }).eq("id", s.id);
       if (error) { toast.error(`Erreur pour ${s.nom}: ${error.message}`); hasError = true; break; }
     }
     if (!hasError) { toast.success("Départements sauvegardés"); setDndOpen(false); load(); }

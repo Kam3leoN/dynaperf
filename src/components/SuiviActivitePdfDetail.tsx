@@ -146,9 +146,9 @@ export function SuiviActivitePdfDetail({ suiviId }: Props) {
       // ── Signatures ──
       html += signaturesHtml(
         suivi.suivi_par,
-        (suivi as any).signature_auditeur,
+        suivi.signature_auditeur,
         suivi.agence,
-        (suivi as any).signature_audite,
+        suivi.signature_audite,
       );
 
       // ── Footer ──

@@ -22,11 +22,11 @@ function isDismissed(): boolean {
 
 function isStandalone(): boolean {
   return window.matchMedia("(display-mode: standalone)").matches
-    || (navigator as any).standalone === true;
+    || (navigator as Navigator & { standalone?: boolean }).standalone === true;
 }
 
 function isIOS(): boolean {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as Window & { MSStream?: unknown }).MSStream;
 }
 
 export function InstallPrompt() {

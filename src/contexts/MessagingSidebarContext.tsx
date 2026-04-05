@@ -24,7 +24,7 @@ export interface MessagingGroupRow {
 
   is_public: boolean;
 
-  lastMsg?: { created_at: string } | null;
+  lastMsg?: { created_at: string; sender_id?: string } | null;
 
 }
 
@@ -48,6 +48,13 @@ export interface MessagingSidebarApi {
   canManageSalons: boolean;
 
   getGroupUnread: (groupId: string) => number;
+
+  /**
+   * Enregistre l’ordre des salons publics ou des groupes privés (permission messaging.manage_salons).
+   */
+  persistChannelOrder: (kind: "salon" | "group", orderedIds: string[]) => Promise<void>;
+
+  viewerUserId: string | undefined;
 
 }
 

@@ -1,5 +1,8 @@
 import { useEffect, useCallback, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
+
+type PublicTableName = keyof Database["public"]["Tables"];
 import { toast } from "sonner";
 
 const DB_NAME = "dynaperf_offline";
@@ -23,7 +26,7 @@ interface PendingAction {
   id?: number;
   table: string;
   operation: "insert" | "update" | "delete";
-  data: any;
+  data: Record<string, unknown>;
   timestamp: number;
 }
 
@@ -76,14 +79,14 @@ export function useOfflineSync() {
     for (const item of items) {
       try {
         if (item.operation === "insert") {
-          const { error } = await supabase.from(item.table as any).insert(item.data);
+          const { error } = await supabase.from(item.table as PublicTableName).insert(item.data as never);
           if (error) throw error;
         } else if (item.operation === "update") {
           const { id: rowId, ...rest } = item.data;
-          const { error } = await supabase.from(item.table as any).update(rest).eq("id", rowId);
+          const { error } = await supabase.from(item.table as PublicTableName).update(rest as never).eq("id", rowId);
           if (error) throw error;
         } else if (item.operation === "delete") {
-          const { error } = await supabase.from(item.table as any).delete().eq("id", item.data.id);
+          const { error } = await supabase.from(item.table as PublicTableName).delete().eq("id", item.data.id as string);
           if (error) throw error;
         }
         await removePending(item.id!);
@@ -98,7 +101,7 @@ export function useOfflineSync() {
     await refreshCount();
   }, [refreshCount]);
 
-  const saveOffline = useCallback(async (table: string, operation: "insert" | "update" | "delete", data: any) => {
+  const saveOffline = useCallback(async (table: string, operation: "insert" | "update" | "delete", data: Record<string, unknown>) => {
     await addPending({ table, operation, data });
     await refreshCount();
     toast.info("Sauvegardé hors-ligne — synchronisation automatique au retour en ligne");

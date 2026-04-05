@@ -11,6 +11,10 @@ import {
 } from "@/services/BiometricSessionService";
 import { hasStoredCredential } from "@/services/WebAuthnService";
 
+type SupabaseAuthWithSessionRemoval = typeof supabase.auth & {
+  _removeSession?: () => Promise<void>;
+};
+
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
@@ -46,7 +50,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (async () => {
       if (hasStoredCredential() && !hasAppSessionUnlocked()) {
         await supabase.auth.stopAutoRefresh().catch(() => undefined);
-        await (supabase.auth as any)._removeSession?.();
+        await (supabase.auth as SupabaseAuthWithSessionRemoval)._removeSession?.();
         clearPersistedAuthSession();
       }
 
@@ -64,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     lockAppLocally();
     await supabase.auth.stopAutoRefresh().catch(() => undefined);
-    await (supabase.auth as any)._removeSession?.();
+    await (supabase.auth as SupabaseAuthWithSessionRemoval)._removeSession?.();
     setUser(null);
     setLoading(false);
   };

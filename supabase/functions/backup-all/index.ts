@@ -14,10 +14,19 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const authHeader = req.headers.get("Authorization");
+    const authHeader = req.headers.get("Authorization") ?? "";
+    const bearer = authHeader.startsWith("Bearer ") ? authHeader.slice(7).trim() : "";
+    const cronSecret = Deno.env.get("BACKUP_CRON_SECRET");
 
-    // If called with auth header, verify super_admin
-    if (authHeader) {
+    const authorizedBySecret = Boolean(cronSecret && bearer === cronSecret);
+
+    if (!authorizedBySecret) {
+      if (!authHeader.trim()) {
+        return new Response(JSON.stringify({ error: "Authorization requis (JWT super_admin ou secret CRON)" }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+
       const userClient = createClient(supabaseUrl, anonKey, {
         global: { headers: { Authorization: authHeader } },
       });
@@ -28,9 +37,9 @@ Deno.serve(async (req) => {
         });
       }
 
-      const adminClient = createClient(supabaseUrl, serviceRoleKey);
-      const { data: roles } = await adminClient.from("user_roles").select("role").eq("user_id", user.id);
-      const isSuperAdmin = roles?.some((r: any) => r.role === "super_admin");
+      const roleCheckClient = createClient(supabaseUrl, serviceRoleKey);
+      const { data: roles } = await roleCheckClient.from("user_roles").select("role").eq("user_id", user.id);
+      const isSuperAdmin = roles?.some((r: { role: string }) => r.role === "super_admin");
       if (!isSuperAdmin) {
         return new Response(JSON.stringify({ error: "Réservé au super admin" }), {
           status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -38,7 +47,6 @@ Deno.serve(async (req) => {
       }
     }
 
-    // If no auth header, it's the CRON calling — proceed
     const adminClient = createClient(supabaseUrl, serviceRoleKey);
 
     const tables = [
@@ -49,7 +57,7 @@ Deno.serve(async (req) => {
       "messages", "activity_log", "prenoms_genre",
     ];
 
-    const backup: Record<string, any> = { created_at: new Date().toISOString() };
+    const backup: Record<string, unknown> = { created_at: new Date().toISOString() };
 
     for (const table of tables) {
       const { data, error } = await adminClient.from(table).select("*").limit(10000);

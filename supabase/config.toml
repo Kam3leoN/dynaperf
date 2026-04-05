@@ -1,2 +1,10 @@
 # project_id : synchronisé depuis .env via « npm run db:sync-project » ou « npm run db:link ».
 project_id = "vexydidjcunyeymlbawz"
+
+# Sauvegardes déclenchées par CRON (Bearer BACKUP_CRON_SECRET) : la vérification JWT
+# est faite dans le code des fonctions (super_admin ou secret).
+[functions.backup-all]
+verify_jwt = false
+
+[functions.sql-backup]
+verify_jwt = false

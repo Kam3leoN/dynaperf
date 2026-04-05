@@ -174,7 +174,7 @@ export default function AdminClubs() {
   const loadClubs = useCallback(async () => {
     setLoading(true);
     const { data } = await supabase.from("clubs").select("*").order("nom");
-    if (data) setClubs(data as any);
+    if (data) setClubs(data as Club[]);
     setLoading(false);
   }, []);
 

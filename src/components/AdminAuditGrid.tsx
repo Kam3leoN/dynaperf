@@ -98,14 +98,17 @@ export default function AdminAuditGridInline() {
     setItems(
       (itemRes.data || [])
         .filter((i) => catIds.includes(i.category_id))
-        .map((i) => ({
-          ...i,
-          checklist_items: Array.isArray(i.checklist_items) ? (i.checklist_items as string[]) : null,
-          scoring_rules: i.scoring_rules ?? null,
-          interets: (i as any).interets ?? "",
-          comment_y_parvenir: (i as any).comment_y_parvenir ?? "",
-          auto_field: (i as any).auto_field ?? null,
-        }))
+        .map((i) => {
+          const ext = i as Record<string, unknown>;
+          return {
+            ...i,
+            checklist_items: Array.isArray(i.checklist_items) ? (i.checklist_items as string[]) : null,
+            scoring_rules: i.scoring_rules ?? null,
+            interets: typeof ext.interets === "string" ? ext.interets : "",
+            comment_y_parvenir: typeof ext.comment_y_parvenir === "string" ? ext.comment_y_parvenir : "",
+            auto_field: ext.auto_field ?? null,
+          };
+        })
     );
   }, [selectedTypeId]);
 
@@ -181,7 +184,7 @@ export default function AdminAuditGridInline() {
             srcItems.map(i => ({
               category_id: newCat.id, sort_order: i.sort_order, title: i.title, description: i.description,
               max_points: i.max_points, condition: i.condition, scoring_rules: i.scoring_rules,
-              input_type: i.input_type, checklist_items: i.checklist_items as any,
+              input_type: i.input_type, checklist_items: i.checklist_items as unknown as string[] | null,
               interets: i.interets, comment_y_parvenir: i.comment_y_parvenir, auto_field: i.auto_field,
             }))
           );
@@ -277,7 +280,9 @@ export default function AdminAuditGridInline() {
           tiers = parsed;
           hasTiers = true;
         }
-      } catch {}
+      } catch {
+        /* scoring_rules JSON invalide : ignorer */
+      }
     }
     const autoFieldRaw = item.auto_field || "";
     const [parsedAutoField, parsedAutoCondition] = autoFieldRaw.includes("::") ? autoFieldRaw.split("::") : [autoFieldRaw, "zero"];
@@ -841,7 +846,7 @@ export default function AdminAuditGridInline() {
                     <div className="flex items-center gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs">Opérateur</Label>
-                        <select value={thresholdOperator} onChange={(e) => setThresholdOperator(e.target.value as any)}
+                        <select value={thresholdOperator} onChange={(e) => setThresholdOperator(e.target.value as "lt" | "lte" | "eq" | "gt" | "gte")}
                           className="h-9 rounded-md border border-input bg-background px-2 text-xs">
                           <option value="lt">{"< Inférieur"}</option>
                           <option value="lte">{"≤ Inférieur ou égal"}</option>

@@ -11,6 +11,7 @@ import { toast } from "sonner";
 import { useUserPreferences, type NotifPref } from "@/hooks/useUserPreferences";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import {
   isWebAuthnSupported,
   hasStoredCredential,
@@ -71,26 +72,28 @@ export default function Preferences() {
           storeBiometricRefreshToken(sessionData.session.refresh_token);
         }
 
-        await supabase.from("webauthn_credentials").insert({
+        const credRow: Database["public"]["Tables"]["webauthn_credentials"]["Insert"] = {
           user_id: user.id,
           credential_id: result.credentialId,
           public_key: result.publicKey,
           user_email: user.email || "",
           device_name: navigator.userAgent.slice(0, 100),
-        } as any);
+        };
+        await supabase.from("webauthn_credentials").insert(credRow);
 
         setBiometricEnabled(true);
         toast.success("Connexion biométrique activée !");
       }
-    } catch (error: any) {
-      if (error.message?.includes("prévisualisation intégrée")) {
-        toast.error(error.message);
-      } else if (error.message?.includes("non confirmée")) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "";
+      if (message.includes("prévisualisation intégrée")) {
+        toast.error(message);
+      } else if (message.includes("non confirmée")) {
         toast.info("Activation non confirmée. Vérifiez Windows Hello puis réessayez.");
-      } else if (error.message?.includes("annulée")) {
+      } else if (message.includes("annulée")) {
         toast.info("Activation annulée.");
       } else {
-        toast.error(error.message);
+        toast.error(message || "Erreur");
       }
     } finally {
       setBiometricLoading(false);
@@ -101,10 +104,7 @@ export default function Preferences() {
   const disableBiometric = async () => {
     removeStoredCredential();
     if (user) {
-      await supabase
-        .from("webauthn_credentials")
-        .delete()
-        .eq("user_id", user.id) as any;
+      await supabase.from("webauthn_credentials").delete().eq("user_id", user.id);
     }
     setBiometricEnabled(false);
     toast.success("Connexion biométrique désactivée.");

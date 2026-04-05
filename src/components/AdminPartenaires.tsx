@@ -120,15 +120,17 @@ export default function AdminPartenaires() {
   const loadPartenaires = useCallback(async () => {
     setLoading(true);
     const { data } = await supabase.from("partenaires").select("*").order("nom");
-    if (data) setPartenaires(data as any);
+    if (data) setPartenaires(data as Partenaire[]);
     setLoading(false);
   }, []);
 
   const loadPrenomsGenre = useCallback(async () => {
-    const { data } = await supabase.from("prenoms_genre" as any).select("prenom, genre");
+    const { data } = await supabase.from("prenoms_genre").select("prenom, genre");
     if (data) {
       const map: Record<string, string> = {};
-      (data as any[]).forEach((d: any) => { map[d.prenom.toLowerCase()] = d.genre; });
+      (data as { prenom: string; genre: string }[]).forEach((d) => {
+        map[d.prenom.toLowerCase()] = d.genre;
+      });
       setPrenomsGenre(map);
     }
   }, []);
@@ -220,10 +222,10 @@ export default function AdminPartenaires() {
   const handleEditSave = async () => {
     if (!editP) return;
     setSaving(true);
-    const row = formToRow();
+    let row = formToRow();
     if (avatarFile) {
       const url = await uploadPhoto(editP.id, avatarFile);
-      if (url) (row as any).photo_url = url;
+      if (url) row = { ...row, photo_url: url };
     }
     const { error } = await supabase.from("partenaires").update(row).eq("id", editP.id);
     if (error) { toast.error("Erreur: " + error.message); setSaving(false); return; }

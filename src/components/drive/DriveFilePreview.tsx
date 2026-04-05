@@ -250,7 +250,6 @@ export function DriveFilePreview({ previewUrl, doc }: DriveFilePreviewProps) {
         <pre className="max-h-[70vh] overflow-auto rounded-lg text-sm p-4 !bg-[#2d2d2d] !m-0 text-left">
           <code
             className="language-none whitespace-pre"
-            // eslint-disable-next-line react/no-danger
             dangerouslySetInnerHTML={{ __html: highlightedHtml }}
           />
         </pre>

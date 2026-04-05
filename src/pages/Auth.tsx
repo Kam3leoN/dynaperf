@@ -99,9 +99,10 @@ export default function Auth() {
           logLoginIp();
         }
       }
-    } catch (error: any) {
-      if (!error.message?.includes("annulée")) {
-        toast.error(error.message);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "";
+      if (!message.includes("annulée")) {
+        toast.error(message || "Erreur biométrique");
       }
     } finally {
       setBiometricLoading(false);

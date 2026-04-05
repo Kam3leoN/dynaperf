@@ -23,7 +23,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faComments, faArrowLeft, faCheck, faCheckDouble,
+  faComments, faCheck, faCheckDouble,
   faEllipsisVertical, faPen, faTrash, faPlus, faUsers, faUserPlus, faXmark, faChevronDown,
   faHashtag, faThumbtack, faFaceSmile,
 } from "@fortawesome/free-solid-svg-icons";
@@ -38,6 +38,7 @@ import type { UserPresenceRow } from "@/lib/presence";
 import { presenceLabelFor } from "@/lib/presence";
 import { messageComposerChromeClassName } from "@/lib/bottomBarChrome";
 import { cn } from "@/lib/utils";
+import { ContextSubHeader } from "@/components/context-sub-header";
 
 interface Profile {
   user_id: string;
@@ -90,6 +91,7 @@ interface ConversationGroup {
   created_by: string;
   kind: "group" | "salon";
   is_public: boolean;
+  nav_sort_order?: number;
 }
 
 interface GroupMember {
@@ -148,20 +150,21 @@ function buildGroupsWithMeta(
   messages: Message[],
   viewerId: string | undefined,
 ): Array<ConversationGroup & { lastMsg?: Message | null }> {
-  return list
-    .map((g) => {
-      const groupMsgs = messages.filter((m) => m.group_id === g.id);
-      const collapsed =
-        viewerId && !g.is_public ? mergeGroupMessageRows(groupMsgs, viewerId) : sortMessagesByTime(groupMsgs);
-      const lastMsg = collapsed.at(-1);
-      return { ...g, lastMsg };
-    })
-    .sort((a, b) => {
-      if (!a.lastMsg && !b.lastMsg) return 0;
-      if (!a.lastMsg) return 1;
-      if (!b.lastMsg) return -1;
-      return new Date(b.lastMsg.created_at).getTime() - new Date(a.lastMsg.created_at).getTime();
-    });
+  return list.map((g) => {
+    const groupMsgs = messages.filter((m) => m.group_id === g.id);
+    const collapsed =
+      viewerId && !g.is_public ? mergeGroupMessageRows(groupMsgs, viewerId) : sortMessagesByTime(groupMsgs);
+    const lastMsg = collapsed.at(-1) ?? null;
+    return { ...g, lastMsg };
+  });
+}
+
+/** Ordre d’affichage stable (nav_sort_order) ; ne pas trier par dernière activité. */
+function sortMessagingChannels<T extends { nav_sort_order?: number; name: string }>(list: T[]): T[] {
+  return [...list].sort(
+    (a, b) =>
+      (a.nav_sort_order ?? 0) - (b.nav_sort_order ?? 0) || a.name.localeCompare(b.name, "fr"),
+  );
 }
 
 /**
@@ -519,13 +522,17 @@ export default function Messages() {
     const [profilesRes, msgsRes, groupsRes, membersRes, presenceRes] = await Promise.all([
       supabase.from("profiles").select("user_id, display_name, avatar_url"),
       supabase.from("messages").select("*").order("created_at", { ascending: true }),
-      supabase.from("conversation_groups").select("*"),
+      supabase
+        .from("conversation_groups")
+        .select("*")
+        .order("nav_sort_order", { ascending: true })
+        .order("name", { ascending: true }),
       supabase.from("conversation_group_members").select("group_id, user_id"),
       supabase.from("user_presence").select("*"),
     ]);
     const allP = (profilesRes.data || []) as Profile[];
     setAllProfiles(allP);
-    setProfiles(allP.filter((p: any) => p.user_id !== user.id));
+    setProfiles(allP.filter((p) => p.user_id !== user.id));
     if (msgsRes.error) toast.error(msgsRes.error.message);
     if (msgsRes.data) {
       setMessages(sortMessagesByTime(msgsRes.data as Message[]));
@@ -552,13 +559,14 @@ export default function Messages() {
           ...(g as unknown as ConversationGroup),
           kind: (g.kind as string) === "salon" ? "salon" : "group",
           is_public: Boolean(g.is_public),
+          nav_sort_order: typeof g.nav_sort_order === "number" ? g.nav_sort_order : 0,
         })),
       );
     }
     if (membersRes.error) {
       toast.error(`Membres des groupes : ${membersRes.error.message}`, { id: "messages-members-load" });
     } else if (membersRes.data) {
-      setGroupMembers(membersRes.data as any);
+      setGroupMembers(membersRes.data as GroupMember[]);
     }
     const pmap: Record<string, UserPresenceRow> = {};
     (presenceRes.data as UserPresenceRow[] | null)?.forEach((r) => {
@@ -587,12 +595,10 @@ export default function Messages() {
     setSearchParams(next, { replace: true });
   }, [searchParams, allProfiles, user?.id, setSearchParams]);
 
-  /** Premier salon public par défaut (style Discord #général). */
+  /** Premier salon public par défaut (style Discord #général), ordre nav fixe. */
   useEffect(() => {
     if (groups.length === 0) return;
-    const salons = groups
-      .filter((g) => g.is_public && g.kind === "salon")
-      .sort((a, b) => a.name.localeCompare(b.name, "fr"));
+    const salons = sortMessagingChannels(groups.filter((g) => g.is_public && g.kind === "salon"));
     if (salons.length === 0) return;
     setTarget((t) => (t === null ? { type: "group", id: salons[0].id } : t));
   }, [groups]);
@@ -771,26 +777,58 @@ export default function Messages() {
   }, []);
 
   const salonsWithMeta = useMemo(
-    () => buildGroupsWithMeta(
-      groups.filter((g) => g.is_public && g.kind === "salon"),
-      messages,
-      user?.id,
-    ),
+    () =>
+      buildGroupsWithMeta(
+        sortMessagingChannels(groups.filter((g) => g.is_public && g.kind === "salon")),
+        messages,
+        user?.id,
+      ),
     [groups, messages, user?.id],
   );
 
   const privateGroupsWithMeta = useMemo(
-    () => buildGroupsWithMeta(
-      groups.filter((g) => !g.is_public && g.kind === "group"),
-      messages,
-      user?.id,
-    ),
+    () =>
+      buildGroupsWithMeta(
+        sortMessagingChannels(groups.filter((g) => !g.is_public && g.kind === "group")),
+        messages,
+        user?.id,
+      ),
     [groups, messages, user?.id],
   );
 
   const mobileChannelsMeta = useMemo(
-    () => [...salonsWithMeta, ...privateGroupsWithMeta].sort((a, b) => a.name.localeCompare(b.name, "fr")),
+    () => [...salonsWithMeta, ...privateGroupsWithMeta],
     [salonsWithMeta, privateGroupsWithMeta],
+  );
+
+  const persistChannelOrder = useCallback(
+    async (kind: "salon" | "group", orderedIds: string[]) => {
+      if (!canManageSalons) return;
+      const { error } = await supabase.rpc("reorder_messaging_channels", {
+        p_public_salon_ids: kind === "salon" ? orderedIds : [],
+        p_private_group_ids: kind === "group" ? orderedIds : [],
+      });
+      if (error) {
+        toast.error(error.message);
+        return;
+      }
+      setGroups((prev) =>
+        prev.map((g) => {
+          const isSalonRow = g.is_public && g.kind === "salon";
+          const isPrivateGroup = !g.is_public && g.kind === "group";
+          if (kind === "salon" && isSalonRow) {
+            const idx = orderedIds.indexOf(g.id);
+            return idx === -1 ? g : { ...g, nav_sort_order: idx + 1 };
+          }
+          if (kind === "group" && isPrivateGroup) {
+            const idx = orderedIds.indexOf(g.id);
+            return idx === -1 ? g : { ...g, nav_sort_order: idx + 1 };
+          }
+          return g;
+        }),
+      );
+    },
+    [canManageSalons],
   );
 
   const getGroupUnreadStable = useCallback(
@@ -924,6 +962,8 @@ export default function Messages() {
       openNewSalon,
       canManageSalons,
       getGroupUnread: getGroupUnreadStable,
+      persistChannelOrder,
+      viewerUserId: user?.id,
     }),
     [
       salonsWithMeta,
@@ -934,6 +974,8 @@ export default function Messages() {
       openNewSalon,
       canManageSalons,
       getGroupUnreadStable,
+      persistChannelOrder,
+      user?.id,
     ],
   );
 
@@ -1004,6 +1046,9 @@ export default function Messages() {
       }
       toast.success(isSalon ? "Salon modifié" : "Groupe modifié");
     } else if (isSalon) {
+      const maxSalonOrder = groups
+        .filter((x) => x.is_public && x.kind === "salon")
+        .reduce((m, x) => Math.max(m, x.nav_sort_order ?? 0), 0);
       const { data: newSalon, error: salonErr } = await supabase
         .from("conversation_groups")
         .insert({
@@ -1011,6 +1056,7 @@ export default function Messages() {
           created_by: user.id,
           kind: "salon",
           is_public: true,
+          nav_sort_order: maxSalonOrder + 1,
         })
         .select()
         .single();
@@ -1020,6 +1066,9 @@ export default function Messages() {
       }
       if (newSalon) toast.success("Salon créé");
     } else {
+      const maxGroupOrder = groups
+        .filter((x) => !x.is_public && x.kind === "group")
+        .reduce((m, x) => Math.max(m, x.nav_sort_order ?? 0), 0);
       const { data: newGroup, error: grpErr } = await supabase
         .from("conversation_groups")
         .insert({
@@ -1027,6 +1076,7 @@ export default function Messages() {
           created_by: user.id,
           kind: "group",
           is_public: false,
+          nav_sort_order: maxGroupOrder + 1,
         })
         .select()
         .single();
@@ -1299,41 +1349,32 @@ export default function Messages() {
           ? `| Salon public · ${allProfiles.length} membres`
           : `| Groupe privé · ${groupMembers.filter((gm) => gm.group_id === target.id).length} membres`;
 
-  const ConversationHeader = ({ onBack }: { onBack?: () => void }) => (
-    <div className="flex h-16 w-full shrink-0 items-center gap-2 px-4 shell:h-[4.25rem] shell:gap-3 shell:px-6">
-      {onBack && (
-        <button type="button" onClick={onBack} className="text-muted-foreground hover:text-foreground">
-          <FontAwesomeIcon icon={faArrowLeft} className="h-4 w-4" />
-        </button>
-      )}
-      {target?.type === "user" ? (
-        <div className="relative h-8 w-8 shrink-0 shell:h-9 shell:w-9">
-          <Avatar className="h-8 w-8 shell:h-9 shell:w-9">
-            {targetAvatar && <AvatarImage src={targetAvatar} />}
-            <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
-              {getInitials(targetName)}
-            </AvatarFallback>
-          </Avatar>
-          <PresenceAvatarBadge presence={presenceByUser[target.id]} className="scale-90" />
-        </div>
-      ) : activeGroup?.is_public ? (
-        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/80 text-muted-foreground shell:h-9 shell:w-9">
-          <FontAwesomeIcon icon={faHashtag} className="h-3.5 w-3.5 shell:h-4 shell:w-4" />
-        </div>
-      ) : (
-        <Avatar className="h-8 w-8 shrink-0 shell:h-9 shell:w-9">
+  const conversationHeaderLeading =
+    target?.type === "user" ? (
+      <div className="relative h-8 w-8 shrink-0 shell:h-9 shell:w-9">
+        <Avatar className="h-8 w-8 shell:h-9 shell:w-9">
           {targetAvatar && <AvatarImage src={targetAvatar} />}
           <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
-            <FontAwesomeIcon icon={faUsers} className="h-4 w-4" />
+            {getInitials(targetName)}
           </AvatarFallback>
         </Avatar>
-      )}
-      <div className="flex min-w-0 flex-1 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-        <span className="min-w-0 max-w-full truncate text-base font-semibold leading-tight text-foreground">{targetName}</span>
-        {conversationHeaderMetaSuffix && (
-          <span className="min-w-0 text-sm font-normal text-muted-foreground sm:truncate">{conversationHeaderMetaSuffix}</span>
-        )}
+        <PresenceAvatarBadge presence={presenceByUser[target.id]} className="scale-90" />
       </div>
+    ) : activeGroup?.is_public ? (
+      <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/80 text-muted-foreground shell:h-9 shell:w-9">
+        <FontAwesomeIcon icon={faHashtag} className="h-3.5 w-3.5 shell:h-4 shell:w-4" />
+      </div>
+    ) : target?.type === "group" ? (
+      <Avatar className="h-8 w-8 shrink-0 shell:h-9 shell:w-9">
+        {targetAvatar && <AvatarImage src={targetAvatar} />}
+        <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
+          <FontAwesomeIcon icon={faUsers} className="h-4 w-4" />
+        </AvatarFallback>
+      </Avatar>
+    ) : null;
+
+  const conversationHeaderActions = (
+    <>
       {target?.type === "group" && activeGroup?.is_public && canManageSalons && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -1362,7 +1403,7 @@ export default function Messages() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => openEditGroup(groups.find(g => g.id === target.id)!)}>
+            <DropdownMenuItem onClick={() => openEditGroup(groups.find((g) => g.id === target.id)!)}>
               <FontAwesomeIcon icon={faPen} className="h-3 w-3 mr-2" /> Modifier le groupe
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setMembersDialogOpen(true)}>
@@ -1377,7 +1418,17 @@ export default function Messages() {
           </DropdownMenuContent>
         </DropdownMenu>
       )}
-    </div>
+    </>
+  );
+
+  const ConversationHeader = ({ onBack }: { onBack?: () => void }) => (
+    <ContextSubHeader
+      onBack={onBack}
+      leading={conversationHeaderLeading}
+      title={targetName}
+      meta={conversationHeaderMetaSuffix ?? undefined}
+      actions={conversationHeaderActions}
+    />
   );
 
   const MessagesArea = () => (
@@ -1439,6 +1490,9 @@ export default function Messages() {
             mobileChannelsMeta.map((g) => {
               const unread = getUnreadCount({ type: "group", id: g.id });
               const active = target?.type === "group" && target.id === g.id;
+              const last = g.lastMsg;
+              const showActivityDot =
+                Boolean(last?.sender_id && user?.id && last.sender_id !== user.id && !active);
               return (
                 <DropdownMenuItem
                   key={g.id}
@@ -1446,16 +1500,30 @@ export default function Messages() {
                   onClick={() => setTarget({ type: "group", id: g.id })}
                 >
                   {g.is_public ? (
-                    <div className="h-8 w-8 shrink-0 rounded-md bg-muted/80 flex items-center justify-center text-muted-foreground">
+                    <div className="relative h-8 w-8 shrink-0 rounded-md bg-muted/80 flex items-center justify-center text-muted-foreground">
                       <FontAwesomeIcon icon={faHashtag} className="h-3.5 w-3.5" />
+                      {showActivityDot && (
+                        <span
+                          className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-primary"
+                          aria-hidden
+                        />
+                      )}
                     </div>
                   ) : (
-                    <Avatar className="h-8 w-8 shrink-0">
-                      {g.avatar_url && <AvatarImage src={g.avatar_url} />}
-                      <AvatarFallback className="bg-primary/15 text-primary text-[10px]">
-                        <FontAwesomeIcon icon={faUsers} className="h-3.5 w-3.5" />
-                      </AvatarFallback>
-                    </Avatar>
+                    <div className="relative shrink-0">
+                      <Avatar className="h-8 w-8">
+                        {g.avatar_url && <AvatarImage src={g.avatar_url} />}
+                        <AvatarFallback className="bg-primary/15 text-primary text-[10px]">
+                          <FontAwesomeIcon icon={faUsers} className="h-3.5 w-3.5" />
+                        </AvatarFallback>
+                      </Avatar>
+                      {showActivityDot && (
+                        <span
+                          className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-primary"
+                          aria-hidden
+                        />
+                      )}
+                    </div>
                   )}
                   <div className="flex-1 min-w-0 text-left">
                     <p className="text-sm font-medium truncate">{g.name}</p>
