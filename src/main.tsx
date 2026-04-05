@@ -33,6 +33,33 @@ const isPreviewHost =
   window.location.hostname.includes("id-preview--") ||
   window.location.hostname.includes("lovableproject.com");
 
+/**
+ * Secours déploiement (cPanel, cache agressif, ancien SW) : ouvrir une fois
+ * `https://votre-site/?dp-sw-reset=1` — désinscription SW, vidage des caches API, rechargement.
+ */
+async function applySwResetFromQuery(): Promise<boolean> {
+  try {
+    const u = new URL(window.location.href);
+    if (u.searchParams.get("dp-sw-reset") !== "1") return false;
+    u.searchParams.delete("dp-sw-reset");
+    const next = `${u.pathname}${u.search}${u.hash}` || u.pathname;
+
+    if ("serviceWorker" in navigator) {
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(registrations.map((r) => r.unregister()));
+    }
+    if ("caches" in window) {
+      const keys = await caches.keys();
+      await Promise.all(keys.map((k) => caches.delete(k)));
+    }
+    window.location.replace(next);
+    return true;
+  } catch (e) {
+    console.warn("[main] dp-sw-reset a échoué:", e);
+    return false;
+  }
+}
+
 async function cleanupCaches() {
   const isGitHubPages = window.location.hostname.endsWith("github.io");
 
@@ -62,17 +89,30 @@ async function registerSW() {
     const normalizedBase = base.endsWith("/") ? base : `${base}/`;
     const swUrl = `${normalizedBase}sw.js`;
     const sw = new Serwist(swUrl, { scope: normalizedBase, type: "classic" });
-    sw.register();
+    await sw.register();
+    /** Forcer une relecture du script SW au retour sur l’onglet (navigateur ne vérifie pas tout seul souvent). */
+    const pingSwUpdate = () => {
+      void sw.update();
+    };
+    pingSwUpdate();
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") pingSwUpdate();
+    });
+    window.addEventListener("focus", pingSwUpdate);
   } catch (e) {
     console.warn("SW registration failed:", e);
   }
 }
 
-ensureResponsiveViewport();
-applyDeviceClasses();
-listenDeviceChanges();
+void (async function bootstrap() {
+  if (await applySwResetFromQuery()) return;
 
-cleanupCaches().finally(() => {
+  ensureResponsiveViewport();
+  applyDeviceClasses();
+  listenDeviceChanges();
+
+  await cleanupCaches();
+
   const el = document.getElementById("root");
   if (!el) {
     console.error("[main] Élément #root introuvable");
@@ -83,5 +123,5 @@ cleanupCaches().finally(() => {
       <App />
     </RootErrorBoundary>,
   );
-  registerSW();
-});
+  void registerSW();
+})();
