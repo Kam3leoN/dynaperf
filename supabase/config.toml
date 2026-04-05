@@ -1,1 +1,2 @@
+# project_id : synchronisé depuis .env via « npm run db:sync-project » ou « npm run db:link ».
 project_id = "vexydidjcunyeymlbawz"

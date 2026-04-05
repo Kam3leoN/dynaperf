@@ -48,7 +48,7 @@ Puis relance : npm run db:apply-drive
 
 Alternative sans URI dans .env :
   npx supabase@latest login
-  npx supabase@latest link --project-ref qgvlojeamzfqkntrpnhk
+  npm run db:link
   npm run db:apply-drive:linked
 `);
   process.exit(1);

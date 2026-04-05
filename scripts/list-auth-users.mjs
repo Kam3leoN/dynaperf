@@ -7,38 +7,7 @@
  */
 
 import { createClient } from "@supabase/supabase-js";
-import { readFileSync, existsSync } from "node:fs";
-import { resolve } from "node:path";
-
-function parseEnvLine(line) {
-  const t = line.replace(/\r$/, "").trim();
-  if (!t || t.startsWith("#")) return null;
-  const eq = t.indexOf("=");
-  if (eq < 1) return null;
-  const key = t.slice(0, eq).trim();
-  let val = t.slice(eq + 1).trim();
-  if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
-    val = val.slice(1, -1);
-  }
-  return { key, val };
-}
-
-function loadRootEnv() {
-  const root = process.cwd();
-  const paths = [resolve(root, ".env"), resolve(root, ".env.local")];
-  for (let i = 0; i < paths.length; i++) {
-    const p = paths[i];
-    if (!existsSync(p)) continue;
-    const raw = readFileSync(p, "utf8");
-    const override = i === 1;
-    for (const line of raw.split("\n")) {
-      const parsed = parseEnvLine(line);
-      if (!parsed) continue;
-      const { key, val } = parsed;
-      if (override || process.env[key] === undefined) process.env[key] = val;
-    }
-  }
-}
+import { loadRootEnv } from "./load-root-env.mjs";
 
 async function listAllAuth(supabase) {
   const perPage = 200;

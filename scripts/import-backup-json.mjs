@@ -181,6 +181,17 @@ function loadUserMap(userMapPath) {
   return m;
 }
 
+/** Réécrit les UUID du mapping dans une URL (chemins Storage après migration Auth). */
+function remapUuidsInString(str, userMap) {
+  if (typeof str !== "string" || userMap.size === 0) return str;
+  let s = str;
+  for (const [oldId, newId] of userMap) {
+    const re = new RegExp(oldId.replace(/-/g, "\\-"), "gi");
+    s = s.replace(re, newId);
+  }
+  return s;
+}
+
 function remapUserIds(row, table, userMap) {
   if (userMap.size === 0) return row;
   const out = { ...row };
@@ -190,7 +201,10 @@ function remapUserIds(row, table, userMap) {
     if (typeof k !== "string") return v;
     return userMap.has(k) ? userMap.get(k) : k;
   };
-  if (table === "profiles") out.user_id = map(out.user_id);
+  if (table === "profiles") {
+    out.user_id = map(out.user_id);
+    if (out.avatar_url != null) out.avatar_url = remapUuidsInString(out.avatar_url, userMap);
+  }
   if (table === "user_roles") out.user_id = map(out.user_id);
   if (table === "collaborateur_config") out.user_id = map(out.user_id);
   if (table === "messages") {

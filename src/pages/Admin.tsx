@@ -121,7 +121,11 @@ function RoleBadge({ role }: { role: string }) {
 function UserAvatar({ url, name, size = "sm" }: { url: string | null; name: string; size?: "sm" | "md" }) {
   const px = size === "md" ? 48 : 32;
   const textCls = size === "md" ? "text-lg" : "text-xs";
-  if (url) {
+  const [imgFailed, setImgFailed] = useState(false);
+  useEffect(() => {
+    setImgFailed(false);
+  }, [url]);
+  if (url && !imgFailed) {
     return (
       <img
         src={url}
@@ -130,6 +134,7 @@ function UserAvatar({ url, name, size = "sm" }: { url: string | null; name: stri
         height={px}
         style={{ width: px, height: px, minWidth: px, minHeight: px }}
         className={`rounded-full object-cover border border-border shrink-0 ${textCls}`}
+        onError={() => setImgFailed(true)}
       />
     );
   }
@@ -297,7 +302,7 @@ export default function Admin() {
     const ext = file.name.split(".").pop();
     const path = `${userId}/avatar.${ext}`;
     const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-    if (error) { console.error("Avatar upload error:", error); return null; }
+    if (error) return null;
     const { data } = supabase.storage.from("avatars").getPublicUrl(path);
     return data.publicUrl;
   };
@@ -333,9 +338,12 @@ export default function Admin() {
       if (avatarFile && res.data?.user?.id) {
         const avatarUrl = await uploadAvatar(res.data.user.id, avatarFile);
         if (avatarUrl) {
-          await supabase.functions.invoke("create-user", {
+          const sav = await supabase.functions.invoke("create-user", {
             body: { action: "save-avatar", userId: res.data.user.id, avatar_url: avatarUrl },
           });
+          if (sav.error || sav.data?.error) {
+            toast.error(sav.data?.error ?? sav.error?.message ?? "Impossible d'enregistrer l'URL de l'avatar");
+          }
         }
       }
       toast.success(`Utilisateur ${email} créé avec succès`);
@@ -365,15 +373,19 @@ export default function Admin() {
 
   const handleAvatarChange = async (userId: string, file: File) => {
     const avatarUrl = await uploadAvatar(userId, file);
-    if (avatarUrl) {
-      await supabase.functions.invoke("create-user", {
-        body: { action: "save-avatar", userId, avatar_url: avatarUrl },
-      });
-      toast.success("Avatar mis à jour");
-      loadUsers();
-    } else {
+    if (!avatarUrl) {
       toast.error("Erreur lors de l'upload de l'avatar");
+      return;
     }
+    const sav = await supabase.functions.invoke("create-user", {
+      body: { action: "save-avatar", userId, avatar_url: avatarUrl },
+    });
+    if (sav.error || sav.data?.error) {
+      toast.error(typeof sav.data?.error === "string" ? sav.data.error : sav.error?.message ?? "Impossible d'enregistrer l'avatar");
+      return;
+    }
+    toast.success("Avatar mis à jour");
+    loadUsers();
   };
 
   const openEditDialog = (u: ManagedUser) => {

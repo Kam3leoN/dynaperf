@@ -194,6 +194,22 @@ Deno.serve(async (req) => {
       return jsonOk({ success: true });
     }
 
+    // SAVE AVATAR (URL publique après upload Storage côté client — admin met à jour profiles)
+    if (action === "save-avatar") {
+      const { userId, avatar_url } = body;
+      if (!userId || typeof avatar_url !== "string" || !avatar_url.trim()) {
+        return jsonError("userId et avatar_url requis", 400);
+      }
+      const { data: targetRoles } = await adminClient.from("user_roles").select("role").eq("user_id", userId);
+      const targetIsSuperAdmin = targetRoles?.some((r: any) => r.role === "super_admin");
+      if (targetIsSuperAdmin && !callerIsSuperAdmin) {
+        return jsonError("Seul un super admin peut modifier l'avatar d'un super admin", 403);
+      }
+      const { error } = await adminClient.from("profiles").update({ avatar_url: avatar_url.trim() }).eq("user_id", userId);
+      if (error) return jsonError(error.message, 400);
+      return jsonOk({ success: true });
+    }
+
     // LIST USERS
     if (action === "list") {
       const { users: listed, error: listErr } = await listAllAuthUsers(adminClient);

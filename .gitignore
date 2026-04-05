@@ -39,6 +39,9 @@ user-id-map.*.json
 # Fichiers Supabase CLI locaux (tokens, état link)
 .supabase/
 
+# Cache / métadonnées CLI (ne pas versionner — ref projet dans config.toml + .env)
+supabase/.temp/
+
 # Dumps / sauvegardes JSON (peuvent contenir PII ou clés dans les URLs)
 # NB : scripts/ reste versionné ; pas de secrets dans le repo (variables .env).
 .tmp-db-reimport
