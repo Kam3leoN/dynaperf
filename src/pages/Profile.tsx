@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faUser, faFloppyDisk, faCamera } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
+import { uploadUserAvatarToBucket, withAvatarCacheBust } from "@/lib/avatarStorage";
 
 export default function Profile() {
   const { user } = useAuth();
@@ -36,13 +37,17 @@ export default function Profile() {
   const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
-    const ext = file.name.split(".").pop();
-    const path = `${user.id}/avatar.${ext}`;
-    const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-    if (error) { toast.error("Erreur upload avatar"); return; }
-    const { data } = supabase.storage.from("avatars").getPublicUrl(path);
-    const url = data.publicUrl + "?t=" + Date.now();
-    await supabase.from("profiles").update({ avatar_url: url }).eq("user_id", user.id);
+    const up = await uploadUserAvatarToBucket(user.id, file);
+    if (!up.ok) {
+      toast.error(up.message);
+      return;
+    }
+    const url = withAvatarCacheBust(up.publicUrl);
+    const { error: upErr } = await supabase.from("profiles").update({ avatar_url: url }).eq("user_id", user.id);
+    if (upErr) {
+      toast.error(upErr.message || "Impossible d'enregistrer l'avatar");
+      return;
+    }
     setAvatarUrl(url);
     toast.success("Avatar mis à jour");
   };
@@ -91,7 +96,7 @@ export default function Profile() {
                 )}
                 <label className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center cursor-pointer">
                   <FontAwesomeIcon icon={faCamera} className="h-4 w-4 text-white" />
-                  <input type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                  <input type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" className="hidden" onChange={handleAvatarChange} />
                 </label>
               </div>
               <div>

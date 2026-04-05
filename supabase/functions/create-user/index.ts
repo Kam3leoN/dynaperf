@@ -68,10 +68,25 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const authHeader = req.headers.get("Authorization")!;
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")?.trim();
+    const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")?.trim();
+    const anonKey = Deno.env.get("SUPABASE_ANON_KEY")?.trim();
+    const missing: string[] = [];
+    if (!supabaseUrl) missing.push("SUPABASE_URL");
+    if (!serviceRoleKey) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+    if (!anonKey) missing.push("SUPABASE_ANON_KEY");
+    if (missing.length > 0) {
+      return jsonError(
+        `Secrets Edge manquants : ${missing.join(", ")}. ` +
+          "Dashboard Supabase → Edge Functions → create-user → Secrets (ou redéploie le projet lié).",
+        500,
+      );
+    }
+
+    const authHeader = req.headers.get("Authorization")?.trim();
+    if (!authHeader) {
+      return jsonError("Non authentifié (en-tête Authorization manquant)", 401);
+    }
 
     const userClient = createClient(supabaseUrl, anonKey, {
       global: { headers: { Authorization: authHeader } },
@@ -88,7 +103,12 @@ Deno.serve(async (req) => {
     const callerIsAdmin = roles?.some((r: any) => r.role === "admin" || r.role === "super_admin");
     if (!callerIsAdmin) return jsonError("Non autorisé", 403);
 
-    const body = await req.json();
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
+      return jsonError("Corps JSON invalide", 400);
+    }
     const { action } = body;
 
     // DELETE USER

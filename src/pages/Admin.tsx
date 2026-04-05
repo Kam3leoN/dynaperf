@@ -16,6 +16,23 @@ import { X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminSecteurs from "@/components/AdminSecteurs";
 import AdminAuditGridInline from "@/components/AdminAuditGrid";
+import { readEdgeFunctionErrorMessage } from "@/lib/readEdgeFunctionError";
+import { uploadUserAvatarToBucket, withAvatarCacheBust } from "@/lib/avatarStorage";
+
+/** Toast le détail JSON `{ error }` si la Edge Function répond en non-2xx. */
+async function toastEdgeInvokeFailure(
+  res: { data: unknown; error: unknown; response?: Response },
+  fallback: string,
+): Promise<boolean> {
+  const dataErr =
+    res.data && typeof res.data === "object" && res.data !== null && typeof (res.data as { error?: unknown }).error === "string"
+      ? (res.data as { error: string }).error
+      : null;
+  if (!res.error && !dataErr) return false;
+  const detail = (await readEdgeFunctionErrorMessage(res)) ?? dataErr;
+  toast.error(detail?.trim() ? detail : fallback);
+  return true;
+}
 
 function ArcText({ text, radius = 78, fontSize = 13 }: { text: string; radius?: number; fontSize?: number }) {
   const id = "arcPath";
@@ -271,10 +288,8 @@ export default function Admin() {
       const viaRpc = await fetchManagedUsersViaRpc();
       if (viaRpc?.length) {
         next = viaRpc;
-      } else if (res.error) {
-        toast.error(res.error.message || "Erreur chargement utilisateurs");
-      } else if (res.data?.error) {
-        toast.error(typeof res.data.error === "string" ? res.data.error : "Erreur chargement utilisateurs");
+      } else if (await toastEdgeInvokeFailure(res, "Erreur chargement utilisateurs")) {
+        /* message affiché */
       }
     }
 
@@ -296,15 +311,6 @@ export default function Admin() {
     const reader = new FileReader();
     reader.onload = (e) => setAvatarPreview(e.target?.result as string);
     reader.readAsDataURL(file);
-  };
-
-  const uploadAvatar = async (userId: string, file: File): Promise<string | null> => {
-    const ext = file.name.split(".").pop();
-    const path = `${userId}/avatar.${ext}`;
-    const { error } = await supabase.storage.from("avatars").upload(path, file, { upsert: true });
-    if (error) return null;
-    const { data } = supabase.storage.from("avatars").getPublicUrl(path);
-    return data.publicUrl;
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -331,19 +337,23 @@ export default function Admin() {
       body: { email, password, displayName, role: newRole, config },
     });
 
-    if (res.error) toast.error(res.error.message || "Erreur lors de la création");
-    else if (res.data?.error) toast.error(res.data.error);
-    else {
+    if (await toastEdgeInvokeFailure(res, "Erreur lors de la création")) {
+      /* */
+    } else {
       // Upload avatar if provided
       if (avatarFile && res.data?.user?.id) {
-        const avatarUrl = await uploadAvatar(res.data.user.id, avatarFile);
-        if (avatarUrl) {
+        const up = await uploadUserAvatarToBucket(res.data.user.id, avatarFile);
+        if (up.ok) {
           const sav = await supabase.functions.invoke("create-user", {
-            body: { action: "save-avatar", userId: res.data.user.id, avatar_url: avatarUrl },
+            body: {
+              action: "save-avatar",
+              userId: res.data.user.id,
+              avatar_url: withAvatarCacheBust(up.publicUrl),
+            },
           });
-          if (sav.error || sav.data?.error) {
-            toast.error(sav.data?.error ?? sav.error?.message ?? "Impossible d'enregistrer l'URL de l'avatar");
-          }
+          await toastEdgeInvokeFailure(sav, "Impossible d'enregistrer l'URL de l'avatar");
+        } else {
+          toast.error(up.message);
         }
       }
       toast.success(`Utilisateur ${email} créé avec succès`);
@@ -359,31 +369,36 @@ export default function Admin() {
     const res = await supabase.functions.invoke("create-user", {
       body: { action: "delete", userId },
     });
-    if (res.data?.error) toast.error(res.data.error);
-    else { toast.success("Utilisateur supprimé"); loadUsers(); }
+    if (await toastEdgeInvokeFailure(res, "Erreur lors de la suppression")) {
+      /* */
+    } else {
+      toast.success("Utilisateur supprimé");
+      loadUsers();
+    }
   };
 
   const handleSetRole = async (userId: string, role: string) => {
     const res = await supabase.functions.invoke("create-user", {
       body: { action: "set-role", userId, role },
     });
-    if (res.data?.error) toast.error(res.data.error);
-    else { toast.success("Rôle mis à jour"); loadUsers(); }
+    if (await toastEdgeInvokeFailure(res, "Erreur lors du changement de rôle")) {
+      /* */
+    } else {
+      toast.success("Rôle mis à jour");
+      loadUsers();
+    }
   };
 
   const handleAvatarChange = async (userId: string, file: File) => {
-    const avatarUrl = await uploadAvatar(userId, file);
-    if (!avatarUrl) {
-      toast.error("Erreur lors de l'upload de l'avatar");
+    const up = await uploadUserAvatarToBucket(userId, file);
+    if (!up.ok) {
+      toast.error(up.message);
       return;
     }
     const sav = await supabase.functions.invoke("create-user", {
-      body: { action: "save-avatar", userId, avatar_url: avatarUrl },
+      body: { action: "save-avatar", userId, avatar_url: withAvatarCacheBust(up.publicUrl) },
     });
-    if (sav.error || sav.data?.error) {
-      toast.error(typeof sav.data?.error === "string" ? sav.data.error : sav.error?.message ?? "Impossible d'enregistrer l'avatar");
-      return;
-    }
+    if (await toastEdgeInvokeFailure(sav, "Impossible d'enregistrer l'avatar")) return;
     toast.success("Avatar mis à jour");
     loadUsers();
   };
@@ -412,17 +427,24 @@ export default function Admin() {
     const res = await supabase.functions.invoke("create-user", {
       body: { action: "update-user", userId: editUser.id, email: editEmail.trim(), displayName: `${editFirstName.trim()} ${editLastName.trim().toUpperCase()}`.trim(), title: editTitle.trim() },
     });
-    if (res.data?.error) { toast.error(res.data.error); setEditSaving(false); return; }
+    if (await toastEdgeInvokeFailure(res, "Erreur lors de la mise à jour du profil")) {
+      setEditSaving(false);
+      return;
+    }
 
     // Update role if changed and not admin
     if (editRole !== role) {
-      await supabase.functions.invoke("create-user", {
+      const roleRes = await supabase.functions.invoke("create-user", {
         body: { action: "set-role", userId: editUser.id, role: editRole },
       });
+      if (await toastEdgeInvokeFailure(roleRes, "Erreur lors du changement de rôle")) {
+        setEditSaving(false);
+        return;
+      }
     }
 
     // Update config
-    await supabase.functions.invoke("create-user", {
+    const cfgRes = await supabase.functions.invoke("create-user", {
       body: {
         action: "save-config",
         userId: editUser.id,
@@ -454,6 +476,10 @@ export default function Admin() {
         semaines_indisponibles: editUser.config?.semaines_indisponibles ?? 10,
       },
     });
+    if (await toastEdgeInvokeFailure(cfgRes, "Erreur lors de l'enregistrement de la configuration")) {
+      setEditSaving(false);
+      return;
+    }
 
     toast.success("Utilisateur mis à jour");
     setEditUser(null);
@@ -576,7 +602,7 @@ export default function Admin() {
                           <FontAwesomeIcon icon={faCamera} className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
                         </div>
                       )}
-                      <input type="file" accept="image/*" className="hidden" onChange={(e) => e.target.files?.[0] && handleAvatarSelect(e.target.files[0])} />
+                      <input type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" className="hidden" onChange={(e) => e.target.files?.[0] && handleAvatarSelect(e.target.files[0])} />
                       <span className="text-[10px] text-muted-foreground absolute -bottom-4 left-1/2 -translate-x-1/2 whitespace-nowrap">Avatar</span>
                     </label>
                   </div>
@@ -887,7 +913,7 @@ export default function Admin() {
                   <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                     <FontAwesomeIcon icon={faCamera} className="h-5 w-5 text-white" />
                   </div>
-                  <input id="edit-avatar-input" type="file" accept="image/*" className="hidden" onChange={async (e) => {
+                  <input id="edit-avatar-input" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" className="hidden" onChange={async (e) => {
                     if (e.target.files?.[0]) {
                       await handleAvatarChange(editUser.id, e.target.files[0]);
                       loadUsers();
@@ -1004,7 +1030,7 @@ function AvatarWithUpload({ user, onUpload }: { user: ManagedUser; onUpload: (us
       <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
         <FontAwesomeIcon icon={faCamera} className="h-3 w-3 text-white" />
       </div>
-      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { if (e.target.files?.[0]) onUpload(user.id, e.target.files[0]); }} />
+      <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" className="hidden" onChange={(e) => { if (e.target.files?.[0]) onUpload(user.id, e.target.files[0]); }} />
     </div>
   );
 }
@@ -1074,16 +1100,21 @@ function UserConfigPanel({
         semaines_indisponibles: semainesIndispo,
       },
     });
-    if (res.data?.error) toast.error(res.data.error);
-    else { toast.success("Prime supprimée"); onSaved(); }
+    if (await toastEdgeInvokeFailure(res, "Erreur lors de l'enregistrement")) {
+      /* */
+    } else {
+      toast.success("Prime supprimée");
+      onSaved();
+    }
   };
 
   const handleDeleteCustomPrime = async (primeId: string) => {
     const res = await supabase.functions.invoke("create-user", {
       body: { action: "delete-custom-prime", primeId },
     });
-    if (res.data?.error) toast.error(res.data.error);
-    else {
+    if (await toastEdgeInvokeFailure(res, "Erreur lors de la suppression")) {
+      /* */
+    } else {
       setCustomPrimes(prev => prev.filter(cp => cp.id !== primeId));
       toast.success("Prime supprimée");
       onSaved();
@@ -1095,8 +1126,9 @@ function UserConfigPanel({
     const res = await supabase.functions.invoke("create-user", {
       body: { action: "add-custom-prime", userId, label: newLabel.trim(), prime_1: newP1, prime_2: newP2, prime_3_plus: newP3 },
     });
-    if (res.data?.error) toast.error(res.data.error);
-    else {
+    if (await toastEdgeInvokeFailure(res, "Erreur lors de l'ajout")) {
+      /* */
+    } else {
       toast.success("Prime ajoutée");
       setNewLabel(""); setNewP1(75); setNewP2(10); setNewP3(5); setAddingCustom(false);
       onSaved();
@@ -1118,8 +1150,12 @@ function UserConfigPanel({
         semaines_indisponibles: semainesIndispo,
       },
     });
-    if (res.data?.error) toast.error(res.data.error);
-    else { toast.success("Configuration enregistrée"); onSaved(); }
+    if (await toastEdgeInvokeFailure(res, "Erreur lors de l'enregistrement")) {
+      /* */
+    } else {
+      toast.success("Configuration enregistrée");
+      onSaved();
+    }
     setSaving(false);
   };
 

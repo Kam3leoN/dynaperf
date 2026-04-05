@@ -16,7 +16,7 @@
  *
  * Optionnel :
  *   USER_ID_MAP_JSON                   — chemin vers { "ancien-uuid": "nouvel-uuid" } pour tables liées à auth
- *   BACKUP_OLD_PROJECT_REF             — défaut qgvlojeamzfqkntrpnhk ; remplacé dans les URLs Storage par la ref du SUPABASE_URL
+ *   BACKUP_OLD_PROJECT_REF             — ref du projet *source* du backup (ex. ancien Lovable) ; si vide, pas de réécriture d’URL Storage
  *
  * Tables « auth » (nécessitent des lignes auth.users avec les bons user_id, ou un USER_ID_MAP_JSON) :
  *   profiles, user_roles, collaborateur_config, messages, activity_log
@@ -27,7 +27,7 @@ import { readFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 
 const BATCH = 150;
-const DEFAULT_OLD_REF = "qgvlojeamzfqkntrpnhk";
+const DEFAULT_OLD_REF = "";
 
 /** Ordre respectant les FK typiques du backup DynaPerf */
 const TABLE_ORDER = [
@@ -300,7 +300,7 @@ async function main() {
   if (skipAuth) console.log("Mode --skip-auth : tables liées aux users ignorées.\n");
   if (onlyAuth) console.log("Mode --only-auth : uniquement messages, activity_log, profiles, user_roles, collaborateur_config.\n");
   if (userMap.size) console.log(`Mapping user_id : ${userMap.size} entrée(s).\n`);
-  if (newRef && oldRef !== newRef) console.log(`Réécriture URLs Storage : ${oldRef} → ${newRef}\n`);
+  if (newRef && oldRef && oldRef !== newRef) console.log(`Réécriture URLs Storage : ${oldRef} → ${newRef}\n`);
 
   let authUserIds = null;
   if (!dryRun) {
@@ -349,7 +349,7 @@ async function main() {
 
     let rows = data.map((row) => {
       let r = remapUserIds(row, table, userMap);
-      if (newRef && oldRef !== newRef) {
+      if (newRef && oldRef && oldRef !== newRef) {
         r = rewriteStorageUrls(r, oldRef, newRef);
       }
       return r;
