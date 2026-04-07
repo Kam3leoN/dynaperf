@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { PresenceAvatarBadge } from "@/components/PresenceAvatarBadge";
+import { effectivePresence, type UserPresenceRow } from "@/lib/presence";
 
 interface Profile {
   user_id: string;
@@ -11,48 +13,52 @@ interface Profile {
 
 export function OnlineAvatars() {
   const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [presenceByUser, setPresenceByUser] = useState<Record<string, UserPresenceRow>>({});
 
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("user_id, display_name, avatar_url");
-      if (data) setProfiles(data);
+      const [profilesRes, presenceRes] = await Promise.all([
+        supabase.from("profiles").select("user_id, display_name, avatar_url"),
+        supabase.from("user_presence").select("*"),
+      ]);
+      if (profilesRes.data) setProfiles(profilesRes.data);
+      const map: Record<string, UserPresenceRow> = {};
+      (presenceRes.data ?? []).forEach((r) => {
+        map[r.user_id] = r as UserPresenceRow;
+      });
+      setPresenceByUser(map);
     };
     load();
   }, []);
 
-  const [onlineIds, setOnlineIds] = useState<Set<string>>(new Set());
-
   useEffect(() => {
-    const channel = supabase.channel("online-users", {
-      config: { presence: { key: "user_id" } },
-    });
-
-    channel
-      .on("presence", { event: "sync" }, () => {
-        const state = channel.presenceState();
-        const ids = new Set<string>();
-        Object.values(state).forEach((presences) => {
-          (presences as { user_id: string }[]).forEach((p) => ids.add(p.user_id));
-        });
-        setOnlineIds(ids);
-      })
-      .subscribe(async (status) => {
-        if (status === "SUBSCRIBED") {
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            await channel.track({ user_id: user.id });
-          }
+    const channel = supabase
+      .channel("online-avatars-presence")
+      .on("postgres_changes", { event: "*", schema: "public", table: "user_presence" }, (payload) => {
+        if (payload.eventType === "DELETE") {
+          const oldId = (payload.old as { user_id?: string }).user_id;
+          if (!oldId) return;
+          setPresenceByUser((prev) => {
+            const next = { ...prev };
+            delete next[oldId];
+            return next;
+          });
+          return;
         }
-      });
+        const row = payload.new as UserPresenceRow;
+        if (!row?.user_id) return;
+        setPresenceByUser((prev) => ({ ...prev, [row.user_id]: row }));
+      })
+      .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      void supabase.removeChannel(channel);
     };
   }, []);
 
-  const onlineProfiles = profiles.filter((p) => onlineIds.has(p.user_id));
+  const onlineProfiles = profiles.filter(
+    (p) => effectivePresence(presenceByUser[p.user_id]) !== "invisible",
+  );
 
   if (onlineProfiles.length === 0) return null;
 
@@ -85,7 +91,10 @@ export function OnlineAvatars() {
                     {getInitials(p.display_name)}
                   </AvatarFallback>
                 </Avatar>
-                <span className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full bg-emerald-500 border-2 border-card" />
+                <PresenceAvatarBadge
+                  presence={presenceByUser[p.user_id]}
+                  className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 border-2 border-card"
+                />
               </button>
             </TooltipTrigger>
             <TooltipContent side="bottom">

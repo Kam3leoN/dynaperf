@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdmin } from "@/hooks/useAdmin";
 import { usePermissionGate } from "@/contexts/PermissionsContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -20,17 +21,24 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faComments, faCheck, faCheckDouble,
-  faEllipsisVertical, faPen, faTrash, faPlus, faUsers, faUserPlus, faXmark, faChevronDown,
-  faHashtag, faThumbtack, faFaceSmile,
+  faEllipsisVertical, faPen, faTrash, faPlus, faUserPlus, faXmark, faChevronDown,
+  faHashtag,
+  faUsers,
+  faEnvelope,
+  faThumbtack,
+  faFaceSmile,
 } from "@fortawesome/free-solid-svg-icons";
 import { format, isToday, isYesterday } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useShellNarrow } from "@/contexts/ResponsiveShellContext";
-import { useMessagingSidebarHost } from "@/contexts/MessagingSidebarContext";
+import {
+  useMessagingSidebarHost,
+  type MessagingDmConversationRow,
+  type MessagingSection,
+} from "@/contexts/MessagingSidebarContext";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PresenceAvatarBadge } from "@/components/PresenceAvatarBadge";
@@ -70,6 +78,25 @@ interface MessageReaction {
 /** Réactions rapides (barre survol) + palette étendue (popover). */
 const MESSAGE_QUICK_REACTIONS = ["👍", "❤️", "😂", "😮", "😢"] as const;
 const MESSAGE_EXTRA_REACTIONS = ["🔥", "👀", "✅", "🙏", "💯", "🎉", "🤔", "👏", "⭐", "💀"];
+
+function twemojiUrl(emoji: string): string {
+  const codepoints = Array.from(emoji)
+    .filter((char) => char.codePointAt(0) !== 0xfe0f)
+    .map((char) => char.codePointAt(0)?.toString(16))
+    .filter((cp): cp is string => Boolean(cp))
+    .join("-");
+  return `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/${codepoints}.svg`;
+}
+
+/** Aperçu texte brut pour la liste des messages épinglés (contenu riche HTML). */
+function previewMessageContent(html: string): string {
+  if (typeof document === "undefined") {
+    return html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 280);
+  }
+  const d = document.createElement("div");
+  d.innerHTML = html;
+  return (d.textContent || d.innerText || "").replace(/\s+/g, " ").trim().slice(0, 280);
+}
 
 function reactionSummaries(rows: MessageReaction[], viewerId: string | undefined) {
   const byEmoji = new Map<string, { count: number; iReacted: boolean }>();
@@ -189,15 +216,6 @@ function siblingGroupSendRows(m: Message, all: Message[]): Message[] {
       x.content === m.content &&
       x.created_at.slice(0, 19) === sec,
   );
-}
-
-/**
- * Comportement type WhatsApp : l'expéditeur peut modifier / supprimer tant qu'aucune copie
- * n'a été lue par un destinataire (DM ou groupe).
- */
-function canSenderEditOrDeleteUnread(m: Message, all: Message[]): boolean {
-  const siblings = m.group_id ? siblingGroupSendRows(m, all) : [m];
-  return siblings.length > 0 && siblings.every((row) => !row.read);
 }
 
 type ConversationTarget = { type: "user"; id: string } | { type: "group"; id: string };
@@ -432,13 +450,6 @@ interface MessagesInputBarProps {
  * Composant de module : ne pas le définir dans `Messages`, sinon React remonte la barre à chaque
  * frappe (nouveau type de composant à chaque rendu du parent) → une lettre puis perte de focus.
  */
-/** Aperçu texte brut pour la liste des messages épinglés (contenu riche HTML). */
-function stripHtmlPreview(html: string, maxLen: number): string {
-  const text = html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim();
-  if (text.length <= maxLen) return text;
-  return `${text.slice(0, maxLen)}…`;
-}
-
 function MessagesInputBar({ value, onChange, onSend, sendDisabled }: MessagesInputBarProps) {
   const isMobile = useShellNarrow();
   const editor = (
@@ -482,11 +493,28 @@ function MessagesInputBar({ value, onChange, onSend, sendDisabled }: MessagesInp
 
 export default function Messages() {
   const { user } = useAuth();
+  const { isAdmin } = useAdmin(user);
   const { hasPermission } = usePermissionGate();
   const canManageSalons = hasPermission("messaging.manage_salons");
   const isMobile = useShellNarrow();
-  const { setApi, setHeaderChrome } = useMessagingSidebarHost();
+  const { setApi } = useMessagingSidebarHost();
   const [searchParams, setSearchParams] = useSearchParams();
+  const messagingSection: MessagingSection =
+    searchParams.get("section") === "messagerie" ? "messagerie" : "discussion";
+  const pinnedView = searchParams.get("view") === "pinned";
+  const setMessagingSection = useCallback(
+    (s: MessagingSection) => {
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.set("section", s);
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
@@ -496,6 +524,7 @@ export default function Messages() {
   const [target, setTarget] = useState<ConversationTarget | null>(null);
   const [newMsg, setNewMsg] = useState("");
   const [sending, setSending] = useState(false);
+  const [deleteShortcutArmed, setDeleteShortcutArmed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const markedReadRef = useRef<Set<string>>(new Set());
 
@@ -503,8 +532,6 @@ export default function Messages() {
   const [editingMsg, setEditingMsg] = useState<Message | null>(null);
   const [editContent, setEditContent] = useState("");
   const [deletingMsg, setDeletingMsg] = useState<Message | null>(null);
-  const [pinnedSheetOpen, setPinnedSheetOpen] = useState(false);
-
   // Group / salon CRUD
   const [groupDialogOpen, setGroupDialogOpen] = useState(false);
   const [groupDialogMode, setGroupDialogMode] = useState<"group" | "salon">("group");
@@ -516,10 +543,36 @@ export default function Messages() {
   // Members management
   const [membersDialogOpen, setMembersDialogOpen] = useState(false);
   const [presenceByUser, setPresenceByUser] = useState<Record<string, UserPresenceRow>>({});
+  const [hiddenDmPartnerIds, setHiddenDmPartnerIds] = useState<string[]>([]);
+  const [dmHideAvailable, setDmHideAvailable] = useState(true);
+  const hiddenDmPartnerIdsRef = useRef<Set<string>>(new Set());
+  const unhideDmPartnerRef = useRef<(partnerId: string) => Promise<void>>(async () => {});
+
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Shift") setDeleteShortcutArmed(true);
+    };
+    const onKeyUp = (e: KeyboardEvent) => {
+      if (e.key === "Shift") setDeleteShortcutArmed(false);
+    };
+    const onBlur = () => setDeleteShortcutArmed(false);
+    window.addEventListener("keydown", onKeyDown);
+    window.addEventListener("keyup", onKeyUp);
+    window.addEventListener("blur", onBlur);
+    return () => {
+      window.removeEventListener("keydown", onKeyDown);
+      window.removeEventListener("keyup", onKeyUp);
+      window.removeEventListener("blur", onBlur);
+    };
+  }, []);
+
+  useEffect(() => {
+    hiddenDmPartnerIdsRef.current = new Set(hiddenDmPartnerIds);
+  }, [hiddenDmPartnerIds]);
 
   const loadData = useCallback(async () => {
     if (!user) return;
-    const [profilesRes, msgsRes, groupsRes, membersRes, presenceRes] = await Promise.all([
+    const [profilesRes, msgsRes, groupsRes, membersRes, presenceRes, hiddenRes] = await Promise.all([
       supabase.from("profiles").select("user_id, display_name, avatar_url"),
       supabase.from("messages").select("*").order("created_at", { ascending: true }),
       supabase
@@ -529,6 +582,7 @@ export default function Messages() {
         .order("name", { ascending: true }),
       supabase.from("conversation_group_members").select("group_id, user_id"),
       supabase.from("user_presence").select("*"),
+      supabase.from("user_dm_hidden_partners").select("partner_user_id").eq("user_id", user.id),
     ]);
     const allP = (profilesRes.data || []) as Profile[];
     setAllProfiles(allP);
@@ -573,9 +627,87 @@ export default function Messages() {
       pmap[r.user_id] = r;
     });
     setPresenceByUser(pmap);
+    if (hiddenRes.error) {
+      const msg = hiddenRes.error.message || "";
+      // DB pas migrée / PostgREST n'a pas la table (schema cache) : on désactive la fonctionnalité
+      // pour éviter de casser la messagerie.
+      if (msg.includes("schema cache") || msg.includes("Could not find the table")) {
+        setDmHideAvailable(false);
+        setHiddenDmPartnerIds([]);
+      } else {
+        toast.error(`Masquage MP : ${msg}`, { id: "messages-dm-hidden-load" });
+      }
+    } else {
+      setDmHideAvailable(true);
+      setHiddenDmPartnerIds((hiddenRes.data ?? []).map((r) => r.partner_user_id));
+    }
   }, [user]);
 
+  const unhideDmPartner = useCallback(async (partnerId: string) => {
+    if (!user?.id) return;
+    if (!dmHideAvailable) return;
+    const { error } = await supabase
+      .from("user_dm_hidden_partners")
+      .delete()
+      .eq("user_id", user.id)
+      .eq("partner_user_id", partnerId);
+    if (error) {
+      const msg = error.message || "";
+      if (msg.includes("schema cache") || msg.includes("Could not find the table")) {
+        setDmHideAvailable(false);
+        return;
+      }
+      toast.error(msg);
+      return;
+    }
+    setHiddenDmPartnerIds((prev) => prev.filter((id) => id !== partnerId));
+  }, [user?.id, dmHideAvailable]);
+
+  const hideDmPartner = useCallback(async (partnerId: string) => {
+    if (!user?.id) return;
+    if (!dmHideAvailable) {
+      toast.error("Fonction indisponible : migration Supabase manquante (table MP masqués).");
+      return;
+    }
+    const { error } = await supabase.from("user_dm_hidden_partners").upsert(
+      { user_id: user.id, partner_user_id: partnerId },
+      { onConflict: "user_id,partner_user_id" },
+    );
+    if (error) {
+      const msg = error.message || "";
+      if (msg.includes("schema cache") || msg.includes("Could not find the table")) {
+        setDmHideAvailable(false);
+        toast.error("Fonction indisponible : migration Supabase manquante (table MP masqués).");
+        return;
+      }
+      toast.error(msg);
+      return;
+    }
+    setHiddenDmPartnerIds((prev) => (prev.includes(partnerId) ? prev : [...prev, partnerId]));
+    setTarget((t) => (t?.type === "user" && t.id === partnerId ? null : t));
+    toast.success("Conversation retirée de votre liste");
+  }, [user?.id, dmHideAvailable]);
+
+  useEffect(() => {
+    unhideDmPartnerRef.current = unhideDmPartner;
+  }, [unhideDmPartner]);
+
   useEffect(() => { loadData(); }, [loadData]);
+
+  /** En changeant de mode (Discussions ↔ Messages privés), on quitte un fil incompatible. */
+  useEffect(() => {
+    setTarget((t) => {
+      if (messagingSection === "messagerie" && t?.type === "group") return null;
+      if (messagingSection === "discussion" && t?.type === "user") return null;
+      return t;
+    });
+  }, [messagingSection]);
+
+  /** Vue « Messages épinglés » : pas de fil ouvert (aligné sur la barre d’app). */
+  useEffect(() => {
+    if (searchParams.get("view") !== "pinned") return;
+    setTarget(null);
+  }, [searchParams]);
 
   /** Ouvre une conversation DM depuis l’annuaire (`/messages?dm=<user_id>`). */
   useEffect(() => {
@@ -589,19 +721,22 @@ export default function Messages() {
     }
     const exists = allProfiles.some((p) => p.user_id === dm);
     if (!exists) return;
+    void unhideDmPartner(dm);
     setTarget({ type: "user", id: dm });
     const next = new URLSearchParams(searchParams);
     next.delete("dm");
+    next.set("section", "messagerie");
     setSearchParams(next, { replace: true });
-  }, [searchParams, allProfiles, user?.id, setSearchParams]);
+  }, [searchParams, allProfiles, user?.id, setSearchParams, unhideDmPartner]);
 
-  /** Premier salon public par défaut (style Discord #général), ordre nav fixe. */
+  /** Premier salon public par défaut en mode Discussions uniquement (pas en Messages privés). */
   useEffect(() => {
+    if (messagingSection === "messagerie") return;
     if (groups.length === 0) return;
     const salons = sortMessagingChannels(groups.filter((g) => g.is_public && g.kind === "salon"));
     if (salons.length === 0) return;
     setTarget((t) => (t === null ? { type: "group", id: salons[0].id } : t));
-  }, [groups]);
+  }, [groups, messagingSection]);
 
   // Realtime
   useEffect(() => {
@@ -611,6 +746,17 @@ export default function Messages() {
       .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, (payload) => {
         if (payload.eventType === "INSERT") {
           const row = payload.new as Message;
+          if (
+            row &&
+            !row.group_id &&
+            user &&
+            row.recipient_id === user.id &&
+            row.sender_id &&
+            row.sender_id !== user.id &&
+            hiddenDmPartnerIdsRef.current.has(row.sender_id)
+          ) {
+            void unhideDmPartnerRef.current(row.sender_id);
+          }
           setMessages((prev) => {
             if (prev.some((m) => m.id === row.id)) return prev;
             return sortMessagesByTime([...prev, row]);
@@ -645,36 +791,72 @@ export default function Messages() {
         const oldId = (payload.old as { id?: string }).id;
         if (oldId) setReactions((prev) => prev.filter((r) => r.id !== oldId));
       })
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "user_dm_hidden_partners",
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => void loadData(),
+      )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
   }, [user, loadData]);
 
-  // Marquer comme lus (évite les requêtes en rafale ; lot par .in())
+  // Marquer comme lus : DM par UPDATE ; groupes / salons par RPC (salons publics : recipient_id = expéditeur → RLS bloquait l’UPDATE client).
   useEffect(() => {
     if (!user || !target) return;
-    if (target.type === "group") {
-      const g = groups.find((x) => x.id === target.id);
-      if (g?.is_public) return;
+    if (target.type === "user") {
+      const unread = messages.filter(
+        (m) =>
+          m.sender_id === target.id && m.recipient_id === user.id && !m.read && !m.group_id,
+      );
+      const ids = unread.map((m) => m.id).filter((id) => !markedReadRef.current.has(id));
+      if (ids.length === 0) return;
+      ids.forEach((id) => markedReadRef.current.add(id));
+      void supabase
+        .from("messages")
+        .update({ read: true })
+        .in("id", ids)
+        .then(({ error }) => {
+          if (error) {
+            ids.forEach((id) => markedReadRef.current.delete(id));
+            toast.error(error.message);
+            return;
+          }
+          setMessages((prev) => prev.map((m) => (ids.includes(m.id) ? { ...m, read: true } : m)));
+        });
+      return;
     }
-    const unread = messages.filter(m => {
-      if (target.type === "user") {
-        return m.sender_id === target.id && m.recipient_id === user.id && !m.read && !m.group_id;
-      }
-      return m.group_id === target.id && m.sender_id !== user.id && !m.read;
-    });
+
+    const unread = messages.filter(
+      (m) => m.group_id === target.id && m.sender_id !== user.id && !m.read,
+    );
     const ids = unread.map((m) => m.id).filter((id) => !markedReadRef.current.has(id));
     if (ids.length === 0) return;
     ids.forEach((id) => markedReadRef.current.add(id));
-    void supabase
-      .from("messages")
-      .update({ read: true })
-      .in("id", ids)
-      .then(({ error }) => {
-        if (error) {
-          ids.forEach((id) => markedReadRef.current.delete(id));
-          toast.error(error.message);
-        }
-      });
+    void supabase.rpc("mark_group_messages_read", { p_group_id: target.id }).then(({ error }) => {
+      if (error) {
+        ids.forEach((id) => markedReadRef.current.delete(id));
+        toast.error(error.message);
+        return;
+      }
+      const grp = groups.find((g) => g.id === target.id);
+      setMessages((prev) =>
+        prev.map((m) => {
+          if (m.group_id !== target.id || m.read || m.sender_id === user.id) return m;
+          if (grp?.is_public && grp.kind === "salon") {
+            return { ...m, read: true };
+          }
+          if (m.recipient_id === user.id) {
+            return { ...m, read: true };
+          }
+          return m;
+        }),
+      );
+    });
   }, [target, messages, user, groups]);
 
   // Auto-scroll
@@ -701,39 +883,79 @@ export default function Messages() {
         : mergeGroupMessageRows(rawConversation, user.id)
       : sortMessagesByTime(rawConversation);
 
-  const openPinnedSheet = useCallback(() => setPinnedSheetOpen(true), []);
-  const pinnedCount = conversation.filter((m) => m.pinned_at).length;
-
-  useEffect(() => {
-    if (!target) {
-      setHeaderChrome(null);
-      return;
-    }
-    setHeaderChrome({ pinnedCount, onOpenPinned: openPinnedSheet });
-    return () => setHeaderChrome(null);
-  }, [target, pinnedCount, openPinnedSheet, setHeaderChrome]);
-
-  const scrollToPinnedMessage = useCallback((messageId: string) => {
-    setPinnedSheetOpen(false);
-    requestAnimationFrame(() => {
-      document.getElementById(`message-${messageId}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-    });
-  }, []);
-
-  const getUnreadCount = (t: ConversationTarget) => {
-    if (t.type === "group") {
-      const g = groups.find((x) => x.id === t.id);
-      if (g?.is_public) return 0;
-    }
-    return messages.filter(m => {
+  const getUnreadCount = (t: ConversationTarget) =>
+    messages.filter((m) => {
       if (t.type === "user") {
         return m.sender_id === t.id && m.recipient_id === user?.id && !m.read && !m.group_id;
       }
       return m.group_id === t.id && m.sender_id !== user?.id && !m.read;
     }).length;
-  };
 
   const getProfileById = (id: string) => allProfiles.find(p => p.user_id === id);
+
+  const pinnedMessagesSorted = useMemo(
+    () =>
+      [...messages]
+        .filter((m) => m.pinned_at)
+        .sort((a, b) => new Date(b.pinned_at!).getTime() - new Date(a.pinned_at!).getTime()),
+    [messages],
+  );
+
+  const getPinnedContextLabel = useCallback(
+    (m: Message) => {
+      if (m.group_id) {
+        const g = groups.find((x) => x.id === m.group_id);
+        return g ? (g.is_public ? `# ${g.name}` : g.name) : "Conversation";
+      }
+      if (!user) return "Message privé";
+      const other = m.sender_id === user.id ? m.recipient_id : m.sender_id;
+      return getProfileById(other)?.display_name?.trim() || "Message privé";
+    },
+    [groups, user, allProfiles],
+  );
+
+  const openFromPinnedList = useCallback(
+    (m: Message) => {
+      if (!user) return;
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.delete("view");
+          next.set("focus", m.id);
+          if (m.group_id) next.set("section", "discussion");
+          else next.set("section", "messagerie");
+          return next;
+        },
+        { replace: true },
+      );
+      if (m.group_id) {
+        setTarget({ type: "group", id: m.group_id });
+      } else {
+        const other = m.sender_id === user.id ? m.recipient_id : m.sender_id;
+        setTarget({ type: "user", id: other });
+      }
+    },
+    [user, setSearchParams],
+  );
+
+  /** Après ouverture depuis la liste épinglée : scroll vers le message ciblé. */
+  useEffect(() => {
+    const id = searchParams.get("focus");
+    if (!id || !target) return;
+    if (!messages.some((msg) => msg.id === id)) return;
+    const t = window.setTimeout(() => {
+      document.getElementById(`message-${id}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 150);
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete("focus");
+        return next;
+      },
+      { replace: true },
+    );
+    return () => clearTimeout(t);
+  }, [target, messages, searchParams, setSearchParams]);
 
   const reactionsByMessageId = useMemo(() => {
     const m: Record<string, MessageReaction[]> = {};
@@ -765,16 +987,29 @@ export default function Messages() {
 
   const toggleMessagePin = useCallback(async (m: Message) => {
     const nextPinned = !m.pinned_at;
+    const nowIso = new Date().toISOString();
+    setMessages((prev) =>
+      prev.map((row) =>
+        row.id === m.id
+          ? {
+              ...row,
+              pinned_at: nextPinned ? nowIso : null,
+              pinned_by: nextPinned && user?.id ? user.id : null,
+            }
+          : row,
+      ),
+    );
     const { error } = await supabase.rpc("set_message_pin_state", {
       p_message_id: m.id,
       p_pinned: nextPinned,
     });
     if (error) {
       toast.error(error.message);
+      await loadData();
       return;
     }
     toast.success(nextPinned ? "Message épinglé" : "Épinglage retiré");
-  }, []);
+  }, [user?.id, loadData]);
 
   const salonsWithMeta = useMemo(
     () =>
@@ -836,6 +1071,62 @@ export default function Messages() {
     [messages, groups, user?.id],
   );
 
+  const hiddenDmPartnerSet = useMemo(() => new Set(hiddenDmPartnerIds), [hiddenDmPartnerIds]);
+
+  /** Total non lus salons + groupes = somme des compteurs par fil (aligné navbar ↔ liste). Le fil ouvert est exclu (comme Discord). */
+  const totalChannelUnread = useMemo(() => {
+    if (!user) return 0;
+    return groups.reduce((sum, g) => {
+      if (g.kind !== "salon" && g.kind !== "group") return sum;
+      if (target?.type === "group" && target.id === g.id) return sum;
+      const n = messages.filter(
+        (m) => m.group_id === g.id && m.sender_id !== user.id && !m.read,
+      ).length;
+      return sum + n;
+    }, 0);
+  }, [groups, messages, user, target]);
+
+  const totalDmUnread = useMemo(() => {
+    if (!user) return 0;
+    return messages.filter(
+      (m) =>
+        !m.group_id &&
+        m.sender_id !== user.id &&
+        m.recipient_id === user.id &&
+        !m.read &&
+        !(target?.type === "user" && target.id === m.sender_id) &&
+        !hiddenDmPartnerSet.has(m.sender_id),
+    ).length;
+  }, [messages, user, target, hiddenDmPartnerSet]);
+
+  /** Historique MP 1:1 (pas l’annuaire complet) — partenaires ayant au moins un message avec moi. */
+  const dmConversations = useMemo((): MessagingDmConversationRow[] => {
+    if (!user?.id) return [];
+    const byUser = new Map<string, { lastAt: string; unread: number }>();
+    for (const m of messages) {
+      if (m.group_id) continue;
+      const other = m.sender_id === user.id ? m.recipient_id : m.sender_id;
+      if (!other || other === user.id) continue;
+      const row = byUser.get(other) ?? { lastAt: m.created_at, unread: 0 };
+      if (m.created_at > row.lastAt) row.lastAt = m.created_at;
+      if (m.sender_id !== user.id && m.recipient_id === user.id && !m.read) row.unread += 1;
+      byUser.set(other, row);
+    }
+    return [...byUser.entries()]
+      .filter(([userId]) => !hiddenDmPartnerSet.has(userId))
+      .map(([userId, v]) => {
+        const p = allProfiles.find((x) => x.user_id === userId);
+        return {
+          userId,
+          displayName: p?.display_name?.trim() || "Utilisateur",
+          avatarUrl: p?.avatar_url ?? null,
+          lastAt: v.lastAt,
+          unread: v.unread,
+        };
+      })
+      .sort((a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime());
+  }, [messages, user?.id, allProfiles, hiddenDmPartnerSet]);
+
   const sendMessage = async () => {
     if (!newMsg.trim() || !target || !user) return;
     setSending(true);
@@ -848,6 +1139,7 @@ export default function Messages() {
           content,
         });
         if (error) throw error;
+        void unhideDmPartner(target.id);
       } else {
         const grp = groups.find((g) => g.id === target.id);
         if (grp?.is_public) {
@@ -897,7 +1189,7 @@ export default function Messages() {
     if (!editingMsg || !editContent.trim() || !user) return;
     const content = editContent.trim();
     const rows = (editingMsg.group_id ? siblingGroupSendRows(editingMsg, messages) : [editingMsg]).filter(
-      (r) => r.sender_id === user.id && !r.read,
+      (r) => r.sender_id === user.id,
     );
     if (rows.length === 0) {
       toast.error("Ce message ne peut plus être modifié.");
@@ -914,14 +1206,15 @@ export default function Messages() {
     toast.success("Message modifié");
   };
 
-  // Delete message (groupe : toutes les lignes non lues du même envoi)
+  // Delete message (auteur) + modération admin/super admin (n'importe quel message)
   const handleDeleteMsg = async () => {
     if (!deletingMsg || !user) return;
-    const rows = (deletingMsg.group_id ? siblingGroupSendRows(deletingMsg, messages) : [deletingMsg]).filter(
-      (r) => r.sender_id === user.id && !r.read,
+    const isMine = deletingMsg.sender_id === user.id;
+    const rows = (deletingMsg.group_id ? siblingGroupSendRows(deletingMsg, messages) : [deletingMsg]).filter((r) =>
+      isMine ? r.sender_id === user.id : isAdmin,
     );
     if (rows.length === 0) {
-      toast.error("Ce message a déjà été lu ou ne peut plus être supprimé.");
+      toast.error("Ce message ne peut plus être supprimé.");
       setDeletingMsg(null);
       return;
     }
@@ -964,6 +1257,12 @@ export default function Messages() {
       getGroupUnread: getGroupUnreadStable,
       persistChannelOrder,
       viewerUserId: user?.id,
+      totalChannelUnread,
+      totalDmUnread,
+      messagingSection,
+      setMessagingSection,
+      dmConversations,
+      hideDmPartner,
     }),
     [
       salonsWithMeta,
@@ -976,6 +1275,12 @@ export default function Messages() {
       getGroupUnreadStable,
       persistChannelOrder,
       user?.id,
+      totalChannelUnread,
+      totalDmUnread,
+      messagingSection,
+      setMessagingSection,
+      dmConversations,
+      hideDmPartner,
     ],
   );
 
@@ -1144,7 +1449,9 @@ export default function Messages() {
   const MessageBubble = ({ m, i, group }: { m: Message; i: number; group: Message[] }) => {
     const isMine = m.sender_id === user?.id;
     const showHeader = i === 0 || group[i - 1].sender_id !== m.sender_id;
-    const canEditOrDelete = isMine && canSenderEditOrDeleteUnread(m, messages);
+    const canOpenActions = isMine || isAdmin;
+    const canDelete = isMine || isAdmin;
+    const canQuickDelete = isAdmin;
     const sender = getProfileById(m.sender_id);
     const displayName = sender?.display_name?.trim() || (isMine ? "Moi" : "Utilisateur");
     const avatarUrl = sender?.avatar_url;
@@ -1194,7 +1501,7 @@ export default function Messages() {
                 className="text-[11px] font-medium leading-none text-muted-foreground dark:text-[#949ba4]"
                 dateTime={m.created_at}
               >
-                {format(new Date(m.created_at), "Pp", { locale: fr })}
+                {format(new Date(m.created_at), "HH:mm")}
               </time>
             </div>
           )}
@@ -1204,10 +1511,10 @@ export default function Messages() {
               Épinglé
             </div>
           )}
-          <div className={cn("flex items-end gap-2", showHeader ? "mt-0.5" : "")}>
+          <div className={cn("inline-flex max-w-full items-end gap-1.5", showHeader ? "mt-0.5" : "")}>
             <div
               className={cn(
-                "min-w-0 flex-1 whitespace-pre-wrap break-words",
+                "min-w-0 max-w-full whitespace-pre-wrap break-words",
                 "text-[15px] leading-[1.22] text-foreground dark:text-[#dbdee1]",
                 "[&_a]:underline [&_a]:text-blue-600 dark:[&_a]:text-[#00a8fc]",
                 "[&_p]:my-0 [&_p]:text-[15px] [&_p]:leading-[1.22]",
@@ -1216,7 +1523,7 @@ export default function Messages() {
               dangerouslySetInnerHTML={{ __html: m.content }}
             />
             {isMine && !m.group_id && (
-              <span className="inline-flex shrink-0 pb-0.5" title={m.read ? "Lu" : "Envoyé"}>
+              <span className="inline-flex shrink-0 self-end pb-0" title={m.read ? "Lu" : "Envoyé"}>
                 <FontAwesomeIcon
                   icon={m.read ? faCheckDouble : faCheck}
                   className={cn(
@@ -1240,7 +1547,7 @@ export default function Messages() {
                   )}
                   onClick={() => void toggleMessageReaction(m.id, emoji)}
                 >
-                  <span aria-hidden>{emoji}</span>
+                  <img src={twemojiUrl(emoji)} alt={emoji} className="h-4 w-4" loading="lazy" />
                   <span className="min-w-[1ch] tabular-nums text-muted-foreground dark:text-[#b5bac1]">{count}</span>
                 </button>
               ))}
@@ -1251,10 +1558,11 @@ export default function Messages() {
         <div
           className={cn(
             "absolute right-2 z-10 flex items-center gap-0.5 opacity-0 transition-opacity group-hover/msg:opacity-100",
-            showHeader ? "top-0.5" : "top-0",
+            // Barre de réactions "à cheval" sur la bulle, style Discord.
+            showHeader ? "-top-3" : "-top-2.5",
           )}
         >
-          <div className="flex items-center rounded-md border border-border/70 bg-background/98 py-0.5 pl-0.5 pr-0.5 shadow-md dark:border-white/12 dark:bg-[#111214]/95">
+          <div className="flex items-center rounded-sm border border-border/80 bg-card py-0.5 pl-0.5 pr-0.5 shadow-md dark:border-white/15 dark:bg-[#1f2126]">
             {MESSAGE_QUICK_REACTIONS.map((emoji) => (
               <button
                 key={emoji}
@@ -1263,7 +1571,7 @@ export default function Messages() {
                 aria-label={`Réagir ${emoji}`}
                 onClick={() => void toggleMessageReaction(m.id, emoji)}
               >
-                {emoji}
+                <img src={twemojiUrl(emoji)} alt={emoji} className="h-5 w-5" loading="lazy" />
               </button>
             ))}
             <DropdownMenu>
@@ -1289,7 +1597,7 @@ export default function Messages() {
                       className="flex h-9 w-9 items-center justify-center rounded-md text-lg hover:bg-black/10 dark:hover:bg-white/10"
                       onClick={() => void toggleMessageReaction(m.id, emoji)}
                     >
-                      {emoji}
+                      <img src={twemojiUrl(emoji)} alt={emoji} className="h-6 w-6" loading="lazy" />
                     </button>
                   ))}
                 </div>
@@ -1307,7 +1615,18 @@ export default function Messages() {
             >
               <FontAwesomeIcon icon={faThumbtack} className="h-3.5 w-3.5" />
             </button>
-            {canEditOrDelete && (
+            {canQuickDelete && deleteShortcutArmed && (
+              <button
+                type="button"
+                className="flex h-7 w-7 items-center justify-center rounded text-destructive hover:bg-black/10 dark:hover:bg-white/10"
+                title="Suppression rapide (Maj)"
+                aria-label="Suppression rapide du message"
+                onClick={() => setDeletingMsg(m)}
+              >
+                <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {canOpenActions && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
@@ -1319,17 +1638,21 @@ export default function Messages() {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem
-                    onClick={() => {
-                      setEditingMsg(m);
-                      setEditContent(m.content);
-                    }}
-                  >
-                    <FontAwesomeIcon icon={faPen} className="mr-2 h-3 w-3" /> Modifier
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="text-destructive" onClick={() => setDeletingMsg(m)}>
+                  {isMine && (
+                    <DropdownMenuItem
+                      onClick={() => {
+                        setEditingMsg(m);
+                        setEditContent(m.content);
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faPen} className="mr-2 h-3 w-3" /> Modifier
+                    </DropdownMenuItem>
+                  )}
+                  {canDelete && (
+                    <DropdownMenuItem className="text-destructive" onClick={() => setDeletingMsg(m)}>
                     <FontAwesomeIcon icon={faTrash} className="mr-2 h-3 w-3" /> Supprimer
-                  </DropdownMenuItem>
+                    </DropdownMenuItem>
+                  )}
                 </DropdownMenuContent>
               </DropdownMenu>
             )}
@@ -1351,14 +1674,9 @@ export default function Messages() {
 
   const conversationHeaderLeading =
     target?.type === "user" ? (
-      <div className="relative h-8 w-8 shrink-0 shell:h-9 shell:w-9">
-        <Avatar className="h-8 w-8 shell:h-9 shell:w-9">
-          {targetAvatar && <AvatarImage src={targetAvatar} />}
-          <AvatarFallback className="bg-primary/15 text-primary text-xs font-semibold">
-            {getInitials(targetName)}
-          </AvatarFallback>
-        </Avatar>
-        <PresenceAvatarBadge presence={presenceByUser[target.id]} className="scale-90" />
+      <div className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/80 text-muted-foreground shell:h-9 shell:w-9">
+        <FontAwesomeIcon icon={faEnvelope} className="h-3.5 w-3.5 shell:h-4 shell:w-4" />
+        <PresenceAvatarBadge presence={presenceByUser[target.id]} className="pointer-events-none absolute -bottom-0.5 -right-0.5 scale-90" />
       </div>
     ) : activeGroup?.is_public ? (
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-muted/80 text-muted-foreground shell:h-9 shell:w-9">
@@ -1464,133 +1782,209 @@ export default function Messages() {
     </div>
   );
 
-  /** Salons + groupes sur mobile (les DM passent par l’annuaire). */
+  /** Mobile : onglets Discussions / Messages privés + sélecteur de fil (salons ou MP). */
   const GroupsToolbar = () => (
-    <div className="flex flex-wrap items-center gap-2 px-3 py-2 border-b border-border/60 bg-background shrink-0">
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="sm" className="h-9 gap-2 font-normal max-w-[min(100%,280px)]">
-            {target?.type === "group" && groups.find((g) => g.id === target.id)?.is_public ? (
-              <FontAwesomeIcon icon={faHashtag} className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            ) : (
-              <FontAwesomeIcon icon={faUsers} className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-            )}
-            <span className="truncate">
-              {target?.type === "group"
-                ? groups.find((g) => g.id === target.id)?.name ?? "Conversation"
-                : "Salons & groupes"}
-            </span>
-            <FontAwesomeIcon icon={faChevronDown} className="h-3 w-3 opacity-50 shrink-0" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-80 max-h-[min(70vh,320px)] overflow-y-auto" align="start">
-          {mobileChannelsMeta.length === 0 ? (
-            <p className="px-2 py-3 text-xs text-muted-foreground">Aucun salon ni groupe.</p>
-          ) : (
-            mobileChannelsMeta.map((g) => {
-              const unread = getUnreadCount({ type: "group", id: g.id });
-              const active = target?.type === "group" && target.id === g.id;
-              const last = g.lastMsg;
-              const showActivityDot =
-                Boolean(last?.sender_id && user?.id && last.sender_id !== user.id && !active);
-              return (
-                <DropdownMenuItem
-                  key={g.id}
-                  className={cn("flex items-center gap-3 cursor-pointer py-2.5", active && "bg-primary/10 focus:bg-primary/10")}
-                  onClick={() => setTarget({ type: "group", id: g.id })}
-                >
-                  {g.is_public ? (
-                    <div className="relative h-8 w-8 shrink-0 rounded-md bg-muted/80 flex items-center justify-center text-muted-foreground">
-                      <FontAwesomeIcon icon={faHashtag} className="h-3.5 w-3.5" />
-                      {showActivityDot && (
+    <div className="flex shrink-0 flex-col border-b border-border/60 bg-background">
+      <div className="flex gap-1 px-2 py-2">
+        <Button
+          type="button"
+          variant={messagingSection === "discussion" ? "secondary" : "ghost"}
+          size="sm"
+          className="h-9 flex-1 text-xs font-semibold"
+          onClick={() => setMessagingSection("discussion")}
+        >
+          Discussions
+        </Button>
+        <Button
+          type="button"
+          variant={messagingSection === "messagerie" ? "secondary" : "ghost"}
+          size="sm"
+          className="h-9 flex-1 text-xs font-semibold"
+          onClick={() => setMessagingSection("messagerie")}
+        >
+          Messages privés
+        </Button>
+      </div>
+      {messagingSection === "discussion" ? (
+        <div className="flex flex-wrap items-center gap-2 px-3 py-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 gap-2 font-normal max-w-[min(100%,280px)]">
+                {target?.type === "group" && groups.find((g) => g.id === target.id)?.is_public ? (
+                  <FontAwesomeIcon icon={faHashtag} className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                ) : (
+                  <FontAwesomeIcon icon={faUsers} className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                )}
+                <span className="truncate">
+                  {target?.type === "group"
+                    ? (groups.find((g) => g.id === target.id)?.name ?? "Conversation")
+                    : "Salons & groupes"}
+                </span>
+                <FontAwesomeIcon icon={faChevronDown} className="h-3 w-3 shrink-0 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="max-h-[min(70vh,320px)] w-80 overflow-y-auto" align="start">
+              {mobileChannelsMeta.length === 0 ? (
+                <p className="px-2 py-3 text-xs text-muted-foreground">Aucun salon ni groupe.</p>
+              ) : (
+                mobileChannelsMeta.map((g) => {
+                  const unread = getUnreadCount({ type: "group", id: g.id });
+                  const active = target?.type === "group" && target.id === g.id;
+                  const hasUnread = unread > 0 && !active;
+                  return (
+                    <DropdownMenuItem
+                      key={g.id}
+                      className={cn(
+                        "relative flex cursor-pointer items-center gap-1.5 rounded py-2 pl-2 pr-2",
+                        active && "bg-primary/10 focus:bg-primary/10",
+                      )}
+                      onClick={() => setTarget({ type: "group", id: g.id })}
+                    >
+                      {hasUnread && (
                         <span
-                          className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-primary"
+                          className="pointer-events-none absolute left-0 top-1/2 z-[1] h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-foreground"
                           aria-hidden
                         />
                       )}
-                    </div>
-                  ) : (
-                    <div className="relative shrink-0">
-                      <Avatar className="h-8 w-8">
-                        {g.avatar_url && <AvatarImage src={g.avatar_url} />}
-                        <AvatarFallback className="bg-primary/15 text-primary text-[10px]">
-                          <FontAwesomeIcon icon={faUsers} className="h-3.5 w-3.5" />
+                      {g.is_public ? (
+                        <FontAwesomeIcon
+                          icon={faHashtag}
+                          className={cn(
+                            "inline-block h-3.5 w-3.5 shrink-0 border-0 leading-none [&>svg]:border-0",
+                            hasUnread
+                              ? "text-foreground/80"
+                              : active
+                                ? "text-zinc-600 dark:text-zinc-300"
+                                : "text-zinc-500 dark:text-zinc-400",
+                          )}
+                        />
+                      ) : (
+                        <Avatar className="h-8 w-8 shrink-0">
+                          {g.avatar_url && <AvatarImage src={g.avatar_url} />}
+                          <AvatarFallback className="bg-primary/15 text-[10px] text-primary">
+                            <FontAwesomeIcon icon={faUsers} className="h-3.5 w-3.5" />
+                          </AvatarFallback>
+                        </Avatar>
+                      )}
+                      <div className="min-w-0 flex-1 text-left">
+                        <p
+                          className={cn(
+                            "truncate text-sm",
+                            hasUnread && "font-semibold text-foreground",
+                            !hasUnread && active && "font-medium text-foreground",
+                            !hasUnread && !active && "font-medium text-zinc-500 dark:text-zinc-400",
+                          )}
+                        >
+                          {g.name}
+                        </p>
+                      </div>
+                    </DropdownMenuItem>
+                  );
+                })
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+          {canManageSalons && (
+            <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={openNewSalon} title="Nouveau salon">
+              <FontAwesomeIcon icon={faHashtag} className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={openNewGroup} title="Nouveau groupe">
+            <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
+          </Button>
+        </div>
+      ) : (
+        <div className="flex flex-wrap items-center gap-2 px-3 py-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="h-9 gap-2 font-normal max-w-[min(100%,280px)]">
+                <FontAwesomeIcon icon={faEnvelope} className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+                <span className="truncate">
+                  {target?.type === "user"
+                    ? (getProfileById(target.id)?.display_name?.trim() ?? "Conversation")
+                    : "Messages privés"}
+                </span>
+                <FontAwesomeIcon icon={faChevronDown} className="h-3 w-3 shrink-0 opacity-50" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="max-h-[min(70vh,320px)] w-80 overflow-y-auto" align="start">
+              {dmConversations.length === 0 ? (
+                <p className="px-2 py-3 text-xs text-muted-foreground">Aucune conversation. Utilisez l’annuaire (Membres).</p>
+              ) : (
+                dmConversations.map((row) => {
+                  const active = target?.type === "user" && target.id === row.userId;
+                  const hasUnread = row.unread > 0 && !active;
+                  return (
+                    <DropdownMenuItem
+                      key={row.userId}
+                      className={cn(
+                        "relative flex cursor-pointer items-center gap-1 rounded py-2 pl-2 pr-1",
+                        active && "bg-primary/10 focus:bg-primary/10",
+                      )}
+                      onSelect={(e) => {
+                        const el = e.target as HTMLElement;
+                        if (el.closest("[data-dismiss-dm]")) {
+                          void hideDmPartner(row.userId);
+                          return;
+                        }
+                        setTarget({ type: "user", id: row.userId });
+                      }}
+                    >
+                      {hasUnread && (
+                        <span
+                          className="pointer-events-none absolute left-0 top-1/2 z-[1] h-4 w-[3px] -translate-y-1/2 rounded-r-full bg-foreground"
+                          aria-hidden
+                        />
+                      )}
+                      <Avatar className="h-8 w-8 shrink-0">
+                        {row.avatarUrl && <AvatarImage src={row.avatarUrl} alt="" />}
+                        <AvatarFallback className="bg-primary/15 text-[10px] font-semibold text-primary">
+                          {row.displayName
+                            .split(" ")
+                            .map((w) => w[0])
+                            .join("")
+                            .slice(0, 2)
+                            .toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      {showActivityDot && (
-                        <span
-                          className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-primary"
-                          aria-hidden
-                        />
+                      <div className="min-w-0 flex-1 text-left">
+                        <p
+                          className={cn(
+                            "truncate text-sm",
+                            hasUnread && "font-semibold text-foreground",
+                            !hasUnread && active && "font-medium text-foreground",
+                            !hasUnread && !active && "font-medium text-zinc-500 dark:text-zinc-400",
+                          )}
+                        >
+                          {row.displayName}
+                        </p>
+                      </div>
+                      {row.unread > 0 && (
+                        <span className="flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+                          {row.unread > 99 ? "99+" : row.unread}
+                        </span>
                       )}
-                    </div>
-                  )}
-                  <div className="flex-1 min-w-0 text-left">
-                    <p className="text-sm font-medium truncate">{g.name}</p>
-                    {g.lastMsg && (
-                      <p className="text-[11px] text-muted-foreground truncate">
-                        {format(new Date(g.lastMsg.created_at), "dd/MM · HH:mm")}
-                      </p>
-                    )}
-                  </div>
-                  {unread > 0 && (
-                    <Badge className="h-5 min-w-[20px] rounded-full px-1.5 text-[10px] shrink-0">{unread}</Badge>
-                  )}
-                </DropdownMenuItem>
-              );
-            })
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
-      {canManageSalons && (
-        <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={openNewSalon} title="Nouveau salon">
-          <FontAwesomeIcon icon={faHashtag} className="h-3.5 w-3.5" />
-        </Button>
+                      <span
+                        data-dismiss-dm
+                        title="Retirer de votre liste"
+                        aria-hidden
+                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive/15 hover:text-foreground"
+                      >
+                        <FontAwesomeIcon icon={faXmark} className="h-3.5 w-3.5" />
+                      </span>
+                    </DropdownMenuItem>
+                  );
+                })
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       )}
-      <Button variant="outline" size="icon" className="h-9 w-9 shrink-0" onClick={openNewGroup} title="Nouveau groupe">
-        <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
-      </Button>
     </div>
   );
 
   const messagesMainClassName =
     "flex min-h-0 min-w-0 w-full max-w-none flex-1 flex-col !mx-0 !max-w-none !space-y-0 !justify-start !overflow-hidden !overflow-y-hidden px-0 pt-0 pb-28 shell:!px-0 shell:!py-0 shell:min-h-0";
-
-  const pinnedMessagesOrdered = [...conversation]
-    .filter((m) => m.pinned_at)
-    .sort((a, b) => new Date(b.pinned_at!).getTime() - new Date(a.pinned_at!).getTime());
-
-  const pinnedMessagesSheet = (
-    <Sheet open={pinnedSheetOpen} onOpenChange={setPinnedSheetOpen}>
-      <SheetContent side="right" className="flex w-[min(100vw-1rem,380px)] flex-col sm:max-w-[380px]">
-        <SheetHeader>
-          <SheetTitle>Messages épinglés</SheetTitle>
-        </SheetHeader>
-        <div className="mt-4 flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1">
-          {pinnedMessagesOrdered.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Aucun message épinglé dans cette conversation.</p>
-          ) : (
-            pinnedMessagesOrdered.map((m) => {
-              const who = getProfileById(m.sender_id)?.display_name?.trim() || "Utilisateur";
-              return (
-                <button
-                  key={m.id}
-                  type="button"
-                  className="rounded-lg border border-border/60 bg-card/30 p-3 text-left transition-colors hover:bg-muted/50"
-                  onClick={() => scrollToPinnedMessage(m.id)}
-                >
-                  <div className="text-xs font-semibold text-muted-foreground">
-                    {who} · {format(new Date(m.created_at), "Pp", { locale: fr })}
-                  </div>
-                  <div className="mt-1 line-clamp-3 text-sm text-foreground">{stripHtmlPreview(m.content, 200)}</div>
-                </button>
-              );
-            })
-          )}
-        </div>
-      </SheetContent>
-    </Sheet>
-  );
 
   const messagesDialogs = (
     <MessagesDialogs
@@ -1642,7 +2036,6 @@ export default function Messages() {
             sendDisabled={!newMsg.trim() || sending}
           />
         </div>
-        {pinnedMessagesSheet}
         {messagesDialogs}
       </AppLayout>
     );
@@ -1667,14 +2060,57 @@ export default function Messages() {
               sendDisabled={!newMsg.trim() || sending}
             />
           </>
+        ) : pinnedView ? (
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            {pinnedMessagesSorted.length === 0 ? (
+              <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+                  <FontAwesomeIcon icon={faThumbtack} className="h-9 w-9 text-primary/30" />
+                </div>
+                <p className="text-sm font-medium text-foreground">Aucun message épinglé</p>
+                <p className="max-w-[280px] text-xs leading-relaxed text-muted-foreground">
+                  Épinglez un message depuis une conversation (salon, groupe ou message privé).
+                </p>
+              </div>
+            ) : (
+              <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-28">
+                {pinnedMessagesSorted.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => void openFromPinnedList(m)}
+                    className="mb-2 w-full rounded-2xl border border-border/60 bg-card/50 p-4 text-left transition-colors hover:bg-muted/50"
+                  >
+                    <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-amber-600 dark:text-amber-400">
+                      <FontAwesomeIcon icon={faThumbtack} className="h-3 w-3" />
+                      {getPinnedContextLabel(m)}
+                    </div>
+                    <p className="mt-2 line-clamp-3 text-sm text-foreground">
+                      {previewMessageContent(m.content)}
+                    </p>
+                    <p className="mt-2 text-[10px] text-muted-foreground">
+                      {format(new Date(m.pinned_at!), "d MMM yyyy 'à' HH:mm", { locale: fr })}
+                    </p>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center gap-3 p-6 min-h-0">
-            <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-              <FontAwesomeIcon icon={faComments} className="h-9 w-9 text-primary/30" />
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-3 p-6 text-center">
+            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+              <FontAwesomeIcon
+                icon={messagingSection === "messagerie" ? faEnvelope : faComments}
+                className="h-9 w-9 text-primary/30"
+              />
             </div>
-            <p className="text-sm font-medium text-foreground">Messagerie</p>
-            <p className="text-xs text-muted-foreground max-w-[280px] leading-relaxed">
-              Sélectionnez un salon ou un groupe à gauche. Pour un message privé, choisissez un membre dans l’annuaire à droite (icône « Membres » sur mobile).
+            <p className="text-sm font-medium text-foreground">
+              {messagingSection === "messagerie" ? "Messages privés" : "Discussions"}
+            </p>
+            <p className="max-w-[280px] text-xs leading-relaxed text-muted-foreground">
+              {messagingSection === "messagerie"
+                ? "Choisissez une conversation dans la liste à gauche ou un contact dans l’annuaire à droite (icône « Membres » sur mobile)."
+                : "Sélectionnez un salon ou un groupe à gauche. Pour les messages privés, passez à l’onglet « Messages privés » ou utilisez l’annuaire."}
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
               {canManageSalons && (
@@ -1689,7 +2125,6 @@ export default function Messages() {
           </div>
         )}
       </div>
-      {pinnedMessagesSheet}
       {messagesDialogs}
     </AppLayout>
   );

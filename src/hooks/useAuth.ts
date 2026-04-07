@@ -1,4 +1,4 @@
-import { createContext, createElement, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, createElement, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { ReactNode } from "react";
 import type { Session, User } from "@supabase/supabase-js";
@@ -15,6 +15,8 @@ type SupabaseAuthWithSessionRemoval = typeof supabase.auth & {
   _removeSession?: () => Promise<void>;
 };
 
+const LAST_AUTH_USER_ID_KEY = "dynaperf_last_auth_user_id_v1";
+
 interface AuthContextValue {
   user: User | null;
   loading: boolean;
@@ -26,12 +28,52 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const currentUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
 
+    const setInvisible = async (userId: string | null | undefined) => {
+      if (!userId) return;
+      try {
+        await supabase
+          .from("user_presence")
+          .upsert({ user_id: userId, status: "invisible", expires_at: null }, { onConflict: "user_id" });
+      } catch (e) {
+        console.error("[Auth] presence invisible update failed", e);
+      }
+    };
+
+    const setOnline = async (userId: string | null | undefined) => {
+      if (!userId) return;
+      try {
+        await supabase
+          .from("user_presence")
+          .upsert({ user_id: userId, status: "online", expires_at: null }, { onConflict: "user_id" });
+      } catch (e) {
+        console.error("[Auth] presence online update failed", e);
+      }
+    };
+
     const applySession = (session: Session | null) => {
       if (!mounted) return;
+      const nextUserId = session?.user?.id ?? null;
+      const prevUserId = currentUserIdRef.current;
+      const persistedPrevUserId = localStorage.getItem(LAST_AUTH_USER_ID_KEY);
+      const previousKnownUserId = prevUserId ?? persistedPrevUserId;
+      if (prevUserId !== nextUserId) {
+        void (async () => {
+          if (previousKnownUserId && previousKnownUserId !== nextUserId) {
+            await setInvisible(previousKnownUserId);
+          }
+          if (nextUserId && previousKnownUserId !== nextUserId) {
+            // Nouvelle session utilisateur: statut initial prioritaire = En ligne.
+            await setOnline(nextUserId);
+          }
+        })();
+      }
+      currentUserIdRef.current = nextUserId;
+      if (nextUserId) localStorage.setItem(LAST_AUTH_USER_ID_KEY, nextUserId);
       setUser(session?.user ?? null);
       setLoading(false);
     };
@@ -67,8 +109,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     lockAppLocally();
+    const { data: authUser } = await supabase.auth.getUser();
+    if (authUser.user) {
+      localStorage.setItem(LAST_AUTH_USER_ID_KEY, authUser.user.id);
+      try {
+        await supabase.from("user_presence").upsert(
+          { user_id: authUser.user.id, status: "invisible", expires_at: null },
+          { onConflict: "user_id" },
+        );
+      } catch (e) {
+        console.error("[Auth] signOut presence update failed", e);
+      }
+    }
+    await supabase.auth.signOut().catch(() => undefined);
     await supabase.auth.stopAutoRefresh().catch(() => undefined);
     await (supabase.auth as SupabaseAuthWithSessionRemoval)._removeSession?.();
+    currentUserIdRef.current = null;
     setUser(null);
     setLoading(false);
   };

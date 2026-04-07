@@ -1,12 +1,14 @@
 import { useCallback, useState } from "react";
-import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faUsers, faPlus, faHashtag, faGripVertical } from "@fortawesome/free-solid-svg-icons";
-import { useMessagingSidebarHost, type MessagingGroupRow } from "@/contexts/MessagingSidebarContext";
+import { faPlus, faHashtag, faUsers, faGripVertical, faXmark } from "@fortawesome/free-solid-svg-icons";
+import {
+  useMessagingSidebarHost,
+  type MessagingDmConversationRow,
+  type MessagingGroupRow,
+} from "@/contexts/MessagingSidebarContext";
 import { cn } from "@/lib/utils";
 
 type ChannelKind = "salon" | "group";
@@ -27,7 +29,6 @@ function ChannelRow({
   unread,
   onSelect,
   icon,
-  viewerUserId,
   canReorder,
   isDragging,
   isDropHover,
@@ -41,7 +42,6 @@ function ChannelRow({
   unread: number;
   onSelect: () => void;
   icon: ChannelKind;
-  viewerUserId: string | undefined;
   canReorder: boolean;
   isDragging: boolean;
   isDropHover: boolean;
@@ -50,15 +50,12 @@ function ChannelRow({
   onDropOnRow: (e: React.DragEvent, id: string) => void;
   onDragEnd: () => void;
 }) {
-  const last = g.lastMsg;
-  const showActivityDot = Boolean(
-    last?.sender_id && viewerUserId && last.sender_id !== viewerUserId && !active,
-  );
+  const hasUnread = unread > 0 && !active;
 
   return (
     <div
       className={cn(
-        "relative flex w-full items-stretch gap-0.5 rounded-lg transition-[background-color,box-shadow,opacity] duration-150 ease-out",
+        "relative flex w-full items-stretch gap-0.5 rounded-md transition-[background-color,box-shadow,opacity] duration-150 ease-out",
         isDragging && "z-[1] opacity-[0.42] shadow-sm ring-1 ring-border/60",
         isDropHover && !isDragging && "bg-primary/[0.07] shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.22)]",
       )}
@@ -95,50 +92,53 @@ function ChannelRow({
         type="button"
         onClick={onSelect}
         className={cn(
-          "flex min-w-0 flex-1 items-center gap-2 rounded-lg px-2 py-2 text-left transition-colors duration-150",
+          "relative flex min-w-0 flex-1 items-center gap-1.5 overflow-visible rounded py-1.5 pl-2 pr-2 text-left transition-colors duration-150",
+          "outline-none focus-visible:outline-none focus-visible:ring-0",
           active ? "bg-primary/12" : "hover:bg-secondary/80",
           isDropHover && !isDragging && !active && "hover:bg-primary/[0.09]",
         )}
       >
+        {/* Style Discord : demi-pilule sur le bord gauche si non lus */}
+        {hasUnread && (
+          <span
+            className="pointer-events-none absolute left-0 top-1/2 z-[1] h-[18px] w-[3px] -translate-y-1/2 rounded-r-full bg-foreground"
+            aria-hidden
+          />
+        )}
         {icon === "salon" ? (
-          <div className="relative flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted/80 text-muted-foreground">
-            <FontAwesomeIcon icon={faHashtag} className="h-4 w-4" />
-            {showActivityDot && (
-              <span
-                className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-primary"
-                title="Dernier message d’un autre membre"
-                aria-hidden
-              />
+          <FontAwesomeIcon
+            icon={faHashtag}
+            className={cn(
+              "inline-block h-3.5 w-3.5 shrink-0 border-0 leading-none [&>svg]:border-0",
+              hasUnread
+                ? "text-foreground/80"
+                : active
+                  ? "text-zinc-600 dark:text-zinc-300"
+                  : "text-zinc-500 dark:text-zinc-400",
             )}
-          </div>
+          />
         ) : (
           <div className="relative shrink-0">
-            <Avatar className="h-9 w-9">
+            <Avatar className="h-8 w-8">
               {g.avatar_url && <AvatarImage src={g.avatar_url} />}
               <AvatarFallback className="bg-primary/15 text-primary text-[10px]">
-                <FontAwesomeIcon icon={faUsers} className="h-4 w-4" />
+                <FontAwesomeIcon icon={faUsers} className="h-3.5 w-3.5" />
               </AvatarFallback>
             </Avatar>
-            {showActivityDot && (
-              <span
-                className="absolute right-0 top-0 h-2.5 w-2.5 rounded-full border-2 border-background bg-primary"
-                title="Dernier message d’un autre membre"
-                aria-hidden
-              />
-            )}
           </div>
         )}
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-medium leading-snug">{g.name}</p>
-          {g.lastMsg && (
-            <p className="truncate text-xs text-muted-foreground">
-              {format(new Date(g.lastMsg.created_at), "dd/MM · HH:mm")}
-            </p>
-          )}
+          <p
+            className={cn(
+              "truncate text-[15px] leading-snug",
+              hasUnread && "font-semibold text-foreground",
+              !hasUnread && active && "font-medium text-foreground",
+              !hasUnread && !active && "font-medium text-zinc-500 dark:text-zinc-400",
+            )}
+          >
+            {g.name}
+          </p>
         </div>
-        {unread > 0 && (
-          <Badge className="h-5 min-w-[20px] shrink-0 rounded-full px-1.5 text-[11px]">{unread}</Badge>
-        )}
       </button>
     </div>
   );
@@ -152,7 +152,6 @@ function ChannelListBlock({
   getGroupUnread,
   persistChannelOrder,
   canManageSalons,
-  viewerUserId,
 }: {
   items: MessagingGroupRow[];
   kind: ChannelKind;
@@ -161,7 +160,6 @@ function ChannelListBlock({
   getGroupUnread: (groupId: string) => number;
   persistChannelOrder: (kind: ChannelKind, orderedIds: string[]) => Promise<void>;
   canManageSalons: boolean;
-  viewerUserId: string | undefined;
 }) {
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [overId, setOverId] = useState<string | null>(null);
@@ -234,7 +232,6 @@ function ChannelListBlock({
             unread={getGroupUnread(g.id)}
             active={target?.type === "group" && target.id === g.id}
             onSelect={() => setTarget({ type: "group", id: g.id })}
-            viewerUserId={viewerUserId}
             canReorder={canManageSalons}
             isDragging={isDragging}
             isDropHover={isDropHover}
@@ -249,8 +246,90 @@ function ChannelListBlock({
   );
 }
 
+function DmConversationRow({
+  row,
+  active,
+  onSelect,
+  onDismiss,
+}: {
+  row: MessagingDmConversationRow;
+  active: boolean;
+  onSelect: () => void;
+  onDismiss: () => void;
+}) {
+  const hasUnread = row.unread > 0 && !active;
+
+  return (
+    <div
+      className={cn(
+        "relative flex w-full min-w-0 items-center gap-0.5 rounded-md py-1.5 pl-2 pr-1 text-left transition-colors",
+        active ? "bg-primary/12" : "hover:bg-secondary/80",
+        "outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1",
+      )}
+    >
+      {hasUnread && (
+        <span
+          className="pointer-events-none absolute left-0 top-1/2 z-[1] h-[18px] w-[3px] -translate-y-1/2 rounded-r-full bg-foreground"
+          aria-hidden
+        />
+      )}
+      <button
+        type="button"
+        onClick={onSelect}
+        className={cn(
+          "flex min-w-0 flex-1 items-center gap-2 rounded-md py-0 pl-0 pr-1 text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1",
+        )}
+      >
+        <div className="relative shrink-0">
+          <Avatar className="h-8 w-8">
+            {row.avatarUrl && <AvatarImage src={row.avatarUrl} alt="" />}
+            <AvatarFallback className="bg-primary/15 text-primary text-[10px] font-semibold">
+              {row.displayName
+                .split(" ")
+                .map((w) => w[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+        </div>
+        <div className="min-w-0 flex-1">
+          <p
+            className={cn(
+              "truncate text-[15px] leading-snug",
+              hasUnread && "font-semibold text-foreground",
+              !hasUnread && active && "font-medium text-foreground",
+              !hasUnread && !active && "font-medium text-zinc-500 dark:text-zinc-400",
+            )}
+          >
+            {row.displayName}
+          </p>
+        </div>
+        {row.unread > 0 && (
+          <span className="flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">
+            {row.unread > 99 ? "99+" : row.unread}
+          </span>
+        )}
+      </button>
+      <button
+        type="button"
+        data-dismiss-dm
+        title="Retirer de votre liste"
+        aria-label="Retirer cette conversation de votre liste"
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/15 hover:text-foreground"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDismiss();
+        }}
+      >
+        <FontAwesomeIcon icon={faXmark} className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
+
 /**
- * Colonne messagerie : salons publics + groupes privés (DM via annuaire à droite).
+ * Colonne gauche : mode Discussions (salons + groupes) ou Messages privés (historique MP).
  */
 export function MessagingSecondaryNav() {
   const { api } = useMessagingSidebarHost();
@@ -269,11 +348,62 @@ export function MessagingSecondaryNav() {
     canManageSalons,
     getGroupUnread,
     persistChannelOrder,
-    viewerUserId,
+    messagingSection,
+    setMessagingSection,
+    dmConversations,
+    hideDmPartner,
   } = api;
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex shrink-0 gap-1 border-b border-border/50 p-2">
+        <Button
+          type="button"
+          variant={messagingSection === "discussion" ? "secondary" : "ghost"}
+          size="sm"
+          className="h-8 flex-1 text-xs font-semibold"
+          onClick={() => setMessagingSection("discussion")}
+        >
+          Discussions
+        </Button>
+        <Button
+          type="button"
+          variant={messagingSection === "messagerie" ? "secondary" : "ghost"}
+          size="sm"
+          className="h-8 flex-1 text-xs font-semibold"
+          onClick={() => setMessagingSection("messagerie")}
+        >
+          Messages privés
+        </Button>
+      </div>
+
+      {messagingSection === "messagerie" ? (
+        <ScrollArea className="min-h-0 flex-1">
+          <div className="p-2 pb-4">
+            <p className="px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Conversations
+            </p>
+            {dmConversations.length === 0 ? (
+              <p className="px-2 py-4 text-center text-sm leading-relaxed text-muted-foreground">
+                Aucun message privé pour l’instant. Écrivez à un membre depuis l’annuaire à droite.
+              </p>
+            ) : (
+              <div className="space-y-0.5">
+                {dmConversations.map((row) => (
+                  <DmConversationRow
+                    key={row.userId}
+                    row={row}
+                    active={target?.type === "user" && target.id === row.userId}
+                    onSelect={() => setTarget({ type: "user", id: row.userId })}
+                    onDismiss={() => void hideDmPartner(row.userId)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        </ScrollArea>
+      ) : (
+        <>
       <div className="flex shrink-0 items-center justify-between gap-2 px-3 py-2">
         <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Salons</p>
         {canManageSalons ? (
@@ -305,7 +435,6 @@ export function MessagingSecondaryNav() {
               getGroupUnread={getGroupUnread}
               persistChannelOrder={persistChannelOrder}
               canManageSalons={canManageSalons}
-              viewerUserId={viewerUserId}
             />
           )}
         </div>
@@ -321,7 +450,7 @@ export function MessagingSecondaryNav() {
         <div className="pb-4">
           {groupsWithMeta.length === 0 ? (
             <p className="px-2 py-4 text-center text-sm leading-relaxed text-muted-foreground">
-              Aucun groupe. Les messages directs se lancent depuis l’annuaire à droite.
+              Aucun groupe. Pour les MP, passez par l’onglet « Messages privés » ou l’annuaire à droite.
             </p>
           ) : (
             <ChannelListBlock
@@ -332,11 +461,12 @@ export function MessagingSecondaryNav() {
               getGroupUnread={getGroupUnread}
               persistChannelOrder={persistChannelOrder}
               canManageSalons={canManageSalons}
-              viewerUserId={viewerUserId}
             />
           )}
         </div>
       </ScrollArea>
+        </>
+      )}
     </div>
   );
 }

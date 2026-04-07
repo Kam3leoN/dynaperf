@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AutocompleteInput } from "@/components/ui/autocomplete-input";
 import { M3Field } from "@/components/ui/m3-field";
+import { ContextSubHeader } from "@/components/context-sub-header";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -96,6 +97,7 @@ export default function SuiviActiviteForm() {
   const totalExpected = 3 + totalItems;
   const totalFilled = headerFields + answeredCount;
   const progress = totalExpected > 0 ? (totalFilled / totalExpected) * 100 : 0;
+  const cleanSectionTitle = (s: string) => s.replace(/\*+/g, "").replace(/\s+/g, " ").trim();
 
   // Group items by category
   const categories = useMemo(() => {
@@ -170,29 +172,24 @@ export default function SuiviActiviteForm() {
   }
 
   return (
-    <AppLayout>
-      {/* Sticky progress bar */}
-      <div className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm border-b border-border px-4 py-2.5 -mx-4 mb-6">
-        <div className="flex items-center gap-3 mb-1.5">
-          <Badge variant="outline" className="text-xs">Suivi d'activité</Badge>
-          <span className="text-xs text-muted-foreground">
-            {totalFilled} / {totalExpected} champs renseignés
-          </span>
-          <span className="ml-auto text-xs font-semibold text-foreground tabular-nums">
-            {Math.round(progress)}%
-          </span>
-        </div>
-        <Progress value={progress} className="h-2" />
-      </div>
-      <div className="px-0">
-        <h1 className="text-xl font-semibold text-foreground mb-6">Nouveau suivi d'activité</h1>
-
+    <AppLayout mainClassName="!pt-0 shell:!pt-0">
+      <div className="min-w-0">
+      <div className="px-0 pt-0">
         <div className="space-y-8">
           {/* Informations générales */}
           <div>
-            <h2 className="text-sm font-bold text-foreground uppercase tracking-wider border-b border-border pb-2 mb-4">
-              Informations générales
-            </h2>
+            <div className="sticky top-0 z-[35] -mx-4 border-b border-border/30 bg-background/90 backdrop-blur-sm supports-[backdrop-filter]:bg-background/85 shell:-mx-6">
+              <ContextSubHeader
+                title="Suivi d'activité : Informations générales"
+                meta={`${totalFilled} / ${totalExpected}`}
+                actions={
+                  <Badge variant="outline" className="text-xs tabular-nums">
+                    {Math.round(progress)}%
+                  </Badge>
+                }
+              />
+              <Progress value={progress} className="pointer-events-none absolute bottom-0 left-0 right-0 h-[3px] rounded-none bg-secondary/80" />
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <M3Field label="Partenaire accompagné (Prénom NOM)" required filled={!!partenaire}>
                 <AutocompleteInput
@@ -253,9 +250,18 @@ export default function SuiviActiviteForm() {
           {/* Items par catégorie */}
           {categories.map((cat) => (
             <div key={cat.name} className="space-y-3">
-              <h2 className="text-sm font-bold text-foreground uppercase tracking-wider border-b border-border pb-2">
-                {cat.name}
-              </h2>
+              <div className="sticky top-0 z-[34] -mx-4 border-b border-border/30 bg-background/90 backdrop-blur-sm supports-[backdrop-filter]:bg-background/85 shell:-mx-6">
+                <ContextSubHeader
+                  title={`Suivi d'activité : ${cleanSectionTitle(cat.name)}`}
+                  meta={`${totalFilled} / ${totalExpected}`}
+                  actions={
+                    <Badge variant="outline" className="text-xs tabular-nums">
+                      {Math.round(progress)}%
+                    </Badge>
+                  }
+                />
+                <Progress value={progress} className="pointer-events-none absolute bottom-0 left-0 right-0 h-[3px] rounded-none bg-secondary/80" />
+              </div>
               {cat.items.map((item) => {
                 const ans = answers[item.id] ?? { status: null };
                 return (
@@ -409,6 +415,7 @@ export default function SuiviActiviteForm() {
             )}
           </div>
         </div>
+      </div>
       </div>
     </AppLayout>
   );

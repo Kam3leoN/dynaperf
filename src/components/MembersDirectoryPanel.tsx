@@ -1,16 +1,21 @@
 import { useAuth } from "@/hooks/useAuth";
 import { useDirectoryMembers } from "@/hooks/useDirectoryMembers";
 import { ORG_TITLE_LABELS, sectionTitleForRole } from "@/lib/memberDirectory";
+import type { UserPresenceRow } from "@/lib/presence";
 import { presenceLabelFor } from "@/lib/presence";
 import { PresenceAvatarBadge } from "@/components/PresenceAvatarBadge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faEnvelope } from "@fortawesome/free-solid-svg-icons";
 
 interface MembersDirectoryPanelProps {
   className?: string;
   /** Appelé après navigation vers la messagerie (ex. fermer le sheet mobile). */
   onPickMember?: () => void;
+  /** Source unique de présence pour l'utilisateur courant (injectée par AppLayout). */
+  currentUserPresence?: UserPresenceRow | null;
 }
 
 function getInitials(name: string) {
@@ -25,7 +30,11 @@ function getInitials(name: string) {
 /**
  * Liste des membres groupés par rôle (style Discord), avec présence et accès rapide à la messagerie.
  */
-export function MembersDirectoryPanel({ className, onPickMember }: MembersDirectoryPanelProps) {
+export function MembersDirectoryPanel({
+  className,
+  onPickMember,
+  currentUserPresence,
+}: MembersDirectoryPanelProps) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { bySection, sectionLabels, rolePriorityOrder, loading, error } = useDirectoryMembers(!!user);
@@ -51,18 +60,21 @@ export function MembersDirectoryPanel({ className, onPickMember }: MembersDirect
                     {sectionTitleForRole(roleKey, sectionLabels)} — {list.length}
                   </h3>
                   <ul className="space-y-0.5">
-                    {list.map((m) => (
+                    {list.map((m) => {
+                      const effectiveRow = m.userId === user?.id ? (currentUserPresence ?? m.presence) : m.presence;
+                      return (
                       <li key={m.userId}>
                         <button
                           type="button"
                           onClick={() => {
-                            navigate(`/messages?dm=${encodeURIComponent(m.userId)}`);
+                            navigate(
+                              `/messages?section=messagerie&dm=${encodeURIComponent(m.userId)}`,
+                            );
                             onPickMember?.();
                           }}
                           className={cn(
                             "w-full flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors",
                             "hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
-                            m.userId === user?.id && "bg-primary/5",
                           )}
                         >
                           <div className="relative h-9 w-9 shrink-0">
@@ -73,7 +85,7 @@ export function MembersDirectoryPanel({ className, onPickMember }: MembersDirect
                                 <span className="text-[10px] font-semibold text-primary">{getInitials(m.displayName)}</span>
                               )}
                             </div>
-                            <PresenceAvatarBadge presence={m.presence} />
+                            <PresenceAvatarBadge presence={effectiveRow} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-medium text-foreground truncate leading-tight">{m.displayName}</p>
@@ -85,12 +97,16 @@ export function MembersDirectoryPanel({ className, onPickMember }: MembersDirect
                                 m.title?.trim() || null,
                               ]
                                 .filter(Boolean)
-                                .join(" · ") || presenceLabelFor(m.presence)}
+                                .join(" · ") || presenceLabelFor(effectiveRow)}
                             </p>
                           </div>
+                          <span className="shrink-0 text-muted-foreground/70" title="Message privé">
+                            <FontAwesomeIcon icon={faEnvelope} className="h-3.5 w-3.5" aria-hidden />
+                          </span>
                         </button>
                       </li>
-                    ))}
+                      );
+                    })}
                   </ul>
                 </section>
               );

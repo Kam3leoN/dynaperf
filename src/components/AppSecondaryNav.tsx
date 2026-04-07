@@ -1,4 +1,4 @@
-import { NavLink, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { useTheme } from "next-themes";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,7 @@ export function AppSecondaryNavPanel({ isAdmin, hasPermission, className }: AppS
   const { pathname } = useLocation();
   const { resolvedTheme } = useTheme();
   const active = getActiveRailSection(pathname, RAIL_SECTIONS_ALL);
+  const isWelcomeRoute = pathname === "/";
   const secondaryLogoSrc =
     resolvedTheme === "dark" ? SECONDARY_LOGO_DARK : SECONDARY_LOGO_LIGHT;
 
@@ -41,17 +42,21 @@ export function AppSecondaryNavPanel({ isAdmin, hasPermission, className }: AppS
       aria-label={`Sous-navigation ${active.label}`}
     >
       <div className="flex h-[4.25rem] shrink-0 items-center justify-start px-4">
-        <img
-          src={secondaryLogoSrc}
-          alt="DynaPerf"
-          className="h-10 w-auto max-w-[min(100%,220px)] object-contain object-left"
-          width={220}
-          height={42}
-          decoding="async"
-        />
+        <Link to="/" aria-label="DynaPerf — Accueil" className="inline-flex items-center">
+          <img
+            src={secondaryLogoSrc}
+            alt="DynaPerf"
+            className="h-10 w-auto max-w-[min(100%,220px)] object-contain object-left"
+            width={220}
+            height={42}
+            decoding="async"
+          />
+        </Link>
       </div>
 
-      {active.id === "messages" ? (
+      {isWelcomeRoute ? (
+        <div className="flex-1 min-h-0" />
+      ) : active.id === "messages" ? (
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <MessagingSecondaryNav />
         </div>

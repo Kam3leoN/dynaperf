@@ -28,6 +28,7 @@ export function BottomNav() {
   const hubPath = "/hub";
 
   const isMessagesActive = location.pathname.startsWith("/messages");
+  const messagesDefaultPath = "/messages?section=discussion";
   const isDriveActive = location.pathname === "/drive" || location.pathname.startsWith("/drive/");
   const isHubActive = location.pathname === "/hub" || location.pathname === "/";
 
@@ -49,7 +50,7 @@ export function BottomNav() {
           {messagesSection && (
             <button
               type="button"
-              onClick={() => navigate(messagesSection.to)}
+              onClick={() => navigate(messagesDefaultPath)}
               className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 touch-target"
             >
               <div

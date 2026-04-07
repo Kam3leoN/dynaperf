@@ -1,5 +1,4 @@
 import { useState, useEffect, lazy, Suspense } from "react";
-import { AiAssistant } from "@/components/AiAssistant";
 import { Link, useLocation } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -9,11 +8,12 @@ import {
   faUser,
   faKey,
   faEnvelope,
-  faThumbtack,
+  faCommentDots,
   faBell,
   faUsers,
   faGear,
   faMoneyBill,
+  faThumbtack,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { FiltersBar } from "./FiltersBar";
@@ -51,7 +51,7 @@ import { MembersDirectoryPanel } from "./MembersDirectoryPanel";
 import { AppNavRail } from "./AppNavRail";
 import { DesktopUserDock } from "./DesktopUserDock";
 import { AppSecondaryNav, AppSecondaryNavPanel } from "./AppSecondaryNav";
-import { getActiveRailSection, RAIL_SECTIONS_ALL } from "@/config/appNavigation";
+import { getActiveRailSection, getRailHeaderLabel, RAIL_SECTIONS_ALL } from "@/config/appNavigation";
 import { usePermissionGate } from "@/contexts/PermissionsContext";
 import { useOptionalMessagingSidebarHost } from "@/contexts/MessagingSidebarContext";
 import { cn } from "@/lib/utils";
@@ -65,7 +65,13 @@ interface AppLayoutProps {
   mainClassName?: string;
 }
 
-export function AppLayout({ children, filters, setFilters, availableYears, mainClassName }: AppLayoutProps) {
+export function AppLayout({
+  children,
+  filters,
+  setFilters,
+  availableYears,
+  mainClassName,
+}: AppLayoutProps) {
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin(user);
   const { hasPermission } = usePermissionGate();
@@ -74,13 +80,25 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
   const [secondaryNavSheetOpen, setSecondaryNavSheetOpen] = useState(false);
   const [displayName, setDisplayName] = useState<string | null>(null);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [unreadMessages, setUnreadMessages] = useState(0);
+  /** Non lus dans salons / groupes (messages avec group_id). */
+  const [unreadChannelMessages, setUnreadChannelMessages] = useState(0);
+  /** Non lus en MP (sans group_id, destinataire = moi). */
+  const [unreadDmMessages, setUnreadDmMessages] = useState(0);
   const { unreadCount: unreadNotifications } = useNotifications();
+  const [pinnedMessagesCount, setPinnedMessagesCount] = useState(0);
   const { row: presenceRow, setPresence } = useMyPresence(user?.id);
   const [membersSheetOpen, setMembersSheetOpen] = useState(false);
 
   const railSection = getActiveRailSection(location.pathname, RAIL_SECTIONS_ALL);
+  const railHeaderLabel = getRailHeaderLabel(location.pathname, RAIL_SECTIONS_ALL);
   const messagingSidebarHost = useOptionalMessagingSidebarHost();
+  /** Sur /messages (desktop), même total que la somme des points par salon dans la colonne. */
+  const channelNavUnread =
+    messagingSidebarHost?.api != null
+      ? messagingSidebarHost.api.totalChannelUnread
+      : unreadChannelMessages;
+  const dmNavUnread =
+    messagingSidebarHost?.api != null ? messagingSidebarHost.api.totalDmUnread : unreadDmMessages;
 
   useEffect(() => {
     if (!user) return;
@@ -94,32 +112,83 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
         setAvatarUrl(data?.avatar_url ?? null);
       });
 
-    supabase
-      .from("messages")
-      .select("id", { count: "exact", head: true })
-      .eq("recipient_id", user.id)
-      .eq("read", false)
-      .then(({ count }) => setUnreadMessages(count ?? 0));
+    const loadUnreadSplit = async () => {
+      const [dmRes, chRes] = await Promise.all([
+        supabase
+          .from("messages")
+          .select("id", { count: "exact", head: true })
+          .eq("recipient_id", user.id)
+          .eq("read", false)
+          .is("group_id", null),
+        supabase
+          .from("messages")
+          .select("id", { count: "exact", head: true })
+          .eq("read", false)
+          .neq("sender_id", user.id)
+          .not("group_id", "is", null),
+      ]);
+      setUnreadDmMessages(dmRes.count ?? 0);
+      setUnreadChannelMessages(chRes.count ?? 0);
+    };
+    void loadUnreadSplit();
   }, [user]);
 
   useEffect(() => {
     if (!user) return;
+    let debounce: ReturnType<typeof setTimeout> | undefined;
+    const loadUnreadSplit = async () => {
+      const [dmRes, chRes] = await Promise.all([
+        supabase
+          .from("messages")
+          .select("id", { count: "exact", head: true })
+          .eq("recipient_id", user.id)
+          .eq("read", false)
+          .is("group_id", null),
+        supabase
+          .from("messages")
+          .select("id", { count: "exact", head: true })
+          .eq("read", false)
+          .neq("sender_id", user.id)
+          .not("group_id", "is", null),
+      ]);
+      setUnreadDmMessages(dmRes.count ?? 0);
+      setUnreadChannelMessages(chRes.count ?? 0);
+    };
     const channel = supabase
-      .channel("unread-messages")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "messages", filter: `recipient_id=eq.${user.id}` },
-        () => {
-          supabase
-            .from("messages")
-            .select("id", { count: "exact", head: true })
-            .eq("recipient_id", user.id)
-            .eq("read", false)
-            .then(({ count }) => setUnreadMessages(count ?? 0));
-        }
-      )
+      .channel("unread-messages-split")
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => {
+        clearTimeout(debounce);
+        debounce = setTimeout(() => void loadUnreadSplit(), 280);
+      })
       .subscribe();
-    return () => { supabase.removeChannel(channel); };
+    return () => {
+      clearTimeout(debounce);
+      void supabase.removeChannel(channel);
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const loadPinnedCount = async () => {
+      const { count, error } = await supabase
+        .from("messages")
+        .select("id", { count: "exact", head: true })
+        .not("pinned_at", "is", null);
+      if (!error) setPinnedMessagesCount(count ?? 0);
+    };
+    void loadPinnedCount();
+    let debounce: ReturnType<typeof setTimeout> | undefined;
+    const channel = supabase
+      .channel("pinned-messages-count")
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => {
+        clearTimeout(debounce);
+        debounce = setTimeout(() => void loadPinnedCount(), 280);
+      })
+      .subscribe();
+    return () => {
+      clearTimeout(debounce);
+      void supabase.removeChannel(channel);
+    };
   }, [user]);
 
   useEffect(() => {
@@ -152,6 +221,12 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
       )}
     </Link>
   );
+
+  const messagingSearch = new URLSearchParams(location.search);
+  const messagingHeaderSection =
+    messagingSearch.get("section") === "messagerie" ? "messagerie" : "discussion";
+  const messagingViewPinned =
+    location.pathname.startsWith("/messages") && messagingSearch.get("view") === "pinned";
 
   const presenceStatusRow = (st: PresenceStatus) =>
     st === "invisible" ? (
@@ -292,7 +367,7 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
           </Link>
         </DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={signOut} className="flex items-center gap-2.5 cursor-pointer text-destructive focus:text-destructive">
+        <DropdownMenuItem onClick={() => void signOut()} className="flex items-center gap-2.5 cursor-pointer text-destructive focus:text-destructive">
           <FontAwesomeIcon icon={faRightFromBracket} className="h-4 w-4" />
           Déconnexion
         </DropdownMenuItem>
@@ -321,9 +396,23 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
               {railSection && (
                 <span
                   className="hidden sm:inline font-semibold text-foreground truncate max-w-[140px] md:max-w-[220px] shrink-0 text-[1.09375rem] leading-tight"
-                  title={railSection.label}
+                  title={
+                    location.pathname.startsWith("/messages")
+                      ? messagingViewPinned
+                        ? "Messages épinglés"
+                        : messagingHeaderSection === "messagerie"
+                          ? "Messages privés"
+                          : "Discussions"
+                      : (railHeaderLabel ?? railSection.label)
+                  }
                 >
-                  {railSection.label}
+                  {location.pathname.startsWith("/messages")
+                    ? messagingViewPinned
+                      ? "Messages épinglés"
+                      : messagingHeaderSection === "messagerie"
+                        ? "Messages privés"
+                        : "Discussions"
+                    : (railHeaderLabel ?? railSection.label)}
                 </span>
               )}
             </div>
@@ -336,27 +425,33 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
             )}
 
             {iconBadge(faBell, "/notifications", unreadNotifications, "Notifications")}
-            {location.pathname.startsWith("/messages") && messagingSidebarHost?.headerChrome && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="relative h-10 w-10 shrink-0 rounded-full"
-                title="Messages épinglés"
-                aria-label="Ouvrir les messages épinglés"
-                onClick={() => messagingSidebarHost.headerChrome?.onOpenPinned()}
+            {iconBadge(faThumbtack, "/messages?view=pinned", pinnedMessagesCount, "Messages épinglés")}
+            <div className="flex items-center gap-1">
+              <Link
+                to="/messages?section=discussion"
+                className="relative flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-secondary/60"
+                title="Discussions (salons et groupes)"
               >
-                <FontAwesomeIcon icon={faThumbtack} className="h-[18px] w-[18px] text-foreground/60" />
-                {messagingSidebarHost.headerChrome.pinnedCount > 0 && (
-                  <span className="absolute top-0 right-0 flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-                    {messagingSidebarHost.headerChrome.pinnedCount > 99
-                      ? "99+"
-                      : messagingSidebarHost.headerChrome.pinnedCount}
+                <FontAwesomeIcon icon={faCommentDots} className="h-5 w-5 text-foreground/60" />
+                {channelNavUnread > 0 && (
+                  <span className="absolute top-0 right-0 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive px-1 text-[11px] font-bold text-destructive-foreground">
+                    {channelNavUnread > 99 ? "99+" : channelNavUnread}
                   </span>
                 )}
-              </Button>
-            )}
-            {iconBadge(faEnvelope, "/messages", unreadMessages, "Messages")}
+              </Link>
+              <Link
+                to="/messages?section=messagerie"
+                className="relative flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-secondary/60"
+                title="Messages privés"
+              >
+                <FontAwesomeIcon icon={faEnvelope} className="h-5 w-5 text-foreground/60" />
+                {dmNavUnread > 0 && (
+                  <span className="absolute top-0 right-0 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-destructive px-1 text-[11px] font-bold text-destructive-foreground">
+                    {dmNavUnread > 99 ? "99+" : dmNavUnread}
+                  </span>
+                )}
+              </Link>
+            </div>
 
             <Button
               type="button"
@@ -412,7 +507,7 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
           className="hidden shell:flex fixed right-0 top-0 bottom-0 z-[45] w-[260px] flex-col border-l border-border/40 bg-muted/10 min-h-0"
           aria-label="Annuaire des membres"
         >
-          <MembersDirectoryPanel className="flex-1 min-h-0" />
+          <MembersDirectoryPanel className="flex-1 min-h-0" currentUserPresence={presenceRow} />
         </aside>
       </div>
 
@@ -437,14 +532,13 @@ export function AppLayout({ children, filters, setFilters, availableYears, mainC
           <MembersDirectoryPanel
             className="flex-1 min-h-0 border-0"
             onPickMember={() => setMembersSheetOpen(false)}
+            currentUserPresence={presenceRow}
           />
         </SheetContent>
       </Sheet>
 
       <DesktopUserDock profileSlot={profileButton()} />
 
-      {/* AI Assistant FAB */}
-      <AiAssistant />
     </div>
   );
 }

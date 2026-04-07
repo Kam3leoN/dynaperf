@@ -28,6 +28,24 @@ export interface MessagingGroupRow {
 
 }
 
+/** Colonne gauche : salons / groupes vs liste de personnes (MP). */
+export type MessagingSection = "discussion" | "messagerie";
+
+/** Conversation MP avec au moins un message (hors groupe), triée par activité. */
+export interface MessagingDmConversationRow {
+
+  userId: string;
+
+  displayName: string;
+
+  avatarUrl: string | null;
+
+  lastAt: string;
+
+  unread: number;
+
+}
+
 
 
 export interface MessagingSidebarApi {
@@ -56,12 +74,29 @@ export interface MessagingSidebarApi {
 
   viewerUserId: string | undefined;
 
-}
+  /**
+   * Somme des non lus sur tous les salons + groupes (même règle que la liste).
+   * Permet d’aligner le badge « bulle » de la navbar sur les points par canal.
+   */
+  totalChannelUnread: number;
 
-/** Actions / badges dans la barre app (ex. épingle) — renseigné par la page Messages. */
-export interface MessagingHeaderChrome {
-  pinnedCount: number;
-  onOpenPinned: () => void;
+  /** Non lus MP (aligné sur l’état local des messages). */
+  totalDmUnread: number;
+
+  /** Vue courante : salons / groupes ou personnes (historique MP). */
+  messagingSection: MessagingSection;
+
+  setMessagingSection: (s: MessagingSection) => void;
+
+  /** Partenaires MP (au moins un message 1:1), du plus récent au plus ancien. */
+  dmConversations: MessagingDmConversationRow[];
+
+  /**
+   * Retire la conversation MP de la liste pour l’utilisateur courant uniquement
+   * (pas de suppression côté autre partie).
+   */
+  hideDmPartner: (partnerUserId: string) => Promise<void>;
+
 }
 
 interface HostValue {
@@ -69,10 +104,6 @@ interface HostValue {
   api: MessagingSidebarApi | null;
 
   setApi: (a: MessagingSidebarApi | null) => void;
-
-  headerChrome: MessagingHeaderChrome | null;
-
-  setHeaderChrome: (h: MessagingHeaderChrome | null) => void;
 
 }
 
@@ -86,9 +117,7 @@ export function MessagingSidebarProvider({ children }: { children: ReactNode }) 
 
   const [api, setApi] = useState<MessagingSidebarApi | null>(null);
 
-  const [headerChrome, setHeaderChrome] = useState<MessagingHeaderChrome | null>(null);
-
-  const value = useMemo(() => ({ api, setApi, headerChrome, setHeaderChrome }), [api, headerChrome]);
+  const value = useMemo(() => ({ api, setApi }), [api]);
 
   return <MessagingSidebarContext.Provider value={value}>{children}</MessagingSidebarContext.Provider>;
 

@@ -1,6 +1,6 @@
 import { AppLayout } from "@/components/AppLayout";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faBell, faCheck, faCheckDouble } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faCheckDouble } from "@fortawesome/free-solid-svg-icons";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -14,23 +14,14 @@ export default function Notifications() {
   return (
     <AppLayout>
       <div className="max-w-2xl mx-auto space-y-4">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
-              <FontAwesomeIcon icon={faBell} className="h-5 w-5 text-primary" />
-              Notifications
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Vos dernières notifications.
-            </p>
-          </div>
-          {unreadCount > 0 && (
+        {unreadCount > 0 && (
+          <div className="flex justify-end">
             <Button variant="ghost" size="sm" onClick={markAllAsRead} className="text-xs gap-1.5">
               <FontAwesomeIcon icon={faCheckDouble} className="h-3 w-3" />
               Tout lire
             </Button>
-          )}
-        </div>
+          </div>
+        )}
 
         {loading ? (
           <div className="flex items-center justify-center py-16">

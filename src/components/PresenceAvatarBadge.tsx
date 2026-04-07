@@ -15,8 +15,10 @@ const BADGE_SIZE = 12;
 export function PresenceAvatarBadge({ presence, className }: PresenceAvatarBadgeProps) {
   const s: PresenceStatus = effectivePresence(presence);
   const color = PRESENCE_COLORS[s];
-  const isHollow = s === "invisible";
   const isDnd = s === "dnd";
+
+  // Déconnecté / invisible = aucun dot affiché.
+  if (s === "invisible") return null;
 
   if (isDnd) {
     return (
@@ -44,22 +46,12 @@ export function PresenceAvatarBadge({ presence, className }: PresenceAvatarBadge
         "absolute bottom-0 right-0 z-10 rounded-full box-border pointer-events-none",
         className,
       )}
-      style={
-        isHollow
-          ? {
-              width: BADGE_SIZE,
-              height: BADGE_SIZE,
-              backgroundColor: "transparent",
-              border: `2px solid ${color}`,
-              boxShadow: PRESENCE_BADGE_GAP,
-            }
-          : {
-              width: BADGE_SIZE,
-              height: BADGE_SIZE,
-              backgroundColor: color,
-              boxShadow: PRESENCE_BADGE_GAP,
-            }
-      }
+      style={{
+        width: BADGE_SIZE,
+        height: BADGE_SIZE,
+        backgroundColor: color,
+        boxShadow: PRESENCE_BADGE_GAP,
+      }}
       aria-hidden
     />
   );

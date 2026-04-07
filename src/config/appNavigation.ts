@@ -22,6 +22,7 @@ import {
   faKey,
   faMoneyBill,
   faBell,
+  faQrcode,
 } from "@fortawesome/free-solid-svg-icons";
 
 /** Entrée du rail (icône seule). */
@@ -72,6 +73,7 @@ const home: RailSection = {
     { label: "Profil", to: "/profile", icon: faUser },
     { label: "Mot de passe", to: "/change-password", icon: faKey },
     { label: "Mes primes", to: "/primes", icon: faMoneyBill },
+    { label: "Gestion QrCode", to: "/qrcodes", icon: faQrcode },
     { label: "Notifications", to: "/notifications", icon: faBell },
   ],
   /** Raccourci maison retiré du rail : le logo en bandeau joue le rôle d’accueil. */
@@ -80,9 +82,9 @@ const home: RailSection = {
 
 const messagerie: RailSection = {
   id: "messages",
-  label: "Messagerie",
+  label: "Messages",
   icon: faComment,
-  to: "/messages",
+  to: "/messages?section=discussion",
   pathPrefixes: ["/messages"],
   children: [],
   requiredPermission: "nav.messages",
@@ -144,6 +146,16 @@ const drive: RailSection = {
   children: [{ label: "Mon Drive", to: "/drive", icon: faFolder }],
 };
 
+const qrcodes: RailSection = {
+  id: "qrcodes",
+  label: "QrCode",
+  icon: faQrcode,
+  to: "/qrcodes",
+  requiredPermission: "nav.hub",
+  pathPrefixes: ["/qrcodes"],
+  children: [{ label: "Gestion QrCode", to: "/qrcodes", icon: faQrcode }],
+};
+
 const sondages: RailSection = {
   id: "sondages",
   label: "Sondages",
@@ -186,6 +198,7 @@ const ALL_RAIL_SECTIONS: RailSection[] = [
   suivis,
   reseau,
   drive,
+  qrcodes,
   sondages,
   historique,
   admin,
@@ -249,4 +262,23 @@ export function getActiveRailSection(pathname: string, sections: RailSection[]):
     }
   }
   return best;
+}
+
+/**
+ * Titre affiché dans le header (bandeau) : pour la zone « Accueil », le libellé de la sous-page
+ * (ex. Notifications, Profil) au lieu de « Accueil » lorsque l’URL correspond à une entrée du menu secondaire.
+ */
+export function getRailHeaderLabel(pathname: string, sections: RailSection[]): string | null {
+  const active = getActiveRailSection(pathname, sections);
+  if (!active) return null;
+  if (active.id !== "home") return active.label;
+
+  const normalized = pathname.split("?")[0];
+  for (const c of active.children) {
+    const base = c.to.split("?")[0];
+    if (normalized === base || normalized.startsWith(`${base}/`)) {
+      return c.label;
+    }
+  }
+  return active.label;
 }

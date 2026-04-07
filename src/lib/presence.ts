@@ -8,6 +8,9 @@ export interface UserPresenceRow {
   updated_at: string;
 }
 
+/** Fenêtre max sans heartbeat avant de considérer l'utilisateur déconnecté. */
+export const PRESENCE_HEARTBEAT_TIMEOUT_MS = 20_000;
+
 export const PRESENCE_COLORS: Record<PresenceStatus, string> = {
   online: "#23a559",
   idle: "#f0b232",
@@ -25,11 +28,24 @@ export const PRESENCE_LABELS: Record<PresenceStatus, string> = {
 };
 
 /**
- * Statut affiché pour un autre utilisateur (ou avant chargement) : sans ligne = hors ligne / invisible.
- * Si `expires_at` est dépassé, retour à « en ligne » (fin d’un statut temporisé).
+ * Un utilisateur est considéré connecté si son heartbeat est récent.
+ */
+export function isPresenceConnected(row: UserPresenceRow | null | undefined): boolean {
+  if (!row) return false;
+  const updatedAtMs = new Date(row.updated_at).getTime();
+  if (Number.isNaN(updatedAtMs)) return false;
+  return Date.now() - updatedAtMs <= PRESENCE_HEARTBEAT_TIMEOUT_MS;
+}
+
+/**
+ * Statut affiché :
+ * - déconnecté => invisible (pas de dot),
+ * - connecté => statut choisi (online/idle/dnd/invisible),
+ * - idle/dnd temporisés expirés => online.
  */
 export function effectivePresence(row: UserPresenceRow | null | undefined): PresenceStatus {
   if (!row) return "invisible";
+  if (!isPresenceConnected(row)) return "invisible";
   if (row.expires_at) {
     const exp = new Date(row.expires_at).getTime();
     if (!Number.isNaN(exp) && Date.now() >= exp) return "online";

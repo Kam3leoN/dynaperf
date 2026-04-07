@@ -7,6 +7,8 @@ import {
   faBell,
   faUpload,
   faGear,
+  faCommentDots,
+  faEnvelope,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/hooks/useAuth";
@@ -72,7 +74,10 @@ export function MobileMoreMenu({ onClose }: Props) {
       {sections.map((section) => (
         <MenuGroup key={section.id} title={section.label}>
           {section.id === "messages" ? (
-            <MenuItem icon={section.icon} label="Messagerie" to="/messages" onClick={onClose} />
+            <>
+              <MenuItem icon={faCommentDots} label="Discussions" to="/messages?section=discussion" onClick={onClose} />
+              <MenuItem icon={faEnvelope} label="Messages privés" to="/messages?section=messagerie" onClick={onClose} />
+            </>
           ) : (
             filterSecondaryNavItems(section.children, hasPermission).map((item) => (
               <MenuItem key={item.to} icon={item.icon} label={item.label} to={item.to} onClick={onClose} />
@@ -100,9 +105,9 @@ export function MobileMoreMenu({ onClose }: Props) {
           icon={faRightFromBracket}
           label="Déconnexion"
           destructive
-          onClick={() => {
+          onClick={async () => {
             onClose();
-            signOut();
+            await signOut();
           }}
         />
       </MenuGroup>

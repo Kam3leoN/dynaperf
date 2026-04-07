@@ -964,6 +964,24 @@ export type Database = {
         }
         Relationships: []
       }
+      user_dm_hidden_partners: {
+        Row: {
+          hidden_at: string
+          partner_user_id: string
+          user_id: string
+        }
+        Insert: {
+          hidden_at?: string
+          partner_user_id: string
+          user_id: string
+        }
+        Update: {
+          hidden_at?: string
+          partner_user_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string
@@ -1608,6 +1626,10 @@ export type Database = {
       }
       reorder_messaging_channels: {
         Args: { p_private_group_ids: string[]; p_public_salon_ids: string[] }
+        Returns: undefined
+      }
+      mark_group_messages_read: {
+        Args: { p_group_id: string }
         Returns: undefined
       }
       set_message_pin_state: {
