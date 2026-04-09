@@ -227,12 +227,12 @@ function normUid(s: string) {
  * alors que les lignes profiles / user_roles existent déjà.
  */
 async function fetchManagedUsersViaRpc(): Promise<ManagedUser[] | null> {
-  const { data: authRows, error: rpcErr } = await supabase.rpc("admin_auth_users_preview");
+  const { data: authRows, error: rpcErr } = await (supabase.rpc as any)("admin_auth_users_preview");
   if (rpcErr || !authRows?.length) return null;
 
   const [rolesRes, profilesRes, configsRes, primesRes] = await Promise.all([
     supabase.from("user_roles").select("*"),
-    supabase.from("profiles").select("user_id, display_name, avatar_url, title, org_titles"),
+    supabase.from("profiles").select("user_id, display_name, avatar_url, title") as any,
     supabase.from("collaborateur_config").select("*"),
     supabase.from("user_custom_primes").select("*").order("created_at"),
   ]);
@@ -242,9 +242,9 @@ async function fetchManagedUsersViaRpc(): Promise<ManagedUser[] | null> {
   const allConfigs = configsRes.data;
   const allCustomPrimes = primesRes.data;
 
-  return authRows.map((u) => {
+  return (authRows as any[]).map((u: any) => {
     const uid = normUid(u.id);
-    const profile = allProfiles?.find((p) => normUid(p.user_id) === uid);
+    const profile = (allProfiles as any[])?.find((p: any) => normUid(p.user_id) === uid);
     return {
       id: u.id,
       email: u.email ?? "",
@@ -378,11 +378,11 @@ export default function Admin() {
   useEffect(() => { loadUsers(); }, [loadUsers]);
 
   useEffect(() => {
-    void supabase
+    void (supabase as any)
       .from("app_permissions")
       .select("key, description")
       .order("key")
-      .then(({ data }) => {
+      .then(({ data }: any) => {
         if (data?.length) setAppPermissionCatalog(data);
       });
   }, []);
@@ -417,7 +417,7 @@ export default function Admin() {
       if (role !== "none") {
         const { error: insErr } = await supabase.from("user_roles").insert({
           user_id: userId,
-          role,
+          role: role as any,
         });
         if (insErr) {
           const res = await supabase.functions.invoke("create-user", {
@@ -486,7 +486,7 @@ export default function Admin() {
             await toastEdgeInvokeFailure(sav, "Impossible d'enregistrer l'URL de l'avatar");
           }
         } else {
-          toast.error(up.message);
+          toast.error((up as any).message);
         }
       }
       toast.success(`Utilisateur ${email} créé avec succès`);
@@ -521,7 +521,7 @@ export default function Admin() {
   const handleAvatarChange = async (userId: string, file: File) => {
     const up = await uploadUserAvatarToBucket(userId, file);
     if (!up.ok) {
-      toast.error(up.message);
+      toast.error((up as any).message);
       return;
     }
     const url = withAvatarCacheBust(up.publicUrl);
@@ -557,17 +557,17 @@ export default function Admin() {
     const loadOverrides = async () => {
       let cat = appPermissionCatalog;
       if (!cat.length) {
-        const { data: fresh } = await supabase.from("app_permissions").select("key, description").order("key");
+        const { data: fresh } = await (supabase as any).from("app_permissions").select("key, description").order("key");
         cat = fresh ?? [];
-        if (cat.length) setAppPermissionCatalog(cat);
+        if (cat.length) setAppPermissionCatalog(cat as any);
       }
-      const { data: ovs } = await supabase
+      const { data: ovs } = await (supabase as any)
         .from("user_permission_overrides")
         .select("permission_key, allowed")
         .eq("user_id", u.id);
       const next: Record<string, "inherit" | "allow" | "deny"> = {};
-      for (const row of cat) next[row.key] = "inherit";
-      for (const o of ovs ?? []) {
+      for (const row of cat as any[]) next[row.key] = "inherit";
+      for (const o of (ovs ?? []) as any[]) {
         if (next[o.permission_key] !== undefined) {
           next[o.permission_key] = o.allowed ? "allow" : "deny";
         }
@@ -638,7 +638,7 @@ export default function Admin() {
       return;
     }
 
-    const { error: orgTitlesErr } = await supabase
+    const { error: orgTitlesErr } = await (supabase as any)
       .from("profiles")
       .update({ org_titles: editOrgTitles })
       .eq("user_id", editUser.id);
@@ -651,13 +651,13 @@ export default function Admin() {
     for (const row of appPermissionCatalog) {
       const mode = editPermOverride[row.key] ?? "inherit";
       if (mode === "inherit") {
-        await supabase
+        await (supabase as any)
           .from("user_permission_overrides")
           .delete()
           .eq("user_id", editUser.id)
           .eq("permission_key", row.key);
       } else {
-        const { error: upErr } = await supabase.from("user_permission_overrides").upsert(
+        const { error: upErr } = await (supabase as any).from("user_permission_overrides").upsert(
           {
             user_id: editUser.id,
             permission_key: row.key,

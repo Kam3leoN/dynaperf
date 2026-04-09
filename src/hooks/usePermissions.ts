@@ -31,7 +31,7 @@ export function usePermissions(userId: string | undefined, authLoading: boolean)
     setLoading(true);
 
     (async () => {
-      const { data, error } = await supabase.rpc("get_my_permissions");
+      const { data, error } = await (supabase.rpc as any)("get_my_permissions");
       if (cancelled) return;
       if (error) {
         setAllowedKeys(new Set());

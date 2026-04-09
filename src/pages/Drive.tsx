@@ -428,7 +428,7 @@ export default function Drive() {
   const toggleFavorite = async (doc: DriveDocument, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!isAdmin) return;
-    const { error } = await supabase.from("drive_documents").update({ is_favorite: !doc.is_favorite }).eq("id", doc.id);
+    const { error } = await (supabase as any).from("drive_documents").update({ is_favorite: !doc.is_favorite }).eq("id", doc.id);
     if (error) {
       toast.error(error.message);
       return;

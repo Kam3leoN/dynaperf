@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 
-type MapLibreModule = typeof import("maplibre-gl").default;
+type MapLibreModule = any;
 
 interface Club {
   id: string;

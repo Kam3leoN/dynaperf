@@ -19,7 +19,7 @@ export function useMyPresence(userId: string | undefined) {
       setRow(null);
       return;
     }
-    const { data, error } = await supabase.from("user_presence").select("*").eq("user_id", userId).maybeSingle();
+    const { data, error } = await (supabase as any).from("user_presence").select("*").eq("user_id", userId).maybeSingle();
     if (error) {
       console.error("[useMyPresence] select", error);
       toast.error("Présence : impossible de charger le statut.");
@@ -30,7 +30,7 @@ export function useMyPresence(userId: string | undefined) {
     firstLoadByUserRef.current[userId] = true;
 
     if (!data || shouldForceOnline) {
-      const ins = await supabase
+      const ins = await (supabase as any)
         .from("user_presence")
         .upsert({ user_id: userId, status: "online" as const, expires_at: null }, { onConflict: "user_id" })
         .select("*")
@@ -92,7 +92,7 @@ export function useMyPresence(userId: string | undefined) {
 
     const heartbeat = window.setInterval(() => {
       touchLocalPresence();
-      void supabase
+      void (supabase as any)
         .from("user_presence")
         .upsert(
           { user_id: userId, status: currentStatus, expires_at: currentExpiresAt },
@@ -117,7 +117,7 @@ export function useMyPresence(userId: string | undefined) {
           updated_at: new Date().toISOString(),
         };
       });
-      void supabase
+      void (supabase as any)
         .from("user_presence")
         .upsert(
           { user_id: userId, status: currentStatus, expires_at: currentExpiresAt },
@@ -138,7 +138,7 @@ export function useMyPresence(userId: string | undefined) {
   const setPresence = useCallback(
     async (status: PresenceStatus, expiresAtIso: string | null) => {
       if (!userId) return;
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from("user_presence")
         .upsert(
           { user_id: userId, status, expires_at: expiresAtIso },

@@ -42,7 +42,7 @@ export interface StepZeroData {
   nbNoShow?: number;
   nbParticipants?: number;
   nbRdvPris?: number;
-  customFieldValues?: Record<string, unknown>;
+  customFieldValues?: Record<string, any>;
 }
 
 // Maps special field types to StepZeroData keys so audit save logic still works
@@ -63,7 +63,7 @@ interface CustomFieldDef {
   id: string;
   field_label: string;
   field_type: string;
-  field_options: unknown;
+  field_options: Record<string, any> | null;
   is_required: boolean;
   sort_order: number;
   col_span: number;
@@ -183,7 +183,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
         next = { ...next, [dataKey]: value } as StepZeroData;
       }
       if (fieldType === "time") {
-        next.heureEvenement = value;
+        next.heureEvenement = value as string;
       }
       if (hideSubmitButton) {
         setTimeout(() => onSubmit(next), 0);

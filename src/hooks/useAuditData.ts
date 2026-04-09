@@ -77,9 +77,9 @@ export function useAuditData() {
       .channel("audits-realtime")
       .on("postgres_changes", { event: "*", schema: "public", table: "audits" }, (payload) => {
         if (payload.eventType === "INSERT") {
-          setAudits((prev) => [dbToAudit(payload.new), ...prev]);
+          setAudits((prev) => [dbToAudit(payload.new as any), ...prev]);
         } else if (payload.eventType === "UPDATE") {
-          setAudits((prev) => prev.map((a) => a.id === payload.new.id ? dbToAudit(payload.new) : a));
+          setAudits((prev) => prev.map((a) => a.id === (payload.new as any).id ? dbToAudit(payload.new as any) : a));
         } else if (payload.eventType === "DELETE") {
           setAudits((prev) => prev.filter((a) => a.id !== payload.old.id));
         }

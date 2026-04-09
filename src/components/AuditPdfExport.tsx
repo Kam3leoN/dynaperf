@@ -30,7 +30,7 @@ interface CustomFieldDef {
   id: string;
   field_label: string;
   field_type: string;
-  field_options: unknown;
+  field_options: Record<string, any> | null;
   sort_order: number;
 }
 
@@ -50,8 +50,8 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
         return;
       }
 
-      const items = (detail.items as Record<string, unknown>) ?? {};
-      const customFieldValues = (items.__custom_fields as Record<string, unknown> | undefined) || {};
+      const items: Record<string, any> = (detail.items as Record<string, any>) ?? {};
+      const customFieldValues: Record<string, any> = items.__custom_fields || {};
       const fields = (customFields as CustomFieldDef[]) || [];
       const allItems = config.categories.flatMap((cat) =>
         cat.items.map((item) => ({ ...item, categoryName: cat.name }))
@@ -79,7 +79,7 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
         const val = customFieldValues[f.id];
         if (val === undefined || val === null || val === "") return null;
         if (isRatingType(f.field_type)) {
-          const n = typeof val === "number" ? val : parseInt(val) || 0;
+          const n = typeof val === "number" ? val : parseInt(val as string) || 0;
           return "★".repeat(n) + "☆".repeat(Math.max(0, 5 - n));
         }
         if (f.field_type === "stat_percent") return `${val} %`;

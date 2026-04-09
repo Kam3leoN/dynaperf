@@ -120,10 +120,10 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setFieldType(f.field_type);
     setIsRequired(f.is_required);
     setColSpan(f.col_span || 6);
-    const opts = f.field_options?.options;
+    const opts = (f.field_options as any)?.options;
     setSelectOptions(Array.isArray(opts) && opts.length > 0 ? opts : [""]);
-    setSourceNumerator(f.field_options?.source_numerator || f.field_options?.source_a || "");
-    setSourceDenominator(f.field_options?.source_denominator || f.field_options?.source_b || "");
+    setSourceNumerator((f.field_options as any)?.source_numerator || (f.field_options as any)?.source_a || "");
+    setSourceDenominator((f.field_options as any)?.source_denominator || (f.field_options as any)?.source_b || "");
     // no operation selector needed
     setAddAtPosition(null);
     setDialogOpen(true);
@@ -187,7 +187,7 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
       field_label: fieldLabel.trim(),
       field_type: fieldType,
       is_required: needsSources ? false : isRequired,
-      field_options: fieldOpts,
+      field_options: fieldOpts as any,
       sort_order: editing ? editing.sort_order : fields.length,
       col_span: colSpan,
       col_offset_before: addAtPosition ? Math.max(addAtPosition.colStart - 1, 0) : 0,
