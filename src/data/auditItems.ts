@@ -9,6 +9,7 @@ export interface AuditItemDef {
   inputType: "boolean" | "number" | "checklist";
   scoringRules?: string;
   checklistItems?: string[];
+  checklistPointsMap?: number[];
   sortOrder: number;
   categoryId: string;
   autoField?: string;

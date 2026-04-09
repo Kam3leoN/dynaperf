@@ -331,7 +331,15 @@ export default function AdminAuditGridInline() {
       scoring_rules: finalScoringRules,
       input_type: itemForm.input_type,
       checklist_items: itemForm.input_type === "checklist" && itemForm.checklist_items.trim()
-        ? itemForm.checklist_items.split("\n").map((s) => s.trim()).filter(Boolean)
+        ? (() => {
+            try {
+              const parsed = JSON.parse(itemForm.checklist_items);
+              if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0].label === "string") {
+                return parsed;
+              }
+            } catch { /* not JSON */ }
+            return itemForm.checklist_items.split("\n").map((s) => s.trim()).filter(Boolean);
+          })()
         : null,
       interets: itemForm.interets.trim(),
       comment_y_parvenir: itemForm.comment_y_parvenir.trim(),
