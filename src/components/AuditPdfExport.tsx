@@ -72,7 +72,7 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
       // ── Informations générales (dynamic) ──
       html += `<div class="section-title">Informations générales</div>`;
 
-      const isStatType = (ft: string) => ["number", "stat_percent", "stat_sum", "stat_diff"].includes(ft);
+      const isStatType = (ft: string) => ["number", "stat_percent", "stat_sum", "stat_diff", "stat_add"].includes(ft);
       const isRatingType = (ft: string) => ["qualite_lieu_rating", "qualite_rating", "rating"].includes(ft);
 
       const getDisplayValue = (f: CustomFieldDef): string | null => {

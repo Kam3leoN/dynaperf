@@ -248,7 +248,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
 
   // Auto-calculate stat_diff fields (A - B, raw number no sign)
   useEffect(() => {
-    const diffFields = customFields.filter((f) => f.field_type === "stat_diff");
+    const diffFields = customFields.filter((f) => f.field_type === "stat_diff" || f.field_type === "stat_add");
     if (diffFields.length === 0) return;
     setData((prev) => {
       const cv = { ...prev.customFieldValues };
@@ -259,7 +259,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
         if (!aId || !bId) continue;
         const a = Number(cv[aId]) || 0;
         const b = Number(cv[bId]) || 0;
-        const result = a - b;
+        const result = field.field_type === "stat_add" ? a + b : a - b;
         if (cv[field.id] !== result) {
           cv[field.id] = result;
           changed = true;
@@ -418,6 +418,23 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
             </span>
             <span className="text-muted-foreground text-xs">
               ({a} − {b})
+            </span>
+          </div>
+        );
+      }
+      case "stat_add": {
+        const aId = field.field_options?.source_a;
+        const bId = field.field_options?.source_b;
+        const a = Number(data.customFieldValues?.[aId]) || 0;
+        const b = Number(data.customFieldValues?.[bId]) || 0;
+        const result = a + b;
+        return (
+          <div className="flex items-center gap-2 h-12 px-4 rounded-xl bg-muted text-sm cursor-not-allowed">
+            <span className="font-semibold text-foreground">
+              {result}
+            </span>
+            <span className="text-muted-foreground text-xs">
+              ({a} + {b})
             </span>
           </div>
         );
