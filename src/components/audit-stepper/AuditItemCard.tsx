@@ -8,6 +8,7 @@ import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { RichHtmlView } from "@/components/ui/rich-html-view";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { getAuditItemMaxPoints } from "@/lib/auditChecklistPoints";
 import {
   AuditItemDef,
   calcParticipantsScore,
@@ -99,15 +100,6 @@ function computeScore(item: AuditItemDef, boolVal: boolean | null, numVal: strin
     return checklist.filter(Boolean).length;
   }
   return 0;
-}
-
-function getItemMaxScore(item: AuditItemDef): number {
-  if (item.inputType !== "checklist") return item.maxPoints;
-  if (item.checklistPointsMap?.length) {
-    return item.checklistPointsMap.reduce((sum, points) => sum + Math.max(0, points), 0);
-  }
-  if (item.checklistItems?.length) return item.checklistItems.length;
-  return item.maxPoints;
 }
 
 const COMMENT_SYNC_DEBOUNCE_MS = 400;
@@ -206,7 +198,7 @@ function AuditItemCardComponent({ item, index, categoryName, answer, onChange, s
   }, [comment]);
 
   const currentScore = notApplicable ? 0 : computeScore(item, boolVal, numVal, checklist, autoValue);
-  const maxScore = getItemMaxScore(item);
+  const maxScore = getAuditItemMaxPoints(item);
   const isMax = !notApplicable && currentScore === maxScore;
   const isTouched = answer?.touched || false;
   const isExplicitZero = !notApplicable && isTouched && currentScore === 0;
