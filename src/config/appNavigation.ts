@@ -40,6 +40,8 @@ export interface RailSection {
   requireAdmin?: boolean;
   /** Clé `app_permissions` (ex. nav.audits) ; absente du menu si refusé. */
   requiredPermission?: string;
+  /** Clé `app_modules` ; absente si le module est désactivé. */
+  requiredModule?: string;
   /** Absente du rail vertical (lg) ; reste dans getRailSections pour mobile / résolution d’URL. */
   hideFromRail?: boolean;
 }
