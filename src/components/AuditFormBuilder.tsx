@@ -120,10 +120,10 @@ export function AuditFormBuilder({ auditTypeKey }: Props) {
     setFieldType(f.field_type);
     setIsRequired(f.is_required);
     setColSpan(f.col_span || 6);
-    const opts = f.field_options?.options;
+    const opts = (f.field_options as any)?.options;
     setSelectOptions(Array.isArray(opts) && opts.length > 0 ? opts : [""]);
-    setSourceNumerator(f.field_options?.source_numerator || f.field_options?.source_a || "");
-    setSourceDenominator(f.field_options?.source_denominator || f.field_options?.source_b || "");
+    setSourceNumerator((f.field_options as any)?.source_numerator || (f.field_options as any)?.source_a || "");
+    setSourceDenominator((f.field_options as any)?.source_denominator || (f.field_options as any)?.source_b || "");
     // no operation selector needed
     setAddAtPosition(null);
     setDialogOpen(true);

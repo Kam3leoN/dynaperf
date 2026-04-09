@@ -50,8 +50,8 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
         return;
       }
 
-      const items = (detail.items as Record<string, unknown>) ?? {};
-      const customFieldValues = (items.__custom_fields as Record<string, unknown> | undefined) || {};
+      const items: Record<string, any> = (detail.items as Record<string, any>) ?? {};
+      const customFieldValues: Record<string, any> = items.__custom_fields || {};
       const fields = (customFields as CustomFieldDef[]) || [];
       const allItems = config.categories.flatMap((cat) =>
         cat.items.map((item) => ({ ...item, categoryName: cat.name }))

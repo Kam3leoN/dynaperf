@@ -82,8 +82,8 @@ export function useOfflineSync() {
           const { error } = await supabase.from(item.table as PublicTableName).insert(item.data as never);
           if (error) throw error;
         } else if (item.operation === "update") {
-          const { id: rowId, ...rest } = item.data;
-          const { error } = await supabase.from(item.table as PublicTableName).update(rest as never).eq("id", rowId);
+          const { id: rowId, ...rest } = item.data as any;
+          const { error } = await supabase.from(item.table as PublicTableName).update(rest as never).eq("id", rowId as string);
           if (error) throw error;
         } else if (item.operation === "delete") {
           const { error } = await supabase.from(item.table as PublicTableName).delete().eq("id", item.data.id as string);

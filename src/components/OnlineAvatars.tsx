@@ -23,7 +23,7 @@ export function OnlineAvatars() {
       ]);
       if (profilesRes.data) setProfiles(profilesRes.data);
       const map: Record<string, UserPresenceRow> = {};
-      (presenceRes.data ?? []).forEach((r) => {
+      (presenceRes.data ?? []).forEach((r: any) => {
         map[r.user_id] = r as UserPresenceRow;
       });
       setPresenceByUser(map);

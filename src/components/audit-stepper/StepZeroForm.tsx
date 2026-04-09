@@ -42,7 +42,7 @@ export interface StepZeroData {
   nbNoShow?: number;
   nbParticipants?: number;
   nbRdvPris?: number;
-  customFieldValues?: Record<string, unknown>;
+  customFieldValues?: Record<string, any>;
 }
 
 // Maps special field types to StepZeroData keys so audit save logic still works
