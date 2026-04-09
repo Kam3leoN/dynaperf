@@ -82,7 +82,7 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
         )}
       </motion.div>
 
-      {/* Card 2: Planifiés — projection commerciale */}
+      {/* Card 2: Planifiés — valeur absolue */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -95,22 +95,13 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
         </p>
         <div className="flex items-baseline gap-1 sm:gap-1.5 mt-1.5 sm:mt-2">
           <span className="text-2xl sm:text-3xl font-bold tabular-nums text-amber-600 dark:text-amber-400">{auditsPlanifies}</span>
-          {obj > 0 && <span className="text-sm sm:text-base text-muted-foreground tabular-nums">/{obj}</span>}
         </div>
-        {obj > 0 && (
-          <div className="mt-2 space-y-1">
-            <Progress value={pctPlanifies} className="h-2" />
-            <p className="text-[10px] text-muted-foreground tabular-nums font-medium">
-              {pctPlanifies.toFixed(0)}% de l'objectif
-            </p>
-          </div>
-        )}
-        <p className="text-[10px] text-muted-foreground mt-1 tabular-nums">
+        <p className="text-[10px] text-muted-foreground mt-2 tabular-nums">
           Encore {restantApresPlanif} à programmer
         </p>
       </motion.div>
 
-      {/* Card 3: Restant à faire */}
+      {/* Card 3: Restant à faire — valeur absolue */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -123,16 +114,7 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
         </p>
         <div className="flex items-baseline gap-1 sm:gap-1.5 mt-1.5 sm:mt-2">
           <span className="text-2xl sm:text-3xl font-bold tabular-nums text-foreground">{restant}</span>
-          {obj > 0 && <span className="text-sm sm:text-base text-muted-foreground tabular-nums">/{obj}</span>}
         </div>
-        {obj > 0 && (
-          <div className="mt-2 space-y-1">
-            <Progress value={pctRestant} className="h-2" />
-            <p className="text-[10px] text-muted-foreground tabular-nums font-medium">
-              {pctRestant.toFixed(0)}% de l'objectif
-            </p>
-          </div>
-        )}
       </motion.div>
 
       {/* Card 4: Moyenne globale */}
