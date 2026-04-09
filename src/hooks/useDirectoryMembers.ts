@@ -73,21 +73,21 @@ export function useDirectoryMembers(enabled: boolean) {
     setLoading(true);
     setError(null);
     const [catalogRes, profilesRes, rolesRes, presenceRes] = await Promise.all([
-      supabase
+      (supabase as any)
         .from("app_roles_catalog")
         .select("role_key, label, sort_rank")
         .order("sort_rank", { ascending: false }),
       supabase
         .from("profiles")
-        .select("user_id, display_name, avatar_url, title, org_titles")
+        .select("user_id, display_name, avatar_url, title")
         .order("display_name", { ascending: true }),
       supabase.from("user_roles").select("user_id, role"),
-      supabase.from("user_presence").select("*"),
+      (supabase as any).from("user_presence").select("*"),
     ]);
-    const cat = catalogRes.error ? [] : (catalogRes.data ?? []);
+    const cat = catalogRes.error ? [] : (catalogRes.data ?? []) as any[];
     const priority =
-      cat.length > 0 ? cat.map((r) => r.role_key) : [...DEFAULT_ROLE_PRIORITY_FALLBACK];
-    const labels = Object.fromEntries(cat.map((r) => [r.role_key, r.label])) as Record<string, string>;
+      cat.length > 0 ? cat.map((r: any) => r.role_key) : [...DEFAULT_ROLE_PRIORITY_FALLBACK];
+    const labels = Object.fromEntries(cat.map((r: any) => [r.role_key, r.label])) as Record<string, string>;
     setRolePriorityOrder(priority);
     setSectionLabels(labels);
 
@@ -110,7 +110,7 @@ export function useDirectoryMembers(enabled: boolean) {
       return;
     }
     const list = buildMembers(
-      profilesRes.data ?? [],
+      (profilesRes.data ?? []) as any[],
       rolesRes.data ?? [],
       (presenceRes.data as UserPresenceRow[]) ?? [],
       priority,

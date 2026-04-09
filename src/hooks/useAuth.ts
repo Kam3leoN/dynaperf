@@ -36,7 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const setInvisible = async (userId: string | null | undefined) => {
       if (!userId) return;
       try {
-        await supabase
+        await (supabase as any)
           .from("user_presence")
           .upsert({ user_id: userId, status: "invisible", expires_at: null }, { onConflict: "user_id" });
       } catch (e) {
@@ -47,7 +47,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const setOnline = async (userId: string | null | undefined) => {
       if (!userId) return;
       try {
-        await supabase
+        await (supabase as any)
           .from("user_presence")
           .upsert({ user_id: userId, status: "online", expires_at: null }, { onConflict: "user_id" });
       } catch (e) {
@@ -92,7 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (async () => {
       if (hasStoredCredential() && !hasAppSessionUnlocked()) {
         await supabase.auth.stopAutoRefresh().catch(() => undefined);
-        await (supabase.auth as SupabaseAuthWithSessionRemoval)._removeSession?.();
+        await (supabase.auth as any)._removeSession?.();
         clearPersistedAuthSession();
       }
 
@@ -113,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (authUser.user) {
       localStorage.setItem(LAST_AUTH_USER_ID_KEY, authUser.user.id);
       try {
-        await supabase.from("user_presence").upsert(
+        await (supabase as any).from("user_presence").upsert(
           { user_id: authUser.user.id, status: "invisible", expires_at: null },
           { onConflict: "user_id" },
         );
@@ -123,7 +123,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     await supabase.auth.signOut().catch(() => undefined);
     await supabase.auth.stopAutoRefresh().catch(() => undefined);
-    await (supabase.auth as SupabaseAuthWithSessionRemoval)._removeSession?.();
+    await (supabase.auth as any)._removeSession?.();
     currentUserIdRef.current = null;
     setUser(null);
     setLoading(false);

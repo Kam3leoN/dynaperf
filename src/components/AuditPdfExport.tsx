@@ -79,7 +79,7 @@ export function AuditPdfExport({ auditId, partenaire, typeEvenement, date, lieu,
         const val = customFieldValues[f.id];
         if (val === undefined || val === null || val === "") return null;
         if (isRatingType(f.field_type)) {
-          const n = typeof val === "number" ? val : parseInt(val) || 0;
+          const n = typeof val === "number" ? val : parseInt(val as string) || 0;
           return "★".repeat(n) + "☆".repeat(Math.max(0, 5 - n));
         }
         if (f.field_type === "stat_percent") return `${val} %`;
