@@ -649,7 +649,7 @@ export default function Drive() {
               return (
                 <motion.div key={doc.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
                   <Card
-                    className="group cursor-pointer transition-all hover:shadow-hover hover:-translate-y-0.5 overflow-hidden relative mb-4"
+                    className="group cursor-pointer transition-all hover:shadow-hover hover:-translate-y-0.5 overflow-hidden relative"
                     onClick={() => openPreview(doc)}
                   >
                     <CardContent className="p-0">
