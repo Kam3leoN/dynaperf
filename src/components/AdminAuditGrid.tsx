@@ -295,7 +295,11 @@ export default function AdminAuditGridInline() {
       condition: item.condition,
       scoring_rules: hasTiers ? "" : (item.scoring_rules || ""),
       input_type: item.input_type,
-      checklist_items: item.checklist_items ? item.checklist_items.join("\n") : "",
+      checklist_items: item.checklist_items
+        ? (Array.isArray(item.checklist_items) && item.checklist_items.length > 0 && typeof item.checklist_items[0] === "object"
+          ? JSON.stringify(item.checklist_items)
+          : (item.checklist_items as string[]).join("\n"))
+        : "",
       interets: item.interets || "",
       comment_y_parvenir: item.comment_y_parvenir || "",
       auto_field: parsedAutoField,

@@ -115,6 +115,11 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
         <div className="flex items-baseline gap-1 sm:gap-1.5 mt-1.5 sm:mt-2">
           <span className="text-2xl sm:text-3xl font-bold tabular-nums text-foreground">{restant}</span>
         </div>
+        {obj > 0 && (
+          <p className="text-[10px] text-muted-foreground mt-2 tabular-nums">
+            sur {obj} (objectif)
+          </p>
+        )}
       </motion.div>
 
       {/* Card 4: Moyenne globale */}
