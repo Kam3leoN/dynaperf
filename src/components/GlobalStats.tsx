@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheckCircle, faHourglassHalf, faArrowTrendUp, faArrowTrendDown, faCalendarDay, faCalculator, faUmbrellaBeach, faCalendarCheck } from "@fortawesome/free-solid-svg-icons";
+import { faCheckCircle, faArrowTrendUp, faArrowTrendDown, faCalendarDay, faCalculator, faUmbrellaBeach, faCalendarCheck } from "@fortawesome/free-solid-svg-icons";
 import { Progress } from "@/components/ui/progress";
 
 interface GlobalStatsProps {
@@ -25,11 +25,8 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
   const pctRealises = obj > 0 ? Math.min(100, (realises / obj) * 100) : 0;
 
   // Planifiés en % de l'objectif
-  const pctPlanifies = obj > 0 ? Math.min(100, (auditsPlanifies / obj) * 100) : 0;
-
   // Restant = objectif - réalisés - planifiés (ce qui reste à programmer)
   const restant = Math.max(0, obj - realises - auditsPlanifies);
-  const pctRestant = obj > 0 ? (restant / obj) * 100 : 0;
 
   // Ce qui reste à programmer après les planifiés
   const restantApresPlanif = restant;
@@ -101,32 +98,11 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
         </p>
       </motion.div>
 
-      {/* Card 3: Restant à faire — valeur absolue */}
+      {/* Card 3: Moyenne globale */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.08, duration: 0.3 }}
-        className="bg-card rounded-2xl p-3 sm:p-5 shadow-soft border border-border/60"
-      >
-        <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider leading-tight flex items-center gap-1.5">
-          <FontAwesomeIcon icon={faHourglassHalf} className="h-3 w-3 text-amber-500" />
-          Restant à faire
-        </p>
-        <div className="flex items-baseline gap-1 sm:gap-1.5 mt-1.5 sm:mt-2">
-          <span className="text-2xl sm:text-3xl font-bold tabular-nums text-foreground">{restant}</span>
-        </div>
-        {obj > 0 && (
-          <p className="text-[10px] text-muted-foreground mt-2 tabular-nums">
-            sur {obj} (objectif)
-          </p>
-        )}
-      </motion.div>
-
-      {/* Card 4: Moyenne globale */}
-      <motion.div
-        initial={{ opacity: 0, y: 12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.12, duration: 0.3 }}
         className="bg-card rounded-2xl p-3 sm:p-5 shadow-soft border border-border/60"
       >
         <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider leading-tight">
@@ -149,12 +125,12 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
         </p>
       </motion.div>
 
-      {/* Card 5: Temps restant — avec toggle réaliste */}
+      {/* Card 4: Temps restant — avec toggle réaliste */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.16, duration: 0.3 }}
-        className="bg-card rounded-2xl p-3 sm:p-5 shadow-soft border border-border/60 cursor-pointer select-none col-span-2 lg:col-span-1"
+        transition={{ delay: 0.12, duration: 0.3 }}
+        className="bg-card rounded-2xl p-3 sm:p-5 shadow-soft border border-border/60 cursor-pointer select-none col-span-2 lg:col-span-2"
         onClick={() => setModeRealiste((prev) => !prev)}
         title="Cliquez pour basculer entre estimation brute et réaliste (-10 semaines)"
       >

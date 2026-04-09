@@ -109,6 +109,12 @@ export function AuditItemDialog({
   const [comment, setComment] = useState(initialAnswer?.comment ?? "");
   const [notApplicable, setNotApplicable] = useState(initialAnswer?.notApplicable ?? false);
 
+  const maxScore = item.inputType === "checklist"
+    ? (item.checklistPointsMap?.length
+        ? item.checklistPointsMap.reduce((sum, points) => sum + Math.max(0, points), 0)
+        : (item.checklistItems?.length ?? item.maxPoints))
+    : item.maxPoints;
+
   function getScore(): number {
     if (notApplicable) return 0;
     if (isNoShowAuto) return (autoValue ?? 0) === 0 ? item.maxPoints : 0;
@@ -167,10 +173,10 @@ export function AuditItemDialog({
               className={cn(
                 "shrink-0 text-xs sm:text-sm font-semibold tabular-nums h-9 min-h-9 px-2.5 inline-flex items-center",
                 notApplicable ? "bg-muted text-muted-foreground" :
-                currentScore === item.maxPoints ? "bg-emerald-600 text-white" : currentScore > 0 ? "bg-amber-500 text-white" : "bg-muted text-muted-foreground"
+                currentScore === maxScore ? "bg-emerald-600 text-white" : currentScore > 0 ? "bg-amber-500 text-white" : "bg-muted text-muted-foreground"
               )}
             >
-              {notApplicable ? "N/A" : `${currentScore}/${item.maxPoints} pts`}
+              {notApplicable ? "N/A" : `${currentScore}/${maxScore} pts`}
             </Badge>
             {isAutoFilled && !notApplicable && (
               <Badge variant="outline" className="text-xs gap-1 text-muted-foreground shrink-0">

@@ -101,6 +101,15 @@ function computeScore(item: AuditItemDef, boolVal: boolean | null, numVal: strin
   return 0;
 }
 
+function getItemMaxScore(item: AuditItemDef): number {
+  if (item.inputType !== "checklist") return item.maxPoints;
+  if (item.checklistPointsMap?.length) {
+    return item.checklistPointsMap.reduce((sum, points) => sum + Math.max(0, points), 0);
+  }
+  if (item.checklistItems?.length) return item.checklistItems.length;
+  return item.maxPoints;
+}
+
 const COMMENT_SYNC_DEBOUNCE_MS = 400;
 
 function AuditItemCardComponent({ item, index, categoryName, answer, onChange, stepZeroData }: Props) {
@@ -197,7 +206,8 @@ function AuditItemCardComponent({ item, index, categoryName, answer, onChange, s
   }, [comment]);
 
   const currentScore = notApplicable ? 0 : computeScore(item, boolVal, numVal, checklist, autoValue);
-  const isMax = !notApplicable && currentScore === item.maxPoints;
+  const maxScore = getItemMaxScore(item);
+  const isMax = !notApplicable && currentScore === maxScore;
   const isTouched = answer?.touched || false;
   const isExplicitZero = !notApplicable && isTouched && currentScore === 0;
 
@@ -235,7 +245,7 @@ function AuditItemCardComponent({ item, index, categoryName, answer, onChange, s
               isMax ? "bg-emerald-600 text-white" : currentScore > 0 ? "bg-amber-500 text-white" : isExplicitZero ? "bg-destructive text-white" : "bg-muted text-muted-foreground"
             )}
           >
-            {notApplicable ? "N/A" : `${currentScore}/${item.maxPoints} pts`}
+            {notApplicable ? "N/A" : `${currentScore}/${maxScore} pts`}
           </Badge>
           {isAutoFilled && !notApplicable && (
             <Badge variant="outline" className="text-[10px] gap-1 text-muted-foreground shrink-0">
