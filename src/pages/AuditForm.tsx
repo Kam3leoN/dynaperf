@@ -529,6 +529,8 @@ export default function AuditForm() {
           <AuditPhotoUpload
             photos={photos}
             onChange={setPhotos}
+            existingPhotos={existingPhotos}
+            onExistingPhotosChange={setExistingPhotos}
             onSubmit={handleFinish}
             onBack={handlePhotosBack}
             uploading={false}

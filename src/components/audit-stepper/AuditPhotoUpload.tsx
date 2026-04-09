@@ -1,13 +1,18 @@
 import { useState, useRef, useCallback } from "react";
+import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCloudArrowUp, faCamera, faXmark, faChevronLeft } from "@fortawesome/free-solid-svg-icons";
+import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { useShellNarrow } from "@/contexts/ResponsiveShellContext";
 import { SignaturePad } from "@/components/ui/signature-pad";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Props {
   photos: File[];
   onChange: (photos: File[]) => void;
+  existingPhotos: string[];
+  onExistingPhotosChange: (photos: string[]) => void;
   onSubmit: () => void;
   onBack: () => void;
   uploading: boolean;
@@ -20,7 +25,7 @@ interface Props {
 }
 
 export function AuditPhotoUpload({
-  photos, onChange, onSubmit, onBack, uploading,
+  photos, onChange, existingPhotos, onExistingPhotosChange, onSubmit, onBack, uploading,
   auditeurName, partenaireName,
   signatureAuditeur, onSignatureAuditeurChange,
   signatureAudite, onSignatureAuditeChange,
@@ -28,6 +33,30 @@ export function AuditPhotoUpload({
   const isMobile = useShellNarrow();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [existingUrls, setExistingUrls] = useState<Record<string, string>>({});
+
+  // Generate signed URLs for existing photos
+  useEffect(() => {
+    if (existingPhotos.length === 0) return;
+    let cancelled = false;
+    (async () => {
+      const urls: Record<string, string> = {};
+      for (const path of existingPhotos) {
+        const { data } = await supabase.storage
+          .from("audit-photos")
+          .createSignedUrl(path, 3600);
+        if (cancelled) return;
+        if (data?.signedUrl) urls[path] = data.signedUrl;
+      }
+      setExistingUrls(urls);
+    })();
+    return () => { cancelled = true; };
+  }, [existingPhotos]);
+
+  const removeExistingPhoto = useCallback(async (path: string) => {
+    await supabase.storage.from("audit-photos").remove([path]);
+    onExistingPhotosChange(existingPhotos.filter((p) => p !== path));
+  }, [existingPhotos, onExistingPhotosChange]);
 
   const addFiles = useCallback((files: FileList | null) => {
     if (!files) return;
@@ -132,8 +161,42 @@ export function AuditPhotoUpload({
         </div>
       )}
 
+      {/* Existing photos from server */}
+      {existingPhotos.length > 0 && (
+        <div className="space-y-2">
+          <p className="text-xs font-medium text-muted-foreground">
+            Photos enregistrées ({existingPhotos.length})
+          </p>
+          <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+            {existingPhotos.map((path) => (
+              <div key={path} className="relative group aspect-square rounded-lg overflow-hidden border border-border">
+                {existingUrls[path] ? (
+                  <img
+                    src={existingUrls[path]}
+                    alt="Photo existante"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-muted">
+                    <span className="text-xs text-muted-foreground">Chargement…</span>
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => removeExistingPhoto(path)}
+                  className="absolute top-1 right-1 p-1 rounded-full bg-background/80 hover:bg-destructive hover:text-destructive-foreground transition-colors opacity-0 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+                  style={{ opacity: isMobile ? 1 : undefined }}
+                >
+                  <FontAwesomeIcon icon={faTrash} className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       <p className="text-xs text-muted-foreground">
-        {photos.length} photo{photos.length !== 1 ? "s" : ""} sélectionnée{photos.length !== 1 ? "s" : ""}
+        {existingPhotos.length + photos.length} photo{(existingPhotos.length + photos.length) !== 1 ? "s" : ""} au total
       </p>
 
       {/* ── Signatures ── */}
