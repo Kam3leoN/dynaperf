@@ -748,8 +748,12 @@ export default function AdminAuditGridInline() {
             </div>
             {itemForm.input_type === "checklist" && (
               <div className="space-y-1.5">
-                <Label>Éléments de la checklist (1 par ligne)</Label>
-                <RichTextEditor value={itemForm.checklist_items} onChange={(val) => setItemForm({ ...itemForm, checklist_items: val })} rows={6} placeholder={"Ordinateur, micro, sono...\nLa présentation officielle (PPT)\nLe logiciel Dynamatch"} />
+                <Label>Éléments de la checklist</Label>
+                <ChecklistItemsEditor
+                  value={itemForm.checklist_items}
+                  onChange={(val) => setItemForm({ ...itemForm, checklist_items: val })}
+                  maxPoints={itemForm.max_points}
+                />
               </div>
             )}
           </div>
