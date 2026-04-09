@@ -17,6 +17,7 @@ import { X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminSecteurs from "@/components/AdminSecteurs";
 import AdminAuditGridInline from "@/components/AdminAuditGrid";
+import AdminModules from "@/components/AdminModules";
 import { readEdgeFunctionErrorMessage } from "@/lib/readEdgeFunctionError";
 import { cn } from "@/lib/utils";
 import { uploadUserAvatarToBucket, withAvatarCacheBust } from "@/lib/avatarStorage";
