@@ -91,7 +91,13 @@ function computeScore(item: AuditItemDef, boolVal: boolean | null, numVal: strin
     }
     return calcLinearScore(n, item.maxPoints);
   }
-  if (item.inputType === "checklist") return checklist.filter(Boolean).length;
+  if (item.inputType === "checklist") {
+    const ptsMap = item.checklistPointsMap;
+    if (ptsMap && ptsMap.length === checklist.length) {
+      return checklist.reduce((sum, checked, i) => sum + (checked ? ptsMap[i] : 0), 0);
+    }
+    return checklist.filter(Boolean).length;
+  }
   return 0;
 }
 
