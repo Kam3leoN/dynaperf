@@ -15,7 +15,6 @@ interface Props {
   onChange: (value: string) => void;
   placeholder?: string;
   className?: string;
-  /** Quand la liste est fermée, Entrée déclenche cette action (ex. enregistrer le formulaire). */
   onEnterSubmit?: () => void;
 }
 
@@ -27,39 +26,55 @@ export function CityAutocomplete({ value, onChange, placeholder, className, onEn
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  // Track whether the last change was a programmatic selection
+  const justSelectedRef = useRef(false);
 
   const search = useCallback(async (query: string) => {
-    if (query.length < 2) {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) {
       setResults([]);
       return;
     }
     setLoading(true);
-    const isPostalSearch = /^\d+$/.test(query);
+
+    // Strip parenthetical postal code if present e.g. "Paris (75001)" → "Paris"
+    const cleaned = trimmed.replace(/\s*\(.*\)\s*$/, "").trim();
+    if (cleaned.length < 2) { setLoading(false); return; }
+
+    const isPostalSearch = /^\d+$/.test(cleaned);
+
     const { data } = isPostalSearch
       ? await supabase
           .from("french_cities")
           .select("name, postal_code, department")
-          .like("postal_code", `${query}%`)
+          .like("postal_code", `${cleaned}%`)
+          .order("postal_code")
           .order("name")
-          .limit(12)
+          .limit(15)
       : await supabase
           .from("french_cities")
           .select("name, postal_code, department")
-          .ilike("name", `%${query}%`)
+          .ilike("name", `${cleaned}%`)
           .order("name")
-          .limit(12);
+          .limit(15);
 
     setResults((data as CityResult[]) || []);
     setHighlightIdx(-1);
     setLoading(false);
   }, []);
 
+  // Debounced search on value change – skip if we just selected
   useEffect(() => {
+    if (justSelectedRef.current) {
+      justSelectedRef.current = false;
+      return;
+    }
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => search(value), 200);
+    debounceRef.current = setTimeout(() => search(value), 150);
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [value, search]);
 
+  // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -79,8 +94,10 @@ export function CityAutocomplete({ value, onChange, placeholder, className, onEn
   }, [highlightIdx]);
 
   const selectCity = (city: CityResult) => {
+    justSelectedRef.current = true;
     onChange(`${city.name} (${city.postal_code})`);
     setOpen(false);
+    setResults([]);
     setHighlightIdx(-1);
   };
 
@@ -115,7 +132,9 @@ export function CityAutocomplete({ value, onChange, placeholder, className, onEn
           onChange(e.target.value);
           setOpen(true);
         }}
-        onFocus={() => value.length >= 2 && setOpen(true)}
+        onFocus={() => {
+          if (value.trim().length >= 2 && results.length > 0) setOpen(true);
+        }}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
         className={className}
@@ -128,7 +147,7 @@ export function CityAutocomplete({ value, onChange, placeholder, className, onEn
         >
           {results.map((city, i) => (
             <button
-              key={`${city.postal_code}-${i}`}
+              key={`${city.postal_code}-${city.name}-${i}`}
               type="button"
               className={cn(
                 "flex w-full items-center justify-between px-3 py-2.5 text-left focus:outline-none",
@@ -145,7 +164,7 @@ export function CityAutocomplete({ value, onChange, placeholder, className, onEn
           ))}
         </div>
       )}
-      {open && loading && (
+      {open && loading && results.length === 0 && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 rounded-md border border-border bg-popover shadow-md px-3 py-2 text-sm text-muted-foreground">
           Recherche…
         </div>
