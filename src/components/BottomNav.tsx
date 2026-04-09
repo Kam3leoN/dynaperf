@@ -19,10 +19,10 @@ export function BottomNav() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { isAdmin } = useAdmin(user);
-  const { hasPermission } = usePermissionGate();
+  const { hasPermission, isModuleEnabled } = usePermissionGate();
   const [menuOpen, setMenuOpen] = useState(false);
 
-  const sections = getRailSections(isAdmin, hasPermission);
+  const sections = getRailSections(isAdmin, hasPermission, isModuleEnabled);
   const messagesSection = sections.find((s) => s.id === "messages");
   const driveSection = sections.find((s) => s.id === "drive");
   const hubPath = "/hub";

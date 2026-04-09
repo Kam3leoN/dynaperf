@@ -17,6 +17,7 @@ const RAIL_LOGO_SRC = publicAssetUrl("pwaDynaperf.svg");
 interface AppNavRailProps {
   isAdmin: boolean;
   hasPermission: (key: string) => boolean;
+  isModuleEnabled: (key: string) => boolean;
 }
 
 interface RailItemProps {
@@ -72,10 +73,10 @@ function RailNavItem({ section, isActive, pinned }: RailItemProps) {
 /**
  * Rail 80px : logo marque fixe (hauteur = bande logo colonne secondaire) ; le reste défile en dessous.
  */
-export function AppNavRail({ isAdmin, hasPermission }: AppNavRailProps) {
+export function AppNavRail({ isAdmin, hasPermission, isModuleEnabled }: AppNavRailProps) {
   const { pathname } = useLocation();
-  const visibleSections = getRailSections(isAdmin, hasPermission);
-  const scrollSections = getRailScrollSections(isAdmin, hasPermission);
+  const visibleSections = getRailSections(isAdmin, hasPermission, isModuleEnabled);
+  const scrollSections = getRailScrollSections(isAdmin, hasPermission, isModuleEnabled);
   const active = getActiveRailSection(pathname, RAIL_SECTIONS_ALL);
   const pinnedSection =
     RAIL_PINNED_TOP_SECTION_ID &&

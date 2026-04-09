@@ -66,8 +66,8 @@ function MenuItem({
 export function MobileMoreMenu({ onClose }: Props) {
   const { signOut, user } = useAuth();
   const { isAdmin } = useAdmin(user);
-  const { hasPermission } = usePermissionGate();
-  const sections = getRailSections(isAdmin, hasPermission);
+  const { hasPermission, isModuleEnabled } = usePermissionGate();
+  const sections = getRailSections(isAdmin, hasPermission, isModuleEnabled);
 
   return (
     <div className="overflow-y-auto max-h-[60vh] pb-6">

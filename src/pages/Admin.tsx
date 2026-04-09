@@ -4,6 +4,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -17,6 +18,7 @@ import { X } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AdminSecteurs from "@/components/AdminSecteurs";
 import AdminAuditGridInline from "@/components/AdminAuditGrid";
+import AdminModules from "@/components/AdminModules";
 import { readEdgeFunctionErrorMessage } from "@/lib/readEdgeFunctionError";
 import { cn } from "@/lib/utils";
 import { uploadUserAvatarToBucket, withAvatarCacheBust } from "@/lib/avatarStorage";
@@ -335,6 +337,8 @@ export default function Admin() {
   const [editOrgTitles, setEditOrgTitles] = useState<string[]>([]);
   const [editPermOverride, setEditPermOverride] = useState<Record<string, "inherit" | "allow" | "deny">>({});
   const [appPermissionCatalog, setAppPermissionCatalog] = useState<{ key: string; description: string }[]>([]);
+  const [editModuleOverrides, setEditModuleOverrides] = useState<Record<string, boolean | null>>({});
+  const [appModulesCatalog, setAppModulesCatalog] = useState<{ module_key: string; label: string }[]>([]);
   const [editSaving, setEditSaving] = useState(false);
 
   // Create dialog
@@ -575,6 +579,27 @@ export default function Admin() {
       setEditPermOverride(next);
     };
     void loadOverrides();
+
+    // Load module overrides
+    const loadModuleOverrides = async () => {
+      let mods = appModulesCatalog;
+      if (!mods.length) {
+        const { data: fresh } = await (supabase as any).from("app_modules").select("module_key, label").order("sort_order");
+        mods = fresh ?? [];
+        if (mods.length) setAppModulesCatalog(mods as any);
+      }
+      const { data: ovs } = await (supabase as any)
+        .from("user_module_overrides")
+        .select("module_key, enabled")
+        .eq("user_id", u.id);
+      const next: Record<string, boolean | null> = {};
+      for (const m of mods as any[]) next[m.module_key] = null; // null = inherit (global)
+      for (const o of (ovs ?? []) as any[]) {
+        if (o.module_key in next) next[o.module_key] = o.enabled;
+      }
+      setEditModuleOverrides(next);
+    };
+    void loadModuleOverrides();
   };
 
   const handleEditSave = async () => {
@@ -673,6 +698,28 @@ export default function Admin() {
       }
     }
 
+    // Save module overrides
+    for (const [moduleKey, val] of Object.entries(editModuleOverrides)) {
+      if (val === null) {
+        // Remove override (inherit global)
+        await (supabase as any)
+          .from("user_module_overrides")
+          .delete()
+          .eq("user_id", editUser.id)
+          .eq("module_key", moduleKey);
+      } else {
+        const { error: moErr } = await (supabase as any).from("user_module_overrides").upsert(
+          { user_id: editUser.id, module_key: moduleKey, enabled: val },
+          { onConflict: "user_id,module_key" },
+        );
+        if (moErr) {
+          toast.error(moErr.message);
+          setEditSaving(false);
+          return;
+        }
+      }
+    }
+
     toast.success("Utilisateur mis à jour");
     setEditUser(null);
     loadUsers();
@@ -746,8 +793,9 @@ export default function Admin() {
     <AppLayout>
       <Tabs defaultValue="collaborateurs" className="space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-lg grid-cols-4">
             <TabsTrigger value="collaborateurs">Utilisateurs</TabsTrigger>
+            <TabsTrigger value="modules">Modules</TabsTrigger>
             <TabsTrigger value="audits">Audits</TabsTrigger>
             <TabsTrigger value="secteurs">Secteurs</TabsTrigger>
           </TabsList>
@@ -1230,6 +1278,44 @@ export default function Admin() {
                 </div>
               </div>
 
+              {/* Modules visibles pour cet utilisateur */}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Modules visibles</label>
+                <p className="text-[10px] text-muted-foreground mb-2">
+                  Défaut = état global du module ; basculer pour forcer l'accès de cet utilisateur.
+                </p>
+                <div className="space-y-2 rounded-md border border-border/60 p-2">
+                  {appModulesCatalog.map((mod) => {
+                    const val = editModuleOverrides[mod.module_key];
+                    const isInherit = val === null || val === undefined;
+                    return (
+                      <div key={mod.module_key} className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-foreground">{mod.label}</span>
+                        <div className="flex items-center gap-2">
+                          {!isInherit && (
+                            <button
+                              type="button"
+                              className="text-[10px] text-muted-foreground hover:text-foreground underline"
+                              onClick={() =>
+                                setEditModuleOverrides((prev) => ({ ...prev, [mod.module_key]: null }))
+                              }
+                            >
+                              Réinitialiser
+                            </button>
+                          )}
+                          <Switch
+                            checked={isInherit ? true : val}
+                            onCheckedChange={(checked) =>
+                              setEditModuleOverrides((prev) => ({ ...prev, [mod.module_key]: checked }))
+                            }
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
               {/* Objectifs paliers */}
               <div>
                 <label className="text-xs text-muted-foreground mb-1 block">Objectifs par palier</label>
@@ -1264,6 +1350,9 @@ export default function Admin() {
         </DialogContent>
       </Dialog>
       </div>
+        </TabsContent>
+        <TabsContent value="modules">
+          <AdminModules />
         </TabsContent>
         <TabsContent value="audits">
           <AdminAuditGridInline />

@@ -40,6 +40,8 @@ export interface RailSection {
   requireAdmin?: boolean;
   /** Clé `app_permissions` (ex. nav.audits) ; absente du menu si refusé. */
   requiredPermission?: string;
+  /** Clé `app_modules` ; absente si le module est désactivé. */
+  requiredModule?: string;
   /** Absente du rail vertical (lg) ; reste dans getRailSections pour mobile / résolution d’URL. */
   hideFromRail?: boolean;
 }
@@ -84,6 +86,7 @@ const messagerie: RailSection = {
   id: "messages",
   label: "Messages",
   icon: faComment,
+  requiredModule: "discussions",
   to: "/messages?section=discussion",
   pathPrefixes: ["/messages"],
   children: [],
@@ -97,6 +100,7 @@ const audits: RailSection = {
   icon: faClipboardList,
   to: "/dashboard",
   requiredPermission: "nav.audits",
+  requiredModule: "audits",
   pathPrefixes: ["/dashboard", "/audits"],
   children: [
     { label: "Tableau de bord", to: "/dashboard", icon: faChartLine },
@@ -112,6 +116,7 @@ const suivis: RailSection = {
   icon: faListCheck,
   to: "/activite/dashboard",
   requiredPermission: "nav.activite",
+  requiredModule: "suivi",
   pathPrefixes: ["/activite"],
   children: [
     { label: "Tableau de bord", to: "/activite/dashboard", icon: faChartLine },
@@ -127,6 +132,7 @@ const reseau: RailSection = {
   icon: faHandshake,
   to: "/reseau/partenaires",
   requiredPermission: "nav.reseau",
+  requiredModule: "reseau",
   pathPrefixes: ["/reseau", "/business-plan"],
   children: [
     { label: "Partenaires", to: "/reseau/partenaires", icon: faUsers },
@@ -142,6 +148,7 @@ const drive: RailSection = {
   icon: faFolder,
   to: "/drive",
   requiredPermission: "nav.drive",
+  requiredModule: "drive",
   pathPrefixes: ["/drive"],
   children: [{ label: "Mon Drive", to: "/drive", icon: faFolder }],
 };
@@ -152,6 +159,7 @@ const qrcodes: RailSection = {
   icon: faQrcode,
   to: "/qrcodes",
   requiredPermission: "nav.hub",
+  requiredModule: "qrcode",
   pathPrefixes: ["/qrcodes"],
   children: [{ label: "Gestion QrCode", to: "/qrcodes", icon: faQrcode }],
 };
@@ -208,14 +216,21 @@ const ALL_RAIL_SECTIONS: RailSection[] = [
 export const RAIL_SECTIONS_ALL: RailSection[] = ALL_RAIL_SECTIONS;
 
 /**
- * Sections du rail filtrées (admin + permissions).
+ * Sections du rail filtrées (admin + permissions + modules).
  * @param hasPermission - si absent, toutes les permissions sont considérées accordées (repli).
+ * @param isModuleEnabled - si absent, tous les modules sont considérés actifs (repli).
  */
-export function getRailSections(isAdmin: boolean, hasPermission?: (key: string) => boolean): RailSection[] {
+export function getRailSections(
+  isAdmin: boolean,
+  hasPermission?: (key: string) => boolean,
+  isModuleEnabled?: (key: string) => boolean,
+): RailSection[] {
   const can = hasPermission ?? (() => true);
+  const modOn = isModuleEnabled ?? (() => true);
   return ALL_RAIL_SECTIONS.filter((s) => {
     if (s.requireAdmin && !isAdmin) return false;
     if (s.requiredPermission && !can(s.requiredPermission)) return false;
+    if (s.requiredModule && !modOn(s.requiredModule)) return false;
     return true;
   });
 }
@@ -226,8 +241,8 @@ export function getRailSections(isAdmin: boolean, hasPermission?: (key: string) 
 export const RAIL_PINNED_TOP_SECTION_ID: string | null = null;
 
 /** Sections du rail sous la bande logo (toutes les entrées quand rien n’est épinglé). */
-export function getRailScrollSections(isAdmin: boolean, hasPermission?: (key: string) => boolean): RailSection[] {
-  const list = getRailSections(isAdmin, hasPermission).filter((s) => !s.hideFromRail);
+export function getRailScrollSections(isAdmin: boolean, hasPermission?: (key: string) => boolean, isModuleEnabled?: (key: string) => boolean): RailSection[] {
+  const list = getRailSections(isAdmin, hasPermission, isModuleEnabled).filter((s) => !s.hideFromRail);
   if (!RAIL_PINNED_TOP_SECTION_ID) return list;
   return list.filter((s) => s.id !== RAIL_PINNED_TOP_SECTION_ID);
 }
