@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { getAuditItemMaxPoints } from "@/lib/auditChecklistPoints";
 import {
   faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faGripVertical, faLayerGroup, faCopy, faBoxArchive, faRotateLeft, faXmark,
 } from "@fortawesome/free-solid-svg-icons";
@@ -103,6 +104,11 @@ export default function AdminAuditGridInline() {
           const ext = i as Record<string, unknown>;
           return {
             ...i,
+            max_points: getAuditItemMaxPoints({
+              input_type: i.input_type,
+              max_points: i.max_points,
+              checklist_items: i.checklist_items,
+            }),
             checklist_items: Array.isArray(i.checklist_items) ? (i.checklist_items as string[]) : null,
             scoring_rules: i.scoring_rules ?? null,
             interets: typeof ext.interets === "string" ? ext.interets : "",
@@ -184,7 +190,7 @@ export default function AdminAuditGridInline() {
           await supabase.from("audit_items_config").insert(
             srcItems.map(i => ({
               category_id: newCat.id, sort_order: i.sort_order, title: i.title, description: i.description,
-              max_points: i.max_points, condition: i.condition, scoring_rules: i.scoring_rules,
+              max_points: getAuditItemMaxPoints({ input_type: i.input_type, max_points: i.max_points, checklist_items: i.checklist_items }), condition: i.condition, scoring_rules: i.scoring_rules,
               input_type: i.input_type, checklist_items: i.checklist_items as unknown as string[] | null,
               interets: i.interets, comment_y_parvenir: i.comment_y_parvenir, auto_field: i.auto_field,
             }))
@@ -291,7 +297,7 @@ export default function AdminAuditGridInline() {
       category_id: item.category_id,
       title: item.title,
       description: item.description,
-      max_points: item.max_points,
+      max_points: getAuditItemMaxPoints(item),
       condition: item.condition,
       scoring_rules: hasTiers ? "" : (item.scoring_rules || ""),
       input_type: item.input_type,
@@ -326,25 +332,33 @@ export default function AdminAuditGridInline() {
           ? JSON.stringify({ type: "threshold", operator: thresholdOperator, value: thresholdValue })
           : itemForm.scoring_rules.trim() || null;
 
+    const checklistItems = itemForm.input_type === "checklist" && itemForm.checklist_items.trim()
+      ? (() => {
+          try {
+            const parsed = JSON.parse(itemForm.checklist_items);
+            if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0].label === "string") {
+              return parsed;
+            }
+          } catch {
+            /* not JSON */
+          }
+          return itemForm.checklist_items.split("\n").map((s) => s.trim()).filter(Boolean);
+        })()
+      : null;
+
     const payload = {
       category_id: itemForm.category_id,
       title: itemForm.title.trim(),
       description: itemForm.description.trim(),
-      max_points: itemForm.max_points,
+      max_points: getAuditItemMaxPoints({
+        input_type: itemForm.input_type,
+        max_points: itemForm.max_points,
+        checklist_items: checklistItems,
+      }),
       condition: itemForm.condition.trim(),
       scoring_rules: finalScoringRules,
       input_type: itemForm.input_type,
-      checklist_items: itemForm.input_type === "checklist" && itemForm.checklist_items.trim()
-        ? (() => {
-            try {
-              const parsed = JSON.parse(itemForm.checklist_items);
-              if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0].label === "string") {
-                return parsed;
-              }
-            } catch { /* not JSON */ }
-            return itemForm.checklist_items.split("\n").map((s) => s.trim()).filter(Boolean);
-          })()
-        : null,
+      checklist_items: checklistItems,
       interets: itemForm.interets.trim(),
       comment_y_parvenir: itemForm.comment_y_parvenir.trim(),
       auto_field: isAutoCalc && itemForm.auto_field
@@ -458,7 +472,7 @@ export default function AdminAuditGridInline() {
   };
 
   const selectedType = types.find((t) => t.id === selectedTypeId);
-  const totalMaxPts = items.reduce((s, i) => s + i.max_points, 0);
+  const totalMaxPts = items.reduce((s, i) => s + getAuditItemMaxPoints(i), 0);
   const uniqueKeys = [...new Set(types.map(t => t.key))];
   const versionsForKey = selectedKey ? types.filter(t => t.key === selectedKey) : [];
 
@@ -585,7 +599,7 @@ export default function AdminAuditGridInline() {
 
           {categories.map((cat) => {
             const catItems = items.filter((i) => i.category_id === cat.id).sort((a, b) => a.sort_order - b.sort_order);
-            const catMaxPts = catItems.reduce((s, i) => s + i.max_points, 0);
+            const catMaxPts = catItems.reduce((s, i) => s + getAuditItemMaxPoints(i), 0);
             return (
               <div key={cat.id} className="rounded-lg border border-border bg-card overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 bg-muted/50 border-b border-border">
@@ -623,7 +637,7 @@ export default function AdminAuditGridInline() {
                         <p className="text-sm font-medium truncate">{item.title}</p>
                         <p className="text-xs text-muted-foreground truncate">{stripHtmlForPreview(item.description, 80)}</p>
                       </div>
-                      <Badge variant="outline" className="text-xs tabular-nums shrink-0">{item.max_points} pts</Badge>
+                      <Badge variant="outline" className="text-xs tabular-nums shrink-0">{getAuditItemMaxPoints(item)} pts</Badge>
                       <Badge variant="secondary" className="text-xs shrink-0">{item.input_type}</Badge>
                       {item.auto_field && <Badge variant="outline" className="text-[10px] shrink-0 text-muted-foreground">Auto</Badge>}
                       <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => openEditItem(item)}>

@@ -10,6 +10,7 @@ import { RichTextEditor } from "@/components/ui/rich-text-editor";
 import { RichHtmlView } from "@/components/ui/rich-html-view";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { getAuditItemMaxPoints } from "@/lib/auditChecklistPoints";
 import {
   AuditItemDef,
   calcParticipantsScore,
@@ -109,11 +110,7 @@ export function AuditItemDialog({
   const [comment, setComment] = useState(initialAnswer?.comment ?? "");
   const [notApplicable, setNotApplicable] = useState(initialAnswer?.notApplicable ?? false);
 
-  const maxScore = item.inputType === "checklist"
-    ? (item.checklistPointsMap?.length
-        ? item.checklistPointsMap.reduce((sum, points) => sum + Math.max(0, points), 0)
-        : (item.checklistItems?.length ?? item.maxPoints))
-    : item.maxPoints;
+  const maxScore = getAuditItemMaxPoints(item);
 
   function getScore(): number {
     if (notApplicable) return 0;

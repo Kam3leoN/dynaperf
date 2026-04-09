@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { getAuditItemMaxPoints } from "@/lib/auditChecklistPoints";
 
 export interface AuditItemDef {
   id: string;
@@ -83,22 +84,30 @@ export async function fetchAuditConfig(typeKey: string): Promise<AuditTypeConfig
     sortOrder: c.sort_order,
     items: (items || [])
       .filter((i) => i.category_id === c.id)
-      .map((i) => ({
-        id: i.id,
-        title: i.title,
-        description: i.description,
-        maxPoints: i.max_points,
-        condition: i.condition,
-        inputType: i.input_type as "boolean" | "number" | "checklist",
-        scoringRules: i.scoring_rules ?? undefined,
-        checklistItems: (() => { const c = parseChecklistFromDb(i.checklist_items); return c?.labels; })(),
-        checklistPointsMap: (() => { const c = parseChecklistFromDb(i.checklist_items); return c?.pointsMap; })(),
-        sortOrder: i.sort_order,
-        categoryId: c.id,
-        autoField: (i as Record<string, unknown>).auto_field as string | undefined ?? undefined,
-        interets: (i as Record<string, unknown>).interets as string | undefined ?? undefined,
-        commentYParvenir: (i as Record<string, unknown>).comment_y_parvenir as string | undefined ?? undefined,
-      })),
+      .map((i) => {
+        const checklist = parseChecklistFromDb(i.checklist_items);
+        return {
+          id: i.id,
+          title: i.title,
+          description: i.description,
+          maxPoints: getAuditItemMaxPoints({
+            inputType: i.input_type as "boolean" | "number" | "checklist",
+            maxPoints: i.max_points,
+            checklistItems: checklist?.labels,
+            checklistPointsMap: checklist?.pointsMap,
+          }),
+          condition: i.condition,
+          inputType: i.input_type as "boolean" | "number" | "checklist",
+          scoringRules: i.scoring_rules ?? undefined,
+          checklistItems: checklist?.labels,
+          checklistPointsMap: checklist?.pointsMap,
+          sortOrder: i.sort_order,
+          categoryId: c.id,
+          autoField: (i as Record<string, unknown>).auto_field as string | undefined ?? undefined,
+          interets: (i as Record<string, unknown>).interets as string | undefined ?? undefined,
+          commentYParvenir: (i as Record<string, unknown>).comment_y_parvenir as string | undefined ?? undefined,
+        };
+      }),
   }));
 
   const allItems = categories.flatMap((c) => c.items);
@@ -144,22 +153,30 @@ export async function fetchAuditConfigById(typeId: string): Promise<AuditTypeCon
     sortOrder: c.sort_order,
     items: (items || [])
       .filter((i) => i.category_id === c.id)
-      .map((i) => ({
-        id: i.id,
-        title: i.title,
-        description: i.description,
-        maxPoints: i.max_points,
-        condition: i.condition,
-        inputType: i.input_type as "boolean" | "number" | "checklist",
-        scoringRules: i.scoring_rules ?? undefined,
-        checklistItems: (() => { const c = parseChecklistFromDb(i.checklist_items); return c?.labels; })(),
-        checklistPointsMap: (() => { const c = parseChecklistFromDb(i.checklist_items); return c?.pointsMap; })(),
-        sortOrder: i.sort_order,
-        categoryId: c.id,
-        autoField: (i as Record<string, unknown>).auto_field as string | undefined ?? undefined,
-        interets: (i as Record<string, unknown>).interets as string | undefined ?? undefined,
-        commentYParvenir: (i as Record<string, unknown>).comment_y_parvenir as string | undefined ?? undefined,
-      })),
+      .map((i) => {
+        const checklist = parseChecklistFromDb(i.checklist_items);
+        return {
+          id: i.id,
+          title: i.title,
+          description: i.description,
+          maxPoints: getAuditItemMaxPoints({
+            inputType: i.input_type as "boolean" | "number" | "checklist",
+            maxPoints: i.max_points,
+            checklistItems: checklist?.labels,
+            checklistPointsMap: checklist?.pointsMap,
+          }),
+          condition: i.condition,
+          inputType: i.input_type as "boolean" | "number" | "checklist",
+          scoringRules: i.scoring_rules ?? undefined,
+          checklistItems: checklist?.labels,
+          checklistPointsMap: checklist?.pointsMap,
+          sortOrder: i.sort_order,
+          categoryId: c.id,
+          autoField: (i as Record<string, unknown>).auto_field as string | undefined ?? undefined,
+          interets: (i as Record<string, unknown>).interets as string | undefined ?? undefined,
+          commentYParvenir: (i as Record<string, unknown>).comment_y_parvenir as string | undefined ?? undefined,
+        };
+      }),
   }));
 
   const allItems = categories.flatMap((c) => c.items);
