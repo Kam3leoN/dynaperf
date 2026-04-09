@@ -308,7 +308,10 @@ export function AuditItemDialog({
                         }}
                         className="mt-0.5"
                       />
-                      <span className="text-sm leading-snug">{label}</span>
+                      <span className="text-sm leading-snug flex-1">{label}</span>
+                      {item.checklistPointsMap?.[idx] !== undefined && (
+                        <span className="text-[10px] font-medium text-muted-foreground shrink-0 tabular-nums">{item.checklistPointsMap[idx]} pt{item.checklistPointsMap[idx] > 1 ? "s" : ""}</span>
+                      )}
                     </label>
                   ))}
                 </div>
