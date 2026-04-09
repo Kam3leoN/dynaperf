@@ -4,6 +4,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -1274,6 +1275,44 @@ export default function Admin() {
                       </Select>
                     </div>
                   ))}
+                </div>
+              </div>
+
+              {/* Modules visibles pour cet utilisateur */}
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Modules visibles</label>
+                <p className="text-[10px] text-muted-foreground mb-2">
+                  Défaut = état global du module ; basculer pour forcer l'accès de cet utilisateur.
+                </p>
+                <div className="space-y-2 rounded-md border border-border/60 p-2">
+                  {appModulesCatalog.map((mod) => {
+                    const val = editModuleOverrides[mod.module_key];
+                    const isInherit = val === null || val === undefined;
+                    return (
+                      <div key={mod.module_key} className="flex items-center justify-between gap-2">
+                        <span className="text-xs text-foreground">{mod.label}</span>
+                        <div className="flex items-center gap-2">
+                          {!isInherit && (
+                            <button
+                              type="button"
+                              className="text-[10px] text-muted-foreground hover:text-foreground underline"
+                              onClick={() =>
+                                setEditModuleOverrides((prev) => ({ ...prev, [mod.module_key]: null }))
+                              }
+                            >
+                              Réinitialiser
+                            </button>
+                          )}
+                          <Switch
+                            checked={isInherit ? true : val}
+                            onCheckedChange={(checked) =>
+                              setEditModuleOverrides((prev) => ({ ...prev, [mod.module_key]: checked }))
+                            }
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
 
