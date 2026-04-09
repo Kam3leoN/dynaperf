@@ -335,10 +335,6 @@ export function AuditItemDialog({
             onChange={setComment}
             placeholder={notApplicable ? "Justifiez pourquoi cet item n'est pas applicable..." : "Ajouter un commentaire..."}
             rows={2}
-            onEnterSubmit={() => {
-              if (notApplicable && !comment.trim()) return;
-              handleSubmit();
-            }}
           />
           {notApplicable && !comment.trim() && (
             <p className="text-xs text-destructive">Un commentaire est requis pour les items non applicables.</p>
