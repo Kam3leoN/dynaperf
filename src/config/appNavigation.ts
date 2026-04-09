@@ -216,14 +216,21 @@ const ALL_RAIL_SECTIONS: RailSection[] = [
 export const RAIL_SECTIONS_ALL: RailSection[] = ALL_RAIL_SECTIONS;
 
 /**
- * Sections du rail filtrées (admin + permissions).
+ * Sections du rail filtrées (admin + permissions + modules).
  * @param hasPermission - si absent, toutes les permissions sont considérées accordées (repli).
+ * @param isModuleEnabled - si absent, tous les modules sont considérés actifs (repli).
  */
-export function getRailSections(isAdmin: boolean, hasPermission?: (key: string) => boolean): RailSection[] {
+export function getRailSections(
+  isAdmin: boolean,
+  hasPermission?: (key: string) => boolean,
+  isModuleEnabled?: (key: string) => boolean,
+): RailSection[] {
   const can = hasPermission ?? (() => true);
+  const modOn = isModuleEnabled ?? (() => true);
   return ALL_RAIL_SECTIONS.filter((s) => {
     if (s.requireAdmin && !isAdmin) return false;
     if (s.requiredPermission && !can(s.requiredPermission)) return false;
+    if (s.requiredModule && !modOn(s.requiredModule)) return false;
     return true;
   });
 }
