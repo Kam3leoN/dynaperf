@@ -230,7 +230,7 @@ export default function AdminRoles() {
       next.set(sid, allowed);
       return next;
     });
-    const { error } = await supabase.rpc("admin_set_role_permission_default", {
+    const { error } = await (supabase.rpc as any)("admin_set_role_permission_default", {
       p_role: role,
       p_permission_key: permissionKey,
       p_allowed: allowed,
@@ -258,7 +258,7 @@ export default function AdminRoles() {
       return;
     }
     setCreating(true);
-    const { error: insErr } = await supabase.from("app_permissions").insert({
+    const { error: insErr } = await (supabase as any).from("app_permissions").insert({
       key,
       description: newDesc.trim() || key,
     });
@@ -267,7 +267,7 @@ export default function AdminRoles() {
       setCreating(false);
       return;
     }
-    const { error: defErr } = await supabase.rpc("admin_seed_role_permission_defaults_for_key", {
+    const { error: defErr } = await (supabase.rpc as any)("admin_seed_role_permission_defaults_for_key", {
       p_permission_key: key,
     });
     setCreating(false);
@@ -295,7 +295,7 @@ export default function AdminRoles() {
       return;
     }
     setCreatingRole(true);
-    const { error } = await supabase.rpc("admin_create_staff_role", {
+    const { error } = await (supabase.rpc as any)("admin_create_staff_role", {
       p_role_key: rk,
       p_label: newRoleLabel.trim() || rk,
       p_sort_rank: rank,
@@ -318,7 +318,7 @@ export default function AdminRoles() {
     if (!deleteRoleKey) return;
     const fallbackLabel = deleteRoleReassignTarget?.label;
     setDeletingRole(true);
-    const { error } = await supabase.rpc("admin_delete_staff_role", { p_role_key: deleteRoleKey });
+    const { error } = await (supabase.rpc as any)("admin_delete_staff_role", { p_role_key: deleteRoleKey });
     setDeletingRole(false);
     if (error) {
       toast.error(error.message);
@@ -335,7 +335,7 @@ export default function AdminRoles() {
   };
 
   const saveDescription = async (key: string, description: string) => {
-    const { error } = await supabase.from("app_permissions").update({ description }).eq("key", key);
+    const { error } = await (supabase as any).from("app_permissions").update({ description }).eq("key", key);
     if (error) {
       toast.error(error.message);
       return;
