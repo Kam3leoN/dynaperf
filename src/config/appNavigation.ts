@@ -86,6 +86,7 @@ const messagerie: RailSection = {
   id: "messages",
   label: "Messages",
   icon: faComment,
+  requiredModule: "discussions",
   to: "/messages?section=discussion",
   pathPrefixes: ["/messages"],
   children: [],
@@ -99,6 +100,7 @@ const audits: RailSection = {
   icon: faClipboardList,
   to: "/dashboard",
   requiredPermission: "nav.audits",
+  requiredModule: "audits",
   pathPrefixes: ["/dashboard", "/audits"],
   children: [
     { label: "Tableau de bord", to: "/dashboard", icon: faChartLine },
@@ -114,6 +116,7 @@ const suivis: RailSection = {
   icon: faListCheck,
   to: "/activite/dashboard",
   requiredPermission: "nav.activite",
+  requiredModule: "suivi",
   pathPrefixes: ["/activite"],
   children: [
     { label: "Tableau de bord", to: "/activite/dashboard", icon: faChartLine },
@@ -129,6 +132,7 @@ const reseau: RailSection = {
   icon: faHandshake,
   to: "/reseau/partenaires",
   requiredPermission: "nav.reseau",
+  requiredModule: "reseau",
   pathPrefixes: ["/reseau", "/business-plan"],
   children: [
     { label: "Partenaires", to: "/reseau/partenaires", icon: faUsers },
@@ -144,6 +148,7 @@ const drive: RailSection = {
   icon: faFolder,
   to: "/drive",
   requiredPermission: "nav.drive",
+  requiredModule: "drive",
   pathPrefixes: ["/drive"],
   children: [{ label: "Mon Drive", to: "/drive", icon: faFolder }],
 };
@@ -154,6 +159,7 @@ const qrcodes: RailSection = {
   icon: faQrcode,
   to: "/qrcodes",
   requiredPermission: "nav.hub",
+  requiredModule: "qrcode",
   pathPrefixes: ["/qrcodes"],
   children: [{ label: "Gestion QrCode", to: "/qrcodes", icon: faQrcode }],
 };
