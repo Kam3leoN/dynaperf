@@ -9,6 +9,7 @@ export interface AuditItemDef {
   inputType: "boolean" | "number" | "checklist";
   scoringRules?: string;
   checklistItems?: string[];
+  checklistPointsMap?: number[];
   sortOrder: number;
   categoryId: string;
   autoField?: string;
@@ -29,6 +30,20 @@ export interface AuditTypeConfig {
   label: string;
   categories: AuditCategoryDef[];
   maxPoints: number;
+}
+
+function parseChecklistFromDb(raw: unknown): { labels: string[]; pointsMap: number[] } | undefined {
+  if (!raw || !Array.isArray(raw) || raw.length === 0) return undefined;
+  // New format: [{label, points}, ...]
+  if (typeof raw[0] === "object" && raw[0] !== null && "label" in raw[0]) {
+    const items = raw as { label: string; points?: number }[];
+    return {
+      labels: items.map((i) => i.label),
+      pointsMap: items.map((i) => (typeof i.points === "number" ? i.points : 1)),
+    };
+  }
+  // Legacy format: string[]
+  return { labels: raw as string[], pointsMap: (raw as string[]).map(() => 1) };
 }
 
 /** Fetch the full config (categories + items) for a given audit type key (latest active) */
@@ -76,9 +91,8 @@ export async function fetchAuditConfig(typeKey: string): Promise<AuditTypeConfig
         condition: i.condition,
         inputType: i.input_type as "boolean" | "number" | "checklist",
         scoringRules: i.scoring_rules ?? undefined,
-        checklistItems: i.checklist_items
-          ? (i.checklist_items as string[])
-          : undefined,
+        checklistItems: (() => { const c = parseChecklistFromDb(i.checklist_items); return c?.labels; })(),
+        checklistPointsMap: (() => { const c = parseChecklistFromDb(i.checklist_items); return c?.pointsMap; })(),
         sortOrder: i.sort_order,
         categoryId: c.id,
         autoField: (i as Record<string, unknown>).auto_field as string | undefined ?? undefined,
@@ -138,7 +152,8 @@ export async function fetchAuditConfigById(typeId: string): Promise<AuditTypeCon
         condition: i.condition,
         inputType: i.input_type as "boolean" | "number" | "checklist",
         scoringRules: i.scoring_rules ?? undefined,
-        checklistItems: i.checklist_items ? (i.checklist_items as string[]) : undefined,
+        checklistItems: (() => { const c = parseChecklistFromDb(i.checklist_items); return c?.labels; })(),
+        checklistPointsMap: (() => { const c = parseChecklistFromDb(i.checklist_items); return c?.pointsMap; })(),
         sortOrder: i.sort_order,
         categoryId: c.id,
         autoField: (i as Record<string, unknown>).auto_field as string | undefined ?? undefined,

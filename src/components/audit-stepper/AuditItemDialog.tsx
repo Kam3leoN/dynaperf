@@ -124,7 +124,13 @@ export function AuditItemDialog({
       if (item.scoringRules && item.scoringRules.includes("participants")) return calcParticipantsScore(n);
       return calcLinearScore(n, item.maxPoints);
     }
-    if (item.inputType === "checklist") return checklist.filter(Boolean).length;
+    if (item.inputType === "checklist") {
+      const ptsMap = item.checklistPointsMap;
+      if (ptsMap && ptsMap.length === checklist.length) {
+        return checklist.reduce((sum, checked, i) => sum + (checked ? ptsMap[i] : 0), 0);
+      }
+      return checklist.filter(Boolean).length;
+    }
     return 0;
   }
 
@@ -302,7 +308,10 @@ export function AuditItemDialog({
                         }}
                         className="mt-0.5"
                       />
-                      <span className="text-sm leading-snug">{label}</span>
+                      <span className="text-sm leading-snug flex-1">{label}</span>
+                      {item.checklistPointsMap?.[idx] !== undefined && (
+                        <span className="text-[10px] font-medium text-muted-foreground shrink-0 tabular-nums">{item.checklistPointsMap[idx]} pt{item.checklistPointsMap[idx] > 1 ? "s" : ""}</span>
+                      )}
                     </label>
                   ))}
                 </div>
