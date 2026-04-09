@@ -13,8 +13,8 @@ function visualizerAppBuildOnly(baseOpts: Parameters<typeof visualizer>[0]): Plu
   };
   const orig = p.generateBundle;
   if (!orig) return p;
-  p.generateBundle = function (outputOptions, outputBundle) {
-    const chunks = Object.values(outputBundle).filter((x) => x?.type === "chunk");
+  p.generateBundle = function (outputOptions: any, outputBundle: any) {
+    const chunks = Object.values(outputBundle).filter((x: any) => x?.type === "chunk");
     if (chunks.length < 3) return;
     return orig.call(this, outputOptions, outputBundle);
   };

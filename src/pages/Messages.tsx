@@ -669,7 +669,7 @@ export default function Messages() {
       toast.error("Fonction indisponible : migration Supabase manquante (table MP masqués).");
       return;
     }
-    const { error } = await supabase.from("user_dm_hidden_partners").upsert(
+    const { error } = await (supabase as any).from("user_dm_hidden_partners").upsert(
       { user_id: user.id, partner_user_id: partnerId },
       { onConflict: "user_id,partner_user_id" },
     );
@@ -837,7 +837,7 @@ export default function Messages() {
     const ids = unread.map((m) => m.id).filter((id) => !markedReadRef.current.has(id));
     if (ids.length === 0) return;
     ids.forEach((id) => markedReadRef.current.add(id));
-    void supabase.rpc("mark_group_messages_read", { p_group_id: target.id }).then(({ error }) => {
+    void (supabase.rpc as any)("mark_group_messages_read", { p_group_id: target.id }).then(({ error }: any) => {
       if (error) {
         ids.forEach((id) => markedReadRef.current.delete(id));
         toast.error(error.message);
@@ -971,10 +971,10 @@ export default function Messages() {
       const list = reactionsByMessageId[messageId] ?? [];
       const mine = list.find((x) => x.user_id === user.id && x.emoji === emoji);
       if (mine) {
-        const { error } = await supabase.from("message_reactions").delete().eq("id", mine.id);
+        const { error } = await (supabase as any).from("message_reactions").delete().eq("id", mine.id);
         if (error) toast.error(error.message);
       } else {
-        const { error } = await supabase.from("message_reactions").insert({
+        const { error } = await (supabase as any).from("message_reactions").insert({
           message_id: messageId,
           user_id: user.id,
           emoji,
@@ -999,7 +999,7 @@ export default function Messages() {
           : row,
       ),
     );
-    const { error } = await supabase.rpc("set_message_pin_state", {
+    const { error } = await (supabase.rpc as any)("set_message_pin_state", {
       p_message_id: m.id,
       p_pinned: nextPinned,
     });
@@ -1039,7 +1039,7 @@ export default function Messages() {
   const persistChannelOrder = useCallback(
     async (kind: "salon" | "group", orderedIds: string[]) => {
       if (!canManageSalons) return;
-      const { error } = await supabase.rpc("reorder_messaging_channels", {
+      const { error } = await (supabase.rpc as any)("reorder_messaging_channels", {
         p_public_salon_ids: kind === "salon" ? orderedIds : [],
         p_private_group_ids: kind === "group" ? orderedIds : [],
       });

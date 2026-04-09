@@ -39,7 +39,7 @@ export default function Profile() {
     if (!file || !user) return;
     const up = await uploadUserAvatarToBucket(user.id, file);
     if (!up.ok) {
-      toast.error(up.message);
+      toast.error((up as any).message);
       return;
     }
     const url = withAvatarCacheBust(up.publicUrl);
