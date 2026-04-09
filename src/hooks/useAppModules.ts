@@ -64,7 +64,8 @@ export function useAppModules(userId: string | undefined) {
   }, [userId]);
 
   const isModuleEnabled = useCallback(
-    (key: string) => enabledModules.has(key),
+    // Si aucun module chargé (table absente ou vide), tout est visible par défaut
+    (key: string) => enabledModules.size === 0 ? true : enabledModules.has(key),
     [enabledModules],
   );
 
