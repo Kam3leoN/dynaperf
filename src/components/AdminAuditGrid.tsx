@@ -106,7 +106,7 @@ export default function AdminAuditGridInline() {
             scoring_rules: i.scoring_rules ?? null,
             interets: typeof ext.interets === "string" ? ext.interets : "",
             comment_y_parvenir: typeof ext.comment_y_parvenir === "string" ? ext.comment_y_parvenir : "",
-            auto_field: ext.auto_field ?? null,
+            auto_field: (typeof ext.auto_field === "string" ? ext.auto_field : null) as string | null,
           };
         })
     );

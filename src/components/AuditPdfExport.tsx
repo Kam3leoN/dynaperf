@@ -30,7 +30,7 @@ interface CustomFieldDef {
   id: string;
   field_label: string;
   field_type: string;
-  field_options: unknown;
+  field_options: Record<string, any> | null;
   sort_order: number;
 }
 

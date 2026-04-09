@@ -225,7 +225,7 @@ export default function AdminPartenaires() {
     let row = formToRow();
     if (avatarFile) {
       const url = await uploadPhoto(editP.id, avatarFile);
-      if (url) row = { ...row, photo_url: url };
+      if (url) row = { ...row, photo_url: url } as typeof row & { photo_url: string };
     }
     const { error } = await supabase.from("partenaires").update(row).eq("id", editP.id);
     if (error) { toast.error("Erreur: " + error.message); setSaving(false); return; }

@@ -19,7 +19,7 @@ export function OnlineAvatars() {
     const load = async () => {
       const [profilesRes, presenceRes] = await Promise.all([
         supabase.from("profiles").select("user_id, display_name, avatar_url"),
-        supabase.from("user_presence").select("*"),
+        supabase.from("user_presence" as any).select("*"),
       ]);
       if (profilesRes.data) setProfiles(profilesRes.data);
       const map: Record<string, UserPresenceRow> = {};
