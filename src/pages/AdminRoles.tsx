@@ -348,7 +348,7 @@ export default function AdminRoles() {
   const confirmDelete = async () => {
     if (!deleteKey) return;
     setDeleting(true);
-    const { error } = await supabase.from("app_permissions").delete().eq("key", deleteKey);
+    const { error } = await (supabase as any).from("app_permissions").delete().eq("key", deleteKey);
     setDeleting(false);
     if (error) {
       toast.error(error.message);

@@ -581,8 +581,8 @@ export default function Messages() {
         .order("nav_sort_order", { ascending: true })
         .order("name", { ascending: true }),
       supabase.from("conversation_group_members").select("group_id, user_id"),
-      supabase.from("user_presence").select("*"),
-      supabase.from("user_dm_hidden_partners").select("partner_user_id").eq("user_id", user.id),
+      (supabase as any).from("user_presence").select("*"),
+      (supabase as any).from("user_dm_hidden_partners").select("partner_user_id").eq("user_id", user.id),
     ]);
     const allP = (profilesRes.data || []) as Profile[];
     setAllProfiles(allP);
@@ -592,7 +592,7 @@ export default function Messages() {
       setMessages(sortMessagesByTime(msgsRes.data as Message[]));
       const ids = (msgsRes.data as Message[]).map((m) => m.id);
       if (ids.length > 0) {
-        const rxRes = await supabase.from("message_reactions").select("*").in("message_id", ids);
+        const rxRes = await (supabase as any).from("message_reactions").select("*").in("message_id", ids);
         if (rxRes.error) {
           toast.error(`Réactions : ${rxRes.error.message}`, { id: "messages-reactions-load" });
           setReactions([]);
@@ -623,7 +623,7 @@ export default function Messages() {
       setGroupMembers(membersRes.data as GroupMember[]);
     }
     const pmap: Record<string, UserPresenceRow> = {};
-    (presenceRes.data as UserPresenceRow[] | null)?.forEach((r) => {
+    ((presenceRes.data as any[]) ?? []).forEach((r: any) => {
       pmap[r.user_id] = r;
     });
     setPresenceByUser(pmap);
@@ -639,14 +639,14 @@ export default function Messages() {
       }
     } else {
       setDmHideAvailable(true);
-      setHiddenDmPartnerIds((hiddenRes.data ?? []).map((r) => r.partner_user_id));
+      setHiddenDmPartnerIds(((hiddenRes.data ?? []) as any[]).map((r: any) => r.partner_user_id));
     }
   }, [user]);
 
   const unhideDmPartner = useCallback(async (partnerId: string) => {
     if (!user?.id) return;
     if (!dmHideAvailable) return;
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from("user_dm_hidden_partners")
       .delete()
       .eq("user_id", user.id)
