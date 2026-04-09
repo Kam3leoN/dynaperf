@@ -578,6 +578,27 @@ export default function Admin() {
       setEditPermOverride(next);
     };
     void loadOverrides();
+
+    // Load module overrides
+    const loadModuleOverrides = async () => {
+      let mods = appModulesCatalog;
+      if (!mods.length) {
+        const { data: fresh } = await (supabase as any).from("app_modules").select("module_key, label").order("sort_order");
+        mods = fresh ?? [];
+        if (mods.length) setAppModulesCatalog(mods as any);
+      }
+      const { data: ovs } = await (supabase as any)
+        .from("user_module_overrides")
+        .select("module_key, enabled")
+        .eq("user_id", u.id);
+      const next: Record<string, boolean | null> = {};
+      for (const m of mods as any[]) next[m.module_key] = null; // null = inherit (global)
+      for (const o of (ovs ?? []) as any[]) {
+        if (o.module_key in next) next[o.module_key] = o.enabled;
+      }
+      setEditModuleOverrides(next);
+    };
+    void loadModuleOverrides();
   };
 
   const handleEditSave = async () => {
