@@ -3,6 +3,7 @@ import { AuditFormBuilder } from "@/components/AuditFormBuilder";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
+import { ChecklistItemsEditor } from "@/components/admin/ChecklistItemsEditor";
 import { stripHtmlForPreview } from "@/components/ui/rich-html-view";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
