@@ -725,196 +725,31 @@ export default function AdminAuditGridInline() {
             </div>
             <div className="space-y-1.5">
               <Label>Description</Label>
-              <RichTextEditor value={itemForm.description} onChange={(val) => setItemForm({ ...itemForm, description: val })} rows={3} onEnterSubmit={enterSaveItem} />
+              <RichTextEditor value={itemForm.description} onChange={(val) => setItemForm({ ...itemForm, description: val })} rows={3} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              {itemForm.input_type !== "number" && (
-                <div className="space-y-1.5">
-                  <Label>Points max</Label>
-                  <Input type="number" min={1} value={itemForm.max_points} onChange={(e) => setItemForm({ ...itemForm, max_points: parseInt(e.target.value) || 1 })} onEnterSubmit={enterSaveItem} />
-                </div>
-              )}
-              <div className="space-y-1.5">
-                <Label>Type de saisie</Label>
-                <Select value={itemForm.input_type} onValueChange={(v) => setItemForm({ ...itemForm, input_type: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="boolean">Oui / Non</SelectItem>
-                    <SelectItem value="number">Nombre</SelectItem>
-                    <SelectItem value="checklist">Checklist</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Auto-calc toggle */}
-            {(itemForm.input_type === "number" || itemForm.input_type === "boolean") && (
-              <div className="rounded-lg border border-border p-3 space-y-3">
-                <div className="flex items-center gap-3">
-                  <Switch checked={isAutoCalc} onCheckedChange={setIsAutoCalc} id="auto-calc" />
-                  <Label htmlFor="auto-calc" className="font-medium">
-                    {itemForm.input_type === "boolean" ? "Validation automatique (depuis un champ source)" : "Calcul automatique (désactivé en saisie)"}
-                  </Label>
-                </div>
-                {isAutoCalc && (
-                  <div className="space-y-2">
-                    <Label className="text-xs">Champ source (informations générales)</Label>
-                    <Select value={itemForm.auto_field} onValueChange={(v) => setItemForm({ ...itemForm, auto_field: v })}>
-                      <SelectTrigger><SelectValue placeholder="Sélectionner un champ source…" /></SelectTrigger>
-                      <SelectContent>
-                        {sourceCustomFields.map((f) => (
-                          <SelectItem key={f.id} value={f.id}>
-                            {f.field_label}
-                            <span className="ml-1 text-muted-foreground text-[10px]">
-                              ({f.field_type === "number" ? "nombre" : f.field_type === "stat_percent" ? "ratio" : f.field_type === "stat_diff" ? "différence" : "évolution"})
-                            </span>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    {sourceCustomFields.length === 0 && (
-                      <p className="text-xs text-muted-foreground">Ajoutez d'abord des champs « Nombre », « Ratio » ou « Évolution » dans le formulaire ci-dessus.</p>
-                    )}
-                    {itemForm.input_type === "boolean" && (
-                      <div className="space-y-1.5">
-                        <Label className="text-xs">Condition de validation</Label>
-                        <Select value={itemForm.auto_condition} onValueChange={(v) => setItemForm({ ...itemForm, auto_condition: v as "zero" | "positive" })}>
-                          <SelectTrigger><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="zero">Validé si la valeur = 0 (ex: no-show)</SelectItem>
-                            <SelectItem value="positive">Validé si la valeur &gt; 0 (ex: participants)</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <p className="text-[11px] text-muted-foreground">
-                          {itemForm.auto_condition === "zero"
-                            ? "L'item sera validé automatiquement si la valeur du champ source est 0."
-                            : "L'item sera validé automatiquement si la valeur du champ source est supérieure à 0."}
-                        </p>
-                      </div>
-                    )}
-                    {itemForm.input_type === "number" && (
-                      <p className="text-[11px] text-muted-foreground">
-                        La valeur sera pré-remplie depuis ce champ et l'utilisateur ne pourra pas la modifier.
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Scoring tiers */}
-            {itemForm.input_type === "number" && (
-              <div className="rounded-lg border border-border p-3 space-y-3">
-                <Label className="font-medium text-sm">Mode de scoring</Label>
-                <div className="flex gap-2 flex-wrap">
-                  {(["none", "tiers", "increment", "threshold"] as const).map((mode) => (
-                    <Button key={mode} type="button" variant={scoringMode === mode ? "default" : "outline"} size="sm"
-                      onClick={() => { setScoringMode(mode); setUseTiers(mode === "tiers"); }}>
-                      {mode === "none" ? "Linéaire (1=1pt)" : mode === "tiers" ? "Paliers" : mode === "increment" ? "Incrémentation" : "Seuil (< / >)"}
-                    </Button>
-                  ))}
-                </div>
-
-                {scoringMode === "increment" && (
-                  <div className="space-y-3 pt-1">
-                    <p className="text-xs text-muted-foreground">Score = valeur ÷ pas (arrondi inf.), plafonné au max points. Les valeurs sous le minimum donnent 0.</p>
-                    <div className="flex items-center gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Valeur min.</Label>
-                        <Input type="number" min={0} value={incrementMin} onChange={(e) => setIncrementMin(parseInt(e.target.value) || 0)} className="w-20 h-9 text-xs" onEnterSubmit={enterSaveItem} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Max points</Label>
-                        <Input type="number" min={1} value={itemForm.max_points} onChange={(e) => setItemForm({ ...itemForm, max_points: parseInt(e.target.value) || 1 })} className="w-20 h-9 text-xs" onEnterSubmit={enterSaveItem} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Pas (incrément)</Label>
-                        <Input type="number" min={1} value={incrementStep} onChange={(e) => setIncrementStep(parseInt(e.target.value) || 1)} className="w-20 h-9 text-xs" onEnterSubmit={enterSaveItem} />
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground italic">
-                      Ex: min={incrementMin}, pas={incrementStep}, max={itemForm.max_points} →
-                      {" "}{incrementMin > 0 ? `<${incrementMin} = 0pt, ` : ""}
-                      {incrementStep} = 1pt, {incrementStep * 2} = 2pts, … {incrementStep * itemForm.max_points} = {itemForm.max_points}pts
-                    </p>
-                  </div>
-                )}
-
-                {scoringMode === "threshold" && (
-                  <div className="space-y-3 pt-1">
-                    <p className="text-xs text-muted-foreground">Attribue le max de points si la valeur respecte la condition, sinon 0.</p>
-                    <div className="flex items-center gap-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs">Opérateur</Label>
-                        <select value={thresholdOperator} onChange={(e) => setThresholdOperator(e.target.value as "lt" | "lte" | "eq" | "gt" | "gte")}
-                          className="h-9 rounded-md border border-input bg-background px-2 text-xs">
-                          <option value="lt">{"< Inférieur"}</option>
-                          <option value="lte">{"≤ Inférieur ou égal"}</option>
-                          <option value="eq">{"= Égal"}</option>
-                          <option value="gt">{"> Supérieur"}</option>
-                          <option value="gte">{"≥ Supérieur ou égal"}</option>
-                        </select>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Seuil</Label>
-                        <Input type="number" value={thresholdValue} onChange={(e) => setThresholdValue(parseInt(e.target.value) || 0)} className="w-20 h-9 text-xs" onEnterSubmit={enterSaveItem} />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">Points si validé</Label>
-                        <Input type="number" min={1} value={itemForm.max_points} onChange={(e) => setItemForm({ ...itemForm, max_points: parseInt(e.target.value) || 1 })} className="w-20 h-9 text-xs" onEnterSubmit={enterSaveItem} />
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground italic">
-                      Valeur {{ lt: "<", lte: "≤", eq: "=", gt: ">", gte: "≥" }[thresholdOperator]} {thresholdValue} → {itemForm.max_points} pts, sinon 0 pt
-                    </p>
-                  </div>
-                )}
-
-                {scoringMode === "tiers" && (
-                  <div className="space-y-2">
-                    {scoringTiers.map((tier, idx) => (
-                      <div key={idx} className="flex items-center gap-2">
-                        <Input type="number" min={0} value={tier.min} onChange={(e) => updateTier(idx, "min", parseInt(e.target.value) || 0)} className="w-20 h-9 text-xs" placeholder="Min" onEnterSubmit={enterSaveItem} />
-                        <span className="text-xs text-muted-foreground">à</span>
-                        <Input type="number" min={0} value={tier.max ?? ""} onChange={(e) => updateTier(idx, "max", e.target.value === "" ? null : parseInt(e.target.value) || 0)} className="w-20 h-9 text-xs" placeholder="∞" onEnterSubmit={enterSaveItem} />
-                        <span className="text-xs text-muted-foreground">→</span>
-                        <Input type="number" min={0} value={tier.points} onChange={(e) => updateTier(idx, "points", parseInt(e.target.value) || 0)} className="w-16 h-9 text-xs" placeholder="Pts" onEnterSubmit={enterSaveItem} />
-                        <span className="text-xs text-muted-foreground">pts</span>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => removeTier(idx)}>
-                          <FontAwesomeIcon icon={faXmark} className="h-3 w-3 text-muted-foreground" />
-                        </Button>
-                      </div>
-                    ))}
-                    <Button variant="outline" size="sm" onClick={addTier} className="gap-1.5 text-xs">
-                      <FontAwesomeIcon icon={faPlus} className="h-3 w-3" /> Ajouter un palier
-                    </Button>
-                  </div>
-                )}
-              </div>
-            )}
-
+...
             <div className="space-y-1.5">
               <Label>Conditions de validation</Label>
-              <RichTextEditor value={itemForm.condition} onChange={(val) => setItemForm({ ...itemForm, condition: val })} rows={2} onEnterSubmit={enterSaveItem} />
+              <RichTextEditor value={itemForm.condition} onChange={(val) => setItemForm({ ...itemForm, condition: val })} rows={2} />
             </div>
             {scoringMode === "none" && (
               <div className="space-y-1.5">
                 <Label>Règles de scoring (optionnel)</Label>
-                <RichTextEditor value={itemForm.scoring_rules} onChange={(val) => setItemForm({ ...itemForm, scoring_rules: val })} rows={2} onEnterSubmit={enterSaveItem} />
+                <RichTextEditor value={itemForm.scoring_rules} onChange={(val) => setItemForm({ ...itemForm, scoring_rules: val })} rows={2} />
               </div>
             )}
             <div className="space-y-1.5">
               <Label>Quel intérêt ?</Label>
-              <RichTextEditor value={itemForm.interets} onChange={(val) => setItemForm({ ...itemForm, interets: val })} rows={2} placeholder="Expliquez l'intérêt de ce critère…" onEnterSubmit={enterSaveItem} />
+              <RichTextEditor value={itemForm.interets} onChange={(val) => setItemForm({ ...itemForm, interets: val })} rows={2} placeholder="Expliquez l'intérêt de ce critère…" />
             </div>
             <div className="space-y-1.5">
               <Label>Comment y parvenir ?</Label>
-              <RichTextEditor value={itemForm.comment_y_parvenir} onChange={(val) => setItemForm({ ...itemForm, comment_y_parvenir: val })} rows={2} placeholder="Conseils pour atteindre ce critère…" onEnterSubmit={enterSaveItem} />
+              <RichTextEditor value={itemForm.comment_y_parvenir} onChange={(val) => setItemForm({ ...itemForm, comment_y_parvenir: val })} rows={2} placeholder="Conseils pour atteindre ce critère…" />
             </div>
             {itemForm.input_type === "checklist" && (
               <div className="space-y-1.5">
                 <Label>Éléments de la checklist (1 par ligne)</Label>
-                <RichTextEditor value={itemForm.checklist_items} onChange={(val) => setItemForm({ ...itemForm, checklist_items: val })} rows={6} placeholder={"Ordinateur, micro, sono...\nLa présentation officielle (PPT)\nLe logiciel Dynamatch"} onEnterSubmit={enterSaveItem} />
+                <RichTextEditor value={itemForm.checklist_items} onChange={(val) => setItemForm({ ...itemForm, checklist_items: val })} rows={6} placeholder={"Ordinateur, micro, sono...\nLa présentation officielle (PPT)\nLe logiciel Dynamatch"} />
               </div>
             )}
           </div>
