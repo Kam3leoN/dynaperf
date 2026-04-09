@@ -119,6 +119,8 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
       }
       case "stat_diff":
         return `${val}`;
+      case "stat_add":
+        return `${val}`;
       case "date_picker":
         if (val instanceof Date) return val.toLocaleDateString("fr-FR");
         if (typeof val === "string") {
@@ -133,7 +135,7 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
   };
 
   // Determine field display type
-  const isStatField = (ft: string) => ["number", "stat_percent", "stat_sum", "stat_diff"].includes(ft);
+  const isStatField = (ft: string) => ["number", "stat_percent", "stat_sum", "stat_diff", "stat_add"].includes(ft);
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>

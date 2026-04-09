@@ -241,7 +241,7 @@ export default function AdminAuditGridInline() {
   };
 
   // === Item CRUD ===
-  const sourceCustomFields = customFieldsForType.filter(f => ["number", "stat_percent", "stat_sum", "stat_diff"].includes(f.field_type));
+  const sourceCustomFields = customFieldsForType.filter(f => ["number", "stat_percent", "stat_sum", "stat_diff", "stat_add"].includes(f.field_type));
 
   const openNewItem = (categoryId: string) => {
     setEditingItem(null);
