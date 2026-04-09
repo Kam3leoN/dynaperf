@@ -336,6 +336,8 @@ export default function Admin() {
   const [editOrgTitles, setEditOrgTitles] = useState<string[]>([]);
   const [editPermOverride, setEditPermOverride] = useState<Record<string, "inherit" | "allow" | "deny">>({});
   const [appPermissionCatalog, setAppPermissionCatalog] = useState<{ key: string; description: string }[]>([]);
+  const [editModuleOverrides, setEditModuleOverrides] = useState<Record<string, boolean | null>>({});
+  const [appModulesCatalog, setAppModulesCatalog] = useState<{ module_key: string; label: string }[]>([]);
   const [editSaving, setEditSaving] = useState(false);
 
   // Create dialog
