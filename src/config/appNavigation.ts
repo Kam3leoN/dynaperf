@@ -241,8 +241,8 @@ export function getRailSections(
 export const RAIL_PINNED_TOP_SECTION_ID: string | null = null;
 
 /** Sections du rail sous la bande logo (toutes les entrées quand rien n’est épinglé). */
-export function getRailScrollSections(isAdmin: boolean, hasPermission?: (key: string) => boolean): RailSection[] {
-  const list = getRailSections(isAdmin, hasPermission).filter((s) => !s.hideFromRail);
+export function getRailScrollSections(isAdmin: boolean, hasPermission?: (key: string) => boolean, isModuleEnabled?: (key: string) => boolean): RailSection[] {
+  const list = getRailSections(isAdmin, hasPermission, isModuleEnabled).filter((s) => !s.hideFromRail);
   if (!RAIL_PINNED_TOP_SECTION_ID) return list;
   return list.filter((s) => s.id !== RAIL_PINNED_TOP_SECTION_ID);
 }
