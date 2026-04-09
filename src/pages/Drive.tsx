@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import Masonry from "react-masonry-css";
+
 import { motion } from "framer-motion";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
@@ -34,12 +34,6 @@ const MAX_FILE_SIZE = 50 * 1024 * 1024;
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 const NEW_DOC_DAYS = 14;
 
-const masonryBreakpoints = {
-  default: 4,
-  1280: 3,
-  768: 2,
-  480: 1,
-};
 
 interface DriveDocument {
   id: string;
@@ -648,18 +642,14 @@ export default function Drive() {
         )}
 
         {filteredDocs.length > 0 ? (
-          <Masonry
-            breakpointCols={masonryBreakpoints}
-            className="drive-masonry-grid"
-            columnClassName="drive-masonry-grid_column"
-          >
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {filteredDocs.map((doc) => {
               const thumbUrl = signedUrls[doc.id] || null;
               const isNew = isNewDocument(doc.created_at);
               return (
                 <motion.div key={doc.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
                   <Card
-                    className="group cursor-pointer transition-all hover:shadow-hover hover:-translate-y-0.5 overflow-hidden relative mb-4"
+                    className="group cursor-pointer transition-all hover:shadow-hover hover:-translate-y-0.5 overflow-hidden relative"
                     onClick={() => openPreview(doc)}
                   >
                     <CardContent className="p-0">
@@ -696,29 +686,15 @@ export default function Drive() {
                         </div>
                       )}
 
-                      <div className="absolute top-2 left-2 z-10 flex flex-wrap gap-1 max-w-[70%]">
+                      <div className="absolute top-2 left-2 z-10">
                         <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${mimeColor(doc.mime_type, doc.file_name)}`}>
                           {mimeLabel(doc.mime_type, doc.file_name)}
                         </span>
-                        {doc.is_favorite && (
-                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                            ★ Favori
-                          </span>
-                        )}
                       </div>
 
                       <div className="p-3 space-y-1">
                         <p className="text-sm font-semibold text-center leading-tight line-clamp-2 pr-6">{doc.title}</p>
                         {doc.description && <p className="text-xs text-muted-foreground text-center line-clamp-2">{doc.description}</p>}
-                        {(doc.tags || []).length > 0 && (
-                          <div className="flex flex-wrap justify-center gap-1 pt-1">
-                            {(doc.tags || []).slice(0, 5).map((t) => (
-                              <span key={t} className="text-[9px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
-                                #{t}
-                              </span>
-                            ))}
-                          </div>
-                        )}
                         {doc.file_size ? <p className="text-[10px] text-muted-foreground text-center">{formatSize(doc.file_size)}</p> : null}
                         <MetaInfo doc={doc} />
                       </div>
@@ -753,7 +729,7 @@ export default function Drive() {
                 </motion.div>
               );
             })}
-          </Masonry>
+          </div>
         ) : (
           <div className="text-center py-16">
             <FontAwesomeIcon icon={faBoxOpen} className="h-12 w-12 text-muted-foreground/30 mb-3" />
