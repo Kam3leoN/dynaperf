@@ -925,7 +925,7 @@ export default function AdminAuditGridInline() {
                 <Label>Éléments de la checklist</Label>
                 <ChecklistItemsEditor
                   value={itemForm.checklist_items}
-                  onChange={(val) => setItemForm({ ...itemForm, checklist_items: val })}
+                  onChange={(val) => setItemForm((prev) => ({ ...prev, checklist_items: val }))}
                   maxPoints={itemForm.max_points}
                   onMaxPointsChange={(total) => setItemForm((prev) => ({ ...prev, max_points: total }))}
                 />
