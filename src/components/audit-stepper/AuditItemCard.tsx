@@ -396,6 +396,9 @@ function AuditItemCardComponent({ item, index, categoryName, answer, onChange, s
                       className="mt-0.5"
                     />
                     <RichHtmlView content={label} className="text-xs sm:text-sm leading-relaxed flex-1 min-w-0" />
+                    {item.checklistPointsMap?.[idx] !== undefined && (
+                      <span className="text-[10px] font-medium text-muted-foreground shrink-0 tabular-nums">{item.checklistPointsMap[idx]} pt{item.checklistPointsMap[idx] > 1 ? "s" : ""}</span>
+                    )}
                   </label>
                 ))}
               </div>
