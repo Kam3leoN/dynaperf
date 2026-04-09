@@ -18,6 +18,63 @@ interface Props {
   onEnterSubmit?: () => void;
 }
 
+const FALLBACK_CITY_API = "https://geo.api.gouv.fr/communes";
+const MAX_RESULTS = 15;
+
+function normalizeQuery(query: string) {
+  return query
+    .trim()
+    .replace(/\s*\(.*\)\s*$/, "")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase();
+}
+
+function dedupeCities(cities: CityResult[]) {
+  const seen = new Set<string>();
+  return cities.filter((city) => {
+    const key = `${city.name}|${city.postal_code}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+async function searchFallbackCities(cleaned: string, isPostalSearch: boolean) {
+  const params = new URLSearchParams({
+    fields: "nom,codeDepartement,codesPostaux",
+    boost: "population",
+    limit: String(MAX_RESULTS),
+  });
+
+  if (isPostalSearch) {
+    params.set("codePostal", cleaned);
+  } else {
+    params.set("nom", cleaned);
+  }
+
+  const response = await fetch(`${FALLBACK_CITY_API}?${params.toString()}`);
+  if (!response.ok) {
+    throw new Error("Fallback city API request failed");
+  }
+
+  const data = (await response.json()) as Array<{
+    nom: string;
+    codeDepartement?: string;
+    codesPostaux?: string[];
+  }>;
+
+  return dedupeCities(
+    data.flatMap((city) =>
+      (city.codesPostaux?.length ? city.codesPostaux : [""]).map((postal_code) => ({
+        name: city.nom,
+        postal_code,
+        department: city.codeDepartement ?? null,
+      }))
+    )
+  ).slice(0, MAX_RESULTS);
+}
+
 export function CityAutocomplete({ value, onChange, placeholder, className, onEnterSubmit }: Props) {
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<CityResult[]>([]);
@@ -26,55 +83,87 @@ export function CityAutocomplete({ value, onChange, placeholder, className, onEn
   const containerRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
-  // Track whether the last change was a programmatic selection
   const justSelectedRef = useRef(false);
+  const requestIdRef = useRef(0);
 
   const search = useCallback(async (query: string) => {
     const trimmed = query.trim();
     if (trimmed.length < 2) {
       setResults([]);
+      setOpen(false);
+      setLoading(false);
       return;
     }
-    setLoading(true);
 
-    // Strip parenthetical postal code if present e.g. "Paris (75001)" → "Paris"
-    const cleaned = trimmed.replace(/\s*\(.*\)\s*$/, "").trim();
-    if (cleaned.length < 2) { setLoading(false); return; }
+    const cleaned = normalizeQuery(trimmed);
+    if (cleaned.length < 2) {
+      setResults([]);
+      setOpen(false);
+      setLoading(false);
+      return;
+    }
 
+    const requestId = ++requestIdRef.current;
     const isPostalSearch = /^\d+$/.test(cleaned);
+    setLoading(true);
+    setOpen(true);
 
-    const { data } = isPostalSearch
-      ? await supabase
-          .from("french_cities")
-          .select("name, postal_code, department")
-          .like("postal_code", `${cleaned}%`)
-          .order("postal_code")
-          .order("name")
-          .limit(15)
-      : await supabase
-          .from("french_cities")
-          .select("name, postal_code, department")
-          .ilike("name", `${cleaned}%`)
-          .order("name")
-          .limit(15);
+    try {
+      const { data, error } = isPostalSearch
+        ? await supabase
+            .from("french_cities")
+            .select("name, postal_code, department")
+            .like("postal_code", `${cleaned}%`)
+            .order("postal_code")
+            .order("name")
+            .limit(MAX_RESULTS)
+        : await supabase
+            .from("french_cities")
+            .select("name, postal_code, department")
+            .or(`name.ilike.${cleaned}%,name.ilike.% ${cleaned}%`)
+            .order("name")
+            .limit(MAX_RESULTS);
 
-    setResults((data as CityResult[]) || []);
-    setHighlightIdx(-1);
-    setLoading(false);
+      if (requestId !== requestIdRef.current) return;
+
+      if (error) {
+        const fallbackResults = await searchFallbackCities(cleaned, isPostalSearch);
+        if (requestId !== requestIdRef.current) return;
+        setResults(fallbackResults);
+      } else {
+        const cities = dedupeCities((data as CityResult[]) || []);
+        if (cities.length > 0) {
+          setResults(cities);
+        } else {
+          const fallbackResults = await searchFallbackCities(cleaned, isPostalSearch);
+          if (requestId !== requestIdRef.current) return;
+          setResults(fallbackResults);
+        }
+      }
+
+      setHighlightIdx(-1);
+    } catch {
+      if (requestId !== requestIdRef.current) return;
+      setResults([]);
+    } finally {
+      if (requestId === requestIdRef.current) {
+        setLoading(false);
+      }
+    }
   }, []);
 
-  // Debounced search on value change – skip if we just selected
   useEffect(() => {
     if (justSelectedRef.current) {
       justSelectedRef.current = false;
       return;
     }
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => search(value), 150);
-    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+    debounceRef.current = setTimeout(() => search(value), 120);
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
   }, [value, search]);
 
-  // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -85,7 +174,6 @@ export function CityAutocomplete({ value, onChange, placeholder, className, onEn
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Scroll highlighted item into view
   useEffect(() => {
     if (highlightIdx >= 0 && listRef.current) {
       const items = listRef.current.querySelectorAll("button");
@@ -116,9 +204,9 @@ export function CityAutocomplete({ value, onChange, placeholder, className, onEn
     } else if (e.key === "ArrowUp") {
       e.preventDefault();
       setHighlightIdx((prev) => (prev > 0 ? prev - 1 : results.length - 1));
-    } else if (e.key === "Enter" && highlightIdx >= 0) {
+    } else if (e.key === "Enter") {
       e.preventDefault();
-      selectCity(results[highlightIdx]);
+      selectCity(results[highlightIdx >= 0 ? highlightIdx : 0]);
     } else if (e.key === "Escape") {
       setOpen(false);
     }
@@ -130,10 +218,10 @@ export function CityAutocomplete({ value, onChange, placeholder, className, onEn
         value={value}
         onChange={(e) => {
           onChange(e.target.value);
-          setOpen(true);
+          setOpen(e.target.value.trim().length >= 2);
         }}
         onFocus={() => {
-          if (value.trim().length >= 2 && results.length > 0) setOpen(true);
+          if (value.trim().length >= 2) setOpen(true);
         }}
         onKeyDown={handleKeyDown}
         placeholder={placeholder}
@@ -159,14 +247,19 @@ export function CityAutocomplete({ value, onChange, placeholder, className, onEn
               }}
             >
               <span>{city.name}</span>
-              <span className="text-xs text-muted-foreground font-mono">{city.postal_code}</span>
+              <span className="font-mono text-xs text-muted-foreground">{city.postal_code}</span>
             </button>
           ))}
         </div>
       )}
       {open && loading && results.length === 0 && (
-        <div className="absolute z-50 top-full left-0 right-0 mt-1 rounded-md border border-border bg-popover shadow-md px-3 py-2 text-sm text-muted-foreground">
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-md border border-border bg-popover px-3 py-2 text-sm text-muted-foreground shadow-md">
           Recherche…
+        </div>
+      )}
+      {open && !loading && results.length === 0 && value.trim().length >= 2 && (
+        <div className="absolute left-0 right-0 top-full z-50 mt-1 rounded-md border border-border bg-popover px-3 py-2 text-sm text-muted-foreground shadow-md">
+          Aucune ville trouvée
         </div>
       )}
     </div>
