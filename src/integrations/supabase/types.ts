@@ -373,81 +373,6 @@ export type Database = {
           },
         ]
       }
-      app_permissions: {
-        Row: {
-          description: string
-          key: string
-        }
-        Insert: {
-          description?: string
-          key: string
-        }
-        Update: {
-          description?: string
-          key?: string
-        }
-        Relationships: []
-      }
-      app_roles_catalog: {
-        Row: {
-          created_at: string
-          is_system: boolean
-          label: string
-          role_key: string
-          sort_rank: number
-        }
-        Insert: {
-          created_at?: string
-          is_system?: boolean
-          label: string
-          role_key: string
-          sort_rank: number
-        }
-        Update: {
-          created_at?: string
-          is_system?: boolean
-          label?: string
-          role_key?: string
-          sort_rank?: number
-        }
-        Relationships: []
-      }
-      role_permission_defaults: {
-        Row: {
-          allowed: boolean
-          permission_key: string
-          role: string
-        }
-        Insert: {
-          allowed?: boolean
-          permission_key: string
-          role: string
-        }
-        Update: {
-          allowed?: boolean
-          permission_key?: string
-          role?: string
-        }
-        Relationships: []
-      }
-      user_permission_overrides: {
-        Row: {
-          allowed: boolean
-          permission_key: string
-          user_id: string
-        }
-        Insert: {
-          allowed: boolean
-          permission_key: string
-          user_id: string
-        }
-        Update: {
-          allowed?: boolean
-          permission_key?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       badges: {
         Row: {
           category: string
@@ -704,13 +629,7 @@ export type Database = {
           created_at: string
           created_by: string
           id: string
-          is_public: boolean
-          kind: string
           name: string
-          nav_sort_order: number
-          salon_access_rule: string
-          salon_min_staff_rank: number | null
-          salon_required_permission: string | null
           updated_at: string
         }
         Insert: {
@@ -718,13 +637,7 @@ export type Database = {
           created_at?: string
           created_by: string
           id?: string
-          is_public?: boolean
-          kind?: string
           name: string
-          nav_sort_order?: number
-          salon_access_rule?: string
-          salon_min_staff_rank?: number | null
-          salon_required_permission?: string | null
           updated_at?: string
         }
         Update: {
@@ -732,13 +645,7 @@ export type Database = {
           created_at?: string
           created_by?: string
           id?: string
-          is_public?: boolean
-          kind?: string
           name?: string
-          nav_sort_order?: number
-          salon_access_rule?: string
-          salon_min_staff_rank?: number | null
-          salon_required_permission?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -869,10 +776,7 @@ export type Database = {
           content: string
           created_at: string
           group_id: string | null
-          group_send_id: string | null
           id: string
-          pinned_at: string | null
-          pinned_by: string | null
           read: boolean
           recipient_id: string
           sender_id: string
@@ -881,10 +785,7 @@ export type Database = {
           content: string
           created_at?: string
           group_id?: string | null
-          group_send_id?: string | null
           id?: string
-          pinned_at?: string | null
-          pinned_by?: string | null
           read?: boolean
           recipient_id: string
           sender_id: string
@@ -893,10 +794,7 @@ export type Database = {
           content?: string
           created_at?: string
           group_id?: string | null
-          group_send_id?: string | null
           id?: string
-          pinned_at?: string | null
-          pinned_by?: string | null
           read?: boolean
           recipient_id?: string
           sender_id?: string
@@ -910,77 +808,6 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
-      }
-      message_reactions: {
-        Row: {
-          created_at: string
-          emoji: string
-          id: string
-          message_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          emoji: string
-          id?: string
-          message_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          emoji?: string
-          id?: string
-          message_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "message_reactions_message_id_fkey"
-            columns: ["message_id"]
-            isOneToOne: false
-            referencedRelation: "messages"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_presence: {
-        Row: {
-          expires_at: string | null
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          expires_at?: string | null
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          expires_at?: string | null
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_dm_hidden_partners: {
-        Row: {
-          hidden_at: string
-          partner_user_id: string
-          user_id: string
-        }
-        Insert: {
-          hidden_at?: string
-          partner_user_id: string
-          user_id: string
-        }
-        Update: {
-          hidden_at?: string
-          partner_user_id?: string
-          user_id?: string
-        }
-        Relationships: []
       }
       notifications: {
         Row: {
@@ -1110,7 +937,6 @@ export type Database = {
           id: string
           last_ip: string | null
           last_login_at: string | null
-          org_titles: Database["public"]["Enums"]["org_title"][]
           title: string | null
           updated_at: string
           user_id: string
@@ -1122,7 +948,6 @@ export type Database = {
           id?: string
           last_ip?: string | null
           last_login_at?: string | null
-          org_titles?: Database["public"]["Enums"]["org_title"][]
           title?: string | null
           updated_at?: string
           user_id: string
@@ -1134,7 +959,6 @@ export type Database = {
           id?: string
           last_ip?: string | null
           last_login_at?: string | null
-          org_titles?: Database["public"]["Enums"]["org_title"][]
           title?: string | null
           updated_at?: string
           user_id?: string
@@ -1466,17 +1290,17 @@ export type Database = {
       user_roles: {
         Row: {
           id: string
-          role: string
+          role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Insert: {
           id?: string
-          role: string
+          role: Database["public"]["Enums"]["app_role"]
           user_id: string
         }
         Update: {
           id?: string
-          role?: string
+          role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
         }
         Relationships: []
@@ -1555,21 +1379,6 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      admin_auth_users_preview: {
-        Args: never
-        Returns: {
-          id: string
-          email: string
-          created_at: string
-        }[]
-      }
-      get_my_permissions: {
-        Args: never
-        Returns: {
-          allowed: boolean
-          permission_key: string
-        }[]
-      }
       get_my_config: {
         Args: never
         Returns: {
@@ -1612,70 +1421,13 @@ export type Database = {
         }
         Returns: boolean
       }
-      staff_rank: {
-        Args: { _user_id: string }
-        Returns: number
-      }
-      user_has_permission: {
-        Args: { _key: string; _user_id: string }
-        Returns: boolean
-      }
       record_activity: {
         Args: { p_score?: number; p_type: string }
         Returns: Json
       }
-      reorder_messaging_channels: {
-        Args: { p_private_group_ids: string[]; p_public_salon_ids: string[] }
-        Returns: undefined
-      }
-      mark_group_messages_read: {
-        Args: { p_group_id: string }
-        Returns: undefined
-      }
-      set_message_pin_state: {
-        Args: { p_message_id: string; p_pinned: boolean }
-        Returns: undefined
-      }
-      admin_set_role_permission_default: {
-        Args: {
-          p_allowed: boolean
-          p_permission_key: string
-          p_role: string
-        }
-        Returns: undefined
-      }
-      admin_seed_role_permission_defaults_for_key: {
-        Args: { p_permission_key: string }
-        Returns: undefined
-      }
-      admin_create_staff_role: {
-        Args: {
-          p_label: string
-          p_role_key: string
-          p_sort_rank: number
-        }
-        Returns: undefined
-      }
-      admin_delete_staff_role: {
-        Args: { p_role_key: string }
-        Returns: undefined
-      }
     }
     Enums: {
-      app_role:
-        | "admin"
-        | "bot"
-        | "member"
-        | "moderator"
-        | "super_admin"
-        | "super_moderator"
-      org_title:
-        | "agency"
-        | "boss"
-        | "director_general"
-        | "external_executive"
-        | "owner"
-        | "president"
+      app_role: "admin" | "user" | "redacteur" | "lecteur" | "super_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1803,22 +1555,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: [
-        "admin",
-        "bot",
-        "member",
-        "moderator",
-        "super_admin",
-        "super_moderator",
-      ],
-      org_title: [
-        "agency",
-        "boss",
-        "director_general",
-        "external_executive",
-        "owner",
-        "president",
-      ],
+      app_role: ["admin", "user", "redacteur", "lecteur", "super_admin"],
     },
   },
 } as const

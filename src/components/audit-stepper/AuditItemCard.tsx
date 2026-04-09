@@ -389,7 +389,7 @@ function AuditItemCardComponent({ item, index, categoryName, answer, onChange, s
                       }}
                       className="mt-0.5"
                     />
-                    <span className="text-xs sm:text-sm leading-relaxed">{label}</span>
+                    <RichHtmlView content={label} className="text-xs sm:text-sm leading-relaxed flex-1 min-w-0" />
                   </label>
                 ))}
               </div>
