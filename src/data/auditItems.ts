@@ -32,6 +32,20 @@ export interface AuditTypeConfig {
   maxPoints: number;
 }
 
+function parseChecklistFromDb(raw: unknown): { labels: string[]; pointsMap: number[] } | undefined {
+  if (!raw || !Array.isArray(raw) || raw.length === 0) return undefined;
+  // New format: [{label, points}, ...]
+  if (typeof raw[0] === "object" && raw[0] !== null && "label" in raw[0]) {
+    const items = raw as { label: string; points?: number }[];
+    return {
+      labels: items.map((i) => i.label),
+      pointsMap: items.map((i) => (typeof i.points === "number" ? i.points : 1)),
+    };
+  }
+  // Legacy format: string[]
+  return { labels: raw as string[], pointsMap: (raw as string[]).map(() => 1) };
+}
+
 /** Fetch the full config (categories + items) for a given audit type key (latest active) */
 export async function fetchAuditConfig(typeKey: string): Promise<AuditTypeConfig | null> {
   // 1. Get type
