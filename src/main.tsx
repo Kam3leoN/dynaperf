@@ -131,3 +131,16 @@ void (async function bootstrap() {
   );
   void registerSW();
 })();
+
+/* Global handler for dynamic import failures (chunk 404 after deploy) */
+window.addEventListener("error", (e) => {
+  if (e.message?.includes("Failed to fetch dynamically imported module") ||
+      e.message?.includes("Importing a module script failed")) {
+    const key = "chunk_reload_ts";
+    const last = Number(sessionStorage.getItem(key) || 0);
+    if (Date.now() - last > 10_000) {
+      sessionStorage.setItem(key, String(Date.now()));
+      window.location.reload();
+    }
+  }
+});
