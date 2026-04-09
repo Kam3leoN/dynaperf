@@ -28,8 +28,12 @@ export function getChecklistStoredTotal(checklistItems: unknown): number | null 
 }
 
 export function getAuditItemMaxPoints(item: ChecklistLike): number {
-  const inputType = "inputType" in item ? item.inputType : item.input_type;
-  const fallbackMax = "maxPoints" in item ? item.maxPoints ?? 0 : item.max_points ?? 0;
+  const inputType = "inputType" in item
+    ? item.inputType
+    : ("input_type" in item ? item.input_type : undefined);
+  const fallbackMax = "maxPoints" in item
+    ? item.maxPoints ?? 0
+    : ("max_points" in item ? item.max_points ?? 0 : 0);
 
   if (inputType !== "checklist") return fallbackMax;
 
