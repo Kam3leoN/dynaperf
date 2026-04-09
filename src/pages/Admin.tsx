@@ -697,6 +697,28 @@ export default function Admin() {
       }
     }
 
+    // Save module overrides
+    for (const [moduleKey, val] of Object.entries(editModuleOverrides)) {
+      if (val === null) {
+        // Remove override (inherit global)
+        await (supabase as any)
+          .from("user_module_overrides")
+          .delete()
+          .eq("user_id", editUser.id)
+          .eq("module_key", moduleKey);
+      } else {
+        const { error: moErr } = await (supabase as any).from("user_module_overrides").upsert(
+          { user_id: editUser.id, module_key: moduleKey, enabled: val },
+          { onConflict: "user_id,module_key" },
+        );
+        if (moErr) {
+          toast.error(moErr.message);
+          setEditSaving(false);
+          return;
+        }
+      }
+    }
+
     toast.success("Utilisateur mis à jour");
     setEditUser(null);
     loadUsers();
