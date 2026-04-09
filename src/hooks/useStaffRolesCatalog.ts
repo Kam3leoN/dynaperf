@@ -25,7 +25,7 @@ export function useStaffRolesCatalog(enabled = true) {
     }
     setLoading(true);
     setError(null);
-    const { data, error: qErr } = await supabase
+    const { data, error: qErr } = await (supabase as any)
       .from("app_roles_catalog")
       .select("role_key, label, sort_rank, is_system, created_at")
       .order("sort_rank", { ascending: false });

@@ -183,7 +183,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
         next = { ...next, [dataKey]: value } as StepZeroData;
       }
       if (fieldType === "time") {
-        next.heureEvenement = value;
+        next.heureEvenement = value as string;
       }
       if (hideSubmitButton) {
         setTimeout(() => onSubmit(next), 0);

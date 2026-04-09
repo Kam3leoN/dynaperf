@@ -157,8 +157,8 @@ export default function AdminRoles() {
     setLoading(true);
     const keys = catalogRoles.map((r) => r.role_key);
     const [pRes, dRes] = await Promise.all([
-      supabase.from("app_permissions").select("key, description").order("key"),
-      supabase.from("role_permission_defaults").select("role, permission_key, allowed"),
+      (supabase as any).from("app_permissions").select("key, description").order("key"),
+      (supabase as any).from("role_permission_defaults").select("role, permission_key, allowed"),
     ]);
     if (pRes.error) {
       toast.error(pRes.error.message);
@@ -177,14 +177,14 @@ export default function AdminRoles() {
         const { count, error } = await supabase
           .from("user_roles")
           .select("*", { count: "exact", head: true })
-          .eq("role", role);
+          .eq("role", role as any);
         counts[role] = error ? 0 : count ?? 0;
       }),
     );
     setRoleCounts(counts);
 
-    setPermissions(pRes.data ?? []);
-    setDefMap(defaultsMap(dRes.data ?? []));
+    setPermissions((pRes.data ?? []) as any[]);
+    setDefMap(defaultsMap((dRes.data ?? []) as any[]));
     setLoading(false);
   }, [catalogRoles]);
 
