@@ -747,8 +747,9 @@ export default function Admin() {
     <AppLayout>
       <Tabs defaultValue="collaborateurs" className="space-y-4">
         <div className="flex items-center justify-between flex-wrap gap-2">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-lg grid-cols-4">
             <TabsTrigger value="collaborateurs">Utilisateurs</TabsTrigger>
+            <TabsTrigger value="modules">Modules</TabsTrigger>
             <TabsTrigger value="audits">Audits</TabsTrigger>
             <TabsTrigger value="secteurs">Secteurs</TabsTrigger>
           </TabsList>
@@ -1265,6 +1266,9 @@ export default function Admin() {
         </DialogContent>
       </Dialog>
       </div>
+        </TabsContent>
+        <TabsContent value="modules">
+          <AdminModules />
         </TabsContent>
         <TabsContent value="audits">
           <AdminAuditGridInline />
