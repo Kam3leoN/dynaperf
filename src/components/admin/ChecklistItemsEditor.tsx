@@ -11,69 +11,100 @@ import {
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 
+interface ChecklistItem {
+  label: string;
+  points: number;
+}
+
 interface ChecklistItemsEditorProps {
-  /** Newline-separated string of items */
+  /** Newline-separated string of items (legacy: plain text, new: JSON with points) */
   value: string;
   onChange: (value: string) => void;
   maxPoints: number;
+  onMaxPointsChange?: (total: number) => void;
+}
+
+function parseItems(value: string): ChecklistItem[] {
+  const trimmed = value.trim();
+  if (!trimmed) return [];
+  // Try JSON format first: [{"label":"...", "points": N}, ...]
+  try {
+    const parsed = JSON.parse(trimmed);
+    if (Array.isArray(parsed) && parsed.length > 0 && typeof parsed[0].label === "string") {
+      return parsed.map((p: { label: string; points?: number }) => ({
+        label: p.label,
+        points: typeof p.points === "number" ? p.points : 1,
+      }));
+    }
+  } catch {
+    // Not JSON
+  }
+  // Fallback: newline-separated plain text
+  return trimmed
+    .split("\n")
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map((label) => ({ label, points: 1 }));
+}
+
+function serializeItems(items: ChecklistItem[]): string {
+  if (items.length === 0) return "";
+  return JSON.stringify(items.map((i) => ({ label: i.label, points: i.points })));
 }
 
 export function ChecklistItemsEditor({
   value,
   onChange,
   maxPoints,
+  onMaxPointsChange,
 }: ChecklistItemsEditorProps) {
-  const items = value
-    .split("\n")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  const items = parseItems(value);
 
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
-  const [editValue, setEditValue] = useState("");
-  const [newValue, setNewValue] = useState("");
+  const [editLabel, setEditLabel] = useState("");
+  const [editPoints, setEditPoints] = useState(1);
+  const [newLabel, setNewLabel] = useState("");
+  const [newPoints, setNewPoints] = useState(1);
   const [dragIdx, setDragIdx] = useState<number | null>(null);
   const [dropIdx, setDropIdx] = useState<number | null>(null);
   const newInputRef = useRef<HTMLInputElement>(null);
 
-  const pointsPerItem = items.length > 0 ? maxPoints / items.length : 0;
-  const displayPts = (idx: number) => {
-    if (items.length === 0) return "0";
-    // distribute points: each item gets floor, remainder spread to first N
-    const base = Math.floor(maxPoints / items.length);
-    const remainder = maxPoints % items.length;
-    return String(idx < remainder ? base + 1 : base);
-  };
+  const totalPoints = items.reduce((s, i) => s + i.points, 0);
 
-  const update = (newItems: string[]) => {
-    onChange(newItems.join("\n"));
+  const update = (newItems: ChecklistItem[]) => {
+    onChange(serializeItems(newItems));
+    const newTotal = newItems.reduce((s, i) => s + i.points, 0);
+    if (onMaxPointsChange && newTotal !== totalPoints) {
+      onMaxPointsChange(newTotal);
+    }
   };
 
   const addItem = () => {
-    if (!newValue.trim()) return;
-    update([...items, newValue.trim()]);
-    setNewValue("");
+    if (!newLabel.trim()) return;
+    update([...items, { label: newLabel.trim(), points: newPoints }]);
+    setNewLabel("");
+    setNewPoints(1);
     setTimeout(() => newInputRef.current?.focus(), 50);
   };
 
   const removeItem = (idx: number) => {
     update(items.filter((_, i) => i !== idx));
-    if (editingIdx === idx) {
-      setEditingIdx(null);
-    }
+    if (editingIdx === idx) setEditingIdx(null);
   };
 
   const startEdit = (idx: number) => {
     setEditingIdx(idx);
-    setEditValue(items[idx]);
+    setEditLabel(items[idx].label);
+    setEditPoints(items[idx].points);
   };
 
   const confirmEdit = () => {
     if (editingIdx === null) return;
-    if (!editValue.trim()) {
+    if (!editLabel.trim()) {
       removeItem(editingIdx);
     } else {
       const next = [...items];
-      next[editingIdx] = editValue.trim();
+      next[editingIdx] = { label: editLabel.trim(), points: editPoints };
       update(next);
     }
     setEditingIdx(null);
@@ -81,16 +112,16 @@ export function ChecklistItemsEditor({
 
   const cancelEdit = () => setEditingIdx(null);
 
+  const updateItemPoints = (idx: number, pts: number) => {
+    const next = [...items];
+    next[idx] = { ...next[idx], points: Math.max(0, pts) };
+    update(next);
+  };
+
   // Drag handlers
   const handleDragStart = (idx: number) => setDragIdx(idx);
-  const handleDragEnd = () => {
-    setDragIdx(null);
-    setDropIdx(null);
-  };
-  const handleDragOver = (e: React.DragEvent, idx: number) => {
-    e.preventDefault();
-    setDropIdx(idx);
-  };
+  const handleDragEnd = () => { setDragIdx(null); setDropIdx(null); };
+  const handleDragOver = (e: React.DragEvent, idx: number) => { e.preventDefault(); setDropIdx(idx); };
   const handleDrop = (targetIdx: number) => {
     if (dragIdx === null || dragIdx === targetIdx) return;
     const next = [...items];
@@ -105,7 +136,7 @@ export function ChecklistItemsEditor({
     <div className="space-y-1">
       {items.map((item, idx) => (
         <div
-          key={`${idx}-${item}`}
+          key={`${idx}-${item.label}`}
           draggable={editingIdx !== idx}
           onDragStart={() => handleDragStart(idx)}
           onDragEnd={handleDragEnd}
@@ -122,56 +153,53 @@ export function ChecklistItemsEditor({
             className="h-3 w-3 text-muted-foreground/40 cursor-grab shrink-0"
           />
 
-          <span className="text-xs font-medium text-muted-foreground tabular-nums shrink-0 w-8 text-right">
-            {displayPts(idx)} pt{Number(displayPts(idx)) > 1 ? "s" : ""}
-          </span>
-
           {editingIdx === idx ? (
             <>
               <Input
-                value={editValue}
-                onChange={(e) => setEditValue(e.target.value)}
+                type="number"
+                min={0}
+                value={editPoints}
+                onChange={(e) => setEditPoints(parseInt(e.target.value) || 0)}
+                className="h-7 w-14 text-xs text-center shrink-0"
+              />
+              <span className="text-[10px] text-muted-foreground shrink-0">pt{editPoints > 1 ? "s" : ""}</span>
+              <Input
+                value={editLabel}
+                onChange={(e) => setEditLabel(e.target.value)}
                 className="h-7 text-sm flex-1"
                 autoFocus
                 onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    confirmEdit();
-                  }
+                  if (e.key === "Enter") { e.preventDefault(); confirmEdit(); }
                   if (e.key === "Escape") cancelEdit();
                 }}
               />
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-emerald-600 shrink-0"
-                onClick={confirmEdit}
-              >
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-emerald-600 shrink-0" onClick={confirmEdit}>
                 <FontAwesomeIcon icon={faCheck} className="h-3 w-3" />
               </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-muted-foreground shrink-0"
-                onClick={cancelEdit}
-              >
+              <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground shrink-0" onClick={cancelEdit}>
                 <FontAwesomeIcon icon={faXmark} className="h-3 w-3" />
               </Button>
             </>
           ) : (
             <>
-              <span className="text-sm flex-1 min-w-0 truncate">{item}</span>
+              <Input
+                type="number"
+                min={0}
+                value={item.points}
+                onChange={(e) => updateItemPoints(idx, parseInt(e.target.value) || 0)}
+                className="h-7 w-14 text-xs text-center shrink-0"
+              />
+              <span className="text-[10px] text-muted-foreground shrink-0">pt{item.points > 1 ? "s" : ""}</span>
+              <span className="text-sm flex-1 min-w-0 truncate">{item.label}</span>
               <Button
-                variant="ghost"
-                size="icon"
+                variant="ghost" size="icon"
                 className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={() => startEdit(idx)}
               >
                 <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3" />
               </Button>
               <Button
-                variant="ghost"
-                size="icon"
+                variant="ghost" size="icon"
                 className="h-6 w-6 text-destructive shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={() => removeItem(idx)}
               >
@@ -185,24 +213,28 @@ export function ChecklistItemsEditor({
       {/* Add new item */}
       <div className="flex items-center gap-2 pt-1">
         <Input
+          type="number"
+          min={0}
+          value={newPoints}
+          onChange={(e) => setNewPoints(parseInt(e.target.value) || 0)}
+          className="h-8 w-14 text-xs text-center shrink-0"
+        />
+        <span className="text-[10px] text-muted-foreground shrink-0">pts</span>
+        <Input
           ref={newInputRef}
-          value={newValue}
-          onChange={(e) => setNewValue(e.target.value)}
+          value={newLabel}
+          onChange={(e) => setNewLabel(e.target.value)}
           placeholder="Nouveau check…"
           className="h-8 text-sm flex-1"
           onKeyDown={(e) => {
-            if (e.key === "Enter") {
-              e.preventDefault();
-              addItem();
-            }
+            if (e.key === "Enter") { e.preventDefault(); addItem(); }
           }}
         />
         <Button
-          variant="outline"
-          size="sm"
+          variant="outline" size="sm"
           className="h-8 gap-1.5 text-xs shrink-0"
           onClick={addItem}
-          disabled={!newValue.trim()}
+          disabled={!newLabel.trim()}
         >
           <FontAwesomeIcon icon={faPlus} className="h-3 w-3" />
           Ajouter
@@ -210,8 +242,8 @@ export function ChecklistItemsEditor({
       </div>
 
       {items.length > 0 && (
-        <p className="text-[11px] text-muted-foreground">
-          {items.length} élément{items.length > 1 ? "s" : ""} · {maxPoints} pts max
+        <p className="text-[11px] text-muted-foreground font-medium">
+          {items.length} élément{items.length > 1 ? "s" : ""} · Total : {totalPoints} pt{totalPoints > 1 ? "s" : ""}
         </p>
       )}
     </div>
