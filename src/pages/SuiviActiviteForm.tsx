@@ -1,9 +1,9 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { SignaturePad } from "@/components/ui/signature-pad";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
-import type { Database, Json } from "@/integrations/supabase/types";
+import type { Json } from "@/integrations/supabase/types";
 import { fetchSuiviItemsConfig, SuiviItemConfig } from "@/data/suiviActiviteItems";
 import { toast } from "sonner";
 import { Progress } from "@/components/ui/progress";
@@ -29,8 +29,8 @@ import {
   faXmark,
   faMinus,
   faCircleInfo,
-  faSave,
 } from "@fortawesome/free-solid-svg-icons";
+import { SaveStatusIndicator } from "@/components/SaveStatusIndicator";
 
 type ItemStatus = "fait" | "pas_fait" | "nc" | null;
 
@@ -62,6 +62,12 @@ export default function SuiviActiviteForm() {
 
   const [partenaires, setPartenaires] = useState<{prenom: string; nom: string}[]>([]);
   const [auditeurs, setAuditeurs] = useState<string[]>([]);
+
+  // Auto-save
+  const draftIdRef = useRef<string | null>(null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const isSavingRef = useRef(false);
 
   useEffect(() => {
     Promise.all([
@@ -113,53 +119,115 @@ export default function SuiviActiviteForm() {
     return cats;
   }, [items]);
 
-  const handleSave = async () => {
-    if (!partenaire.trim() || !suiviPar.trim() || !dateEntretien) {
-      toast.error("Remplis les champs obligatoires (Partenaire, Accompagné par, Date)");
-      return;
-    }
+  // --- Auto-save infrastructure ---
+  const latestRef = useRef({ partenaire, accompagnePar, suiviPar, dateEntretien, nbContratsTotal, nbContratsDernier, answers, signatureAuditeur, signatureAudite });
+  useEffect(() => {
+    latestRef.current = { partenaire, accompagnePar, suiviPar, dateEntretien, nbContratsTotal, nbContratsDernier, answers, signatureAuditeur, signatureAudite };
+  });
 
-    setSaving(true);
-
-    const itemsJson: Record<string, { status: string; observation?: string }> = {};
-    Object.entries(answers).forEach(([id, ans]) => {
+  const buildSuiviPayload = useCallback((data: typeof latestRef.current, isDraft: boolean) => {
+    const itemsJson: Record<string, unknown> = {};
+    Object.entries(data.answers).forEach(([id, ans]) => {
       itemsJson[id] = {
         status: ans.status,
         ...(ans.observation && { observation: ans.observation }),
       };
     });
+    if (isDraft) {
+      itemsJson._draft = true;
+    }
 
-    const valides = Object.values(answers).filter((a) => a.status === "fait").length;
+    const valides = Object.values(data.answers).filter(a => a.status === "fait").length;
 
-    const row: Database["public"]["Tables"]["suivi_activite"]["Insert"] = {
-      date: format(dateEntretien, "yyyy-MM-dd"),
-      agence: partenaire.trim(),
-      agence_referente: accompagnePar.trim() || null,
-      suivi_par: suiviPar.trim(),
-      nb_contrats_total: parseInt(nbContratsTotal) || 0,
-      nb_contrats_depuis_dernier: parseInt(nbContratsDernier) || 0,
+    return {
+      date: data.dateEntretien ? format(data.dateEntretien, "yyyy-MM-dd") : new Date().toISOString().slice(0, 10),
+      agence: data.partenaire.trim() || "—",
+      agence_referente: data.accompagnePar.trim() || null,
+      suivi_par: data.suiviPar.trim() || "—",
+      nb_contrats_total: parseInt(data.nbContratsTotal) || 0,
+      nb_contrats_depuis_dernier: parseInt(data.nbContratsDernier) || 0,
       items: itemsJson as Json,
       total_items_valides: valides,
       total_items: totalItems,
-      signature_auditeur: signatureAuditeur,
-      signature_audite: signatureAudite,
+      signature_auditeur: data.signatureAuditeur,
+      signature_audite: data.signatureAudite,
     };
-    const { error } = await supabase.from("suivi_activite").insert(row);
+  }, [totalItems]);
 
-    if (error) {
-      toast.error("Erreur lors de l'enregistrement");
-      console.error(error);
-      setSaving(false);
+  const saveDraft = useCallback(async () => {
+    if (isSavingRef.current) return;
+    const data = latestRef.current;
+    if (!data.partenaire.trim() && !data.suiviPar.trim() && !data.dateEntretien) return;
+
+    isSavingRef.current = true;
+    setSaveStatus('saving');
+
+    try {
+      const payload = buildSuiviPayload(data, true);
+
+      if (draftIdRef.current) {
+        await supabase.from("suivi_activite").update(payload).eq("id", draftIdRef.current);
+      } else {
+        const { data: row, error } = await supabase.from("suivi_activite").insert(payload).select("id").single();
+        if (error) throw error;
+        draftIdRef.current = row.id;
+      }
+      setSaveStatus('saved');
+    } catch (e) {
+      console.error("Auto-save error", e);
+      setSaveStatus('error');
+    } finally {
+      isSavingRef.current = false;
+    }
+  }, [buildSuiviPayload]);
+
+  // Debounced auto-save trigger
+  useEffect(() => {
+    if (!partenaire && !suiviPar && !dateEntretien && Object.keys(answers).length === 0) return;
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(saveDraft, 3000);
+    return () => clearTimeout(saveTimerRef.current);
+  }, [partenaire, accompagnePar, suiviPar, dateEntretien, nbContratsTotal, nbContratsDernier, answers, signatureAuditeur, signatureAudite, saveDraft]);
+
+  const handleFinalize = async () => {
+    if (!partenaire.trim() || !suiviPar.trim() || !dateEntretien) {
+      toast.error("Remplis les champs obligatoires (Partenaire, Suivi par, Date)");
       return;
     }
 
-    toast.success(`Suivi enregistré — ${valides}/${totalItems} items validés`);
-    navigate("/activite");
+    setSaving(true);
+    clearTimeout(saveTimerRef.current);
+
+    try {
+      const data = latestRef.current;
+      const payload = buildSuiviPayload(data, false);
+
+      if (draftIdRef.current) {
+        const { error } = await supabase.from("suivi_activite").update(payload).eq("id", draftIdRef.current);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("suivi_activite").insert(payload);
+        if (error) throw error;
+      }
+
+      const valides = Object.values(answers).filter(a => a.status === "fait").length;
+      toast.success(`Suivi enregistré — ${valides}/${totalItems} items validés`);
+      navigate("/activite");
+    } catch (error) {
+      console.error(error);
+      toast.error("Erreur lors de l'enregistrement");
+      setSaving(false);
+    }
   };
 
-  const enterSaveSuivi = () => {
-    void handleSave();
-  };
+  const headerActions = (
+    <div className="flex items-center gap-1.5">
+      <SaveStatusIndicator status={saveStatus} />
+      <Badge variant="outline" className="text-xs tabular-nums">
+        {Math.round(progress)}%
+      </Badge>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -182,11 +250,7 @@ export default function SuiviActiviteForm() {
               <ContextSubHeader
                 title="Suivi d'activité : Informations générales"
                 meta={`${totalFilled} / ${totalExpected}`}
-                actions={
-                  <Badge variant="outline" className="text-xs tabular-nums">
-                    {Math.round(progress)}%
-                  </Badge>
-                }
+                actions={headerActions}
               />
               <Progress value={progress} className="pointer-events-none absolute bottom-0 left-0 right-0 h-[3px] rounded-none bg-secondary/80" />
             </div>
@@ -197,7 +261,6 @@ export default function SuiviActiviteForm() {
                   onChange={setPartenaire}
                   suggestions={partenaires.map((p) => `${p.prenom} ${p.nom.toUpperCase()}`)}
                   placeholder="ex: Émilie BLAISE"
-                  onEnterSubmit={enterSaveSuivi}
                 />
               </M3Field>
               <M3Field label="Partenaire référent (Prénom NOM)" filled={!!accompagnePar}>
@@ -206,7 +269,6 @@ export default function SuiviActiviteForm() {
                   onChange={setAccompagnePar}
                   suggestions={partenaires.map((p) => `${p.prenom} ${p.nom.toUpperCase()}`)}
                   placeholder="ex: Marie DUPONT"
-                  onEnterSubmit={enterSaveSuivi}
                 />
               </M3Field>
               <M3Field label="Suivi réalisé par" required filled={!!suiviPar}>
@@ -222,7 +284,7 @@ export default function SuiviActiviteForm() {
                     </SelectContent>
                   </Select>
                 ) : (
-                  <Input value={suiviPar} onChange={(e) => setSuiviPar(e.target.value)} placeholder="ex: Cédric MALZAT" onEnterSubmit={enterSaveSuivi} />
+                  <Input value={suiviPar} onChange={(e) => setSuiviPar(e.target.value)} placeholder="ex: Cédric MALZAT" />
                 )}
               </M3Field>
               <M3Field label="Date de l'entretien" required filled={!!dateEntretien}>
@@ -239,10 +301,10 @@ export default function SuiviActiviteForm() {
                 </Popover>
               </M3Field>
               <M3Field label="Nb contrats total depuis début d'année" filled={!!nbContratsTotal}>
-                <Input type="number" min={0} value={nbContratsTotal} onChange={(e) => setNbContratsTotal(e.target.value)} onEnterSubmit={enterSaveSuivi} />
+                <Input type="number" min={0} value={nbContratsTotal} onChange={(e) => setNbContratsTotal(e.target.value)} />
               </M3Field>
               <M3Field label="Nb contrats depuis dernier entretien" filled={!!nbContratsDernier}>
-                <Input type="number" min={0} value={nbContratsDernier} onChange={(e) => setNbContratsDernier(e.target.value)} onEnterSubmit={enterSaveSuivi} />
+                <Input type="number" min={0} value={nbContratsDernier} onChange={(e) => setNbContratsDernier(e.target.value)} />
               </M3Field>
             </div>
           </div>
@@ -254,11 +316,7 @@ export default function SuiviActiviteForm() {
                 <ContextSubHeader
                   title={`Suivi d'activité : ${cleanSectionTitle(cat.name)}`}
                   meta={`${totalFilled} / ${totalExpected}`}
-                  actions={
-                    <Badge variant="outline" className="text-xs tabular-nums">
-                      {Math.round(progress)}%
-                    </Badge>
-                  }
+                  actions={headerActions}
                 />
                 <Progress value={progress} className="pointer-events-none absolute bottom-0 left-0 right-0 h-[3px] rounded-none bg-secondary/80" />
               </div>
@@ -401,16 +459,15 @@ export default function SuiviActiviteForm() {
           {/* Save button */}
           <div className="pt-4 border-t border-border">
             <Button
-              onClick={handleSave}
+              onClick={handleFinalize}
               disabled={saving || !partenaire.trim() || !suiviPar.trim() || !dateEntretien}
               className="w-full gap-2"
             >
-              <FontAwesomeIcon icon={faSave} className="h-3.5 w-3.5" />
-              {saving ? "Enregistrement…" : "Enregistrer le suivi"}
+              {saving ? "Enregistrement…" : "Finaliser le suivi"}
             </Button>
             {(!partenaire.trim() || !suiviPar.trim() || !dateEntretien) && (
               <p className="text-xs text-muted-foreground text-center mt-2">
-                Remplis les champs obligatoires (*) pour enregistrer
+                Remplis les champs obligatoires (*) pour finaliser
               </p>
             )}
           </div>

@@ -15,7 +15,8 @@ import { ContextSubHeader } from "@/components/context-sub-header";
 import { format } from "date-fns";
 import { MOIS_ORDRE } from "@/data/audits";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faChevronRight, faCamera } from "@fortawesome/free-solid-svg-icons";
+import { faChevronRight } from "@fortawesome/free-solid-svg-icons";
+import { SaveStatusIndicator } from "@/components/SaveStatusIndicator";
 
 export default function AuditForm() {
   const navigate = useNavigate();
@@ -37,6 +38,12 @@ export default function AuditForm() {
   const [editLoaded, setEditLoaded] = useState(false);
   const [requiredFieldIds, setRequiredFieldIds] = useState<string[]>([]);
   const itemsSectionRef = useRef<HTMLDivElement>(null);
+
+  // Auto-save
+  const draftIdRef = useRef<string | null>(auditId ?? null);
+  const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>(isEditMode ? 'saved' : 'idle');
+  const isSavingRef = useRef(false);
 
   // Load required custom field IDs for progress tracking
   useEffect(() => {
@@ -162,25 +169,139 @@ export default function AuditForm() {
     setAnswers((prev) => ({ ...prev, [itemId]: answer }));
   }, []);
 
-  const handleGoToPhotos = useCallback(() => {
+  // --- Auto-save infrastructure ---
+  const latestRef = useRef({ stepZeroData, answers, signatureAuditeur, signatureAudite, existingPhotos });
+  useEffect(() => {
+    latestRef.current = { stepZeroData, answers, signatureAuditeur, signatureAudite, existingPhotos };
+  });
+
+  const buildAuditPayloads = useCallback((
+    szd: StepZeroData,
+    ans: Record<string, ItemAnswer>,
+    photosList: string[],
+    sigAuditeur: string | null,
+    sigAudite: string | null,
+  ) => {
+    const applicableAnswers = Object.entries(ans).filter(([, a]) => !a.notApplicable);
+    const totalPointsCalc = applicableAnswers.reduce((s, [, a]) => s + a.score, 0);
+    const applicableMaxPoints = allItems.filter(i => !ans[i.id]?.notApplicable).reduce((s, i) => s + i.maxPoints, 0);
+    const noteSur10 = applicableMaxPoints > 0 ? +((totalPointsCalc / applicableMaxPoints) * 10).toFixed(2) : 0;
+
+    const dateStr = szd.dateEvenement
+      ? format(szd.dateEvenement, "yyyy-MM-dd")
+      : new Date().toISOString().slice(0, 10);
+
+    const month = szd.dateEvenement ? szd.dateEvenement.getMonth() : new Date().getMonth();
+    const moisVersementIdx = Math.min(month + 1, 11);
+    const moisVersement = MOIS_ORDRE[moisVersementIdx];
+
+    const auditPayload = {
+      date: dateStr,
+      partenaire: szd.partenaireAudite || "—",
+      lieu: szd.lieu,
+      auditeur: szd.auditeur || "—",
+      type_evenement: typeEvenement,
+      note: noteSur10,
+      mois_versement: moisVersement,
+    };
+
+    const itemsJson: Record<string, unknown> = {};
+    Object.entries(ans).forEach(([id, a]) => {
+      itemsJson[id] = {
+        score: a.score,
+        ...(a.comment && { comment: a.comment }),
+        ...(a.checklist && { checklist: a.checklist }),
+        ...(a.rawValue !== undefined && { rawValue: a.rawValue }),
+        ...(a.notApplicable && { notApplicable: true }),
+      };
+    });
+    if (szd.customFieldValues && Object.keys(szd.customFieldValues).length > 0) {
+      itemsJson["__custom_fields"] = szd.customFieldValues;
+    }
+
+    const detailPayload: Database["public"]["Tables"]["audit_details"]["Insert"] = {
+      audit_id: draftIdRef.current || "",
+      partenaire_referent: szd.partenaireReferent || null,
+      type_lieu: szd.typeLieu || null,
+      qualite_lieu: szd.qualiteLieu ?? null,
+      heure_evenement: szd.heureEvenement || null,
+      heure_debut_prevue: szd.heureDebutPrevue || null,
+      heure_fin_prevue: szd.heureFinPrevue || null,
+      heure_debut_reelle: szd.heureDebutReelle || null,
+      heure_fin_reelle: szd.heureFinReelle || null,
+      nom_club: szd.nomClub || null,
+      nb_adherents: szd.nbAdherents ?? null,
+      nb_invites: szd.nbInvites ?? null,
+      nb_no_show: szd.nbNoShow ?? null,
+      nb_participants: szd.nbParticipants ?? null,
+      nb_rdv_pris: szd.nbRdvPris ?? null,
+      items: itemsJson as Json,
+      total_points: totalPointsCalc,
+      note_sur_10: noteSur10,
+      photos: photosList,
+      signature_auditeur: sigAuditeur,
+      signature_audite: sigAudite,
+    };
+
+    return { auditPayload, detailPayload, noteSur10 };
+  }, [allItems, typeEvenement]);
+
+  const saveDraft = useCallback(async () => {
+    if (isSavingRef.current || !config) return;
+    const { stepZeroData: szd, answers: ans, signatureAuditeur: sa, signatureAudite: sp, existingPhotos: ep } = latestRef.current;
+    if (!szd) return;
+
+    isSavingRef.current = true;
+    setSaveStatus('saving');
+
+    try {
+      const { auditPayload, detailPayload } = buildAuditPayloads(szd, ans, ep, sa, sp);
+
+      if (draftIdRef.current) {
+        await supabase.from("audits").update(auditPayload).eq("id", draftIdRef.current);
+        const { data: existing } = await supabase.from("audit_details").select("id").eq("audit_id", draftIdRef.current).maybeSingle();
+        if (existing) {
+          await supabase.from("audit_details").update({ ...detailPayload, audit_id: draftIdRef.current }).eq("audit_id", draftIdRef.current);
+        } else {
+          await supabase.from("audit_details").insert({ ...detailPayload, audit_id: draftIdRef.current });
+        }
+      } else {
+        const { data, error } = await supabase.from("audits")
+          .insert({ ...auditPayload, statut: 'brouillon' })
+          .select("id")
+          .single();
+        if (error) throw error;
+        draftIdRef.current = data.id;
+        await supabase.from("audit_details").insert({ ...detailPayload, audit_id: data.id });
+      }
+      setSaveStatus('saved');
+    } catch (e) {
+      console.error("Auto-save error", e);
+      setSaveStatus('error');
+    } finally {
+      isSavingRef.current = false;
+    }
+  }, [config, buildAuditPayloads]);
+
+  // Debounced auto-save trigger
+  useEffect(() => {
+    if (!stepZeroData && Object.keys(answers).length === 0) return;
+    if (phase !== 'main') return;
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(saveDraft, 3000);
+    return () => clearTimeout(saveTimerRef.current);
+  }, [stepZeroData, answers, signatureAuditeur, signatureAudite, existingPhotos, saveDraft, phase]);
+
+  const handleGoToPhotos = useCallback(async () => {
+    clearTimeout(saveTimerRef.current);
+    await saveDraft();
     setPhase("photos");
     window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
+  }, [saveDraft]);
 
   const handlePhotosBack = useCallback(() => {
     setPhase("main");
   }, []);
-
-  const handleFinish = async () => {
-    try {
-      setPhase("saving");
-      await saveAudit(answers);
-    } catch (error) {
-      console.error(error);
-      toast.error("Erreur lors de l'enregistrement des photos de l'audit");
-      setPhase("main");
-    }
-  };
 
   const uploadPhotos = async (id: string): Promise<string[]> => {
     const urls: string[] = [];
@@ -196,147 +317,42 @@ export default function AuditForm() {
     return urls;
   };
 
-  const saveAudit = async (finalAnswers: Record<string, ItemAnswer>) => {
+  const handleFinish = async () => {
     if (!stepZeroData || !config) return;
-
-    const applicableAnswers = Object.entries(finalAnswers).filter(([, a]) => !a.notApplicable);
-    const totalPoints = applicableAnswers.reduce((s, [, a]) => s + a.score, 0);
-    const applicableMaxPoints = allItems.filter(i => !finalAnswers[i.id]?.notApplicable).reduce((s, i) => s + i.maxPoints, 0);
-    const noteSur10 = applicableMaxPoints > 0 ? +((totalPoints / applicableMaxPoints) * 10).toFixed(2) : 0;
-
-    const dateStr = stepZeroData.dateEvenement
-      ? format(stepZeroData.dateEvenement, "yyyy-MM-dd")
-      : new Date().toISOString().slice(0, 10);
-
-    const month = stepZeroData.dateEvenement
-      ? stepZeroData.dateEvenement.getMonth()
-      : new Date().getMonth();
-    const moisVersementIdx = Math.min(month + 1, 11);
-    const moisVersement = MOIS_ORDRE[moisVersementIdx];
-
-    const auditPayload = {
-      date: dateStr,
-      partenaire: stepZeroData.partenaireAudite || "—",
-      lieu: stepZeroData.lieu,
-      auditeur: stepZeroData.auditeur || "—",
-      type_evenement: typeEvenement,
-      note: noteSur10,
-      mois_versement: moisVersement,
-      statut: "OK" as const,
-    };
-
-    let targetAuditId: string;
-
-    if (isEditMode && auditId) {
-      const { error: auditErr } = await supabase
-        .from("audits")
-        .update(auditPayload)
-        .eq("id", auditId);
-      if (auditErr) {
-        toast.error("Erreur lors de la modification de l'audit");
-        console.error(auditErr);
-        setPhase("main");
-        return;
-      }
-      targetAuditId = auditId;
-    } else {
-      const { data: auditRow, error: auditErr } = await supabase
-        .from("audits")
-        .insert(auditPayload)
-        .select()
-        .single();
-      if (auditErr) {
-        toast.error("Erreur lors de la création de l'audit");
-        console.error(auditErr);
-        setPhase("main");
-        return;
-      }
-      targetAuditId = auditRow.id;
-    }
-
-    let photoUrls: string[] = [...existingPhotos];
-    if (photos.length > 0) {
-      const newUrls = await uploadPhotos(targetAuditId);
-      photoUrls = [...photoUrls, ...newUrls];
-    }
-
-    const itemsJson: Record<string, unknown> = {};
-    Object.entries(finalAnswers).forEach(([id, ans]) => {
-      itemsJson[id] = {
-        score: ans.score,
-        ...(ans.comment && { comment: ans.comment }),
-        ...(ans.checklist && { checklist: ans.checklist }),
-        ...(ans.rawValue !== undefined && { rawValue: ans.rawValue }),
-        ...(ans.notApplicable && { notApplicable: true }),
-      };
-    });
-    if (stepZeroData.customFieldValues && Object.keys(stepZeroData.customFieldValues).length > 0) {
-      itemsJson["__custom_fields"] = stepZeroData.customFieldValues;
-    }
-
-    const detailPayload: Database["public"]["Tables"]["audit_details"]["Insert"] = {
-      audit_id: targetAuditId,
-      partenaire_referent: stepZeroData.partenaireReferent || null,
-      type_lieu: stepZeroData.typeLieu || null,
-      qualite_lieu: stepZeroData.qualiteLieu ?? null,
-      heure_evenement: stepZeroData.heureEvenement || null,
-      heure_debut_prevue: stepZeroData.heureDebutPrevue || null,
-      heure_fin_prevue: stepZeroData.heureFinPrevue || null,
-      heure_debut_reelle: stepZeroData.heureDebutReelle || null,
-      heure_fin_reelle: stepZeroData.heureFinReelle || null,
-      nom_club: stepZeroData.nomClub || null,
-      nb_adherents: stepZeroData.nbAdherents ?? null,
-      nb_invites: stepZeroData.nbInvites ?? null,
-      nb_no_show: stepZeroData.nbNoShow ?? null,
-      nb_participants: stepZeroData.nbParticipants ?? null,
-      nb_rdv_pris: stepZeroData.nbRdvPris ?? null,
-      items: itemsJson as Json,
-      total_points: totalPoints,
-      note_sur_10: noteSur10,
-      photos: photoUrls,
-      signature_auditeur: signatureAuditeur,
-      signature_audite: signatureAudite,
-    };
-
-    if (isEditMode) {
-      const { data: existingDetail } = await supabase
-        .from("audit_details")
-        .select("id")
-        .eq("audit_id", targetAuditId)
-        .single();
-
-      if (existingDetail) {
-        const { error: detailErr } = await supabase
-          .from("audit_details")
-          .update(detailPayload)
-          .eq("audit_id", targetAuditId);
-        if (detailErr) {
-          toast.error("Erreur lors de la modification des détails");
-          console.error(detailErr);
-          setPhase("main");
-          return;
-        }
-      } else {
-        const { error: detailErr } = await supabase.from("audit_details").insert(detailPayload);
-        if (detailErr) {
-          toast.error("Erreur lors de l'enregistrement des détails");
-          console.error(detailErr);
-          setPhase("main");
-          return;
-        }
-      }
-    } else {
-      const { error: detailErr } = await supabase.from("audit_details").insert(detailPayload);
-      if (detailErr) {
-        toast.error("Erreur lors de l'enregistrement des détails");
-        console.error(detailErr);
-        setPhase("main");
+    if (!draftIdRef.current) {
+      await saveDraft();
+      if (!draftIdRef.current) {
+        toast.error("Impossible de sauvegarder l'audit");
         return;
       }
     }
+    setPhase("saving");
+    try {
+      clearTimeout(saveTimerRef.current);
+      let photoUrls = [...existingPhotos];
+      if (photos.length > 0) {
+        const newUrls = await uploadPhotos(draftIdRef.current);
+        photoUrls = [...photoUrls, ...newUrls];
+      }
 
-    toast.success(isEditMode ? `Audit modifié — Note : ${noteSur10}/10` : `Audit enregistré — Note : ${noteSur10}/10`);
-    navigate("/audits");
+      const { auditPayload, detailPayload, noteSur10 } = buildAuditPayloads(
+        stepZeroData, answers, photoUrls, signatureAuditeur, signatureAudite
+      );
+
+      await supabase.from("audits")
+        .update({ ...auditPayload, statut: 'OK' })
+        .eq("id", draftIdRef.current);
+      await supabase.from("audit_details")
+        .update({ ...detailPayload, audit_id: draftIdRef.current })
+        .eq("audit_id", draftIdRef.current);
+
+      toast.success(isEditMode ? `Audit modifié — Note : ${noteSur10}/10` : `Audit enregistré — Note : ${noteSur10}/10`);
+      navigate("/audits");
+    } catch (error) {
+      console.error(error);
+      toast.error("Erreur lors de la finalisation de l'audit");
+      setPhase("photos");
+    }
   };
 
   if (configLoading || (isEditMode && !editLoaded)) {
@@ -385,7 +401,15 @@ export default function AuditForm() {
     if (upper.includes("PROMOTION")) return "Promotion";
     return cleaned.charAt(0).toUpperCase() + cleaned.slice(1).toLowerCase();
   };
-  const headerTitle = phase === "main" ? selectedTypeTitle : formTitle;
+
+  const headerActions = (
+    <div className="flex items-center gap-1.5">
+      <SaveStatusIndicator status={saveStatus} />
+      <Badge variant="outline" className="shrink-0 text-xs tabular-nums">
+        {Math.round(progress)}%
+      </Badge>
+    </div>
+  );
 
   return (
     <AppLayout mainClassName="!pt-0 shell:!pt-0">
@@ -398,11 +422,7 @@ export default function AuditForm() {
                 <ContextSubHeader
                   title={`${selectedTypeTitle} : Informations générales`}
                   meta={`${totalFilled} / ${totalExpected}`}
-                  actions={
-                    <Badge variant="outline" className="shrink-0 text-xs tabular-nums">
-                      {Math.round(progress)}%
-                    </Badge>
-                  }
+                  actions={headerActions}
                 />
                 <Progress
                   value={progress}
@@ -429,11 +449,7 @@ export default function AuditForm() {
                       <ContextSubHeader
                         title={`${selectedTypeTitle} : ${normalizeSectionTitle(cat.name)}`}
                         meta={`${totalFilled} / ${totalExpected}`}
-                        actions={
-                          <Badge variant="outline" className="shrink-0 text-xs tabular-nums">
-                            {Math.round(progress)}%
-                          </Badge>
-                        }
+                        actions={headerActions}
                       />
                       <Progress
                         value={progress}
@@ -512,8 +528,7 @@ export default function AuditForm() {
                 disabled={!infoValid}
                 className="w-full gap-1.5"
               >
-                <FontAwesomeIcon icon={faCamera} className="h-3.5 w-3.5" />
-                Photos & Finaliser
+                Continuer vers les photos
                 <FontAwesomeIcon icon={faChevronRight} className="h-3 w-3" />
               </Button>
               {!infoValid && (

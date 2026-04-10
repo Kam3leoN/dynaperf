@@ -23,6 +23,7 @@ import {
   faMoneyBill,
   faBell,
   faQrcode,
+  faImages,
 } from "@fortawesome/free-solid-svg-icons";
 
 /** Entrée du rail (icône seule). */
@@ -206,6 +207,7 @@ const ALL_RAIL_SECTIONS: RailSection[] = [
   suivis,
   reseau,
   drive,
+  galerie,
   qrcodes,
   sondages,
   historique,
