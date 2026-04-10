@@ -12,7 +12,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { publicAssetUrl } from "@/lib/basePath";
 
 /**
- * Barre inférieure mobile : entrées alignées sur le rail (config centrale).
+ * Barre inférieure mobile — Material You 3 Expressive Navigation Bar.
+ * Pill ovale horizontale 64×32 comme indicateur actif, surface tonale, icônes 24px, labels 12px.
  */
 export function BottomNav() {
   const location = useLocation();
@@ -25,7 +26,6 @@ export function BottomNav() {
   const sections = getRailSections(isAdmin, hasPermission, isModuleEnabled);
   const messagesSection = sections.find((s) => s.id === "messages");
   const driveSection = sections.find((s) => s.id === "drive");
-  const hubPath = "/hub";
 
   const isMessagesActive = location.pathname.startsWith("/messages");
   const messagesDefaultPath = "/messages?section=discussion";
@@ -34,120 +34,57 @@ export function BottomNav() {
 
   return (
     <>
-      <nav className="fixed bottom-0 inset-x-0 z-50 bg-card/95 backdrop-blur-xl border-t border-border/40 safe-area-bottom shell:hidden">
-        <div className="flex items-end justify-around px-2 pt-2 pb-2">
-          <button
-            type="button"
-            onClick={() => setMenuOpen(true)}
-            className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 touch-target"
-          >
-            <div className="flex items-center justify-center w-16 h-8 rounded-2xl bg-transparent">
-              <FontAwesomeIcon icon={faBars} className="h-[22px] w-[22px] text-muted-foreground" />
-            </div>
-            <span className="text-[11px] font-semibold text-muted-foreground">Menu</span>
-          </button>
+      {/* M3 Navigation Bar — surface tonale, shadow-soft, 80px */}
+      <nav className="fixed bottom-0 inset-x-0 z-50 bg-surface-container shadow-soft backdrop-blur-xl safe-area-bottom shell:hidden">
+        <div className="flex h-20 items-center justify-around px-1">
 
+          {/* ── Menu ── */}
+          <NavBarItem
+            active={false}
+            label="Menu"
+            icon={<FontAwesomeIcon icon={faBars} className="h-6 w-6" />}
+            onClick={() => setMenuOpen(true)}
+          />
+
+          {/* ── Messages ── */}
           {messagesSection && (
-            <button
-              type="button"
+            <NavBarItem
+              active={isMessagesActive}
+              label="Messages"
+              icon={<FontAwesomeIcon icon={messagesSection.icon} className="h-6 w-6" />}
               onClick={() => navigate(messagesDefaultPath)}
-              className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 touch-target"
-            >
-              <div
-                className={cn(
-                  "flex items-center justify-center w-16 h-8 rounded-2xl transition-all duration-200",
-                  isMessagesActive ? "bg-primary/12 scale-105" : "bg-transparent",
-                )}
-              >
-                <FontAwesomeIcon
-                  icon={messagesSection.icon}
-                  className={cn(
-                    "h-[22px] w-[22px] transition-colors",
-                    isMessagesActive ? "text-primary" : "text-muted-foreground",
-                  )}
-                />
-              </div>
-              <span
-                className={cn(
-                  "text-[11px] font-semibold transition-colors",
-                  isMessagesActive ? "text-primary" : "text-muted-foreground",
-                )}
-              >
-                Messages
-              </span>
-            </button>
+            />
           )}
 
+          {/* ── Accueil FAB (brand) ── */}
           <button
             type="button"
             onClick={() => navigate("/")}
-            className="relative -top-4 flex items-center justify-center w-16 h-16 rounded-3xl shadow-elevated active:scale-95 transition-transform"
+            className="relative -top-3 flex items-center justify-center w-14 h-14 rounded-3xl shadow-elevated active:scale-95 transition-transform"
             style={{ backgroundColor: "#212121" }}
             aria-label="Accueil"
           >
-            <img src={publicAssetUrl("pwaDynaperf.svg")} alt="DynaPerf" className="h-8 w-8" />
+            <img src={publicAssetUrl("pwaDynaperf.svg")} alt="DynaPerf" className="h-7 w-7" />
           </button>
 
+          {/* ── Drive ── */}
           {driveSection && (
-            <button
-              type="button"
+            <NavBarItem
+              active={isDriveActive}
+              label="Drive"
+              icon={<FontAwesomeIcon icon={driveSection.icon} className="h-6 w-6" />}
               onClick={() => navigate(driveSection.to)}
-              className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 touch-target"
-            >
-              <div
-                className={cn(
-                  "flex items-center justify-center w-16 h-8 rounded-2xl transition-all duration-200",
-                  isDriveActive ? "bg-primary/12 scale-105" : "bg-transparent",
-                )}
-              >
-                <FontAwesomeIcon
-                  icon={driveSection.icon}
-                  className={cn(
-                    "h-[22px] w-[22px] transition-colors",
-                    isDriveActive ? "text-primary" : "text-muted-foreground",
-                  )}
-                />
-              </div>
-              <span
-                className={cn(
-                  "text-[11px] font-semibold transition-colors",
-                  isDriveActive ? "text-primary" : "text-muted-foreground",
-                )}
-              >
-                Drive
-              </span>
-            </button>
+            />
           )}
 
+          {/* ── Hub ── */}
           {hasPermission("nav.hub") && (
-            <button
-              type="button"
-              onClick={() => navigate(hubPath)}
-              className="flex flex-col items-center justify-center gap-1 min-w-[64px] py-2 touch-target"
-            >
-              <div
-                className={cn(
-                  "flex items-center justify-center w-16 h-8 rounded-2xl transition-all duration-200",
-                  isHubActive ? "bg-primary/12 scale-105" : "bg-transparent",
-                )}
-              >
-                <FontAwesomeIcon
-                  icon={faChartLine}
-                  className={cn(
-                    "h-[22px] w-[22px] transition-colors",
-                    isHubActive ? "text-primary" : "text-muted-foreground",
-                  )}
-                />
-              </div>
-              <span
-                className={cn(
-                  "text-[11px] font-semibold transition-colors",
-                  isHubActive ? "text-primary" : "text-muted-foreground",
-                )}
-              >
-                Hub
-              </span>
-            </button>
+            <NavBarItem
+              active={isHubActive}
+              label="Hub"
+              icon={<FontAwesomeIcon icon={faChartLine} className="h-6 w-6" />}
+              onClick={() => navigate("/hub")}
+            />
           )}
         </div>
       </nav>
@@ -161,5 +98,48 @@ export function BottomNav() {
         </SheetContent>
       </Sheet>
     </>
+  );
+}
+
+/* ─── M3 Navigation Bar Item ─── */
+
+interface NavBarItemProps {
+  active: boolean;
+  label: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+}
+
+function NavBarItem({ active, label, icon, onClick }: NavBarItemProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="flex flex-1 flex-col items-center justify-center gap-1 min-h-[48px] py-1 touch-target"
+    >
+      {/* Active indicator pill — 64×32, rounded-full */}
+      <div
+        className={cn(
+          "flex items-center justify-center w-16 h-8 rounded-full transition-all duration-200 ease-out",
+          active
+            ? "bg-primary/12 scale-x-100"
+            : "bg-transparent scale-x-75 opacity-0",
+        )}
+        style={{ willChange: active ? "auto" : "transform, opacity" }}
+      >
+        <span className={cn("transition-colors duration-200", active ? "text-primary" : "text-muted-foreground")}>
+          {icon}
+        </span>
+      </div>
+      {/* Label — 12px semibold */}
+      <span
+        className={cn(
+          "text-xs font-semibold transition-colors duration-200",
+          active ? "text-foreground" : "text-muted-foreground",
+        )}
+      >
+        {label}
+      </span>
+    </button>
   );
 }
