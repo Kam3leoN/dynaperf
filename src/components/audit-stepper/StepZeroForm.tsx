@@ -75,6 +75,7 @@ interface Props {
   typeEvenement: string;
   initialData?: StepZeroData;
   onSubmit: (data: StepZeroData) => void;
+  onChange?: (data: StepZeroData) => void;
   hideSubmitButton?: boolean;
 }
 
@@ -86,7 +87,7 @@ const EMPTY_SUGGESTIONS = {
   referents: [] as string[],
 };
 
-export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitButton }: Props) {
+export function StepZeroForm({ typeEvenement, initialData, onSubmit, onChange, hideSubmitButton }: Props) {
   const isMobile = useShellNarrow();
   const [data, setData] = useState<StepZeroData>(
     initialData ?? {
