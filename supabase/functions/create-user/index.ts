@@ -1,11 +1,35 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient, type User } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-function jsonOk(data: any) {
+interface UserRoleRow {
+  user_id: string;
+  role: string;
+}
+
+interface ProfileRow {
+  user_id: string;
+  display_name?: string | null;
+  avatar_url?: string | null;
+  title?: string | null;
+  [key: string]: unknown;
+}
+
+interface CollaborateurConfigRow {
+  user_id: string;
+  [key: string]: unknown;
+}
+
+interface CustomPrimeRow {
+  user_id: string;
+  id?: string;
+  [key: string]: unknown;
+}
+
+function jsonOk(data: unknown) {
   return new Response(JSON.stringify(data), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
@@ -24,11 +48,11 @@ function jsonError(msg: string, status: number) {
  */
 async function listAllAuthUsers(adminClient: ReturnType<typeof createClient>) {
   const perPage = 200;
-  const users: any[] = [];
+  const users: User[] = [];
   let page = 1;
   for (;;) {
     const { data, error } = await adminClient.auth.admin.listUsers({ page, perPage });
-    if (error) return { users: null as any[] | null, error };
+    if (error) return { users: null as User[] | null, error };
     const batch = data?.users ?? [];
     users.push(...batch);
     if (batch.length < perPage) break;
@@ -46,7 +70,7 @@ function normUuidStr(s: string | undefined | null): string {
  * Repli si `listUsers` renvoie un tableau vide côté Edge (bundle Deno / API),
  * alors que `profiles` référence bien des lignes dans auth.users (FK).
  */
-async function hydrateAuthUsersFromProfiles(adminClient: ReturnType<typeof createClient>): Promise<any[]> {
+async function hydrateAuthUsersFromProfiles(adminClient: ReturnType<typeof createClient>): Promise<User[]> {
   const { data: profRows, error: profErr } = await adminClient.from("profiles").select("user_id");
   if (profErr || !profRows?.length) return [];
   const ids = [
@@ -54,7 +78,7 @@ async function hydrateAuthUsersFromProfiles(adminClient: ReturnType<typeof creat
       (profRows as { user_id: string }[]).map((p) => p.user_id).filter(Boolean),
     ),
   ];
-  const out: any[] = [];
+  const out: User[] = [];
   for (const uid of ids) {
     const { data, error } = await adminClient.auth.admin.getUserById(uid);
     if (!error && data?.user) out.push(data.user);
@@ -99,8 +123,8 @@ Deno.serve(async (req) => {
       .from("user_roles").select("role")
       .eq("user_id", user.id);
 
-    const callerIsSuperAdmin = roles?.some((r: any) => r.role === "super_admin");
-    const callerIsAdmin = roles?.some((r: any) => r.role === "admin" || r.role === "super_admin");
+    const callerIsSuperAdmin = roles?.some((r: UserRoleRow) => r.role === "super_admin");
+    const callerIsAdmin = roles?.some((r: UserRoleRow) => r.role === "admin" || r.role === "super_admin");
     if (!callerIsAdmin) return jsonError("Non autorisé", 403);
 
     let body: Record<string, unknown>;
@@ -116,7 +140,7 @@ Deno.serve(async (req) => {
       const { userId } = body;
       if (!userId) return jsonError("userId requis", 400);
       const { data: targetRoles } = await adminClient.from("user_roles").select("role").eq("user_id", userId);
-      const targetIsSuperAdmin = targetRoles?.some((r: any) => r.role === "super_admin");
+      const targetIsSuperAdmin = targetRoles?.some((r: UserRoleRow) => r.role === "super_admin");
       if (targetIsSuperAdmin && !callerIsSuperAdmin) return jsonError("Seul un super admin peut supprimer un super admin", 403);
       await adminClient.from("collaborateur_config").delete().eq("user_id", userId);
       await adminClient.from("user_roles").delete().eq("user_id", userId);
@@ -132,7 +156,7 @@ Deno.serve(async (req) => {
       if (!userId || !role) return jsonError("userId et role requis", 400);
       if (role === "super_admin" && !callerIsSuperAdmin) return jsonError("Seul un super admin peut attribuer ce rôle", 403);
       const { data: targetRoles } = await adminClient.from("user_roles").select("role").eq("user_id", userId);
-      const targetIsSuperAdmin = targetRoles?.some((r: any) => r.role === "super_admin");
+      const targetIsSuperAdmin = targetRoles?.some((r: UserRoleRow) => r.role === "super_admin");
       if (targetIsSuperAdmin && !callerIsSuperAdmin) return jsonError("Seul un super admin peut modifier le rôle d'un super admin", 403);
       const { error: delRoleErr } = await adminClient.from("user_roles").delete().eq("user_id", userId);
       if (delRoleErr) return jsonError(delRoleErr.message, 400);
@@ -197,7 +221,7 @@ Deno.serve(async (req) => {
       if (!userId) return jsonError("userId requis", 400);
 
       const { data: targetRoles } = await adminClient.from("user_roles").select("role").eq("user_id", userId);
-      const targetIsSuperAdmin = targetRoles?.some((r: any) => r.role === "super_admin");
+      const targetIsSuperAdmin = targetRoles?.some((r: UserRoleRow) => r.role === "super_admin");
       if (targetIsSuperAdmin && !callerIsSuperAdmin) return jsonError("Seul un super admin peut modifier un super admin", 403);
 
       if (email) {
@@ -222,7 +246,7 @@ Deno.serve(async (req) => {
         return jsonError("userId et avatar_url requis", 400);
       }
       const { data: targetRoles } = await adminClient.from("user_roles").select("role").eq("user_id", userId);
-      const targetIsSuperAdmin = targetRoles?.some((r: any) => r.role === "super_admin");
+      const targetIsSuperAdmin = targetRoles?.some((r: UserRoleRow) => r.role === "super_admin");
       if (targetIsSuperAdmin && !callerIsSuperAdmin) {
         return jsonError("Seul un super admin peut modifier l'avatar d'un super admin", 403);
       }
@@ -245,18 +269,29 @@ Deno.serve(async (req) => {
       const { data: allConfigs } = await adminClient.from("collaborateur_config").select("*");
       const { data: allCustomPrimes } = await adminClient.from("user_custom_primes").select("*").order("created_at");
 
-      const result = authUsers.map((u: any) => {
+      const result = authUsers.map((u: User) => {
         const uid = normUuidStr(u.id);
-        const profile = allProfiles?.find((p: any) => normUuidStr(p.user_id) === uid);
+        const profile = (allProfiles as ProfileRow[] | null | undefined)?.find(
+          (p: ProfileRow) => normUuidStr(p.user_id) === uid,
+        );
         return {
           id: u.id,
           email: u.email,
           displayName: profile?.display_name || u.email,
           avatarUrl: profile?.avatar_url || null,
           title: profile?.title || null,
-          roles: allRoles?.filter((r: any) => normUuidStr(r.user_id) === uid).map((r: any) => r.role) || [],
-          config: allConfigs?.find((c: any) => normUuidStr(c.user_id) === uid) || null,
-          customPrimes: allCustomPrimes?.filter((cp: any) => normUuidStr(cp.user_id) === uid) || [],
+          roles:
+            (allRoles as UserRoleRow[] | null | undefined)
+              ?.filter((r: UserRoleRow) => normUuidStr(r.user_id) === uid)
+              .map((r: UserRoleRow) => r.role) || [],
+          config:
+            (allConfigs as CollaborateurConfigRow[] | null | undefined)?.find(
+              (c: CollaborateurConfigRow) => normUuidStr(c.user_id) === uid,
+            ) || null,
+          customPrimes:
+            (allCustomPrimes as CustomPrimeRow[] | null | undefined)?.filter(
+              (cp: CustomPrimeRow) => normUuidStr(cp.user_id) === uid,
+            ) || [],
           createdAt: u.created_at,
         };
       });
@@ -278,7 +313,7 @@ Deno.serve(async (req) => {
     if (action === "update-custom-prime") {
       const { primeId, label, prime_1, prime_2, prime_3_plus } = body;
       if (!primeId) return jsonError("primeId requis", 400);
-      const updates: any = {};
+      const updates: Record<string, string | number> = {};
       if (label !== undefined) updates.label = label;
       if (prime_1 !== undefined) updates.prime_1 = prime_1;
       if (prime_2 !== undefined) updates.prime_2 = prime_2;
@@ -323,7 +358,8 @@ Deno.serve(async (req) => {
     }
 
     return jsonOk({ user: newUser.user });
-  } catch (err: any) {
-    return jsonError(err.message || "Erreur interne", 500);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    return jsonError(msg || "Erreur interne", 500);
   }
 });

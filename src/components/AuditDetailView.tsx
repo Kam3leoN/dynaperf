@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { resolveAuditPhotoUrls } from "@/lib/storageUtils";
+import { resolveAuditPhotoGalleryUrls } from "@/lib/storageUtils";
 import {
   Dialog,
   DialogContent,
@@ -43,7 +43,7 @@ interface DetailData {
   nb_no_show: number | null;
   nb_participants: number | null;
   nb_rdv_pris: number | null;
-  photos: string[] | null;
+  photos: { thumb: string; full: string }[] | null;
   signature_auditeur: string | null;
   signature_audite: string | null;
 }
@@ -74,7 +74,7 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
     ]).then(async ([{ data: detailRow }, cfg, { data: fields }]) => {
       if (detailRow) {
         const rawPhotos = (detailRow.photos as string[]) ?? [];
-        const resolvedPhotos = await resolveAuditPhotoUrls(rawPhotos);
+        const resolvedPhotos = await resolveAuditPhotoGalleryUrls(rawPhotos);
         setDetail({
           ...detailRow,
           items: (detailRow.items as DetailData["items"]) ?? {},
@@ -417,12 +417,16 @@ export function AuditDetailView({ auditId, typeEvenement, open, onClose, partena
                   Photos ({detail.photos.length})
                 </h2>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                  {detail.photos.map((url, idx) => (
-                    <a key={idx} href={url} target="_blank" rel="noopener noreferrer" className="block">
+                  {detail.photos.map((p, idx) => (
+                    <a key={idx} href={p.full} target="_blank" rel="noopener noreferrer" className="block overflow-hidden rounded-lg border border-border bg-muted/30">
                       <img
-                        src={url}
+                        src={p.thumb}
                         alt={`Photo ${idx + 1}`}
-                        className="rounded-lg border border-border object-cover w-full aspect-video hover:opacity-90 transition-opacity"
+                        width={720}
+                        height={480}
+                        loading="lazy"
+                        decoding="async"
+                        className="object-cover w-full aspect-video hover:opacity-90 transition-opacity"
                       />
                     </a>
                   ))}

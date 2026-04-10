@@ -432,7 +432,7 @@ export default function Admin() {
       }
       return true;
     },
-    [users, currentUser?.id, isSuperAdmin, adminRolesLoading],
+    [users, isSuperAdmin, adminRolesLoading],
   );
 
   const resetCreateForm = () => {

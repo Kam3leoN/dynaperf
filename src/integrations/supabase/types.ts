@@ -839,6 +839,128 @@ export type Database = {
           },
         ]
       }
+      message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          id: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          id?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          id?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      qr_codes: {
+        Row: {
+          bg_color: string
+          cover_svg: string | null
+          created_at: string
+          created_by: string | null
+          dot_svg: string | null
+          eye_svg: string | null
+          fg_color: string
+          id: string
+          level: string
+          logo_url: string | null
+          name: string
+          size: number
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          bg_color?: string
+          cover_svg?: string | null
+          created_at?: string
+          created_by?: string | null
+          dot_svg?: string | null
+          eye_svg?: string | null
+          fg_color?: string
+          id?: string
+          level?: string
+          logo_url?: string | null
+          name: string
+          size?: number
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          bg_color?: string
+          cover_svg?: string | null
+          created_at?: string
+          created_by?: string | null
+          dot_svg?: string | null
+          eye_svg?: string | null
+          fg_color?: string
+          id?: string
+          level?: string
+          logo_url?: string | null
+          name?: string
+          size?: number
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      user_presence: {
+        Row: {
+          expires_at: string | null
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          expires_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          expires_at?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_dm_hidden_partners: {
+        Row: {
+          hidden_at: string
+          partner_user_id: string
+          user_id: string
+        }
+        Insert: {
+          hidden_at?: string
+          partner_user_id: string
+          user_id: string
+        }
+        Update: {
+          hidden_at?: string
+          partner_user_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           body: string

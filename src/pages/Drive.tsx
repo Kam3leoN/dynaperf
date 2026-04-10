@@ -29,6 +29,11 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { DriveFilePreview } from "@/components/drive/DriveFilePreview";
 import { uploadFileToSignedUrl } from "@/utils/driveUpload";
+import {
+  DRIVE_GRID_THUMB,
+  createSignedImageUrlWithThumbFallback,
+  parseStoragePathFromPublicUrl,
+} from "@/lib/storageImageUrls";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024;
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
@@ -113,6 +118,31 @@ function canPreview(doc: DriveDocument): boolean {
   return false;
 }
 
+const DRIVE_BUCKET = "drive-files";
+
+/** Chemin storage pour la vignette (fichier image ou image de couverture). */
+function driveObjectPathForThumb(doc: DriveDocument): string | null {
+  if (doc.mime_type?.startsWith("image/")) {
+    const p = parseStoragePathFromPublicUrl(doc.file_url, DRIVE_BUCKET);
+    if (p) return p;
+  }
+  if (doc.image_url) {
+    const p = parseStoragePathFromPublicUrl(doc.image_url, DRIVE_BUCKET);
+    if (p) return p;
+  }
+  return null;
+}
+
+async function buildDriveThumbnailUrl(doc: DriveDocument): Promise<string | null> {
+  const path = driveObjectPathForThumb(doc);
+  if (path) {
+    const pack = await createSignedImageUrlWithThumbFallback(DRIVE_BUCKET, path, 3600, DRIVE_GRID_THUMB);
+    if (pack?.url) return pack.url;
+  }
+  if (doc.image_url?.startsWith("http")) return doc.image_url;
+  return null;
+}
+
 function parseTagsInput(s: string): string[] {
   return s
     .split(/[,;\n]+/)
@@ -131,7 +161,7 @@ export default function Drive() {
   const { isAdmin } = useAdmin(user);
   const [searchParams] = useSearchParams();
   const [documents, setDocuments] = useState<DriveDocument[]>([]);
-  const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -181,6 +211,7 @@ export default function Drive() {
 
   const fetchAll = async () => {
     setLoading(true);
+    setThumbUrls({});
     const [{ data: docs }, { data: profs }] = await Promise.all([
       supabase.from("drive_documents").select("*").order("created_at", { ascending: false }),
       supabase.from("profiles").select("user_id, display_name"),
@@ -194,29 +225,25 @@ export default function Drive() {
     setProfiles(profileMap);
     setLoading(false);
 
-    const urlMap: Record<string, string> = {};
-    const toSign = docList.filter((d) => canPreview(d));
-    await Promise.all(toSign.map(async (doc) => {
-      try {
-        if (doc.mime_type?.startsWith("image/")) {
-          const path = new URL(doc.file_url).pathname.split("/drive-files/")[1];
-          if (path) {
-            const { data } = await supabase.storage.from("drive-files").createSignedUrl(decodeURIComponent(path), 3600);
-            if (data?.signedUrl) urlMap[doc.id] = data.signedUrl;
+    const toThumb = docList.filter((d) => canPreview(d));
+    const CHUNK = 8;
+    for (let i = 0; i < toThumb.length; i += CHUNK) {
+      const slice = toThumb.slice(i, i + CHUNK);
+      const patch: Record<string, string> = {};
+      await Promise.all(
+        slice.map(async (doc) => {
+          try {
+            const u = await buildDriveThumbnailUrl(doc);
+            if (u) patch[doc.id] = u;
+          } catch {
+            /* ignore */
           }
-        }
-        if (doc.image_url && !urlMap[doc.id]) {
-          const imgPath = new URL(doc.image_url).pathname.split("/drive-files/")[1];
-          if (imgPath) {
-            const { data } = await supabase.storage.from("drive-files").createSignedUrl(decodeURIComponent(imgPath), 3600);
-            if (data?.signedUrl) urlMap[doc.id] = data.signedUrl;
-          } else {
-            urlMap[doc.id] = doc.image_url;
-          }
-        }
-      } catch { /* ignore */ }
-    }));
-    setSignedUrls(urlMap);
+        }),
+      );
+      if (Object.keys(patch).length > 0) {
+        setThumbUrls((prev) => ({ ...prev, ...patch }));
+      }
+    }
   };
 
   useEffect(() => { void fetchAll(); }, []);
@@ -514,8 +541,26 @@ export default function Drive() {
   if (loading) {
     return (
       <AppLayout>
-        <div className="flex items-center justify-center py-20">
-          <p className="text-muted-foreground">Chargement…</p>
+        <div className="space-y-5 max-w-6xl mx-auto animate-in fade-in duration-200">
+          <div className="flex items-center justify-between gap-3">
+            <div className="h-8 w-36 sm:w-44 rounded-lg bg-muted animate-pulse" />
+            <div className="h-10 w-24 rounded-lg bg-muted animate-pulse" />
+          </div>
+          <div className="h-12 w-full rounded-xl bg-muted animate-pulse" />
+          <div className="flex flex-wrap gap-2">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-8 w-20 rounded-full bg-muted animate-pulse" />
+            ))}
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div key={i} className="space-y-2">
+                <div className="aspect-[4/3] rounded-xl bg-muted animate-pulse" />
+                <div className="h-4 w-3/4 mx-auto rounded bg-muted/80 animate-pulse" />
+              </div>
+            ))}
+          </div>
+          <p className="text-center text-sm text-muted-foreground">Chargement du Drive…</p>
         </div>
       </AppLayout>
     );
@@ -644,7 +689,8 @@ export default function Drive() {
         {filteredDocs.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {filteredDocs.map((doc) => {
-              const thumbUrl = signedUrls[doc.id] || null;
+              const thumbUrl = thumbUrls[doc.id] || null;
+              const thumbPending = canPreview(doc) && !thumbUrl;
               const isNew = isNewDocument(doc.created_at);
               return (
                 <motion.div key={doc.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
@@ -665,11 +711,18 @@ export default function Drive() {
                         </div>
                       )}
 
-                      {thumbUrl ? (
+                      {thumbPending ? (
+                        <div className="aspect-[4/3] bg-muted animate-pulse" aria-hidden />
+                      ) : thumbUrl ? (
                         <div className="aspect-[4/3] bg-muted overflow-hidden">
                           <img
                             src={thumbUrl}
                             alt={doc.title}
+                            width={480}
+                            height={360}
+                            loading="lazy"
+                            decoding="async"
+                            sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
                             className="w-full h-full object-cover"
                             onError={(e) => {
                               (e.target as HTMLImageElement).style.display = "none";

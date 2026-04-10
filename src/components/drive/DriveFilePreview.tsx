@@ -189,7 +189,12 @@ export function DriveFilePreview({ previewUrl, doc }: DriveFilePreviewProps) {
 
   if (isImage) {
     return (
-      <img src={previewUrl} alt={doc.title} className="max-w-full max-h-[70vh] object-contain rounded-lg mx-auto" />
+      <img
+        src={previewUrl}
+        alt={doc.title}
+        decoding="async"
+        className="max-w-full max-h-[70vh] object-contain rounded-lg mx-auto"
+      />
     );
   }
 

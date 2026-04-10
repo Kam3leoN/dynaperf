@@ -117,7 +117,7 @@ export function SignaturePad({ label, signerName, value, onChange, className }: 
       };
       img.src = value;
     }
-  }, []);
+  }, [value]);
 
   const applyInitials = useCallback(() => {
     const canvas = canvasRef.current;

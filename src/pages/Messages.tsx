@@ -883,15 +883,21 @@ export default function Messages() {
         : mergeGroupMessageRows(rawConversation, user.id)
       : sortMessagesByTime(rawConversation);
 
-  const getUnreadCount = (t: ConversationTarget) =>
-    messages.filter((m) => {
-      if (t.type === "user") {
-        return m.sender_id === t.id && m.recipient_id === user?.id && !m.read && !m.group_id;
-      }
-      return m.group_id === t.id && m.sender_id !== user?.id && !m.read;
-    }).length;
+  const getUnreadCount = useCallback(
+    (t: ConversationTarget) =>
+      messages.filter((m) => {
+        if (t.type === "user") {
+          return m.sender_id === t.id && m.recipient_id === user?.id && !m.read && !m.group_id;
+        }
+        return m.group_id === t.id && m.sender_id !== user?.id && !m.read;
+      }).length,
+    [messages, user?.id],
+  );
 
-  const getProfileById = (id: string) => allProfiles.find(p => p.user_id === id);
+  const getProfileById = useCallback(
+    (id: string) => allProfiles.find((p) => p.user_id === id),
+    [allProfiles],
+  );
 
   const pinnedMessagesSorted = useMemo(
     () =>
@@ -911,7 +917,7 @@ export default function Messages() {
       const other = m.sender_id === user.id ? m.recipient_id : m.sender_id;
       return getProfileById(other)?.display_name?.trim() || "Message privé";
     },
-    [groups, user, allProfiles],
+    [groups, user, getProfileById],
   );
 
   const openFromPinnedList = useCallback(
@@ -1068,7 +1074,7 @@ export default function Messages() {
 
   const getGroupUnreadStable = useCallback(
     (groupId: string) => getUnreadCount({ type: "group", id: groupId }),
-    [messages, groups, user?.id],
+    [getUnreadCount],
   );
 
   const hiddenDmPartnerSet = useMemo(() => new Set(hiddenDmPartnerIds), [hiddenDmPartnerIds]);
@@ -1219,13 +1225,27 @@ export default function Messages() {
       return;
     }
     const ids = rows.map((r) => r.id);
-    const { error } = await supabase.from("messages").delete().in("id", ids);
+    const { data: deletedRows, error } = await supabase.from("messages").delete().in("id", ids).select("id");
     if (error) {
       toast.error(error.message);
       return;
     }
+    const deletedIds = new Set((deletedRows ?? []).map((r) => r.id));
+    if (deletedIds.size === 0) {
+      toast.error(
+        "Suppression impossible (droits insuffisants ou message déjà retiré). Les administrateurs ne peuvent supprimer que les messages visibles selon les règles du salon ou de la conversation.",
+      );
+      setDeletingMsg(null);
+      return;
+    }
+    setMessages((prev) => prev.filter((m) => !deletedIds.has(m.id)));
+    setReactions((prev) => prev.filter((r) => !deletedIds.has(r.message_id)));
     setDeletingMsg(null);
-    toast.success(ids.length > 1 ? "Message retiré pour tous les destinataires concernés." : "Message supprimé");
+    toast.success(
+      deletedIds.size > 1
+        ? "Message retiré pour tous les destinataires concernés."
+        : "Message supprimé",
+    );
   };
 
   // Group CRUD

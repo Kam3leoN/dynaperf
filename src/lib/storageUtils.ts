@@ -1,4 +1,8 @@
-import { supabase } from "@/integrations/supabase/client";
+import {
+  AUDIT_GALLERY_THUMB,
+  createSignedFullUrl,
+  createSignedImageUrlWithThumbFallback,
+} from "@/lib/storageImageUrls";
 
 /**
  * Resolves audit photo references to displayable URLs.
@@ -15,13 +19,11 @@ export async function resolveAuditPhotoUrls(photos: string[]): Promise<string[]>
       results.push(ref);
     } else {
       try {
-        const { data, error } = await supabase.storage
-          .from("audit-photos")
-          .createSignedUrl(ref, 3600);
-        if (data?.signedUrl && !error) {
-          results.push(data.signedUrl);
+        const signed = await createSignedFullUrl("audit-photos", ref, 3600);
+        if (signed) {
+          results.push(signed);
         } else {
-          console.warn("Failed to sign audit photo URL:", ref, error?.message);
+          console.warn("Failed to sign audit photo URL:", ref);
         }
       } catch (e) {
         console.warn("Error resolving audit photo:", ref, e);
@@ -29,4 +31,24 @@ export async function resolveAuditPhotoUrls(photos: string[]): Promise<string[]>
     }
   }
   return results;
+}
+
+/** Vignette + plein écran pour la galerie (charge moins de pixels dans la grille). */
+export async function resolveAuditPhotoGalleryUrls(
+  photos: string[],
+): Promise<{ thumb: string; full: string }[]> {
+  if (!photos || photos.length === 0) return [];
+  const out: { thumb: string; full: string }[] = [];
+  for (const ref of photos) {
+    if (!ref || ref.trim() === "") continue;
+    if (ref.startsWith("http")) {
+      out.push({ thumb: ref, full: ref });
+      continue;
+    }
+    const full = await createSignedFullUrl("audit-photos", ref, 3600);
+    if (!full) continue;
+    const pack = await createSignedImageUrlWithThumbFallback("audit-photos", ref, 3600, AUDIT_GALLERY_THUMB);
+    out.push({ full, thumb: pack?.url ?? full });
+  }
+  return out;
 }

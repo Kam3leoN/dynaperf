@@ -83,9 +83,9 @@ export default function AdminAuditGridInline() {
     const { data } = await supabase.from("audit_types").select("id, key, label, version, version_label, is_active, color").order("key").order("version", { ascending: false });
     setTypes(data || []);
     setLoading(false);
-  }, [selectedTypeId]);
+  }, []);
 
-  useEffect(() => { loadTypes(); }, []);
+  useEffect(() => { loadTypes(); }, [loadTypes]);
 
   // Load categories + items when type changes
   const loadData = useCallback(async () => {
@@ -481,7 +481,7 @@ export default function AdminAuditGridInline() {
       const t = types.find(t => t.id === selectedTypeId);
       if (t && t.key !== selectedKey) setSelectedKey(t.key);
     }
-  }, [selectedTypeId, types]);
+  }, [selectedTypeId, types, selectedKey]);
 
   if (loading) {
     return <div className="flex items-center justify-center py-20"><p className="text-muted-foreground animate-pulse">Chargement…</p></div>;

@@ -69,7 +69,7 @@ export function useAdmin(providedUser?: User | null) {
     return () => {
       cancelled = true;
     };
-  }, [authLoading, user?.id]);
+  }, [authLoading, user]);
 
   return { isAdmin, isSuperAdmin, loading };
 }

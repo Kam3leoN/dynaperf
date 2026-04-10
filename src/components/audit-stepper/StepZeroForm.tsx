@@ -601,7 +601,12 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, onChange, h
             const before = field.col_offset_before || 0;
             const after = field.col_offset_after || 0;
             const val = data.customFieldValues?.[field.id] ?? "";
-            const isFilled = val !== "" && val !== null && val !== undefined && val !== 0;
+            const isFilled = (() => {
+              if (val === "" || val === null || val === undefined) return false;
+              if (field.field_type === "number" || field.field_type === "rating") return true;
+              if (Array.isArray(val)) return val.length > 0;
+              return val !== 0;
+            })();
             return (
               <React.Fragment key={field.id}>
                 {!isMobile && before > 0 && (

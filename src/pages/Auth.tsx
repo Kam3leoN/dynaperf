@@ -72,7 +72,7 @@ export default function Auth() {
         setTimeout(() => triggerBiometricLogin(), 300);
       }
     })();
-  }, []);
+  }, [isMobile]);
 
   const triggerBiometricLogin = async () => {
     setBiometricLoading(true);

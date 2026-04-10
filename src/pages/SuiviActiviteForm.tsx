@@ -87,7 +87,7 @@ export default function SuiviActiviteForm() {
       );
       setLoading(false);
     });
-  }, []);
+  }, [versionParam]);
 
   const setAnswer = useCallback((itemId: string, update: Partial<ItemAnswer>) => {
     setAnswers((prev) => ({

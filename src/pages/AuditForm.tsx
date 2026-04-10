@@ -17,6 +17,15 @@ import { MOIS_ORDRE } from "@/data/audits";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import { SaveStatusIndicator } from "@/components/SaveStatusIndicator";
+import {
+  buildAuditDraftStorageKey,
+  buildPersistableDraftJson,
+  clearAuditDraft,
+  draftHasContent,
+  loadAuditDraft,
+} from "@/lib/auditDraftStorage";
+
+const AUDIT_DRAFT_DEBOUNCE_MS = 1600;
 
 export default function AuditForm() {
   const navigate = useNavigate();
@@ -26,18 +35,113 @@ export default function AuditForm() {
   const typeId = searchParams.get("typeId") || "";
   const isEditMode = !!auditId;
 
+  const draftStorageKey = useMemo(
+    () => buildAuditDraftStorageKey(typeEvenement, typeId),
+    [typeEvenement, typeId],
+  );
+
+  const initialDraft = useMemo(() => {
+    if (typeof window === "undefined" || isEditMode) return null;
+    return loadAuditDraft(buildAuditDraftStorageKey(typeEvenement, typeId));
+  }, [isEditMode, typeEvenement, typeId]);
+
   const [config, setConfig] = useState<AuditTypeConfig | null>(null);
   const [configLoading, setConfigLoading] = useState(true);
   const [phase, setPhase] = useState<"main" | "photos" | "saving">("main");
-  const [stepZeroData, setStepZeroData] = useState<StepZeroData | undefined>();
-  const [answers, setAnswers] = useState<Record<string, ItemAnswer>>({});
+  const [stepZeroData, setStepZeroData] = useState<StepZeroData | undefined>(initialDraft?.stepZeroData);
+  const [answers, setAnswers] = useState<Record<string, ItemAnswer>>(initialDraft?.answers ?? {});
   const [photos, setPhotos] = useState<File[]>([]);
   const [existingPhotos, setExistingPhotos] = useState<string[]>([]);
-  const [signatureAuditeur, setSignatureAuditeur] = useState<string | null>(null);
-  const [signatureAudite, setSignatureAudite] = useState<string | null>(null);
+  const [signatureAuditeur, setSignatureAuditeur] = useState<string | null>(
+    initialDraft?.signatureAuditeur ?? null,
+  );
+  const [signatureAudite, setSignatureAudite] = useState<string | null>(initialDraft?.signatureAudite ?? null);
   const [editLoaded, setEditLoaded] = useState(false);
   const [requiredFieldIds, setRequiredFieldIds] = useState<string[]>([]);
   const itemsSectionRef = useRef<HTMLDivElement>(null);
+  const prevDraftKeyRef = useRef<string | null>(null);
+  const draftPersistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const draftWelcomeToastKeyRef = useRef<string | null>(null);
+
+  /** Changement de type d’audit (query) ou toast unique si brouillon présent au chargement. */
+  useEffect(() => {
+    if (isEditMode) {
+      prevDraftKeyRef.current = draftStorageKey;
+      return;
+    }
+    const prev = prevDraftKeyRef.current;
+    prevDraftKeyRef.current = draftStorageKey;
+    const isKeyChange = prev !== null && prev !== draftStorageKey;
+
+    if (isKeyChange) {
+      const snap = loadAuditDraft(draftStorageKey);
+      if (snap && draftHasContent(snap)) {
+        setStepZeroData(snap.stepZeroData);
+        setAnswers(snap.answers);
+        setSignatureAuditeur(snap.signatureAuditeur);
+        setSignatureAudite(snap.signatureAudite);
+        toast.info("Brouillon local chargé pour ce type d'événement.");
+      } else {
+        setStepZeroData(undefined);
+        setAnswers({});
+        setSignatureAuditeur(null);
+        setSignatureAudite(null);
+      }
+      setPhotos([]);
+      setPhase("main");
+      draftWelcomeToastKeyRef.current = draftStorageKey;
+      return;
+    }
+
+    const snap = loadAuditDraft(draftStorageKey);
+    if (
+      snap &&
+      draftHasContent(snap) &&
+      draftWelcomeToastKeyRef.current !== draftStorageKey
+    ) {
+      draftWelcomeToastKeyRef.current = draftStorageKey;
+      toast.info("Brouillon local restauré — vos dernières saisies ont été rechargées.");
+    }
+  }, [draftStorageKey, isEditMode]);
+
+  /** Sauvegarde automatique (localStorage) après saisie — debounce. */
+  useEffect(() => {
+    if (isEditMode || phase === "saving") return;
+
+    if (draftPersistTimerRef.current) {
+      clearTimeout(draftPersistTimerRef.current);
+      draftPersistTimerRef.current = null;
+    }
+
+    draftPersistTimerRef.current = window.setTimeout(() => {
+      draftPersistTimerRef.current = null;
+      const json = buildPersistableDraftJson(stepZeroData, answers, signatureAuditeur, signatureAudite);
+      try {
+        if (json) {
+          localStorage.setItem(draftStorageKey, json);
+        } else {
+          clearAuditDraft(draftStorageKey);
+        }
+      } catch {
+        /* quota ou navigation privée */
+      }
+    }, AUDIT_DRAFT_DEBOUNCE_MS);
+
+    return () => {
+      if (draftPersistTimerRef.current) {
+        clearTimeout(draftPersistTimerRef.current);
+        draftPersistTimerRef.current = null;
+      }
+    };
+  }, [
+    answers,
+    draftStorageKey,
+    isEditMode,
+    phase,
+    signatureAudite,
+    signatureAuditeur,
+    stepZeroData,
+  ]);
 
   // Auto-save
   const draftIdRef = useRef<string | null>(auditId ?? null);
@@ -346,6 +450,8 @@ export default function AuditForm() {
         .update({ ...detailPayload, audit_id: draftIdRef.current })
         .eq("audit_id", draftIdRef.current);
 
+      clearAuditDraft(draftStorageKey);
+
       toast.success(isEditMode ? `Audit modifié — Note : ${noteSur10}/10` : `Audit enregistré — Note : ${noteSur10}/10`);
       navigate("/audits");
     } catch (error) {
@@ -432,6 +538,7 @@ export default function AuditForm() {
                 />
               </div>
               <StepZeroForm
+                key={draftStorageKey}
                 typeEvenement={typeEvenement}
                 initialData={stepZeroData}
                 onSubmit={handleStepZeroChange}
