@@ -103,7 +103,16 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, onChange, h
     }
   );
 
-  const { data: suggestions = EMPTY_SUGGESTIONS } = useQuery({
+  // Notify parent of every data change for live auto-save
+  const onChangeRef = React.useRef(onChange);
+  onChangeRef.current = onChange;
+  const initialRef = React.useRef(true);
+  React.useEffect(() => {
+    if (initialRef.current) { initialRef.current = false; return; }
+    onChangeRef.current?.(data);
+  }, [data]);
+
+
     queryKey: ["audit-step-zero", "suggestions", typeEvenement],
     staleTime: 1000 * 60 * 10,
     queryFn: async () => {
