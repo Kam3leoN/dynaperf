@@ -23,6 +23,7 @@ import {
   faMoneyBill,
   faBell,
   faQrcode,
+  faImages,
 } from "@fortawesome/free-solid-svg-icons";
 
 /** Entrée du rail (icône seule). */
@@ -153,6 +154,17 @@ const drive: RailSection = {
   children: [{ label: "Mon Drive", to: "/drive", icon: faFolder }],
 };
 
+const galerie: RailSection = {
+  id: "galerie",
+  label: "Galerie",
+  icon: faImages,
+  to: "/galerie",
+  requiredPermission: "nav.audits",
+  requiredModule: "galerie",
+  pathPrefixes: ["/galerie"],
+  children: [{ label: "Galerie photos", to: "/galerie", icon: faImages }],
+};
+
 const qrcodes: RailSection = {
   id: "qrcodes",
   label: "QrCode",
@@ -206,6 +218,7 @@ const ALL_RAIL_SECTIONS: RailSection[] = [
   suivis,
   reseau,
   drive,
+  galerie,
   qrcodes,
   sondages,
   historique,
