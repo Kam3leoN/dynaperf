@@ -1231,15 +1231,14 @@ export default function Messages() {
     let deletedRows: { id: string }[] | null = null;
     let error: { message: string } | null = null;
 
+    /** RPC SECURITY DEFINER : même règles que la lecture + modération (évite DELETE RLS à 0 ligne). */
     if (deletingMsg.group_id && deletingMsg.group_send_id) {
-      const res = await supabase
-        .from("messages")
-        .delete()
-        .eq("group_id", deletingMsg.group_id)
-        .eq("group_send_id", deletingMsg.group_send_id)
-        .eq("sender_id", deletingMsg.sender_id)
-        .select("id");
-      deletedRows = res.data;
+      const res = await supabase.rpc("delete_messages_moderation_by_send", {
+        p_group_id: deletingMsg.group_id,
+        p_group_send_id: deletingMsg.group_send_id,
+        p_sender_id: deletingMsg.sender_id,
+      });
+      deletedRows = (res.data ?? []).map((id) => ({ id }));
       error = res.error;
     } else {
       const rows = (deletingMsg.group_id ? siblingGroupSendRows(deletingMsg, messages) : [deletingMsg]).filter((r) =>
@@ -1250,8 +1249,10 @@ export default function Messages() {
         setDeletingMsg(null);
         return;
       }
-      const res = await supabase.from("messages").delete().in("id", rows.map((r) => r.id)).select("id");
-      deletedRows = res.data;
+      const res = await supabase.rpc("delete_messages_moderation_by_ids", {
+        p_message_ids: rows.map((r) => r.id),
+      });
+      deletedRows = (res.data ?? []).map((id) => ({ id }));
       error = res.error;
     }
 
@@ -1267,8 +1268,32 @@ export default function Messages() {
       setDeletingMsg(null);
       return;
     }
-    setMessages((prev) => prev.filter((m) => !deletedIds.has(m.id)));
-    setReactions((prev) => prev.filter((r) => !deletedIds.has(r.message_id)));
+
+    /**
+     * Retirer du state toutes les lignes concernées : le serveur peut renvoyer un sous-ensemble d’ids
+     * selon PostgREST, et en groupe il peut rester localement une autre ligne du même envoi (même bulle).
+     * On aligne aussi les réactions sur les ids réellement enlevés.
+     */
+    const sameSendAsDeleting = (m: Message) =>
+      Boolean(
+        deletingMsg.group_id &&
+          deletingMsg.group_send_id &&
+          m.group_id === deletingMsg.group_id &&
+          m.group_send_id === deletingMsg.group_send_id &&
+          m.sender_id === deletingMsg.sender_id,
+      );
+
+    setMessages((prev) => {
+      const removedIds = new Set<string>();
+      const next = prev.filter((m) => {
+        const drop = deletedIds.has(m.id) || sameSendAsDeleting(m);
+        if (drop) removedIds.add(m.id);
+        return !drop;
+      });
+      setReactions((rprev) => rprev.filter((r) => !removedIds.has(r.message_id)));
+      return next;
+    });
+
     setDeletingMsg(null);
     toast.success(
       deletedIds.size > 1

@@ -1608,6 +1608,20 @@ export type Database = {
         }
         Returns: boolean
       }
+      delete_messages_moderation_by_send: {
+        Args: {
+          p_group_id: string
+          p_group_send_id: string
+          p_sender_id: string
+        }
+        Returns: string[]
+      }
+      delete_messages_moderation_by_ids: {
+        Args: {
+          p_message_ids: string[]
+        }
+        Returns: string[]
+      }
       record_activity: {
         Args: { p_score?: number; p_type: string }
         Returns: Json
