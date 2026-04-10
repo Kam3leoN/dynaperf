@@ -112,7 +112,7 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, onChange, h
     onChangeRef.current?.(data);
   }, [data]);
 
-
+  const { data: suggestions = EMPTY_SUGGESTIONS } = useQuery({
     queryKey: ["audit-step-zero", "suggestions", typeEvenement],
     staleTime: 1000 * 60 * 10,
     queryFn: async () => {
