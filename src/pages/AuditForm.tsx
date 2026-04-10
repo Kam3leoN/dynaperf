@@ -435,6 +435,7 @@ export default function AuditForm() {
                 typeEvenement={typeEvenement}
                 initialData={stepZeroData}
                 onSubmit={handleStepZeroChange}
+                onChange={handleStepZeroChange}
                 hideSubmitButton
               />
             </div>

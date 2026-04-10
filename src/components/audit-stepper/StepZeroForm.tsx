@@ -75,6 +75,7 @@ interface Props {
   typeEvenement: string;
   initialData?: StepZeroData;
   onSubmit: (data: StepZeroData) => void;
+  onChange?: (data: StepZeroData) => void;
   hideSubmitButton?: boolean;
 }
 
@@ -86,7 +87,7 @@ const EMPTY_SUGGESTIONS = {
   referents: [] as string[],
 };
 
-export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitButton }: Props) {
+export function StepZeroForm({ typeEvenement, initialData, onSubmit, onChange, hideSubmitButton }: Props) {
   const isMobile = useShellNarrow();
   const [data, setData] = useState<StepZeroData>(
     initialData ?? {
@@ -101,6 +102,15 @@ export function StepZeroForm({ typeEvenement, initialData, onSubmit, hideSubmitB
       customFieldValues: {},
     }
   );
+
+  // Notify parent of every data change for live auto-save
+  const onChangeRef = React.useRef(onChange);
+  onChangeRef.current = onChange;
+  const initialRef = React.useRef(true);
+  React.useEffect(() => {
+    if (initialRef.current) { initialRef.current = false; return; }
+    onChangeRef.current?.(data);
+  }, [data]);
 
   const { data: suggestions = EMPTY_SUGGESTIONS } = useQuery({
     queryKey: ["audit-step-zero", "suggestions", typeEvenement],
