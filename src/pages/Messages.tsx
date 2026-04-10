@@ -1216,16 +1216,45 @@ export default function Messages() {
   const handleDeleteMsg = async () => {
     if (!deletingMsg || !user) return;
     const isMine = deletingMsg.sender_id === user.id;
-    const rows = (deletingMsg.group_id ? siblingGroupSendRows(deletingMsg, messages) : [deletingMsg]).filter((r) =>
-      isMine ? r.sender_id === user.id : isAdmin,
-    );
-    if (rows.length === 0) {
+    if (!isMine && !isAdmin) {
       toast.error("Ce message ne peut plus être supprimé.");
       setDeletingMsg(null);
       return;
     }
-    const ids = rows.map((r) => r.id);
-    const { data: deletedRows, error } = await supabase.from("messages").delete().in("id", ids).select("id");
+
+    /**
+     * Envoi groupe avec `group_send_id` : une ligne DB par destinataire. Le state local peut ne pas
+     * contenir toutes les lignes (réseau, timing), donc `.in(id, …)` ne supprimait qu’un sous-ensemble :
+     * toast « supprimé » mais la bulle restait (autre id du même envoi). On supprime côté serveur par
+     * clé logique (groupe + lot + expéditeur) pour retirer tout le lot.
+     */
+    let deletedRows: { id: string }[] | null = null;
+    let error: { message: string } | null = null;
+
+    if (deletingMsg.group_id && deletingMsg.group_send_id) {
+      const res = await supabase
+        .from("messages")
+        .delete()
+        .eq("group_id", deletingMsg.group_id)
+        .eq("group_send_id", deletingMsg.group_send_id)
+        .eq("sender_id", deletingMsg.sender_id)
+        .select("id");
+      deletedRows = res.data;
+      error = res.error;
+    } else {
+      const rows = (deletingMsg.group_id ? siblingGroupSendRows(deletingMsg, messages) : [deletingMsg]).filter((r) =>
+        isMine ? r.sender_id === user.id : isAdmin,
+      );
+      if (rows.length === 0) {
+        toast.error("Ce message ne peut plus être supprimé.");
+        setDeletingMsg(null);
+        return;
+      }
+      const res = await supabase.from("messages").delete().in("id", rows.map((r) => r.id)).select("id");
+      deletedRows = res.data;
+      error = res.error;
+    }
+
     if (error) {
       toast.error(error.message);
       return;

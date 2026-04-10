@@ -3,6 +3,7 @@ import App from "./App.tsx";
 import { RootErrorBoundary } from "./components/RootErrorBoundary";
 import "./index.css";
 import { applyDeviceClasses, listenDeviceChanges } from "./lib/deviceClasses";
+import { scheduleChunkLoadRecovery } from "./lib/chunkLoadRecovery";
 
 const RESPONSIVE_VIEWPORT =
   "width=device-width, initial-scale=1.0, minimum-scale=1, maximum-scale=5, viewport-fit=cover, interactive-widget=resizes-content";
@@ -132,15 +133,17 @@ void (async function bootstrap() {
   void registerSW();
 })();
 
-/* Global handler for dynamic import failures (chunk 404 after deploy) */
+/**
+ * Échecs de chunks après déploiement (hashes changés) : souvent `unhandledrejection`
+ * sur l’import dynamique, pas seulement `error` sur window.
+ */
 window.addEventListener("error", (e) => {
-  if (e.message?.includes("Failed to fetch dynamically imported module") ||
-      e.message?.includes("Importing a module script failed")) {
-    const key = "chunk_reload_ts";
-    const last = Number(sessionStorage.getItem(key) || 0);
-    if (Date.now() - last > 10_000) {
-      sessionStorage.setItem(key, String(Date.now()));
-      window.location.reload();
-    }
+  const ev = e as ErrorEvent;
+  scheduleChunkLoadRecovery(ev.error ?? ev.message ?? "");
+});
+
+window.addEventListener("unhandledrejection", (e) => {
+  if (scheduleChunkLoadRecovery(e.reason)) {
+    e.preventDefault();
   }
 });

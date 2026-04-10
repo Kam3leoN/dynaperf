@@ -1,36 +1,24 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
+import {
+  isStaleChunkLoadFailure,
+  purgeServiceWorkerAndCaches,
+  scheduleChunkLoadRecovery,
+} from "@/lib/chunkLoadRecovery";
 
-/** Purge SW + caches then hard-reload */
+/** Purge SW + caches puis hard-reload (bouton manuel). */
 async function purgeAndReload() {
-  try {
-    if ("serviceWorker" in navigator) {
-      const regs = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(regs.map((r) => r.unregister()));
-    }
-    const keys = await caches.keys();
-    await Promise.all(keys.map((k) => caches.delete(k)));
-  } catch {
-    /* best-effort */
-  }
+  await purgeServiceWorkerAndCaches();
   window.location.reload();
-}
-
-function isChunkLoadError(error: Error | null): boolean {
-  if (!error) return false;
-  const msg = error.message || "";
-  return (
-    msg.includes("Failed to fetch dynamically imported module") ||
-    msg.includes("Importing a module script failed") ||
-    msg.includes("Loading chunk") ||
-    msg.includes("Loading CSS chunk")
-  );
 }
 
 interface Props {
   children: ReactNode;
 }
 
-interface State { error: Error | null; retrying: boolean }
+interface State {
+  error: Error | null;
+  retrying: boolean;
+}
 
 /**
  * Évite l’écran blanc en cas d’erreur React : affiche un message et permet de recharger.
@@ -44,13 +32,8 @@ export class RootErrorBoundary extends Component<Props, State> {
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error("[RootErrorBoundary]", error, info.componentStack);
-    if (isChunkLoadError(error)) {
-      const key = "chunk_reload_ts";
-      const last = Number(sessionStorage.getItem(key) || 0);
-      if (Date.now() - last > 10_000) {
-        sessionStorage.setItem(key, String(Date.now()));
-        purgeAndReload();
-      }
+    if (isStaleChunkLoadFailure(error.message)) {
+      scheduleChunkLoadRecovery(error);
     }
   }
 
@@ -72,7 +55,8 @@ export class RootErrorBoundary extends Component<Props, State> {
         >
           <h1 style={{ fontSize: "1.25rem", marginBottom: 12 }}>Une erreur a interrompu l’affichage</h1>
           <p style={{ color: "#94a3b8", textAlign: "center", maxWidth: 420, marginBottom: 20 }}>
-            Recharge la page ou vide le cache / désactive le service worker si le problème persiste après une mise en ligne.
+            Après une mise en ligne, un rechargement purge souvent le cache. Si le problème continue, utilise le bouton
+            ci-dessous (vide le cache du site).
           </p>
           {this.state.error?.message && (
             <pre
@@ -92,7 +76,7 @@ export class RootErrorBoundary extends Component<Props, State> {
             type="button"
             onClick={() => {
               this.setState({ retrying: true });
-              purgeAndReload();
+              void purgeAndReload();
             }}
             disabled={this.state.retrying}
             style={{
