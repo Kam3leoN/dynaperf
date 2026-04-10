@@ -118,16 +118,18 @@ function NavBarItem({ active, label, icon, onClick }: NavBarItemProps) {
       className="flex flex-1 flex-col items-center justify-center gap-1 min-h-[48px] py-1 touch-target"
     >
       {/* Active indicator pill — 64×32, rounded-full */}
-      <div
-        className={cn(
-          "flex items-center justify-center w-16 h-8 rounded-full transition-all duration-200 ease-out",
-          active
-            ? "bg-primary/12 scale-x-100"
-            : "bg-transparent scale-x-75 opacity-0",
-        )}
-        style={{ willChange: active ? "auto" : "transform, opacity" }}
-      >
-        <span className={cn("transition-colors duration-200", active ? "text-primary" : "text-muted-foreground")}>
+      <div className="relative flex items-center justify-center w-16 h-8">
+        {/* Pill background */}
+        <div
+          className={cn(
+            "absolute inset-0 rounded-full transition-all duration-200 ease-out",
+            active
+              ? "bg-primary/12 scale-x-100 opacity-100"
+              : "bg-transparent scale-x-75 opacity-0",
+          )}
+        />
+        {/* Icon — always visible */}
+        <span className={cn("relative z-10 transition-colors duration-200", active ? "text-primary" : "text-muted-foreground")}>
           {icon}
         </span>
       </div>
