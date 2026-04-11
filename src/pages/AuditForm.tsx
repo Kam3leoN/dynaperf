@@ -411,7 +411,7 @@ export default function AuditForm() {
       } else {
         const { data, error } = await supabase
           .from("audits")
-          .insert({ ...auditPayload, statut: "brouillon", created_by: uid })
+          .insert({ ...auditPayload, statut: "NON", created_by: uid })
           .select("id")
           .single();
         if (error) throw error;

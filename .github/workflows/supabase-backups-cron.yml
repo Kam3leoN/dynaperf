@@ -1,8 +1,12 @@
 # Déclenche quotidiennement les Edge Functions de sauvegarde (JSON + dump SQL).
-# Secrets GitHub requis :
-#   SUPABASE_URL           — ex. https://xxxx.supabase.co
+# Secrets GitHub (Settings → Secrets and variables → Actions) REQUIS :
+#   SUPABASE_URL           — ex. https://xxxx.supabase.co (sans slash final)
 #   SUPABASE_ANON_KEY      — clé anon (header apikey)
 #   BACKUP_CRON_SECRET     — même valeur que le secret Edge BACKUP_CRON_SECRET
+#
+# Si le job échoue avec « No host part in the URL », vérifiez que ces trois secrets
+# existent bien sur le dépôt (les workflows planifiés n’ont pas accès aux secrets « Environment »
+# sauf si le job cible explicitement cet environment).
 #
 # Sur Supabase : déployer backup-all et sql-backup, définir BACKUP_CRON_SECRET,
 # SUPABASE_DB_URL (sql-backup), et config.toml verify_jwt = false pour ces fonctions.
@@ -25,12 +29,19 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           BACKUP_CRON_SECRET: ${{ secrets.BACKUP_CRON_SECRET }}
         run: |
-          set -e
-          test -n "$SUPABASE_URL" && test -n "$SUPABASE_ANON_KEY" && test -n "$BACKUP_CRON_SECRET"
+          set -euo pipefail
+          for v in SUPABASE_URL SUPABASE_ANON_KEY BACKUP_CRON_SECRET; do
+            if [ -z "${!v:-}" ]; then
+              echo "::error title=Secrets manquants::Ajoutez les secrets Actions du dépôt : SUPABASE_URL, SUPABASE_ANON_KEY, BACKUP_CRON_SECRET (voir entête du workflow)."
+              exit 1
+            fi
+          done
+          # Ne pas utiliser ${VAR%/} ici : le parseur GitHub peut tronquer l’URL (curl « No host part »).
+          BASE_URL="$(printf '%s' "$SUPABASE_URL" | sed 's|/*$||')"
           curl -sfS -X POST \
             -H "Authorization: Bearer ${BACKUP_CRON_SECRET}" \
             -H "apikey: ${SUPABASE_ANON_KEY}" \
-            "${SUPABASE_URL%/}/functions/v1/backup-all"
+            "${BASE_URL}/functions/v1/backup-all"
 
       - name: sql-backup (SQL)
         env:
@@ -38,8 +49,15 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           BACKUP_CRON_SECRET: ${{ secrets.BACKUP_CRON_SECRET }}
         run: |
-          set -e
+          set -euo pipefail
+          for v in SUPABASE_URL SUPABASE_ANON_KEY BACKUP_CRON_SECRET; do
+            if [ -z "${!v:-}" ]; then
+              echo "::error title=Secrets manquants::Ajoutez les secrets Actions du dépôt : SUPABASE_URL, SUPABASE_ANON_KEY, BACKUP_CRON_SECRET."
+              exit 1
+            fi
+          done
+          BASE_URL="$(printf '%s' "$SUPABASE_URL" | sed 's|/*$||')"
           curl -sfS -X POST \
             -H "Authorization: Bearer ${BACKUP_CRON_SECRET}" \
             -H "apikey: ${SUPABASE_ANON_KEY}" \
-            "${SUPABASE_URL%/}/functions/v1/sql-backup"
+            "${BASE_URL}/functions/v1/sql-backup"
