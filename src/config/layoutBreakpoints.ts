@@ -1,5 +1,5 @@
 /**
- * Breakpoints du **shell application** (rail 80px, navigation secondaire, aside membres,
+ * Breakpoints du **shell application** (rail 96px, navigation secondaire, aside membres,
  * dock profil, bottom nav).
  *
  * **Téléphone réel vs DevTools** : les media queries et `shell:` utilisent des **px CSS**
@@ -19,6 +19,16 @@
  * - `src/components/AppSecondaryNav.tsx`
  * - `src/components/DesktopUserDock.tsx`
  */
+
+/** Rail principal (navigation M3 expressive, icône + libellé). */
+export const SHELL_RAIL_WIDTH_PX = 96 as const;
+
+/** Colonne secondaire (sous-navigation). */
+export const SHELL_SECONDARY_NAV_WIDTH_PX = 280 as const;
+
+/** Décalage gauche du contenu principal = rail + colonne secondaire (px). */
+export const SHELL_LEFT_NAV_TOTAL_PX =
+  SHELL_RAIL_WIDTH_PX + SHELL_SECONDARY_NAV_WIDTH_PX;
 
 /** Largeur min-viewport (px) pour le layout « bureau » (rails visibles, pas de bottom nav). */
 export const SHELL_BREAKPOINT_PX = 1024 as const;

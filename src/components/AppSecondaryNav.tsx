@@ -1,5 +1,6 @@
 import { Link, NavLink, useLocation } from "react-router-dom";
 import { useTheme } from "next-themes";
+import { LayoutGroup, motion } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { cn } from "@/lib/utils";
 import {
@@ -7,12 +8,18 @@ import {
   getActiveRailSection,
   RAIL_SECTIONS_ALL,
 } from "@/config/appNavigation";
+import { SHELL_RAIL_WIDTH_PX, SHELL_SECONDARY_NAV_WIDTH_PX } from "@/config/layoutBreakpoints";
 import { MessagingSecondaryNav } from "@/components/messaging/MessagingSecondaryNav";
 import { publicAssetUrl } from "@/lib/basePath";
 import { BackupButton, SqlBackupButton } from "@/pages/admin/AdminBackupButtons";
 
 const SECONDARY_LOGO_LIGHT = publicAssetUrl("DynaPerf_light_simple.svg");
 const SECONDARY_LOGO_DARK = publicAssetUrl("DynaPerf_dark_simple.svg");
+
+/** Courbe d’accélération Material 3 (cohérente avec le rail). */
+const M3_EASE: [number, number, number, number] = [0.2, 0, 0, 1];
+
+const SECONDARY_ACTIVE_LAYOUT_ID = "shell-secondary-nav-active-pill";
 
 interface AppSecondaryNavPanelProps {
   /** Affiche le bloc Sauvegardes en bas de la colonne admin (super_admin uniquement). */
@@ -69,34 +76,65 @@ export function AppSecondaryNavPanel({
           <MessagingSecondaryNav />
         </div>
       ) : (
-        <nav className="flex flex-col flex-1 min-h-0 p-2">
-          <div className="flex flex-col gap-0.5 overflow-y-auto flex-1 min-h-0">
-            {filterSecondaryNavItems(active.children, hasPermission, isModuleEnabled).map((item) => (
-              <NavLink
-                key={item.to}
-                to={item.to}
-                className={({ isActive }) =>
-                  cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
-                    isActive ? "bg-primary/12 text-primary font-medium" : "text-foreground hover:bg-secondary/70",
-                  )
-                }
-              >
-                <FontAwesomeIcon icon={item.icon} className="h-4 w-4 text-muted-foreground w-5 shrink-0" />
-                <span className="truncate">{item.label}</span>
-              </NavLink>
-            ))}
-          </div>
-          {active.id === "admin" && isSuperAdmin ? (
-            <div className="mt-3 shrink-0 border-t border-border/60 pt-3">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-1 mb-2">Sauvegardes</p>
-              <div className="flex flex-col gap-2">
-                <BackupButton />
-                <SqlBackupButton />
-              </div>
+        <LayoutGroup id="app-secondary-nav">
+          <nav className="flex flex-col flex-1 min-h-0 p-2">
+            <div className="flex flex-col gap-1 overflow-y-auto flex-1 min-h-0">
+              {filterSecondaryNavItems(active.children, hasPermission, isModuleEnabled).map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  className="group relative flex items-center gap-3 overflow-hidden rounded-full px-3 py-2.5 text-sm outline-none transition-[color] duration-200 ease-[cubic-bezier(0.2,0,0,1)] focus-visible:ring-2 focus-visible:ring-primary/35"
+                >
+                  {({ isActive }) => (
+                    <>
+                      {isActive ? (
+                        <motion.span
+                          layoutId={SECONDARY_ACTIVE_LAYOUT_ID}
+                          className="absolute inset-0 z-0 rounded-full bg-primary/12 shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.12)]"
+                          transition={{ duration: 0.36, ease: M3_EASE }}
+                        />
+                      ) : (
+                        <span
+                          className="absolute inset-0 z-0 rounded-full bg-transparent transition-colors duration-200 ease-[cubic-bezier(0.2,0,0,1)] group-hover:bg-muted/55"
+                          aria-hidden
+                        />
+                      )}
+                      <span className="relative z-10 flex min-w-0 flex-1 items-center gap-3">
+                        <FontAwesomeIcon
+                          icon={item.icon}
+                          className={cn(
+                            "h-[1.25rem] w-[1.25rem] shrink-0 transition-colors duration-200",
+                            isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
+                          )}
+                          aria-hidden
+                        />
+                        <span
+                          className={cn(
+                            "truncate transition-[font-weight,color] duration-200",
+                            isActive ? "font-semibold text-primary" : "font-medium text-foreground",
+                          )}
+                        >
+                          {item.label}
+                        </span>
+                      </span>
+                    </>
+                  )}
+                </NavLink>
+              ))}
             </div>
-          ) : null}
-        </nav>
+            {active.id === "admin" && isSuperAdmin ? (
+              <div className="mt-3 shrink-0 border-t border-border/60 pt-3">
+                <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-1 mb-2">
+                  Sauvegardes
+                </p>
+                <div className="flex flex-col gap-2">
+                  <BackupButton />
+                  <SqlBackupButton />
+                </div>
+              </div>
+            ) : null}
+          </nav>
+        </LayoutGroup>
       )}
     </div>
   );
@@ -113,7 +151,10 @@ interface AppSecondaryNavProps {
  */
 export function AppSecondaryNav({ isSuperAdmin, hasPermission, isModuleEnabled }: AppSecondaryNavProps) {
   return (
-    <aside className="hidden shell:flex fixed left-[80px] top-0 bottom-0 z-[45] w-[280px] flex-col border-r border-border/40 bg-muted/10 min-h-0">
+    <aside
+      style={{ left: SHELL_RAIL_WIDTH_PX, width: SHELL_SECONDARY_NAV_WIDTH_PX }}
+      className="hidden shell:flex fixed top-0 bottom-0 z-[45] flex-col border-r border-border/40 bg-muted/10 min-h-0 transition-[background-color] duration-300 ease-[cubic-bezier(0.2,0,0,1)]"
+    >
       <AppSecondaryNavPanel
         isSuperAdmin={isSuperAdmin}
         hasPermission={hasPermission}

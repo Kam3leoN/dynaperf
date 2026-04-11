@@ -379,7 +379,7 @@ export function AppLayout({
     <div className="flex h-dvh min-h-0 flex-col bg-background">
       {/* Top app bar — le shell est en h-dvh + overflow-hidden sur la zone centrale : pas de scroll document */}
       <header className="z-40 shrink-0 bg-card/85 backdrop-blur-2xl border-b border-border/30 px-4 shell:px-0">
-        <div className="w-full flex items-stretch justify-between h-16 shell:h-[4.25rem] shell:pl-[360px] shell:pr-[260px]">
+        <div className="w-full flex items-stretch justify-between h-16 shell:h-[4.25rem] shell:pl-[376px] shell:pr-[260px]">
           <div className="flex flex-1 items-center justify-between min-w-0 gap-2 pl-4 pr-4 shell:pl-6 shell:pr-6">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <Button
@@ -488,7 +488,7 @@ export function AppLayout({
         </Sheet>
       )}
 
-      <div className="flex min-h-0 flex-1 flex-row overflow-x-auto overflow-y-hidden shell:pl-[360px] shell:pr-[260px]">
+      <div className="flex min-h-0 flex-1 flex-row overflow-x-auto overflow-y-hidden shell:pl-[376px] shell:pr-[260px]">
         <AppNavRail isAdmin={isAdmin} hasPermission={hasPermission} isModuleEnabled={isModuleEnabled} />
         <AppSecondaryNav isSuperAdmin={isSuperAdmin} hasPermission={hasPermission} isModuleEnabled={isModuleEnabled} />
         <div className="flex flex-1 flex-col min-w-0 min-h-0">
