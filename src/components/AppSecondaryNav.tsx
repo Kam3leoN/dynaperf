@@ -9,12 +9,14 @@ import {
 } from "@/config/appNavigation";
 import { MessagingSecondaryNav } from "@/components/messaging/MessagingSecondaryNav";
 import { publicAssetUrl } from "@/lib/basePath";
+import { BackupButton, SqlBackupButton } from "@/pages/admin/AdminBackupButtons";
 
 const SECONDARY_LOGO_LIGHT = publicAssetUrl("DynaPerf_light_simple.svg");
 const SECONDARY_LOGO_DARK = publicAssetUrl("DynaPerf_dark_simple.svg");
 
 interface AppSecondaryNavPanelProps {
-  isAdmin: boolean;
+  /** Affiche le bloc Sauvegardes en bas de la colonne admin (super_admin uniquement). */
+  isSuperAdmin?: boolean;
   hasPermission: (key: string) => boolean;
   className?: string;
 }
@@ -22,7 +24,7 @@ interface AppSecondaryNavPanelProps {
 /**
  * Contenu de la colonne secondaire ~280px type Discord (réutilisable dans le sheet mobile).
  */
-export function AppSecondaryNavPanel({ isAdmin, hasPermission, className }: AppSecondaryNavPanelProps) {
+export function AppSecondaryNavPanel({ isSuperAdmin = false, hasPermission, className }: AppSecondaryNavPanelProps) {
   const { pathname } = useLocation();
   const { resolvedTheme } = useTheme();
   const active = getActiveRailSection(pathname, RAIL_SECTIONS_ALL);
@@ -61,22 +63,33 @@ export function AppSecondaryNavPanel({ isAdmin, hasPermission, className }: AppS
           <MessagingSecondaryNav />
         </div>
       ) : (
-        <nav className="flex flex-col gap-0.5 p-2 overflow-y-auto flex-1 min-h-0">
-          {filterSecondaryNavItems(active.children, hasPermission).map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              className={({ isActive }) =>
-                cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
-                  isActive ? "bg-primary/12 text-primary font-medium" : "text-foreground hover:bg-secondary/70",
-                )
-              }
-            >
-              <FontAwesomeIcon icon={item.icon} className="h-4 w-4 text-muted-foreground w-5 shrink-0" />
-              <span className="truncate">{item.label}</span>
-            </NavLink>
-          ))}
+        <nav className="flex flex-col flex-1 min-h-0 p-2">
+          <div className="flex flex-col gap-0.5 overflow-y-auto flex-1 min-h-0">
+            {filterSecondaryNavItems(active.children, hasPermission).map((item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                className={({ isActive }) =>
+                  cn(
+                    "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
+                    isActive ? "bg-primary/12 text-primary font-medium" : "text-foreground hover:bg-secondary/70",
+                  )
+                }
+              >
+                <FontAwesomeIcon icon={item.icon} className="h-4 w-4 text-muted-foreground w-5 shrink-0" />
+                <span className="truncate">{item.label}</span>
+              </NavLink>
+            ))}
+          </div>
+          {active.id === "admin" && isSuperAdmin ? (
+            <div className="mt-3 shrink-0 border-t border-border/60 pt-3">
+              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-1 mb-2">Sauvegardes</p>
+              <div className="flex flex-col gap-2">
+                <BackupButton />
+                <SqlBackupButton />
+              </div>
+            </div>
+          ) : null}
         </nav>
       )}
     </div>
@@ -84,17 +97,17 @@ export function AppSecondaryNavPanel({ isAdmin, hasPermission, className }: AppS
 }
 
 interface AppSecondaryNavProps {
-  isAdmin: boolean;
+  isSuperAdmin?: boolean;
   hasPermission: (key: string) => boolean;
 }
 
 /**
  * Colonne secondaire desktop (~280px) : sous-menus de la section active.
  */
-export function AppSecondaryNav({ isAdmin, hasPermission }: AppSecondaryNavProps) {
+export function AppSecondaryNav({ isSuperAdmin, hasPermission }: AppSecondaryNavProps) {
   return (
     <aside className="hidden shell:flex fixed left-[80px] top-0 bottom-0 z-[45] w-[280px] flex-col border-r border-border/40 bg-muted/10 min-h-0">
-      <AppSecondaryNavPanel isAdmin={isAdmin} hasPermission={hasPermission} className="flex-1 min-h-0" />
+      <AppSecondaryNavPanel isSuperAdmin={isSuperAdmin} hasPermission={hasPermission} className="flex-1 min-h-0" />
     </aside>
   );
 }

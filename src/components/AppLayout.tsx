@@ -73,7 +73,7 @@ export function AppLayout({
   mainClassName,
 }: AppLayoutProps) {
   const { user, signOut } = useAuth();
-  const { isAdmin } = useAdmin(user);
+  const { isAdmin, isSuperAdmin } = useAdmin(user);
   const { hasPermission, isModuleEnabled } = usePermissionGate();
   const location = useLocation();
   const [filtersOpen, setFiltersOpen] = useState(false);
@@ -490,7 +490,7 @@ export function AppLayout({
 
       <div className="flex min-h-0 flex-1 flex-row overflow-x-auto overflow-y-hidden shell:pl-[360px] shell:pr-[260px]">
         <AppNavRail isAdmin={isAdmin} hasPermission={hasPermission} isModuleEnabled={isModuleEnabled} />
-        <AppSecondaryNav isAdmin={isAdmin} hasPermission={hasPermission} />
+        <AppSecondaryNav isSuperAdmin={isSuperAdmin} hasPermission={hasPermission} />
         <div className="flex flex-1 flex-col min-w-0 min-h-0">
           <main
             className={cn(
@@ -517,7 +517,7 @@ export function AppLayout({
             <SheetTitle>Navigation de la section</SheetTitle>
           </SheetHeader>
           <AppSecondaryNavPanel
-            isAdmin={isAdmin}
+            isSuperAdmin={isSuperAdmin}
             hasPermission={hasPermission}
             className="flex-1 min-h-0 overflow-y-auto"
           />

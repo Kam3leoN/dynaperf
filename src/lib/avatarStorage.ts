@@ -6,6 +6,7 @@ const MIME_TO_EXT: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
   "image/webp": "webp",
+  "image/svg+xml": "svg",
 };
 
 export type AvatarUploadOk = { ok: true; publicUrl: string; path: string };
@@ -24,6 +25,7 @@ export function resolveAvatarFileMeta(file: File): { ext: string; contentType: s
   if (n.endsWith(".png")) return { ext: "png", contentType: "image/png" };
   if (n.endsWith(".jpg") || n.endsWith(".jpeg")) return { ext: "jpg", contentType: "image/jpeg" };
   if (n.endsWith(".webp")) return { ext: "webp", contentType: "image/webp" };
+  if (n.endsWith(".svg")) return { ext: "svg", contentType: "image/svg+xml" };
   return null;
 }
 

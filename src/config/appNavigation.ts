@@ -24,6 +24,9 @@ import {
   faBell,
   faQrcode,
   faImages,
+  faPalette,
+  faIcons,
+  faEnvelope,
 } from "@fortawesome/free-solid-svg-icons";
 
 /** Entrée du rail (icône seule). */
@@ -200,13 +203,17 @@ const admin: RailSection = {
   id: "admin",
   label: "Admin",
   icon: faUserShield,
-  to: "/admin",
+  to: "/admin/users",
   pathPrefixes: ["/admin"],
   requireAdmin: true,
   requiredPermission: "nav.admin",
   children: [
-    { label: "Administration", to: "/admin", icon: faUserShield },
+    { label: "Utilisateurs", to: "/admin/users", icon: faUsers },
+    { label: "Application", to: "/admin/application", icon: faGear },
+    { label: "Identité", to: "/admin/branding", icon: faPalette },
     { label: "Rôles & droits", to: "/admin/roles", icon: faKey },
+    { label: "Expression", to: "/admin/expression", icon: faIcons },
+    { label: "Invitations", to: "/admin/invitations", icon: faEnvelope },
     { label: "Grille audits", to: "/admin/audit-grid", icon: faTableCells },
   ],
 };

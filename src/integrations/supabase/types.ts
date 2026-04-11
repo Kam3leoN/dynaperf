@@ -122,8 +122,12 @@ export type Database = {
           app_name: string
           description: string | null
           logo_url: string | null
+          logo_light_url: string | null
+          logo_dark_url: string | null
           favicon_url: string | null
           icon_512_url: string | null
+          icon_512_light_url: string | null
+          icon_512_dark_url: string | null
           updated_at: string
         }
         Insert: {
@@ -131,8 +135,12 @@ export type Database = {
           app_name?: string
           description?: string | null
           logo_url?: string | null
+          logo_light_url?: string | null
+          logo_dark_url?: string | null
           favicon_url?: string | null
           icon_512_url?: string | null
+          icon_512_light_url?: string | null
+          icon_512_dark_url?: string | null
           updated_at?: string
         }
         Update: {
@@ -140,8 +148,12 @@ export type Database = {
           app_name?: string
           description?: string | null
           logo_url?: string | null
+          logo_light_url?: string | null
+          logo_dark_url?: string | null
           favicon_url?: string | null
           icon_512_url?: string | null
+          icon_512_light_url?: string | null
+          icon_512_dark_url?: string | null
           updated_at?: string
         }
         Relationships: []

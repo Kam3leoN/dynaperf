@@ -53,7 +53,7 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
   const moyennePct = Math.min(100, (moyenneGlobale / 10) * 100);
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
       {/* Card 1: Audits Réalisés */}
       <motion.div
         initial={{ opacity: 0, y: 12 }}
@@ -130,7 +130,7 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.12, duration: 0.3 }}
-        className="bg-card rounded-2xl p-3 sm:p-5 shadow-soft border border-border/60 cursor-pointer select-none col-span-2 lg:col-span-2"
+        className="bg-card rounded-2xl p-3 sm:p-5 shadow-soft border border-border/60 cursor-pointer select-none"
         onClick={() => setModeRealiste((prev) => !prev)}
         title="Cliquez pour basculer entre estimation brute et réaliste (-10 semaines)"
       >
