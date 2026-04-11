@@ -49,14 +49,14 @@ function RailIconPill({
   return (
     <span
       className={cn(
-        "relative flex min-h-9 min-w-[3rem] max-w-[5.25rem] shrink-0 items-center justify-center px-2.5",
+        "relative flex h-8 min-w-[3.5rem] max-w-[5.5rem] shrink-0 items-center justify-center px-3.5",
         className,
       )}
     >
       {isActive ? (
         <motion.span
           layoutId={RAIL_PILL_LAYOUT_ID}
-          className="absolute inset-0 z-0 rounded-full bg-primary/15 shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.16)]"
+          className="absolute inset-0 z-0 rounded-full bg-primary/15"
           transition={{ duration: 0.38, ease: M3_EASE }}
         />
       ) : (
@@ -93,7 +93,7 @@ function RailNavItem({ section, isActive, pinned }: RailItemProps) {
       </RailIconPill>
       <span
         className={cn(
-          "max-w-[5.25rem] truncate text-center text-[10px] leading-tight transition-[color,font-weight] duration-200 ease-[cubic-bezier(0.2,0,0,1)]",
+          "max-w-[5.25rem] truncate text-center text-[11px] leading-tight transition-[color,font-weight] duration-200 ease-[cubic-bezier(0.2,0,0,1)]",
           isActive ? "font-semibold text-primary" : "font-medium text-muted-foreground group-hover:text-foreground",
         )}
       >
@@ -161,7 +161,7 @@ export function AppNavRail({ isAdmin, hasPermission, isModuleEnabled }: AppNavRa
                     RAIL_TOP_STRIP_H,
                   )}
                 >
-                  <RailIconPill isActive={logoIsHomeActive} className="min-h-8 min-w-[2.75rem] max-w-[4.75rem] px-2">
+                  <RailIconPill isActive={logoIsHomeActive} className="h-8 min-w-[3.25rem] max-w-[4.75rem] px-3">
                     <img
                       src={RAIL_LOGO_SRC}
                       alt=""
@@ -176,7 +176,7 @@ export function AppNavRail({ isAdmin, hasPermission, isModuleEnabled }: AppNavRa
                   </RailIconPill>
                   <span
                     className={cn(
-                      "max-w-[5rem] truncate text-center text-[10px] leading-tight transition-colors duration-200 ease-[cubic-bezier(0.2,0,0,1)]",
+                      "max-w-[5rem] truncate text-center text-[11px] leading-tight transition-colors duration-200 ease-[cubic-bezier(0.2,0,0,1)]",
                       logoIsHomeActive
                         ? "font-semibold text-primary"
                         : "font-medium text-muted-foreground group-hover:text-foreground",

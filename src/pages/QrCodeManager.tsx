@@ -27,8 +27,10 @@ import { faPaypal, faStripe, faWhatsapp } from "@fortawesome/free-brands-svg-ico
 import { toast } from "sonner";
 import defaultLogoDynaLipsRed from "@/assets/logo-dynalips-red.svg";
 import { QrStylingPreview } from "@/components/qr/QrStylingPreview";
+import { QrFgColorSwatches } from "@/components/qr/QrFgColorSwatches";
 import { QrStyleVisualPickers } from "@/components/qr/QrStyleSwatches";
 import { DEFAULT_QR_STYLE, mergeQrStyle, type QrStyleConfig } from "@/lib/qrCodeStyle";
+import { isTransparentBgColor } from "@/lib/qrBgColor";
 import { composeQrPayload, type QrComposeFields, type QrContentKind } from "@/lib/qrContentCompose";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { cn } from "@/lib/utils";
@@ -518,7 +520,7 @@ export default function QrCodeManager() {
         <div>
           <h1 className="text-2xl font-semibold">Gestion QrCode</h1>
           <p className="text-sm text-muted-foreground">
-            Contenu à gauche, aperçu à droite, bibliothèque et liste enregistrée en dessous — personnalisation visuelle (qr-code-styling).
+            Contenu à gauche, aperçu à droite, bibliothèque et liste enregistrée en dessous — personnalisation visuelle (SVG, pastilles de couleur).
           </p>
         </div>
 
@@ -559,31 +561,64 @@ export default function QrCodeManager() {
               onValueCustom={(v) => setDraft((d) => ({ ...d, value: v }))}
             />
 
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <div className="space-y-1">
+            <div className="space-y-3">
+              <div className="space-y-2">
                 <Label>Couleur modules</Label>
-                <Input type="color" className="h-10 w-full cursor-pointer" value={draft.fgColor} onChange={(e) => setDraft((p) => ({ ...p, fgColor: e.target.value }))} />
+                <QrFgColorSwatches
+                  value={draft.fgColor}
+                  onChange={(hex) => setDraft((p) => ({ ...p, fgColor: hex }))}
+                />
+                <Input
+                  type="color"
+                  className="h-10 max-w-[120px] cursor-pointer"
+                  value={draft.fgColor}
+                  onChange={(e) => setDraft((p) => ({ ...p, fgColor: e.target.value }))}
+                />
               </div>
-              <div className="space-y-1">
-                <Label>Fond</Label>
-                <Input type="color" className="h-10 w-full cursor-pointer" value={draft.bgColor} onChange={(e) => setDraft((p) => ({ ...p, bgColor: e.target.value }))} />
-              </div>
-              <div className="space-y-1">
-                <Label>Taille (px)</Label>
-                <Input type="number" min={120} max={2048} step={8} value={draft.size} onChange={(e) => setDraft((p) => ({ ...p, size: Number(e.target.value || 512) }))} />
-              </div>
-              <div className="space-y-1">
-                <Label>Précision</Label>
-                <select
-                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  value={draft.level}
-                  onChange={(e) => setDraft((p) => ({ ...p, level: e.target.value as QrRecord["level"] }))}
-                >
-                  <option value="L">L</option>
-                  <option value="M">M</option>
-                  <option value="Q">Q</option>
-                  <option value="H">H (recommandé + logo)</option>
-                </select>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div className="space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <Label>Fond</Label>
+                    <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                      <input
+                        type="checkbox"
+                        className="rounded border-input"
+                        checked={isTransparentBgColor(draft.bgColor)}
+                        onChange={(e) =>
+                          setDraft((p) => ({
+                            ...p,
+                            bgColor: e.target.checked ? "transparent" : "#ffffff",
+                          }))
+                        }
+                      />
+                      Transparent
+                    </label>
+                  </div>
+                  <Input
+                    type="color"
+                    className="h-10 w-full cursor-pointer disabled:pointer-events-none disabled:opacity-40"
+                    disabled={isTransparentBgColor(draft.bgColor)}
+                    value={draft.bgColor.startsWith("#") ? draft.bgColor : "#ffffff"}
+                    onChange={(e) => setDraft((p) => ({ ...p, bgColor: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label>Taille (px)</Label>
+                  <Input type="number" min={120} max={2048} step={8} value={draft.size} onChange={(e) => setDraft((p) => ({ ...p, size: Number(e.target.value || 512) }))} />
+                </div>
+                <div className="space-y-1 sm:col-span-1">
+                  <Label>Précision</Label>
+                  <select
+                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                    value={draft.level}
+                    onChange={(e) => setDraft((p) => ({ ...p, level: e.target.value as QrRecord["level"] }))}
+                  >
+                    <option value="L">L</option>
+                    <option value="M">M</option>
+                    <option value="Q">Q</option>
+                    <option value="H">H (recommandé + logo)</option>
+                  </select>
+                </div>
               </div>
             </div>
 

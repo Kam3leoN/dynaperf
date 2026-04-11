@@ -3,10 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Charge les modules applicatifs et les surcharges utilisateur.
- * Un module est visible si :
- *  1. Il est activé globalement (app_modules.is_enabled)
- *  2. ET l'utilisateur n'a pas de surcharge `enabled = false`
- *  OU l'utilisateur a une surcharge `enabled = true` (force même si global off — admin volontaire).
+ * Un module est visible dans l’app si :
+ *  1. Il est activé globalement (`app_modules.is_enabled`) — si OFF, personne ne l’a (overrides ignorés).
+ *  2. Et l’utilisateur n’a pas de surcharge `enabled = false` (refus explicite).
+ * Surcharge `enabled = true` sans ligne : hérite du global (module actif).
  */
 export function useAppModules(userId: string | undefined) {
   const [enabledModules, setEnabledModules] = useState<Set<string>>(new Set());
@@ -45,12 +45,14 @@ export function useAppModules(userId: string | undefined) {
 
         const next = new Set<string>();
         for (const m of (modules ?? []) as any[]) {
-          const override = overrideMap.get(m.module_key);
-          if (override !== undefined) {
-            if (override) next.add(m.module_key);
-          } else if (m.is_enabled) {
-            next.add(m.module_key);
+          if (!m.is_enabled) {
+            continue;
           }
+          const override = overrideMap.get(m.module_key);
+          if (override === false) {
+            continue;
+          }
+          next.add(m.module_key);
         }
         setEnabledModules(next);
       } catch {
