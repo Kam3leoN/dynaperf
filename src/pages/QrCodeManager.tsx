@@ -3,13 +3,34 @@ import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { QRCodeSVG } from "qrcode.react";
 import { publicAssetUrl } from "@/lib/basePath";
 import { supabase } from "@/integrations/supabase/client";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFloppyDisk, faHeart, faPen, faPlus, faStar, faTrash } from "@fortawesome/free-solid-svg-icons";
+import {
+  faAlignLeft,
+  faCreditCard,
+  faEnvelope,
+  faFloppyDisk,
+  faHeart,
+  faIdCard,
+  faLink,
+  faPen,
+  faPhone,
+  faPlus,
+  faQrcode,
+  faSms,
+  faStar,
+  faTrash,
+  faWifi,
+} from "@fortawesome/free-solid-svg-icons";
+import { faPaypal, faStripe, faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { toast } from "sonner";
 import defaultLogoDynaLipsRed from "@/assets/logo-dynalips-red.svg";
+import { QrStylingPreview } from "@/components/qr/QrStylingPreview";
+import { DEFAULT_QR_STYLE, mergeQrStyle, type QrStyleConfig } from "@/lib/qrCodeStyle";
+import { composeQrPayload, type QrComposeFields, type QrContentKind } from "@/lib/qrContentCompose";
+import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
+import { cn } from "@/lib/utils";
 
 type QrRecord = {
   id: string;
@@ -20,84 +41,81 @@ type QrRecord = {
   bgColor: string;
   level: "L" | "M" | "Q" | "H";
   logoUrl?: string;
-  eyeSvg?: string;
-  dotSvg?: string;
-  coverSvg?: string;
+  qrStyle: QrStyleConfig;
 };
 
 const LOGO_FAVORITES_KEY = "dynaperf_qr_logo_favorites_v1";
 
-const EYE_PRESETS: { id: string; svg: string }[] = [
-  { id: "0", svg: '<svg width="32" height="32" viewBox="0 0 14 14" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0,0v14h14V0H0z M12,12H2V2h10V12z"></path></svg>' },
-  { id: "2", svg: '<svg width="32" height="32" viewBox="0 0 14 14" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0,0l0.9,13c0,0.6,0.5,1,1,1h12V2c0-0.6-0.4-1-1-1L0,0z M12,12H3.8c-0.5,0-1-0.4-1-1L2,2l9,0.7c0.5,0,1,0.5,1,1 V12z"></path></svg>' },
-  { id: "3", svg: '<svg width="32" height="32" viewBox="0 0 14 14" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0,0l0,7c0,3.9,3.1,7,7,7h0c3.9,0,7-3.1,7-7v0c0-3.9-3.1-7-7-7H0z M7,12L7,12c-2.8,0-5-2.2-5-5V2h5c2.8,0,5,2.2,5,5v0 C12,9.8,9.8,12,7,12z"></path></svg>' },
-  { id: "4", svg: '<svg width="32" height="32" viewBox="0 0 14 14" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0,7L0,7c0,3.9,3.1,7,7,7h7V7c0-3.9-3.1-7-7-7h0C3.1,0,0,3.1,0,7z M12,12H7c-2.8,0-5-2.2-5-5v0c0-2.8,2.2-5,5-5h0 c2.8,0,5,2.2,5,5V12z"></path></svg>' },
-  { id: "5", svg: '<svg width="32" height="32" viewBox="0 0 14 14" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0,0l0,7c0,3.9,3.1,7,7,7h7V7c0-3.9-3.1-7-7-7H0z M12,12H7c-2.8,0-5-2.2-5-5V2h5c2.8,0,5,2.2,5,5V12z"></path></svg>' },
-  { id: "6", svg: '<svg width="32" height="32" viewBox="0 0 14 14" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0,0l0,7c0,3.9,3.1,7,7,7h7V7c0-3.9-3.1-7-7-7H0z M12,12H7c-2.8,0-5-2.2-5-5v0c0-2.8,2.2-5,5-5h0c2.8,0,5,2.2,5,5V12z"></path></svg>' },
-  { id: "7", svg: '<svg width="32" height="32" viewBox="0 0 14 14" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0,0l0,7c0,3.9,3.1,7,7,7h7V7c0-3.9-3.1-7-7-7H0z M7,12L7,12c-2.8,0-5-2.2-5-5V2h5c2.8,0,5,2.2,5,5v0C12,9.8,9.8,12,7,12z"></path></svg>' },
-  { id: "8", svg: '<svg width="32" height="32" viewBox="0 0 14 14" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0,0l0,7c0,3.9,3.1,7,7,7h7V7c0-3.9-3.1-7-7-7H0z M7,12L7,12c-2.8,0-5-2.2-5-5v0c0-2.8,2.2-5,5-5h0c2.8,0,5,2.2,5,5v0 C12,9.8,9.8,12,7,12z"></path></svg>' },
-  { id: "9", svg: '<svg width="32" height="32" viewBox="0 0 14 14" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0,0l0,14h14V0H0z M7,12L7,12c-2.8,0-5-2.2-5-5v0c0-2.8,2.2-5,5-5h0c2.8,0,5,2.2,5,5v0C12,9.8,9.8,12,7,12z"></path></svg>' },
-  { id: "10", svg: '<svg width="32" height="32" viewBox="0 0 14 14" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0,7L0,7c0,3.9,3.1,7,7,7h0c3.9,0,7-3.1,7-7v0c0-3.9-3.1-7-7-7h0C3.1,0,0,3.1,0,7z M7,12L7,12c-2.8,0-5-2.2-5-5v0 c0-2.8,2.2-5,5-5h0c2.8,0,5,2.2,5,5v0C12,9.8,9.8,12,7,12z"></path></svg>' },
-  { id: "11", svg: '<svg width="32" height="32" viewBox="0 0 14 14" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M4.5,14h5.1C12,14,14,12,14,9.6V4.5C14,2,12,0,9.5,0H4.4C2,0,0,2,0,4.4v5.1C0,12,2,14,4.5,14z M12,4.8v4.4 c0,1.5-1.3,2.8-2.8,2.8H4.8C3.2,12,2,10.8,2,9.2V4.8C2,3.3,3.3,2,4.8,2h4.4C10.8,2,12,3.2,12,4.8z"></path></svg>' },
-  { id: "12", svg: '<svg width="32" height="32" viewBox="0 0 14 14" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0,0v9.6C0,12,2,14,4.4,14h5.1C12,14,14,12,14,9.6V4.4C14,2,12,0,9.6,0H0z M9.2,12H4.8C3.3,12,2,10.7,2,9.2V2h7.2 C10.7,2,12,3.3,12,4.8v4.4C12,10.7,10.7,12,9.2,12z"></path></svg>' },
-  { id: "13", svg: '<svg width="32" height="32" viewBox="0 0 14 14" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M14,14V4.4C14,2,12,0,9.6,0H4.4C2,0,0,2,0,4.4v5.1C0,12,2,14,4.4,14H14z M4.8,2h4.4C10.7,2,12,3.3,12,4.8V12H4.8 C3.3,12,2,10.7,2,9.2V4.8C2,3.3,3.3,2,4.8,2z"></path></svg>' },
-  { id: "14", svg: '<svg width="32" height="32" viewBox="0 0 14 14" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0,0v9.6C0,12,2,14,4.4,14H14V4.4C14,2,12,0,9.6,0H0z M12,12H4.8C3.3,12,2,10.7,2,9.2V2h7.2C10.7,2,12,3.3,12,4.8V12z"></path></svg>' },
+const DOT_LABELS: { value: QrStyleConfig["dotsType"]; label: string }[] = [
+  { value: "square", label: "Carrés" },
+  { value: "dots", label: "Points" },
+  { value: "rounded", label: "Arrondis" },
+  { value: "extra-rounded", label: "Extra-arrondis" },
+  { value: "classy", label: "Élégant" },
+  { value: "classy-rounded", label: "Élégant arrondi" },
 ];
 
-const DOT_PRESETS: { id: string; svg: string }[] = [
-  { id: "0", svg: '<svg width="14" height="14" viewBox="0 0 6 6" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><rect width="6" height="6"></rect></svg>' },
-  { id: "1", svg: '<svg width="14" height="14" viewBox="0 0 6 6" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><polygon points="5.9,5.9 5.6,5.9 5.3,6 5,5.7 4.7,5.8 4.4,5.8 4.1,5.8 3.9,5.7 3.6,5.7 3.3,5.8 3,5.9 2.7,5.8 2.4,5.8 2.1,5.8 1.9,5.7 1.6,5.7 1.3,5.7 1,5.8 0.7,5.8 0.4,5.8 0.1,5.9 0,5.5 0.1,5.3 0,5 0.3,4.7 0.3,4.4 0.2,4.1 0.2,3.8 0.1,3.5 0.3,3.3 0.1,3 0.1,2.7 0.2,2.4 0.1,2.1 0.1,1.8 0.1,1.5 0.2,1.3 0.3,1 0,0.7 0,0.4 0.3,0.2 0.4,0.1 0.7,0.1 1,0.2 1.3,0.1 1.6,0.3 1.9,0.1 2.1,0.1 2.4,0.2 2.7,0.1 3,0.3 3.3,0.2 3.6,0.2 3.8,0.2 4.1,0.1 4.4,0.3 4.7,0.1 5,0.2 5.3,0.1 5.6,0 5.9,0 5.8,0.4 6,0.7 6,1 5.9,1.2 5.7,1.5 5.7,1.8 5.9,2.1 5.7,2.4 5.8,2.7 6,3 5.9,3.3 5.8,3.5 5.8,3.8 5.8,4.1 6,4.4 5.8,4.7 5.7,5 5.7,5.3 5.8,5.5"></polygon></svg>' },
-  { id: "2", svg: '<svg width="14" height="14" viewBox="0 0 6 6" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><polygon points="6,6 0.5,6 0,0 6,0.5"></polygon></svg>' },
-  { id: "3", svg: '<svg width="14" height="14" viewBox="0 0 6 6" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M3,6L3,6C1.3,6,0,4.7,0,3l0-3l3,0c1.7,0,3,1.3,3,3v0C6,4.7,4.7,6,3,6z"></path></svg>' },
-  { id: "4", svg: '<svg width="14" height="14" viewBox="0 0 6 6" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M6,6H3C1.3,6,0,4.7,0,3v0c0-1.7,1.3-3,3-3h0c1.7,0,3,1.3,3,3V6z"></path></svg>' },
-  { id: "5", svg: '<svg width="14" height="14" viewBox="0 0 6 6" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M6,6H3C1.3,6,0,4.7,0,3l0-3l3,0c1.7,0,3,1.3,3,3V6z"></path></svg>' },
-  { id: "6", svg: '<svg width="14" height="14" viewBox="0 0 6 6" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><circle cx="3" cy="3" r="3"></circle></svg>' },
-  { id: "7", svg: '<svg width="14" height="14" viewBox="0 0 6 6" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M6,1.7v2.7C6,5.2,5.2,6,4.3,6H1.7C0.7,6,0,5.3,0,4.3V1.7C0,0.8,0.8,0,1.7,0h2.7C5.3,0,6,0.7,6,1.7z"></path></svg>' },
-  { id: "8", svg: '<svg width="14" height="14" viewBox="0 0 6 6" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><polygon points="3,0 3.4,0.7 4,0.2 4.1,0.9 4.9,0.7 4.8,1.5 5.6,1.5 5.2,2.2 5.9,2.5 5.3,3 5.9,3.5 5.2,3.8 5.6,4.5 4.8,4.5 4.9,5.3 4.1,5.1 4,5.8 3.4,5.3 3,6 2.5,5.3 1.9,5.8 1.8,5.1 1,5.3 1.1,4.5 0.4,4.5 0.7,3.8 0,3.5 0.6,3 0,2.5 0.7,2.2 0.4,1.5 1.1,1.5 1,0.7 1.8,0.9 1.9,0.2 2.5,0.7"></polygon></svg>' },
-  { id: "9", svg: '<svg width="14" height="14" viewBox="0 0 6 6" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M3.2,0.3l0.6,1.3C4,1.8,4.1,1.9,4.3,1.9l1.4,0.2c0.2,0,0.3,0.3,0.2,0.5l-1,1C4.7,3.7,4.7,3.9,4.7,4.1L5,5.5 c0,0.2-0.2,0.4-0.4,0.3L3.3,5.2c-0.2-0.1-0.4-0.1-0.6,0L1.4,5.8C1.2,5.9,1,5.8,1,5.5l0.2-1.4c0-0.2,0-0.4-0.2-0.5l-1-1 C-0.1,2.4,0,2.2,0.2,2.1l1.4-0.2c0.2,0,0.4-0.2,0.5-0.3l0.6-1.3C2.9,0.1,3.1,0.1,3.2,0.3z"></path></svg>' },
-  { id: "10", svg: '<svg width="14" height="14" viewBox="0 0 6 6" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><rect x="0.9" y="0.9" transform="matrix(0.7071 -0.7071 0.7071 0.7071 -1.2426 3)" width="4.2" height="4.2"></rect></svg>' },
-  { id: "11", svg: '<svg width="14" height="14" viewBox="0 0 6 6" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><polygon points="3,5.1 3.9,6 6,6 6,3.9 5.1,3 6,2.1 6,0 3.9,0 3,0.9 2.1,0 0,0 0,2.1 0.9,3 0,3.9 0,6 2.1,6"></polygon></svg>' },
-  { id: "12", svg: '<svg width="14" height="14" viewBox="0 0 6 6" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><polygon points="6,1.5 4.5,1.5 4.5,0 1.5,0 1.5,1.5 0,1.5 0,4.5 1.5,4.5 1.5,6 4.5,6 4.5,4.5 6,4.5"></polygon></svg>' },
-  { id: "13", svg: '<svg width="14" height="14" viewBox="0 0 6 6" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M4.5,1.5L4.5,1.5L4.5,1.5C4.5,0.7,3.8,0,3,0h0C2.2,0,1.5,0.7,1.5,1.5v0h0C0.7,1.5,0,2.2,0,3v0 c0,0.8,0.7,1.5,1.5,1.5h0v0C1.5,5.3,2.2,6,3,6h0c0.8,0,1.5-0.7,1.5-1.5v0h0C5.3,4.5,6,3.8,6,3v0C6,2.2,5.3,1.5,4.5,1.5z"></path></svg>' },
-  { id: "14", svg: '<svg width="14" height="14" viewBox="0 0 6 6" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M3,5.1l0.4,0.4C3.7,5.8,4.1,6,4.5,6h0C5.3,6,6,5.3,6,4.5v0c0-0.4-0.2-0.8-0.4-1.1L5.1,3l0.4-0.4 C5.8,2.3,6,1.9,6,1.5v0C6,0.7,5.3,0,4.5,0h0C4.1,0,3.7,0.2,3.4,0.4L3,0.9L2.6,0.4C2.3,0.2,1.9,0,1.5,0h0C0.7,0,0,0.7,0,1.5v0 c0,0.4,0.2,0.8,0.4,1.1L0.9,3L0.4,3.4C0.2,3.7,0,4.1,0,4.5v0C0,5.3,0.7,6,1.5,6h0c0.4,0,0.8-0.2,1.1-0.4L3,5.1z"></path></svg>' },
-  { id: "15", svg: '<svg width="14" height="14" viewBox="0 0 6 6" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M6,1.8C5.9,1,5.3,0.4,4.5,0.3C3.9,0.2,3.4,0.5,3,0.9C2.6,0.5,2.1,0.3,1.6,0.3C0.8,0.4,0.1,1,0,1.8 C0,2.3,0.1,2.7,0.3,3l0,0l0,0c0.1,0.1,0.2,0.2,0.3,0.3l1.9,2.2c0.3,0.3,0.7,0.3,0.9,0l1.8-1.9c0.1-0.1,0.3-0.3,0.4-0.5 C5.9,2.8,6.1,2.3,6,1.8z"></path></svg>' },
+const CORNER_OUTER_LABELS: { value: QrStyleConfig["cornersSquareType"]; label: string }[] = [
+  { value: "square", label: "Carré" },
+  { value: "dot", label: "Disque" },
+  { value: "extra-rounded", label: "Très arrondi" },
+  { value: "rounded", label: "Arrondi" },
+  { value: "dots", label: "Points" },
+  { value: "classy", label: "Élégant" },
+  { value: "classy-rounded", label: "Élégant arrondi" },
 ];
 
-const COVER_PRESETS: { id: string; svg: string }[] = [
-  { id: "0", svg: '<svg width="48" height="56" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><polygon points="18.7,6.6 12,13.3 5.3,6.6 4.6,7.3 11.3,14 4.6,20.7 5.3,21.4 12,14.7 18.7,21.4 19.4,20.7 12.7,14 19.4,7.3"></polygon></svg>' },
-  { id: "1", svg: '<svg width="48" height="56" viewBox="0 0 24 29" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M22.7,0H1.3C0.6,0,0,0.6,0,1.3v25.3C0,27.4,0.6,28,1.3,28h21.3c0.7,0,1.3-0.6,1.3-1.3V1.3C24,0.6,23.4,0,22.7,0 z M23,22c0,0.6-0.5,1-1,1H2c-0.6,0-1-0.5-1-1V2c0-0.6,0.5-1,1-1h20c0.6,0,1,0.5,1,1V22z"></path></svg>' },
-  { id: "2", svg: '<svg width="48" height="56" viewBox="0 0 24 29" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M1.3,28L22.6,28c0.7,0,1.3-0.6,1.3-1.3L24,1.4c0-0.7-0.6-1.3-1.3-1.3L1.4,0C0.7,0,0.1,0.6,0,1.3L0,26.6 C-0.1,27.4,0.5,28,1.3,28z M1,6c0-0.6,0.5-1,1-1L22,5c0.6,0,1,0.5,1,1L23,26c0,0.6-0.5,1-1,1L2,27c-0.6,0-1-0.5-1-1L1,6z"></path></svg>' },
-  { id: "3", svg: '<svg width="48" height="56" viewBox="0 0 24 31" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M1.3,24l21.3,0c0.7,0,1.3-0.6,1.3-1.3l0-21.3C24,0.6,23.4,0,22.7,0L1.3,0C0.6,0,0,0.6,0,1.3l0,21.3 C0,23.4,0.6,24,1.3,24z M1,2c0-0.6,0.5-1,1-1l20,0c0.6,0,1,0.5,1,1v20c0,0.6-0.5,1-1,1L2,23c-0.6,0-1-0.5-1-1V2z"></path><path d="M1,30h22c0.5,0,1-0.4,1-1v-3c0-0.5-0.4-1-1-1H13l-1-1l-1,1H1c-0.5,0-1,0.4-1,1v3C0,29.6,0.4,30,1,30z"></path></svg>' },
-  { id: "4", svg: '<svg width="48" height="56" viewBox="0 0 24 31" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M22.7,6L1.3,6C0.6,6,0,6.6,0,7.3l0,21.3C0,29.4,0.6,30,1.3,30l21.3,0c0.7,0,1.3-0.6,1.3-1.3l0-21.3 C24,6.6,23.4,6,22.7,6z M23,28c0,0.6-0.5,1-1,1L2,29c-0.6,0-1-0.5-1-1V8c0-0.6,0.5-1,1-1l20,0c0.6,0,1,0.5,1,1V28z"></path><path d="M23,0H1C0.4,0,0,0.4,0,1v3c0,0.5,0.4,1,1,1h10l1,1l1-1h10c0.5,0,1-0.4,1-1V1C24,0.4,23.6,0,23,0z"></path></svg>' },
-  { id: "5", svg: '<svg width="48" height="56" viewBox="0 0 24 28" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M24,21h-1.7V1.7H1.7V21H0l1,2l-1,2h1v2h22v-2h1l-1-2L24,21z M2,2h20v19v1H2v-1V2z"></path></svg>' },
-  { id: "6", svg: '<svg width="48" height="56" viewBox="0 0 24 28" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M0,6h1.7v19.3h20.7V6H24l-1-2l1-2h-1V0H1v2H0l1,2L0,6z M22,25H2V6V5h20v1V25z"></path></svg>' },
-  { id: "7", svg: '<svg width="48" height="56" viewBox="0 0 24 25.5" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M17.6,0H6.4c-1,0-1.8,0.8-1.8,1.8v20.4c0,1,0.8,1.8,1.8,1.8h11.1c1,0,1.8-0.8,1.8-1.8V1.8C19.4,0.8,18.6,0,17.6,0z M11.2,2.3h2.7c0.1,0,0.2,0.1,0.2,0.2S14,2.7,13.9,2.7h-2.7c-0.1,0-0.2-0.1-0.2-0.2S11.1,2.3,11.2,2.3z M10.1,2.3 c0.1,0,0.2,0.1,0.2,0.2s-0.1,0.2-0.2,0.2c-0.1,0-0.2-0.1-0.2-0.2S10,2.3,10.1,2.3z M19,19H5V5h14V19z"></path></svg>' },
-  { id: "8", svg: '<svg width="48" height="56" viewBox="0 0 24 23.9" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M4.5,4.5L4.5,4.5L4.5,4.5l0,17.2c0,0.3,0.3,0.6,0.6,0.6h13.8c0.3,0,0.6-0.3,0.6-0.6V4.5H4.5z M19,18.6 c0,0.2-0.2,0.4-0.4,0.4H5.4C5.2,19,5,18.8,5,18.6V5.4C5,5.2,5.2,5,5.4,5h13.1C18.8,5,19,5.2,19,5.4V18.6z"></path><path d="M19.1,0.1L4.2,1.7l0.3,2.8l14.9-1.6L19.1,0.1z M6.8,3.8L4.9,4l1.7-2.1l1.9-0.2L6.8,3.8z M10.5,3.4L8.6,3.6l1.7-2.1l1.9-0.2 L10.5,3.4z M14.2,3l-1.9,0.2L14,1.1l1.9-0.2L14.2,3z M18,2.6l-1.9,0.2l1.7-2.1l0.9-0.1l0.1,0.9L18,2.6z"></path></svg>' },
+const CORNER_INNER_LABELS: { value: QrStyleConfig["cornersDotType"]; label: string }[] = [
+  { value: "square", label: "Carré" },
+  { value: "dot", label: "Point" },
+  { value: "rounded", label: "Arrondi" },
+  { value: "extra-rounded", label: "Extra-arrondi" },
+  { value: "classy", label: "Élégant" },
+  { value: "classy-rounded", label: "Élégant arrondi" },
+  { value: "dots", label: "Points" },
+];
+
+type PresetCard = {
+  kind: QrContentKind;
+  title: string;
+  description: string;
+  icon: IconDefinition;
+  accent: string;
+};
+
+const CONTENT_PRESETS: PresetCard[] = [
+  { kind: "url", title: "Lien", description: "Lien vers n'importe quel site web", icon: faLink, accent: "text-emerald-600" },
+  { kind: "email", title: "E-mail", description: "Envoyer un e-mail", icon: faEnvelope, accent: "text-sky-600" },
+  { kind: "text", title: "Texte", description: "Partager un texte", icon: faAlignLeft, accent: "text-amber-600" },
+  { kind: "tel", title: "Appel", description: "Passer un appel", icon: faPhone, accent: "text-emerald-700" },
+  { kind: "sms", title: "SMS", description: "Envoyer un message", icon: faSms, accent: "text-blue-600" },
+  { kind: "whatsapp", title: "WhatsApp", description: "Envoyer un message WhatsApp", icon: faWhatsapp, accent: "text-green-600" },
+  { kind: "wifi", title: "Wi‑Fi", description: "Se connecter au réseau Wi‑Fi", icon: faWifi, accent: "text-teal-600" },
+  { kind: "vcard", title: "Vcard", description: "Enregistrer un contact", icon: faIdCard, accent: "text-indigo-600" },
+  { kind: "paypal", title: "PayPal", description: "Lien PayPal.me ou paiement", icon: faPaypal, accent: "text-blue-700" },
+  { kind: "stripe", title: "Stripe", description: "Lien de paiement Stripe", icon: faStripe, accent: "text-violet-600" },
+  {
+    kind: "payment_url",
+    title: "Paiement (URL)",
+    description: "SumUp, Lydia, autre lien sécurisé",
+    icon: faCreditCard,
+    accent: "text-orange-600",
+  },
+  { kind: "custom", title: "Saisie libre", description: "Coller toute chaîne (URI, texte)", icon: faQrcode, accent: "text-slate-600" },
 ];
 
 function makeEmpty(): QrRecord {
   return {
     id: crypto.randomUUID(),
     name: "",
-    value: "",
+    value: "https://",
     size: 220,
     fgColor: "#111827",
     bgColor: "#ffffff",
     level: "M",
     logoUrl: "",
-    eyeSvg: "",
-    dotSvg: "",
-    coverSvg: "",
+    qrStyle: { ...DEFAULT_QR_STYLE },
   };
-}
-
-function readFileAsText(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(String(reader.result || ""));
-    reader.onerror = () => reject(reader.error);
-    reader.readAsText(file);
-  });
 }
 
 function readFileAsDataUrl(file: File): Promise<string> {
@@ -109,75 +127,171 @@ function readFileAsDataUrl(file: File): Promise<string> {
   });
 }
 
-function SvgLayer({
-  svg,
-  color,
-  size,
-  style,
+function ContentFields({
+  kind,
+  fields,
+  onChange,
+  valueCustom,
+  onValueCustom,
 }: {
-  svg?: string;
-  color: string;
-  size: number;
-  style: React.CSSProperties;
+  kind: QrContentKind;
+  fields: QrComposeFields;
+  onChange: (p: Partial<QrComposeFields>) => void;
+  valueCustom: string;
+  onValueCustom: (v: string) => void;
 }) {
-  if (!svg) return null;
-  return (
-    <div
-      className="pointer-events-none absolute"
-      style={{ width: size, height: size, color, ...style }}
-      dangerouslySetInnerHTML={{ __html: svg }}
-      aria-hidden
-    />
-  );
-}
+  if (kind === "custom") {
+    return (
+      <div className="space-y-1">
+        <Label>Contenu encodé</Label>
+        <textarea
+          className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          value={valueCustom}
+          onChange={(e) => onValueCustom(e.target.value)}
+          placeholder="https://… ou texte brut"
+        />
+      </div>
+    );
+  }
 
-function QrPreview({ record }: { record: QrRecord }) {
-  const eye = Math.max(22, Math.floor(record.size * 0.2));
-  const dot = Math.max(8, Math.floor(eye * 0.36));
-  const cover = record.size;
-  const logo = Math.max(26, Math.floor(record.size * 0.18));
-  const offset = 8;
-  const centerOffset = Math.floor((eye - dot) / 2);
-  const right = offset + record.size - eye;
-  const bottom = offset + record.size - eye;
+  if (kind === "url") {
+    return (
+      <div className="space-y-1">
+        <Label>URL</Label>
+        <Input value={fields.url ?? ""} onChange={(e) => onChange({ url: e.target.value })} placeholder="https://exemple.fr" />
+      </div>
+    );
+  }
 
-  return (
-    <div className="relative mx-auto w-fit rounded-lg bg-white p-2">
-      <QRCodeSVG
-        value={record.value || " "}
-        size={record.size}
-        level={record.level}
-        fgColor={record.fgColor}
-        bgColor={record.bgColor}
-        imageSettings={
-          record.logoUrl
-            ? {
-                src: record.logoUrl.startsWith("/") ? publicAssetUrl(record.logoUrl.replace(/^\//, "")) : record.logoUrl,
-                height: logo,
-                width: logo,
-                excavate: true,
-              }
-            : undefined
-        }
-      />
-      {/* Masque les 3 coins finder standards pour les remplacer totalement */}
-      <div className="pointer-events-none absolute bg-white" style={{ left: offset, top: offset, width: eye, height: eye }} />
-      <div className="pointer-events-none absolute bg-white" style={{ left: right, top: offset, width: eye, height: eye }} />
-      <div className="pointer-events-none absolute bg-white" style={{ left: offset, top: bottom, width: eye, height: eye }} />
-      <SvgLayer svg={record.eyeSvg} color={record.fgColor} size={eye} style={{ left: offset, top: offset }} />
-      <SvgLayer svg={record.eyeSvg} color={record.fgColor} size={eye} style={{ left: right, top: offset }} />
-      <SvgLayer svg={record.eyeSvg} color={record.fgColor} size={eye} style={{ left: offset, top: bottom }} />
-      <SvgLayer svg={record.dotSvg} color={record.fgColor} size={dot} style={{ left: offset + centerOffset, top: offset + centerOffset }} />
-      <SvgLayer svg={record.dotSvg} color={record.fgColor} size={dot} style={{ left: right + centerOffset, top: offset + centerOffset }} />
-      <SvgLayer svg={record.dotSvg} color={record.fgColor} size={dot} style={{ left: offset + centerOffset, top: bottom + centerOffset }} />
-      <SvgLayer
-        svg={record.coverSvg}
-        color={record.fgColor}
-        size={cover}
-        style={{ left: offset, top: offset }}
-      />
-    </div>
-  );
+  if (kind === "email") {
+    return (
+      <div className="grid gap-2">
+        <div className="space-y-1">
+          <Label>E-mail</Label>
+          <Input type="email" value={fields.email ?? ""} onChange={(e) => onChange({ email: e.target.value })} />
+        </div>
+        <div className="space-y-1">
+          <Label>Objet (optionnel)</Label>
+          <Input value={fields.emailSubject ?? ""} onChange={(e) => onChange({ emailSubject: e.target.value })} />
+        </div>
+        <div className="space-y-1">
+          <Label>Message (optionnel)</Label>
+          <Input value={fields.emailBody ?? ""} onChange={(e) => onChange({ emailBody: e.target.value })} />
+        </div>
+      </div>
+    );
+  }
+
+  if (kind === "text") {
+    return (
+      <div className="space-y-1">
+        <Label>Texte</Label>
+        <textarea
+          className="min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          value={fields.text ?? ""}
+          onChange={(e) => onChange({ text: e.target.value })}
+        />
+      </div>
+    );
+  }
+
+  if (kind === "tel" || kind === "sms" || kind === "whatsapp") {
+    return (
+      <div className="grid gap-2">
+        <div className="space-y-1">
+          <Label>Numéro (indicatif inclus, ex. +33612345678)</Label>
+          <Input value={fields.phone ?? ""} onChange={(e) => onChange({ phone: e.target.value })} placeholder="+33…" />
+        </div>
+        {kind === "sms" && (
+          <div className="space-y-1">
+            <Label>Message (optionnel)</Label>
+            <Input value={fields.smsBody ?? ""} onChange={(e) => onChange({ smsBody: e.target.value })} />
+          </div>
+        )}
+        {kind === "whatsapp" && (
+          <div className="space-y-1">
+            <Label>Message prérempli (optionnel)</Label>
+            <Input value={fields.waText ?? ""} onChange={(e) => onChange({ waText: e.target.value })} />
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  if (kind === "wifi") {
+    return (
+      <div className="grid gap-2">
+        <div className="space-y-1">
+          <Label>Nom du réseau (SSID)</Label>
+          <Input value={fields.wifiSsid ?? ""} onChange={(e) => onChange({ wifiSsid: e.target.value })} />
+        </div>
+        <div className="space-y-1">
+          <Label>Mot de passe</Label>
+          <Input type="password" value={fields.wifiPass ?? ""} onChange={(e) => onChange({ wifiPass: e.target.value })} />
+        </div>
+        <div className="space-y-1">
+          <Label>Sécurité</Label>
+          <select
+            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+            value={fields.wifiEnc ?? "WPA"}
+            onChange={(e) => onChange({ wifiEnc: e.target.value as QrComposeFields["wifiEnc"] })}
+          >
+            <option value="WPA">WPA / WPA2</option>
+            <option value="WEP">WEP</option>
+            <option value="nopass">Ouvert</option>
+          </select>
+        </div>
+      </div>
+    );
+  }
+
+  if (kind === "vcard") {
+    return (
+      <div className="grid gap-2">
+        <div className="space-y-1">
+          <Label>Nom</Label>
+          <Input value={fields.vcardName ?? ""} onChange={(e) => onChange({ vcardName: e.target.value })} />
+        </div>
+        <div className="space-y-1">
+          <Label>Téléphone</Label>
+          <Input value={fields.vcardTel ?? ""} onChange={(e) => onChange({ vcardTel: e.target.value })} />
+        </div>
+        <div className="space-y-1">
+          <Label>E-mail</Label>
+          <Input value={fields.vcardEmail ?? ""} onChange={(e) => onChange({ vcardEmail: e.target.value })} />
+        </div>
+      </div>
+    );
+  }
+
+  if (kind === "paypal") {
+    return (
+      <div className="space-y-1">
+        <Label>PayPal.me (pseudo) ou URL complète</Label>
+        <Input value={fields.paypalSlug ?? ""} onChange={(e) => onChange({ paypalSlug: e.target.value })} placeholder="votre-compte ou https://…" />
+      </div>
+    );
+  }
+
+  if (kind === "stripe") {
+    return (
+      <div className="space-y-1">
+        <Label>Lien de paiement Stripe</Label>
+        <Input value={fields.stripeUrl ?? ""} onChange={(e) => onChange({ stripeUrl: e.target.value })} placeholder="https://buy.stripe.com/…" />
+      </div>
+    );
+  }
+
+  if (kind === "payment_url") {
+    return (
+      <div className="space-y-1">
+        <Label>URL de paiement</Label>
+        <Input value={fields.paymentUrl ?? ""} onChange={(e) => onChange({ paymentUrl: e.target.value })} placeholder="Lydia, SumUp, boutique…" />
+      </div>
+    );
+  }
+
+  return null;
 }
 
 export default function QrCodeManager() {
@@ -185,6 +299,8 @@ export default function QrCodeManager() {
   const [draft, setDraft] = useState<QrRecord>(() => makeEmpty());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [composeKind, setComposeKind] = useState<QrContentKind>("url");
+  const [composeFields, setComposeFields] = useState<QrComposeFields>({});
   const [logoFavorites, setLogoFavorites] = useState<string[]>(() => {
     try {
       const raw = localStorage.getItem(LOGO_FAVORITES_KEY);
@@ -200,6 +316,13 @@ export default function QrCodeManager() {
   useEffect(() => {
     localStorage.setItem(LOGO_FAVORITES_KEY, JSON.stringify(logoFavorites));
   }, [logoFavorites]);
+
+  /** Synchronise la charge utile générée (hors mode saisie libre). */
+  useEffect(() => {
+    if (composeKind === "custom") return;
+    const next = composeQrPayload(composeKind, composeFields);
+    setDraft((d) => ({ ...d, value: next }));
+  }, [composeKind, composeFields]);
 
   useEffect(() => {
     let alive = true;
@@ -222,9 +345,7 @@ export default function QrCodeManager() {
           bgColor: r.bg_color,
           level: r.level as QrRecord["level"],
           logoUrl: r.logo_url ?? "",
-          eyeSvg: r.eye_svg ?? "",
-          dotSvg: r.dot_svg ?? "",
-          coverSvg: r.cover_svg ?? "",
+          qrStyle: mergeQrStyle(r.qr_style),
         })),
       );
       setLoading(false);
@@ -247,14 +368,32 @@ export default function QrCodeManager() {
   const resetDraft = () => {
     setDraft(makeEmpty());
     setEditingId(null);
+    setComposeKind("url");
+    setComposeFields({});
+  };
+
+  const validatePayload = (value: string): boolean => {
+    const v = value.trim();
+    if (!v) return false;
+    if (v === "https://" || v === "http://") return false;
+    return true;
   };
 
   const submit = async () => {
-    if (!draft.name.trim() || !draft.value.trim()) {
-      toast.error("Nom et lien/texte sont requis.");
+    if (!draft.name.trim()) {
+      toast.error("Le nom est requis.");
       return;
     }
-    const payload: QrRecord = { ...draft, name: draft.name.trim(), value: draft.value.trim() };
+    if (!validatePayload(draft.value)) {
+      toast.error("Contenu du QR invalide ou vide.");
+      return;
+    }
+    const payload: QrRecord = {
+      ...draft,
+      name: draft.name.trim(),
+      value: draft.value.trim(),
+    };
+
     if (editingId) {
       const { error } = await supabase
         .from("qr_codes")
@@ -266,9 +405,10 @@ export default function QrCodeManager() {
           bg_color: payload.bgColor,
           level: payload.level,
           logo_url: payload.logoUrl || null,
-          eye_svg: payload.eyeSvg || null,
-          dot_svg: payload.dotSvg || null,
-          cover_svg: payload.coverSvg || null,
+          qr_style: payload.qrStyle,
+          eye_svg: null,
+          dot_svg: null,
+          cover_svg: null,
         })
         .eq("id", editingId);
       if (error) {
@@ -276,7 +416,7 @@ export default function QrCodeManager() {
         return;
       }
       setRecords((prev) => prev.map((r) => (r.id === editingId ? payload : r)));
-      toast.success("QrCode modifie.");
+      toast.success("QrCode modifié.");
     } else {
       const { data, error } = await supabase
         .from("qr_codes")
@@ -288,14 +428,15 @@ export default function QrCodeManager() {
           bg_color: payload.bgColor,
           level: payload.level,
           logo_url: payload.logoUrl || null,
-          eye_svg: payload.eyeSvg || null,
-          dot_svg: payload.dotSvg || null,
-          cover_svg: payload.coverSvg || null,
+          qr_style: payload.qrStyle,
+          eye_svg: null,
+          dot_svg: null,
+          cover_svg: null,
         })
         .select("*")
         .single();
       if (error || !data) {
-        toast.error(error?.message || "Creation impossible");
+        toast.error(error?.message || "Création impossible");
         return;
       }
       setRecords((prev) => [
@@ -308,29 +449,13 @@ export default function QrCodeManager() {
           bgColor: data.bg_color,
           level: data.level as QrRecord["level"],
           logoUrl: data.logo_url ?? "",
-          eyeSvg: data.eye_svg ?? "",
-          dotSvg: data.dot_svg ?? "",
-          coverSvg: data.cover_svg ?? "",
+          qrStyle: mergeQrStyle(data.qr_style),
         },
         ...prev,
       ]);
-      toast.success("QrCode cree.");
+      toast.success("QrCode créé.");
     }
     resetDraft();
-  };
-
-  const uploadSvg = async (file: File | undefined, key: "eyeSvg" | "dotSvg" | "coverSvg") => {
-    if (!file) return;
-    try {
-      const svg = await readFileAsText(file);
-      if (!svg.includes("<svg")) {
-        toast.error("Fichier SVG invalide.");
-        return;
-      }
-      setDraft((p) => ({ ...p, [key]: svg }));
-    } catch {
-      toast.error("Import SVG impossible.");
-    }
   };
 
   const uploadLogo = async (file: File | undefined) => {
@@ -346,15 +471,30 @@ export default function QrCodeManager() {
   const addCurrentLogoToFavorites = () => {
     const url = (draft.logoUrl || "").trim();
     if (!url) {
-      toast.error("Aucun logo a ajouter.");
+      toast.error("Aucun logo à ajouter.");
       return;
     }
     if (url === defaultLogoDynaLipsRed) {
-      toast.info("Ce logo est deja le logo par defaut.");
+      toast.info("Ce logo est déjà le logo par défaut.");
       return;
     }
     setLogoFavorites((prev) => (prev.includes(url) ? prev : [url, ...prev]));
-    toast.success("Logo ajoute aux favoris.");
+    toast.success("Logo ajouté aux favoris.");
+  };
+
+  const pickPreset = (kind: QrContentKind) => {
+    setComposeKind(kind);
+    setComposeFields({});
+    if (kind === "custom") {
+      setDraft((d) => ({ ...d, value: "" }));
+    }
+  };
+
+  const startEdit = (r: QrRecord) => {
+    setEditingId(r.id);
+    setDraft(r);
+    setComposeKind("custom");
+    setComposeFields({});
   };
 
   return (
@@ -362,22 +502,49 @@ export default function QrCodeManager() {
       <section className="mx-auto w-full max-w-6xl space-y-4">
         <div>
           <h1 className="text-2xl font-semibold">Gestion QrCode</h1>
-          <p className="text-sm text-muted-foreground">Genere, personnalise et gere un nombre illimite de QR codes.</p>
+          <p className="text-sm text-muted-foreground">Générez des QR stylés (points, coins, logo) comme sur qr.io — tout en local, sans API tierce.</p>
         </div>
 
         <div className="grid gap-4 lg:grid-cols-[380px_1fr]">
           <div className="space-y-3 rounded-2xl border border-border/40 bg-card p-4">
+            <div className="space-y-2">
+              <p className="text-sm font-medium">Type de contenu</p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {CONTENT_PRESETS.map((p) => (
+                  <button
+                    key={p.kind}
+                    type="button"
+                    onClick={() => pickPreset(p.kind)}
+                    className={cn(
+                      "flex flex-col items-center gap-1 rounded-xl border bg-background p-2 text-center transition hover:bg-muted/50",
+                      composeKind === p.kind ? "border-primary ring-1 ring-primary/30" : "border-border/60",
+                    )}
+                  >
+                    <FontAwesomeIcon icon={p.icon} className={cn("h-6 w-6", p.accent)} />
+                    <span className="text-xs font-semibold leading-tight">{p.title}</span>
+                    <span className="line-clamp-2 text-[10px] text-muted-foreground">{p.description}</span>
+                    <span className="mt-1 w-full rounded-md bg-primary py-1 text-[10px] font-medium text-primary-foreground">Choisir</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
             <div className="space-y-1">
               <Label>Nom</Label>
-              <Input value={draft.name} onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))} placeholder="Ex: WelcomeApps" />
+              <Input value={draft.name} onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))} placeholder="Ex: Flyer printemps" />
             </div>
-            <div className="space-y-1">
-              <Label>Lien / texte</Label>
-              <Input value={draft.value} onChange={(e) => setDraft((p) => ({ ...p, value: e.target.value }))} placeholder="https://..." />
-            </div>
+
+            <ContentFields
+              kind={composeKind}
+              fields={composeFields}
+              onChange={(patch) => setComposeFields((f) => ({ ...f, ...patch }))}
+              valueCustom={draft.value}
+              onValueCustom={(v) => setDraft((d) => ({ ...d, value: v }))}
+            />
+
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <Label>Couleur QR</Label>
+                <Label>Couleur modules</Label>
                 <Input type="color" value={draft.fgColor} onChange={(e) => setDraft((p) => ({ ...p, fgColor: e.target.value }))} />
               </div>
               <div className="space-y-1">
@@ -385,33 +552,115 @@ export default function QrCodeManager() {
                 <Input type="color" value={draft.bgColor} onChange={(e) => setDraft((p) => ({ ...p, bgColor: e.target.value }))} />
               </div>
             </div>
+
+            <div className="grid gap-2">
+              <div className="space-y-1">
+                <Label>Motif des points (données)</Label>
+                <select
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  value={draft.qrStyle.dotsType}
+                  onChange={(e) =>
+                    setDraft((p) => ({
+                      ...p,
+                      qrStyle: { ...p.qrStyle, dotsType: e.target.value as QrStyleConfig["dotsType"] },
+                    }))
+                  }
+                >
+                  {DOT_LABELS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label>Coins extérieurs (finder)</Label>
+                <select
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  value={draft.qrStyle.cornersSquareType}
+                  onChange={(e) =>
+                    setDraft((p) => ({
+                      ...p,
+                      qrStyle: { ...p.qrStyle, cornersSquareType: e.target.value as QrStyleConfig["cornersSquareType"] },
+                    }))
+                  }
+                >
+                  {CORNER_OUTER_LABELS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="space-y-1">
+                <Label>Point central des coins</Label>
+                <select
+                  className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
+                  value={draft.qrStyle.cornersDotType}
+                  onChange={(e) =>
+                    setDraft((p) => ({
+                      ...p,
+                      qrStyle: { ...p.qrStyle, cornersDotType: e.target.value as QrStyleConfig["cornersDotType"] },
+                    }))
+                  }
+                >
+                  {CORNER_INNER_LABELS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="qr-frame"
+                  checked={draft.qrStyle.frame === "card"}
+                  onChange={(e) =>
+                    setDraft((p) => ({
+                      ...p,
+                      qrStyle: { ...p.qrStyle, frame: e.target.checked ? "card" : "none" },
+                    }))
+                  }
+                />
+                <Label htmlFor="qr-frame" className="font-normal">
+                  Cadre carte (aperçu)
+                </Label>
+              </div>
+            </div>
+
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <Label>Taille</Label>
                 <Input type="number" min={120} max={600} value={draft.size} onChange={(e) => setDraft((p) => ({ ...p, size: Number(e.target.value || 220) }))} />
               </div>
               <div className="space-y-1">
-                <Label>Niveau</Label>
+                <Label>Correction d&apos;erreur</Label>
                 <select
                   className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
                   value={draft.level}
                   onChange={(e) => setDraft((p) => ({ ...p, level: e.target.value as QrRecord["level"] }))}
                 >
-                  <option value="L">L</option>
+                  <option value="L">L (faible)</option>
                   <option value="M">M</option>
                   <option value="Q">Q</option>
-                  <option value="H">H</option>
+                  <option value="H">H (forte + logo)</option>
                 </select>
               </div>
             </div>
+
             <div className="space-y-1">
-              <Label>Logo central (URL ou upload)</Label>
-              <Input value={draft.logoUrl || ""} onChange={(e) => setDraft((p) => ({ ...p, logoUrl: e.target.value }))} placeholder="URL image/logo" />
+              <Label>Logo central (URL ou fichier)</Label>
+              <Input
+                value={draft.logoUrl || ""}
+                onChange={(e) => setDraft((p) => ({ ...p, logoUrl: e.target.value }))}
+                placeholder="URL image / data URL"
+              />
               <Input type="file" accept="image/*" onChange={(e) => void uploadLogo(e.target.files?.[0])} />
               <div className="flex flex-wrap gap-1 pt-1">
                 <Button type="button" variant="outline" size="sm" className="gap-1" onClick={() => setDraft((p) => ({ ...p, logoUrl: defaultLogoDynaLipsRed }))}>
                   <FontAwesomeIcon icon={faStar} className="h-3 w-3" />
-                  Logo par defaut
+                  Logo par défaut
                 </Button>
                 <Button type="button" variant="outline" size="sm" className="gap-1" onClick={addCurrentLogoToFavorites}>
                   <FontAwesomeIcon icon={faHeart} className="h-3 w-3" />
@@ -428,66 +677,36 @@ export default function QrCodeManager() {
                 </div>
               )}
             </div>
-            <div className="space-y-1">
-              <Label>Eyes SVG (tes presets fournis)</Label>
-              <select
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={draft.eyeSvg || ""}
-                onChange={(e) => setDraft((p) => ({ ...p, eyeSvg: e.target.value }))}
-              >
-                <option value="">Aucun</option>
-                {EYE_PRESETS.map((p) => (
-                  <option key={p.id} value={p.svg}>Eyes #{p.id}</option>
-                ))}
-              </select>
-              <Input type="file" accept=".svg,image/svg+xml" onChange={(e) => void uploadSvg(e.target.files?.[0], "eyeSvg")} />
-            </div>
-            <div className="space-y-1">
-              <Label>Dot SVG (preset ou upload)</Label>
-              <select
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={draft.dotSvg || ""}
-                onChange={(e) => setDraft((p) => ({ ...p, dotSvg: e.target.value }))}
-              >
-                <option value="">Aucun</option>
-                {DOT_PRESETS.map((p) => (
-                  <option key={p.id} value={p.svg}>Dot #{p.id}</option>
-                ))}
-              </select>
-              <Input type="file" accept=".svg,image/svg+xml" onChange={(e) => void uploadSvg(e.target.files?.[0], "dotSvg")} />
-            </div>
-            <div className="space-y-1">
-              <Label>Cover SVG (preset ou upload)</Label>
-              <select
-                className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                value={draft.coverSvg || ""}
-                onChange={(e) => setDraft((p) => ({ ...p, coverSvg: e.target.value }))}
-              >
-                <option value="">Aucun</option>
-                {COVER_PRESETS.map((p) => (
-                  <option key={p.id} value={p.svg}>Cover #{p.id}</option>
-                ))}
-              </select>
-              <Input type="file" accept=".svg,image/svg+xml" onChange={(e) => void uploadSvg(e.target.files?.[0], "coverSvg")} />
-            </div>
+
             <div className="rounded-xl border border-border/40 p-2">
-              <p className="mb-2 text-xs text-muted-foreground">Apercu en direct</p>
-              <QrPreview record={draft} />
+              <p className="mb-2 text-xs text-muted-foreground">Aperçu</p>
+              <QrStylingPreview
+                value={draft.value}
+                size={draft.size}
+                fgColor={draft.fgColor}
+                bgColor={draft.bgColor}
+                level={draft.level}
+                logoUrl={draft.logoUrl}
+                style={draft.qrStyle}
+              />
             </div>
+
             <div className="flex gap-2">
               <Button onClick={submit} className="gap-2">
                 <FontAwesomeIcon icon={editingId ? faFloppyDisk : faPlus} className="h-3.5 w-3.5" />
-                {editingId ? "Enregistrer" : "Creer"}
+                {editingId ? "Enregistrer" : "Créer"}
               </Button>
               {editingId && (
-                <Button variant="outline" onClick={resetDraft}>Annuler</Button>
+                <Button variant="outline" onClick={resetDraft}>
+                  Annuler
+                </Button>
               )}
             </div>
           </div>
 
           <div className="rounded-2xl border border-border/40 bg-card p-4">
             {loading ? (
-              <p className="text-sm text-muted-foreground">Chargement...</p>
+              <p className="text-sm text-muted-foreground">Chargement…</p>
             ) : sorted.length === 0 ? (
               <p className="text-sm text-muted-foreground">Aucun QR code pour le moment.</p>
             ) : (
@@ -497,27 +716,23 @@ export default function QrCodeManager() {
                     <div className="flex items-center justify-between gap-2">
                       <p className="truncate text-sm font-medium">{r.name}</p>
                       <div className="flex gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => {
-                            setEditingId(r.id);
-                            setDraft(r);
-                          }}
-                        >
+                        <Button size="icon" variant="ghost" onClick={() => startEdit(r)}>
                           <FontAwesomeIcon icon={faPen} className="h-3.5 w-3.5" />
                         </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="text-destructive"
-                          onClick={() => void persistDelete(r.id)}
-                        >
+                        <Button size="icon" variant="ghost" className="text-destructive" onClick={() => void persistDelete(r.id)}>
                           <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </div>
-                    <QrPreview record={r} />
+                    <QrStylingPreview
+                      value={r.value}
+                      size={Math.min(r.size, 200)}
+                      fgColor={r.fgColor}
+                      bgColor={r.bgColor}
+                      level={r.level}
+                      logoUrl={r.logoUrl}
+                      style={r.qrStyle}
+                    />
                     <p className="break-all text-xs text-muted-foreground">{r.value}</p>
                   </div>
                 ))}
@@ -529,4 +744,3 @@ export default function QrCodeManager() {
     </AppLayout>
   );
 }
-

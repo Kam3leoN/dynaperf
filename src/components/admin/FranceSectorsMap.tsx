@@ -15,6 +15,44 @@ const GEOJSON_URL =
 
 const FALLBACK_UNASSIGNED = "#e4e4e7";
 
+/** Calcule une emprise pour centrer la carte sur tous les polygones (France + DOM si présents). */
+function boundsFromFeatureCollection(fc: GeoJSON.FeatureCollection): [[number, number], [number, number]] | null {
+  let minLng = Infinity;
+  let minLat = Infinity;
+  let maxLng = -Infinity;
+  let maxLat = -Infinity;
+  let any = false;
+
+  const walk = (coords: unknown): void => {
+    if (!Array.isArray(coords)) return;
+    if (typeof coords[0] === "number" && typeof coords[1] === "number") {
+      const lng = coords[0] as number;
+      const lat = coords[1] as number;
+      minLng = Math.min(minLng, lng);
+      minLat = Math.min(minLat, lat);
+      maxLng = Math.max(maxLng, lng);
+      maxLat = Math.max(maxLat, lat);
+      any = true;
+      return;
+    }
+    for (const c of coords) walk(c);
+  };
+
+  for (const f of fc.features) {
+    const g = f.geometry;
+    if (!g) continue;
+    if (g.type === "Polygon" || g.type === "MultiPolygon") {
+      walk(g.coordinates);
+    }
+  }
+
+  if (!any || !Number.isFinite(minLng)) return null;
+  return [
+    [minLng, minLat],
+    [maxLng, maxLat],
+  ];
+}
+
 function normalizeDeptCode(raw: unknown): string {
   if (raw == null) return "";
   const s = String(raw).trim();
@@ -131,6 +169,15 @@ export function FranceSectorsMap({ secteurs }: { secteurs: SecteurMapRow[] }) {
         paint: { "line-color": "#ffffff", "line-width": 0.35, "line-opacity": 0.9 },
       });
 
+      const b = boundsFromFeatureCollection(geo);
+      if (b) {
+        map.fitBounds(b, {
+          padding: { top: 28, bottom: 28, left: 28, right: 28 },
+          duration: 0,
+          maxZoom: 6.2,
+        });
+      }
+
       map.on("mousemove", "depts-fill", (e) => {
         const f = e.features?.[0];
         if (!f?.properties) {
@@ -175,7 +222,10 @@ export function FranceSectorsMap({ secteurs }: { secteurs: SecteurMapRow[] }) {
           <p className="text-sm text-destructive">{loadErr}</p>
         ) : (
           <>
-            <div ref={containerRef} className="relative w-full h-[min(420px,55vh)] rounded-xl border border-border/60 overflow-hidden bg-muted/20" />
+            <div
+              ref={containerRef}
+              className="relative w-full min-h-[520px] h-[min(72vh,780px)] rounded-xl border border-border/60 overflow-hidden bg-muted/20"
+            />
             {hover && (
               <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
                 <span>

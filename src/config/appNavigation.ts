@@ -16,7 +16,6 @@ import {
   faBriefcase,
   faMapLocationDot,
   faCalendarPlus,
-  faTableCells,
   faGear,
   faUser,
   faKey,
@@ -220,7 +219,6 @@ const admin: RailSection = {
     { label: "Rôles & droits", to: "/admin/roles", icon: faKey },
     { label: "Expression", to: "/admin/expression", icon: faIcons },
     { label: "Invitations", to: "/admin/invitations", icon: faEnvelope },
-    { label: "Grille audits (aperçu)", to: "/admin/audit-grid", icon: faTableCells },
   ],
 };
 

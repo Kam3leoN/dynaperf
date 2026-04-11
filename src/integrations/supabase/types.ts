@@ -1001,6 +1001,7 @@ export type Database = {
           level: string
           logo_url: string | null
           name: string
+          qr_style: Record<string, unknown> | null
           size: number
           updated_at: string
           value: string
@@ -1017,6 +1018,7 @@ export type Database = {
           level?: string
           logo_url?: string | null
           name: string
+          qr_style?: Record<string, unknown> | null
           size?: number
           updated_at?: string
           value: string
@@ -1033,6 +1035,7 @@ export type Database = {
           level?: string
           logo_url?: string | null
           name?: string
+          qr_style?: Record<string, unknown> | null
           size?: number
           updated_at?: string
           value?: string

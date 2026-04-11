@@ -39,27 +39,21 @@ function RailNavItem({ section, isActive, pinned }: RailItemProps) {
           aria-label={section.label}
           aria-current={isActive ? "page" : undefined}
           className={cn(
-            "group relative flex shrink-0 items-center justify-center rounded-[28%] outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/40",
+            "group relative flex shrink-0 items-center justify-center outline-none transition-colors focus-visible:ring-2 focus-visible:ring-primary/40",
             pinned
               ? cn(RAIL_TOP_STRIP_H, "w-20")
               : "h-[56px] w-full max-w-[72px]",
           )}
         >
-          {isActive && (
-            <span
-              className="absolute -left-1 top-1/2 h-8 w-[4px] -translate-y-1/2 rounded-r-full bg-primary"
-              aria-hidden
-            />
-          )}
           <span
             className={cn(
-              "relative flex size-12 items-center justify-center rounded-[28%] transition-colors",
+              "relative flex min-h-[40px] min-w-[40px] items-center justify-center rounded-full px-3 py-2 transition-colors",
               isActive
-                ? "bg-primary/20 text-primary"
-                : "text-muted-foreground group-hover:bg-secondary/80 group-hover:text-foreground",
+                ? "bg-primary/18 text-primary ring-1 ring-primary/20"
+                : "text-muted-foreground group-hover:bg-muted/70 group-hover:text-foreground",
             )}
           >
-            <FontAwesomeIcon icon={section.icon} className="size-6 shrink-0" />
+            <FontAwesomeIcon icon={section.icon} className="h-[1.25rem] w-[1.25rem] shrink-0" />
           </span>
         </NavLink>
       </TooltipTrigger>
@@ -127,18 +121,12 @@ export function AppNavRail({ isAdmin, hasPermission, isModuleEnabled }: AppNavRa
                       "w-20",
                     )}
                   >
-                    {logoIsHomeActive && (
-                      <span
-                        className="absolute -left-1 top-1/2 h-8 w-[4px] -translate-y-1/2 rounded-r-full bg-primary"
-                        aria-hidden
-                      />
-                    )}
                     <span
                       className={cn(
-                        "relative flex size-12 items-center justify-center rounded-[28%] transition-colors",
+                        "relative flex min-h-[40px] min-w-[40px] items-center justify-center rounded-full px-3 py-2 transition-colors",
                         logoIsHomeActive
-                          ? "bg-primary/20 ring-1 ring-primary/25"
-                          : "group-hover:bg-secondary/60",
+                          ? "bg-primary/18 ring-1 ring-primary/20"
+                          : "group-hover:bg-muted/70",
                       )}
                     >
                       <img

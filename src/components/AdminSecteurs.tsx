@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -110,30 +110,62 @@ export default function AdminSecteurs() {
   const assignedDepts = new Set(localSecteurs.flatMap(s => s.departements || []));
   const unassignedDepts = ALL_DEPARTMENTS.filter(d => !assignedDepts.has(d));
 
-  const handleDragStart = (dept: string) => {
+  const handleDragStart = (dept: string, e: React.DragEvent) => {
+    e.dataTransfer.setData("text/plain", dept);
+    e.dataTransfer.effectAllowed = "move";
+    try {
+      e.dataTransfer.setDragImage(e.currentTarget, 12, 12);
+    } catch {
+      /* ignore */
+    }
     setDraggedDept(dept);
   };
 
-  const handleDropOnSecteur = (secteurId: string) => {
-    if (!draggedDept) return;
-    setLocalSecteurs(prev => prev.map(s => {
-      // Remove from current secteur if assigned
-      const withoutDept = { ...s, departements: (s.departements || []).filter(d => d !== draggedDept) };
-      // Add to target secteur
-      if (s.id === secteurId && !s.departements.includes(draggedDept)) {
-        return { ...withoutDept, departements: [...withoutDept.departements, draggedDept].sort() };
-      }
-      return withoutDept;
-    }));
-    setDraggedDept(null);
+  const endDrag = () => setDraggedDept(null);
+
+  const moveDeptToSecteur = (dept: string, secteurId: string) => {
+    if (!dept) return;
+    setLocalSecteurs((prev) => {
+      if (!prev.some((s) => s.id === secteurId)) return prev;
+      return prev.map((s) => {
+        const stripped = { ...s, departements: (s.departements || []).filter((d) => d !== dept) };
+        if (s.id === secteurId) {
+          return { ...stripped, departements: [...stripped.departements, dept].sort() };
+        }
+        return stripped;
+      });
+    });
   };
 
-  const handleDropOnUnassigned = () => {
-    if (!draggedDept) return;
-    setLocalSecteurs(prev => prev.map(s => ({
-      ...s, departements: (s.departements || []).filter(d => d !== draggedDept)
-    })));
-    setDraggedDept(null);
+  const moveDeptToUnassigned = (dept: string) => {
+    if (!dept) return;
+    setLocalSecteurs((prev) =>
+      prev.map((s) => ({
+        ...s,
+        departements: (s.departements || []).filter((d) => d !== dept),
+      })),
+    );
+  };
+
+  const handleDropOnSecteur = (secteurId: string, e: React.DragEvent) => {
+    e.preventDefault();
+    const dept = (e.dataTransfer.getData("text/plain") || draggedDept || "").trim();
+    if (!dept) return;
+    moveDeptToSecteur(dept, secteurId);
+    endDrag();
+  };
+
+  const handleDropOnUnassigned = (e: React.DragEvent) => {
+    e.preventDefault();
+    const dept = (e.dataTransfer.getData("text/plain") || draggedDept || "").trim();
+    if (!dept) return;
+    moveDeptToUnassigned(dept);
+    endDrag();
+  };
+
+  const allowDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
   };
 
   const removeDeptFromSecteur = (secteurId: string, dept: string) => {
@@ -153,18 +185,42 @@ export default function AdminSecteurs() {
     setSavingDepts(false);
   };
 
-  const DeptChip = ({ dept, draggable = true, onRemove }: { dept: string; draggable?: boolean; onRemove?: () => void }) => (
-    <span
-      draggable={draggable}
-      onDragStart={() => handleDragStart(dept)}
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-xs font-semibold tabular-nums border border-border bg-secondary text-foreground cursor-grab active:cursor-grabbing select-none transition-colors hover:bg-accent ${draggedDept === dept ? "opacity-50 ring-2 ring-primary" : ""}`}
+  const DeptChip = ({ dept, onRemove }: { dept: string; onRemove?: () => void }) => (
+    <div
+      className={`inline-flex items-stretch rounded-lg border border-border bg-secondary text-foreground shadow-sm select-none ${
+        draggedDept === dept ? "opacity-80 ring-2 ring-primary/60" : ""
+      }`}
     >
-      {draggable && <FontAwesomeIcon icon={faGripVertical} className="h-2.5 w-2.5 text-muted-foreground" />}
-      {dept}
-      {onRemove && (
-        <button onClick={onRemove} className="ml-0.5 hover:text-destructive transition-colors">×</button>
-      )}
-    </span>
+      <span
+        draggable
+        role="button"
+        tabIndex={0}
+        aria-label={`Glisser le département ${dept}`}
+        title="Glisser pour déplacer"
+        onDragStart={(e) => handleDragStart(dept, e)}
+        onDragEnd={endDrag}
+        className="inline-flex cursor-grab active:cursor-grabbing items-center px-1.5 py-1.5 text-muted-foreground hover:bg-muted/80 rounded-l-lg touch-none"
+      >
+        <FontAwesomeIcon icon={faGripVertical} className="h-3.5 w-3.5 shrink-0 pointer-events-none" />
+      </span>
+      <span className="inline-flex items-center px-1.5 py-1.5 text-xs font-semibold tabular-nums min-w-[2rem] justify-center border-l border-border/60">
+        {dept}
+      </span>
+      {onRemove ? (
+        <button
+          type="button"
+          draggable={false}
+          onClick={(ev) => {
+            ev.stopPropagation();
+            onRemove();
+          }}
+          className="inline-flex items-center justify-center px-2 py-1 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-r-lg border-l border-border/60 transition-colors"
+          aria-label={`Retirer ${dept}`}
+        >
+          ×
+        </button>
+      ) : null}
+    </div>
   );
 
   return (
@@ -319,7 +375,7 @@ export default function AdminSecteurs() {
 
       {/* DnD Dialog */}
       <Dialog open={dndOpen} onOpenChange={setDndOpen}>
-        <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-4xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Répartition des départements par secteur</DialogTitle>
           </DialogHeader>
@@ -329,15 +385,20 @@ export default function AdminSecteurs() {
 
           {/* Unassigned pool */}
           <div
-            className={`border-2 border-dashed rounded-lg p-3 mb-4 min-h-[60px] transition-colors ${draggedDept && !assignedDepts.has(draggedDept) ? "" : "border-border"}`}
-            onDragOver={(e) => e.preventDefault()}
+            className={`border-2 border-dashed rounded-xl p-3 mb-4 min-h-[72px] transition-colors ${
+              draggedDept ? "border-primary/50 bg-primary/[0.04]" : "border-border"
+            }`}
+            onDragEnter={allowDrop}
+            onDragOver={allowDrop}
             onDrop={handleDropOnUnassigned}
           >
             <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider mb-2">
               Non attribués ({unassignedDepts.length})
             </p>
-            <div className="flex flex-wrap gap-1.5">
-              {unassignedDepts.map(d => <DeptChip key={d} dept={d} />)}
+            <div className="flex flex-wrap gap-2 content-start">
+              {unassignedDepts.map((d) => (
+                <DeptChip key={d} dept={d} />
+              ))}
               {unassignedDepts.length === 0 && <span className="text-xs text-muted-foreground">Tous les départements sont attribués</span>}
             </div>
           </div>
@@ -347,13 +408,16 @@ export default function AdminSecteurs() {
             {localSecteurs.map(s => (
               <div
                 key={s.id}
-                className={`border-2 rounded-lg p-3 min-h-[60px] transition-colors ${draggedDept ? "border-primary/40 bg-primary/5" : "border-border"}`}
-                onDragOver={(e) => e.preventDefault()}
-                onDrop={() => handleDropOnSecteur(s.id)}
+                className={`border-2 rounded-xl p-3 min-h-[80px] transition-colors ${
+                  draggedDept ? "border-primary/35 bg-primary/[0.03]" : "border-border"
+                }`}
+                onDragEnter={allowDrop}
+                onDragOver={allowDrop}
+                onDrop={(e) => handleDropOnSecteur(s.id, e)}
               >
                 <p className="text-xs font-semibold text-foreground mb-2">{s.nom}</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {(s.departements || []).map(d => (
+                <div className="flex flex-wrap gap-2 content-start">
+                  {(s.departements || []).map((d) => (
                     <DeptChip key={d} dept={d} onRemove={() => removeDeptFromSecteur(s.id, d)} />
                   ))}
                   {(s.departements || []).length === 0 && (
