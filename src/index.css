@@ -224,6 +224,11 @@
     @apply w-full max-w-full mx-auto px-0 sm:px-1 md:max-w-[56rem] md:px-4;
   }
 
+  /** Pages admin / plein conteneur (sans limite 56rem) */
+  .app-page-shell-wide {
+    @apply w-full max-w-full mx-auto px-0 sm:px-2 lg:px-4;
+  }
+
   /* M3 touch target enforcement */
   .touch-target {
     min-height: var(--m3-touch-target);

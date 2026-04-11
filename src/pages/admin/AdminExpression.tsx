@@ -109,7 +109,7 @@ export default function AdminExpression() {
   };
 
   return (
-    <div className="app-page-shell min-w-0 w-full max-w-full space-y-6 pb-8">
+    <div className="app-page-shell-wide min-w-0 w-full max-w-full space-y-6 pb-8">
       <div>
         <h1 className="text-xl font-semibold text-foreground">Expression</h1>
         <p className="text-sm text-muted-foreground mt-1">Emojis, autocollants et sons pour enrichir la messagerie.</p>

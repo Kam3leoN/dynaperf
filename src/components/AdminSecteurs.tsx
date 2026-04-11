@@ -8,13 +8,19 @@ import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faGripVertical } from 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { FranceSectorsMap } from "@/components/admin/FranceSectorsMap";
 
 interface Secteur {
   id: string;
   nom: string;
   departements: string[];
+  color_hex?: string | null;
   created_at: string;
 }
+
+const SECTOR_COLOR_PALETTE = [
+  "#EE4540", "#2563EB", "#16A34A", "#D97706", "#9333EA", "#0891B2", "#E11D48", "#4F46E5",
+];
 
 // All French departments
 const ALL_DEPARTMENTS = [
@@ -57,7 +63,10 @@ export default function AdminSecteurs() {
     e.preventDefault();
     if (!newNom.trim()) return;
     setCreating(true);
-    const { error } = await supabase.from("secteurs").insert({ nom: newNom.trim() });
+    const { error } = await supabase.from("secteurs").insert({
+      nom: newNom.trim(),
+      color_hex: SECTOR_COLOR_PALETTE[secteurs.length % SECTOR_COLOR_PALETTE.length],
+    });
     if (error) toast.error("Erreur : " + error.message);
     else { toast.success("Secteur créé"); setNewNom(""); setCreateOpen(false); load(); }
     setCreating(false);
@@ -65,9 +74,24 @@ export default function AdminSecteurs() {
 
   const handleUpdate = async (id: string) => {
     if (!editNom.trim()) return;
-    const { error } = await supabase.from("secteurs").update({ nom: editNom.trim() }).eq("id", id);
+    const row = secteurs.find((s) => s.id === id);
+    const { error } = await supabase
+      .from("secteurs")
+      .update({ nom: editNom.trim(), color_hex: row?.color_hex ?? null })
+      .eq("id", id);
     if (error) toast.error("Erreur : " + error.message);
     else { toast.success("Secteur mis à jour"); setEditId(null); load(); }
+  };
+
+  const handleColorChange = async (id: string, hex: string) => {
+    const v = hex.trim();
+    if (!/^#[0-9A-Fa-f]{6}$/.test(v)) return;
+    const { error } = await supabase.from("secteurs").update({ color_hex: v }).eq("id", id);
+    if (error) toast.error(error.message);
+    else {
+      setSecteurs((prev) => prev.map((s) => (s.id === id ? { ...s, color_hex: v } : s)));
+      toast.success("Couleur enregistrée");
+    }
   };
 
   const handleDelete = async (id: string, nom: string) => {
@@ -144,6 +168,9 @@ export default function AdminSecteurs() {
   );
 
   return (
+    <div className="app-page-shell-wide min-w-0 w-full space-y-6 pb-8">
+      <FranceSectorsMap secteurs={secteurs} />
+
     <div className="bg-card rounded-2xl shadow-soft border border-border/60 p-4 sm:p-5">
       <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <h3 className="text-sm font-semibold text-foreground">Gestion des secteurs</h3>
@@ -195,7 +222,16 @@ export default function AdminSecteurs() {
                       </div>
                     ) : (
                       <>
-                        <span className="text-sm font-medium text-foreground">{s.nom}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-foreground">{s.nom}</span>
+                          <input
+                            type="color"
+                            aria-label={`Couleur ${s.nom}`}
+                            value={s.color_hex && /^#[0-9A-Fa-f]{6}$/.test(s.color_hex) ? s.color_hex : "#94a3b8"}
+                            onChange={(e) => void handleColorChange(s.id, e.target.value)}
+                            className="h-7 w-12 cursor-pointer rounded border border-border bg-transparent p-0 shrink-0"
+                          />
+                        </div>
                         <div className="flex gap-1">
                           <button onClick={() => { setEditId(s.id); setEditNom(s.nom); }} className="p-1.5 rounded-sm hover:bg-secondary">
                             <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
@@ -225,6 +261,7 @@ export default function AdminSecteurs() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nom du secteur</TableHead>
+                  <TableHead className="w-[100px]">Couleur</TableHead>
                   <TableHead>Départements</TableHead>
                   <TableHead className="w-24 text-right">Actions</TableHead>
                 </TableRow>
@@ -243,6 +280,15 @@ export default function AdminSecteurs() {
                       ) : (
                         <span className="text-sm font-medium">{s.nom}</span>
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <input
+                        type="color"
+                        aria-label={`Couleur ${s.nom}`}
+                        value={s.color_hex && /^#[0-9A-Fa-f]{6}$/.test(s.color_hex) ? s.color_hex : "#94a3b8"}
+                        onChange={(e) => void handleColorChange(s.id, e.target.value)}
+                        className="h-8 w-14 cursor-pointer rounded border border-border bg-transparent p-0"
+                      />
                     </TableCell>
                     <TableCell>
                       <div className="flex flex-wrap gap-1">
@@ -327,6 +373,7 @@ export default function AdminSecteurs() {
           </div>
         </DialogContent>
       </Dialog>
+    </div>
     </div>
   );
 }

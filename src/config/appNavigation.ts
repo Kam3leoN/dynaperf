@@ -27,6 +27,7 @@ import {
   faPalette,
   faIcons,
   faEnvelope,
+  faCubes,
 } from "@fortawesome/free-solid-svg-icons";
 
 /** Entrée du rail (icône seule). */
@@ -55,6 +56,8 @@ export interface SecondaryNavItem {
   to: string;
   icon: IconDefinition;
   requiredPermission?: string;
+  /** Masqué si le module applicatif n’est pas activé pour l’utilisateur (ex. primes). */
+  requiredModule?: string;
 }
 
 const home: RailSection = {
@@ -209,12 +212,15 @@ const admin: RailSection = {
   requiredPermission: "nav.admin",
   children: [
     { label: "Utilisateurs", to: "/admin/users", icon: faUsers },
-    { label: "Application", to: "/admin/application", icon: faGear },
+    { label: "Modules", to: "/admin/modules", icon: faCubes },
+    { label: "Audits", to: "/admin/audits-config", icon: faClipboardList },
+    { label: "Secteurs", to: "/admin/secteurs", icon: faMapLocationDot },
+    { label: "Primes par utilisateur", to: "/admin/primes-users", icon: faMoneyBill, requiredModule: "primes" },
     { label: "Identité", to: "/admin/branding", icon: faPalette },
     { label: "Rôles & droits", to: "/admin/roles", icon: faKey },
     { label: "Expression", to: "/admin/expression", icon: faIcons },
     { label: "Invitations", to: "/admin/invitations", icon: faEnvelope },
-    { label: "Grille audits", to: "/admin/audit-grid", icon: faTableCells },
+    { label: "Grille audits (aperçu)", to: "/admin/audit-grid", icon: faTableCells },
   ],
 };
 
@@ -271,9 +277,15 @@ export function getRailScrollSections(isAdmin: boolean, hasPermission?: (key: st
 export function filterSecondaryNavItems(
   items: SecondaryNavItem[],
   hasPermission?: (key: string) => boolean,
+  isModuleEnabled?: (key: string) => boolean,
 ): SecondaryNavItem[] {
   const can = hasPermission ?? (() => true);
-  return items.filter((item) => !item.requiredPermission || can(item.requiredPermission));
+  const mod = isModuleEnabled ?? (() => true);
+  return items.filter((item) => {
+    if (item.requiredPermission && !can(item.requiredPermission)) return false;
+    if (item.requiredModule && !mod(item.requiredModule)) return false;
+    return true;
+  });
 }
 
 /**
@@ -306,13 +318,13 @@ export function getActiveRailSection(pathname: string, sections: RailSection[]):
 export function getRailHeaderLabel(pathname: string, sections: RailSection[]): string | null {
   const active = getActiveRailSection(pathname, sections);
   if (!active) return null;
-  if (active.id !== "home") return active.label;
-
-  const normalized = pathname.split("?")[0];
-  for (const c of active.children) {
-    const base = c.to.split("?")[0];
-    if (normalized === base || normalized.startsWith(`${base}/`)) {
-      return c.label;
+  if (active.id === "home" || active.id === "admin") {
+    const normalized = pathname.split("?")[0];
+    for (const c of active.children) {
+      const base = c.to.split("?")[0];
+      if (normalized === base || normalized.startsWith(`${base}/`)) {
+        return c.label;
+      }
     }
   }
   return active.label;

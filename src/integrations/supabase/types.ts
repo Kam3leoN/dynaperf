@@ -1236,6 +1236,7 @@ export type Database = {
       }
       secteurs: {
         Row: {
+          color_hex: string | null
           created_at: string
           departements: string[]
           id: string
@@ -1243,6 +1244,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          color_hex?: string | null
           created_at?: string
           departements?: string[]
           id?: string
@@ -1250,6 +1252,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          color_hex?: string | null
           created_at?: string
           departements?: string[]
           id?: string

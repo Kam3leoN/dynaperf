@@ -104,7 +104,7 @@ export default function AdminInvitations() {
   };
 
   return (
-    <div className="app-page-shell min-w-0 w-full max-w-full space-y-6 pb-8">
+    <div className="app-page-shell-wide min-w-0 w-full max-w-full space-y-6 pb-8">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-semibold text-foreground">Invitations</h1>

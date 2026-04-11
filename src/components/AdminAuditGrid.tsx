@@ -488,7 +488,7 @@ export default function AdminAuditGridInline() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="app-page-shell-wide min-w-0 w-full max-w-full space-y-6 pb-8">
       {/* Step 1: Type selection cards */}
       {!selectedTypeId && (
         <>

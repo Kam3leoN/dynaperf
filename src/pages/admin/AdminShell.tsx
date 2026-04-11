@@ -8,7 +8,7 @@ import { AppLayout } from "@/components/AppLayout";
 export default function AdminShell() {
   return (
     <AppLayout>
-      <div className="app-page-shell flex min-w-0 w-full max-w-full flex-col gap-4">
+      <div className="app-page-shell-wide flex min-w-0 w-full max-w-full flex-col gap-4">
         <main className="min-w-0 w-full flex-1 overflow-x-auto">
           <Outlet />
         </main>

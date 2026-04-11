@@ -79,7 +79,7 @@ export function MobileMoreMenu({ onClose }: Props) {
               <MenuItem icon={faEnvelope} label="Messages privés" to="/messages?section=messagerie" onClick={onClose} />
             </>
           ) : (
-            filterSecondaryNavItems(section.children, hasPermission).map((item) => (
+            filterSecondaryNavItems(section.children, hasPermission, isModuleEnabled).map((item) => (
               <MenuItem key={item.to} icon={item.icon} label={item.label} to={item.to} onClick={onClose} />
             ))
           )}

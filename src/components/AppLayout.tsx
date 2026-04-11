@@ -490,7 +490,7 @@ export function AppLayout({
 
       <div className="flex min-h-0 flex-1 flex-row overflow-x-auto overflow-y-hidden shell:pl-[360px] shell:pr-[260px]">
         <AppNavRail isAdmin={isAdmin} hasPermission={hasPermission} isModuleEnabled={isModuleEnabled} />
-        <AppSecondaryNav isSuperAdmin={isSuperAdmin} hasPermission={hasPermission} />
+        <AppSecondaryNav isSuperAdmin={isSuperAdmin} hasPermission={hasPermission} isModuleEnabled={isModuleEnabled} />
         <div className="flex flex-1 flex-col min-w-0 min-h-0">
           <main
             className={cn(
@@ -519,6 +519,7 @@ export function AppLayout({
           <AppSecondaryNavPanel
             isSuperAdmin={isSuperAdmin}
             hasPermission={hasPermission}
+            isModuleEnabled={isModuleEnabled}
             className="flex-1 min-h-0 overflow-y-auto"
           />
         </SheetContent>

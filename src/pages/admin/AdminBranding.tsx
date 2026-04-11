@@ -6,28 +6,52 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCamera, faFloppyDisk, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faCamera, faFloppyDisk, faMoon, faSpinner, faSun } from "@fortawesome/free-solid-svg-icons";
 import { resolveAvatarFileMeta } from "@/lib/avatarStorage";
 
 type AppSettingsRow = {
   app_name: string;
   description: string | null;
-  logo_url: string | null;
+  logo_light_url: string | null;
+  logo_dark_url: string | null;
   favicon_url: string | null;
-  icon_512_url: string | null;
+  icon_512_light_url: string | null;
+  icon_512_dark_url: string | null;
 };
 
-async function uploadBrandingAsset(file: File, slot: "logo" | "favicon" | "icon512"): Promise<string | null> {
+type BrandingSlot = "logo_light" | "logo_dark" | "favicon" | "icon512_light" | "icon512_dark";
+
+const FILE_ACCEPT =
+  "image/jpeg,image/png,image/webp,image/svg+xml,.jpg,.jpeg,.png,.webp,.svg";
+
+function slotToPathSuffix(slot: BrandingSlot): string {
+  switch (slot) {
+    case "logo_light":
+      return "logo_light";
+    case "logo_dark":
+      return "logo_dark";
+    case "favicon":
+      return "favicon";
+    case "icon512_light":
+      return "icon512_light";
+    case "icon512_dark":
+      return "icon512_dark";
+    default:
+      return "asset";
+  }
+}
+
+async function uploadBrandingAsset(file: File, slot: BrandingSlot): Promise<string | null> {
   if (file.size > 5 * 1024 * 1024) {
     toast.error("Fichier trop volumineux (max. 5 Mo).");
     return null;
   }
   const meta = resolveAvatarFileMeta(file);
   if (!meta) {
-    toast.error("Format d’image non pris en charge (JPG, PNG, WebP).");
+    toast.error("Format d’image non pris en charge (JPG, PNG, WebP ou SVG).");
     return null;
   }
-  const suffix = slot === "icon512" ? "icon512" : slot;
+  const suffix = slotToPathSuffix(slot);
   const path = `branding/${suffix}.${meta.ext}`;
   const { error } = await supabase.storage.from("avatars").upload(path, file, {
     upsert: true,
@@ -42,8 +66,29 @@ async function uploadBrandingAsset(file: File, slot: "logo" | "favicon" | "icon5
   return `${data.publicUrl}?t=${Date.now()}`;
 }
 
+function pickUrlForSlot(
+  form: AppSettingsRow,
+  slot: BrandingSlot,
+  url: string,
+): AppSettingsRow {
+  switch (slot) {
+    case "logo_light":
+      return { ...form, logo_light_url: url };
+    case "logo_dark":
+      return { ...form, logo_dark_url: url };
+    case "favicon":
+      return { ...form, favicon_url: url };
+    case "icon512_light":
+      return { ...form, icon_512_light_url: url };
+    case "icon512_dark":
+      return { ...form, icon_512_dark_url: url };
+    default:
+      return form;
+  }
+}
+
 /**
- * Page Identité : nom, description, logo, favicon, icône PWA / grand format.
+ * Page Identité : nom, description, logo (clair / sombre), favicon, icône 512 (clair / sombre).
  */
 export default function AdminBranding() {
   const [loading, setLoading] = useState(true);
@@ -51,9 +96,11 @@ export default function AdminBranding() {
   const [form, setForm] = useState<AppSettingsRow>({
     app_name: "DynaPerf",
     description: "",
-    logo_url: null,
+    logo_light_url: null,
+    logo_dark_url: null,
     favicon_url: null,
-    icon_512_url: null,
+    icon_512_light_url: null,
+    icon_512_dark_url: null,
   });
 
   const load = useCallback(async () => {
@@ -65,9 +112,11 @@ export default function AdminBranding() {
       setForm({
         app_name: data.app_name ?? "DynaPerf",
         description: data.description,
-        logo_url: data.logo_url,
+        logo_light_url: data.logo_light_url ?? data.logo_url,
+        logo_dark_url: data.logo_dark_url,
         favicon_url: data.favicon_url,
-        icon_512_url: data.icon_512_url,
+        icon_512_light_url: data.icon_512_light_url ?? data.icon_512_url,
+        icon_512_dark_url: data.icon_512_dark_url,
       });
     }
     setLoading(false);
@@ -84,9 +133,13 @@ export default function AdminBranding() {
       .update({
         app_name: form.app_name.trim() || "DynaPerf",
         description: form.description?.trim() || null,
-        logo_url: form.logo_url,
+        logo_light_url: form.logo_light_url,
+        logo_dark_url: form.logo_dark_url,
+        logo_url: form.logo_light_url,
         favicon_url: form.favicon_url,
-        icon_512_url: form.icon_512_url,
+        icon_512_light_url: form.icon_512_light_url,
+        icon_512_dark_url: form.icon_512_dark_url,
+        icon_512_url: form.icon_512_light_url,
         updated_at: new Date().toISOString(),
       })
       .eq("id", 1);
@@ -98,26 +151,58 @@ export default function AdminBranding() {
     setSaving(false);
   };
 
-  const onPick = async (file: File | undefined, slot: "logo" | "favicon" | "icon512") => {
+  const onPick = async (file: File | undefined, slot: BrandingSlot) => {
     if (!file) return;
     const url = await uploadBrandingAsset(file, slot);
     if (!url) return;
-    setForm((f) => {
-      if (slot === "logo") return { ...f, logo_url: url };
-      if (slot === "favicon") return { ...f, favicon_url: url };
-      return { ...f, icon_512_url: url };
-    });
+    setForm((f) => pickUrlForSlot(f, slot, url));
     toast.success("Fichier envoyé — enregistrez pour appliquer partout.");
   };
 
+  const visualRow = (
+    slot: BrandingSlot,
+    label: string,
+    url: string | null,
+    themeIcon: typeof faSun,
+    themeHint: string,
+  ) => (
+    <div key={slot} className="space-y-2">
+      <Label className="flex items-center gap-2">
+        <FontAwesomeIcon icon={themeIcon} className="h-3.5 w-3.5 text-muted-foreground" aria-hidden />
+        {label}
+        <span className="text-[10px] font-normal text-muted-foreground">({themeHint})</span>
+      </Label>
+      <div className="flex items-start gap-3">
+        <div className="w-16 h-16 rounded-lg border border-border bg-muted/30 flex items-center justify-center overflow-hidden shrink-0">
+          {url ? (
+            <img src={url} alt="" className="max-w-full max-h-full object-contain" />
+          ) : (
+            <FontAwesomeIcon icon={faCamera} className="h-6 w-6 text-muted-foreground" />
+          )}
+        </div>
+        <label className="cursor-pointer">
+          <input
+            type="file"
+            accept={FILE_ACCEPT}
+            className="hidden"
+            onChange={(e) => void onPick(e.target.files?.[0], slot)}
+          />
+          <Button type="button" variant="outline" size="sm" className="rounded-md" asChild>
+            <span>Choisir…</span>
+          </Button>
+        </label>
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
-      <div className="app-page-shell py-12 text-center text-muted-foreground text-sm">Chargement…</div>
+      <div className="app-page-shell-wide py-12 text-center text-muted-foreground text-sm">Chargement…</div>
     );
   }
 
   return (
-    <div className="app-page-shell min-w-0 w-full max-w-full space-y-6 pb-8">
+    <div className="app-page-shell-wide min-w-0 w-full max-w-full space-y-6 pb-8">
       <div>
         <h1 className="text-xl font-semibold text-foreground">Identité de l’application</h1>
         <p className="text-sm text-muted-foreground mt-1">Nom affiché, favicon et visuels pour l’ensemble du site.</p>
@@ -153,20 +238,34 @@ export default function AdminBranding() {
       <Card className="border-border/60 shadow-soft">
         <CardHeader>
           <CardTitle>Visuels</CardTitle>
-          <CardDescription>Stockage public `avatars/branding/…` — PNG, JPG ou WebP recommandés.</CardDescription>
+          <CardDescription>
+            Stockage public <code className="text-xs">avatars/branding/…</code> — PNG, JPG, WebP ou SVG recommandés.
+          </CardDescription>
         </CardHeader>
-        <CardContent className="grid gap-6 sm:grid-cols-3">
-          {[
-            { key: "logo" as const, label: "Logo", url: form.logo_url },
-            { key: "favicon" as const, label: "Favicon", url: form.favicon_url },
-            { key: "icon512" as const, label: "Icône 512", url: form.icon_512_url },
-          ].map(({ key, label, url }) => (
-            <div key={key} className="space-y-2">
-              <Label>{label}</Label>
+        <CardContent className="space-y-8">
+          <div>
+            <p className="text-sm font-medium text-foreground mb-3">Logo</p>
+            <div className="grid gap-6 sm:grid-cols-2">
+              {visualRow("logo_light", "Logo", form.logo_light_url, faSun, "clair")}
+              {visualRow("logo_dark", "Logo", form.logo_dark_url, faMoon, "sombre")}
+            </div>
+          </div>
+
+          <div>
+            <p className="text-sm font-medium text-foreground mb-3">Icône 512</p>
+            <div className="grid gap-6 sm:grid-cols-2">
+              {visualRow("icon512_light", "Icône 512", form.icon_512_light_url, faSun, "clair")}
+              {visualRow("icon512_dark", "Icône 512", form.icon_512_dark_url, faMoon, "sombre")}
+            </div>
+          </div>
+
+          <div className="border-t border-border/60 pt-6">
+            <div className="space-y-2 sm:max-w-xs">
+              <Label>Favicon</Label>
               <div className="flex items-start gap-3">
                 <div className="w-16 h-16 rounded-lg border border-border bg-muted/30 flex items-center justify-center overflow-hidden shrink-0">
-                  {url ? (
-                    <img src={url} alt="" className="max-w-full max-h-full object-contain" />
+                  {form.favicon_url ? (
+                    <img src={form.favicon_url} alt="" className="max-w-full max-h-full object-contain" />
                   ) : (
                     <FontAwesomeIcon icon={faCamera} className="h-6 w-6 text-muted-foreground" />
                   )}
@@ -174,9 +273,9 @@ export default function AdminBranding() {
                 <label className="cursor-pointer">
                   <input
                     type="file"
-                    accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                    accept={FILE_ACCEPT}
                     className="hidden"
-                    onChange={(e) => void onPick(e.target.files?.[0], key)}
+                    onChange={(e) => void onPick(e.target.files?.[0], "favicon")}
                   />
                   <Button type="button" variant="outline" size="sm" className="rounded-md" asChild>
                     <span>Choisir…</span>
@@ -184,7 +283,7 @@ export default function AdminBranding() {
                 </label>
               </div>
             </div>
-          ))}
+          </div>
         </CardContent>
       </Card>
 

@@ -1,10 +1,14 @@
 import { useEffect } from "react";
+import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Charge les paramètres d’identité (`app_settings`) et applique titre du document, favicon et méta OG de base.
+ * L’icône « apple-touch » suit le thème clair / sombre lorsque des variantes sont définies.
  */
 export function useAppBranding() {
+  const { resolvedTheme } = useTheme();
+
   useEffect(() => {
     let cancelled = false;
     void (async () => {
@@ -30,8 +34,17 @@ export function useAppBranding() {
       if (data.favicon_url?.trim()) {
         setLink("icon", data.favicon_url.trim());
       }
-      if (data.icon_512_url?.trim()) {
-        setLink("apple-touch-icon", data.icon_512_url.trim());
+
+      const isDark = resolvedTheme === "dark";
+      const icon512 =
+        (isDark ? data.icon_512_dark_url : data.icon_512_light_url)?.trim() ||
+        (isDark ? data.icon_512_light_url : data.icon_512_dark_url)?.trim() ||
+        data.icon_512_light_url?.trim() ||
+        data.icon_512_dark_url?.trim() ||
+        data.icon_512_url?.trim();
+
+      if (icon512) {
+        setLink("apple-touch-icon", icon512);
       }
 
       const ogTitle = document.querySelector('meta[property="og:title"]');
@@ -54,5 +67,5 @@ export function useAppBranding() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [resolvedTheme]);
 }

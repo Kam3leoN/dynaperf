@@ -79,6 +79,7 @@ export default function AdminModules() {
   }
 
   return (
+    <div className="app-page-shell-wide min-w-0 w-full max-w-full space-y-4 pb-8">
     <div className="bg-card rounded-2xl shadow-soft border border-border/60 p-4 sm:p-5 space-y-1">
       <h3 className="text-sm font-semibold text-foreground mb-4">Gestion des modules</h3>
       <p className="text-xs text-muted-foreground mb-4">
@@ -111,6 +112,7 @@ export default function AdminModules() {
           );
         })}
       </div>
+    </div>
     </div>
   );
 }

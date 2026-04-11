@@ -27,7 +27,10 @@ const AuditVersionSelect = lazy(() => import("./pages/AuditVersionSelect"));
 const AuditForm = lazy(() => import("./pages/AuditForm"));
 const AdminShell = lazy(() => import("./pages/admin/AdminShell"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
-const AdminApplication = lazy(() => import("./pages/admin/AdminApplication"));
+const AdminModules = lazy(() => import("./components/AdminModules"));
+const AdminAuditsConfig = lazy(() => import("./components/AdminAuditGrid"));
+const AdminSecteursAdmin = lazy(() => import("./components/AdminSecteurs"));
+const AdminUserPrimes = lazy(() => import("./pages/admin/AdminUserPrimes"));
 const AdminExpression = lazy(() => import("./pages/admin/AdminExpression"));
 const AdminInvitations = lazy(() => import("./pages/admin/AdminInvitations"));
 const AdminBranding = lazy(() => import("./pages/admin/AdminBranding"));
@@ -144,7 +147,11 @@ const App = () => {
                     <Route path="/admin" element={<AdminRoute><AdminShell /></AdminRoute>}>
                       <Route index element={<Navigate to="users" replace />} />
                       <Route path="users" element={<AdminUsers />} />
-                      <Route path="application" element={<AdminApplication />} />
+                      <Route path="modules" element={<AdminModules />} />
+                      <Route path="audits-config" element={<AdminAuditsConfig />} />
+                      <Route path="secteurs" element={<AdminSecteursAdmin />} />
+                      <Route path="primes-users" element={<AdminUserPrimes />} />
+                      <Route path="application" element={<Navigate to="/admin/modules" replace />} />
                       <Route path="roles" element={<AdminRoles />} />
                       <Route path="expression" element={<AdminExpression />} />
                       <Route path="invitations" element={<AdminInvitations />} />

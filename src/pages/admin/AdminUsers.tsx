@@ -57,7 +57,7 @@ function ArcText({ text, radius = 78, fontSize = 13 }: { text: string; radius?: 
   );
 }
 
-interface UserConfig {
+export interface UserConfig {
   objectif: number;
   palier_1: number | null;
   palier_2: number | null;
@@ -86,7 +86,7 @@ interface UserConfig {
   semaines_indisponibles: number;
 }
 
-interface CustomPrime {
+export interface CustomPrime {
   id: string;
   user_id: string;
   label: string;
@@ -95,7 +95,7 @@ interface CustomPrime {
   prime_3_plus: number;
 }
 
-interface ManagedUser {
+export interface ManagedUser {
   id: string;
   email: string;
   displayName: string;
@@ -273,6 +273,19 @@ async function fetchManagedUsersViaRpc(): Promise<ManagedUser[] | null> {
       createdAt: u.created_at,
     };
   });
+}
+
+/** Liste des utilisateurs gérables (Edge Function `list`, sinon repli RPC). */
+export async function fetchManagedUsersList(): Promise<ManagedUser[]> {
+  const res = await supabase.functions.invoke("create-user", {
+    body: { action: "list" },
+  });
+  const edgeUsers = !res.error && !res.data?.error && Array.isArray(res.data?.users) ? res.data.users : null;
+  if (edgeUsers && edgeUsers.length > 0) {
+    return edgeUsers as ManagedUser[];
+  }
+  const viaRpc = await fetchManagedUsersViaRpc();
+  return viaRpc ?? [];
 }
 
 export default function AdminUsers() {
@@ -752,7 +765,7 @@ export default function AdminUsers() {
   };
 
   return (
-    <div className="app-page-shell min-w-0 w-full max-w-full space-y-4 pb-8 sm:space-y-6">
+    <div className="app-page-shell-wide min-w-0 w-full max-w-full space-y-4 pb-8 sm:space-y-6">
       <div className="space-y-4">
       <div className="bg-card rounded-2xl shadow-soft border border-border/60 p-4 sm:p-5">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
@@ -1313,7 +1326,7 @@ function AvatarWithUpload({ user, onUpload }: { user: ManagedUser; onUpload: (us
 
 /* ─── Inline sub-component for user config (objectives + primes) ─── */
 
-function UserConfigPanel({
+export function UserConfigPanel({
   userId,
   config,
   customPrimes: initialCustomPrimes,

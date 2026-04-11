@@ -18,13 +18,19 @@ interface AppSecondaryNavPanelProps {
   /** Affiche le bloc Sauvegardes en bas de la colonne admin (super_admin uniquement). */
   isSuperAdmin?: boolean;
   hasPermission: (key: string) => boolean;
+  isModuleEnabled?: (key: string) => boolean;
   className?: string;
 }
 
 /**
  * Contenu de la colonne secondaire ~280px type Discord (réutilisable dans le sheet mobile).
  */
-export function AppSecondaryNavPanel({ isSuperAdmin = false, hasPermission, className }: AppSecondaryNavPanelProps) {
+export function AppSecondaryNavPanel({
+  isSuperAdmin = false,
+  hasPermission,
+  isModuleEnabled,
+  className,
+}: AppSecondaryNavPanelProps) {
   const { pathname } = useLocation();
   const { resolvedTheme } = useTheme();
   const active = getActiveRailSection(pathname, RAIL_SECTIONS_ALL);
@@ -65,7 +71,7 @@ export function AppSecondaryNavPanel({ isSuperAdmin = false, hasPermission, clas
       ) : (
         <nav className="flex flex-col flex-1 min-h-0 p-2">
           <div className="flex flex-col gap-0.5 overflow-y-auto flex-1 min-h-0">
-            {filterSecondaryNavItems(active.children, hasPermission).map((item) => (
+            {filterSecondaryNavItems(active.children, hasPermission, isModuleEnabled).map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}
@@ -99,15 +105,21 @@ export function AppSecondaryNavPanel({ isSuperAdmin = false, hasPermission, clas
 interface AppSecondaryNavProps {
   isSuperAdmin?: boolean;
   hasPermission: (key: string) => boolean;
+  isModuleEnabled?: (key: string) => boolean;
 }
 
 /**
  * Colonne secondaire desktop (~280px) : sous-menus de la section active.
  */
-export function AppSecondaryNav({ isSuperAdmin, hasPermission }: AppSecondaryNavProps) {
+export function AppSecondaryNav({ isSuperAdmin, hasPermission, isModuleEnabled }: AppSecondaryNavProps) {
   return (
     <aside className="hidden shell:flex fixed left-[80px] top-0 bottom-0 z-[45] w-[280px] flex-col border-r border-border/40 bg-muted/10 min-h-0">
-      <AppSecondaryNavPanel isSuperAdmin={isSuperAdmin} hasPermission={hasPermission} className="flex-1 min-h-0" />
+      <AppSecondaryNavPanel
+        isSuperAdmin={isSuperAdmin}
+        hasPermission={hasPermission}
+        isModuleEnabled={isModuleEnabled}
+        className="flex-1 min-h-0"
+      />
     </aside>
   );
 }

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -43,7 +42,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faArrowLeft,
   faEllipsisVertical,
   faKey,
   faMagnifyingGlass,
@@ -389,15 +387,9 @@ export default function AdminRoles() {
   const editRow = editRole ? catalogRoles.find((r) => r.role_key === editRole) : undefined;
 
   return (
-    <div className="app-page-shell min-w-0 w-full max-w-full space-y-5 overflow-x-clip pb-8 sm:space-y-6">
+    <div className="app-page-shell-wide min-w-0 w-full max-w-full space-y-5 overflow-x-clip pb-8 sm:space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
-            <Button variant="outline" size="sm" className="rounded-md gap-2 min-h-11 sm:min-h-10 shrink-0" asChild>
-              <Link to="/admin/users">
-                <FontAwesomeIcon icon={faArrowLeft} className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-                Administration
-              </Link>
-            </Button>
             <h1 className="text-xl font-semibold flex items-center gap-2 min-w-0 sm:text-lg">
               <FontAwesomeIcon icon={faKey} className="h-6 w-6 shrink-0 text-primary sm:h-5 sm:w-5" />
               <span className="truncate">Rôles serveur</span>
