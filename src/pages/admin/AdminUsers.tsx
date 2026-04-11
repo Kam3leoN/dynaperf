@@ -1,6 +1,4 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,17 +6,13 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faChevronDown, faChevronUp, faCamera, faEye, faEyeSlash, faDownload, faSpinner, faKey, faDatabase } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faChevronDown, faChevronUp, faCamera, faEye, faEyeSlash, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import AdminSecteurs from "@/components/AdminSecteurs";
-import AdminAuditGridInline from "@/components/AdminAuditGrid";
-import AdminModules from "@/components/AdminModules";
 import { readEdgeFunctionErrorMessage } from "@/lib/readEdgeFunctionError";
 import { cn } from "@/lib/utils";
 import { uploadUserAvatarToBucket, withAvatarCacheBust } from "@/lib/avatarStorage";
@@ -165,6 +159,8 @@ function StaffRoleSelectItems({ isSuperAdmin }: { isSuperAdmin: boolean }) {
 }
 
 function RoleBadge({ role }: { role: string }) {
+  const { roles: catalog } = useStaffRolesCatalog(true);
+  const row = catalog.find((r) => r.role_key === role);
   const styles: Record<string, string> = {
     super_admin: "bg-amber-500/15 text-amber-700 dark:text-amber-400",
     admin: "bg-primary/10 text-primary",
@@ -174,9 +170,26 @@ function RoleBadge({ role }: { role: string }) {
     member: "bg-secondary text-muted-foreground",
   };
   const fallback = styles.member;
+  const hex = row?.color_hex?.trim();
+  const validHex = hex && /^#[0-9A-Fa-f]{6}$/.test(hex);
+  const label = row?.label ?? ROLE_LABELS[role] ?? role;
   return (
-    <span className={`text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full ${styles[role] || fallback}`}>
-      {ROLE_LABELS[role] || role}
+    <span
+      className={`inline-flex items-center gap-1 text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full border border-transparent max-w-full ${!validHex ? styles[role] || fallback : ""}`}
+      style={
+        validHex
+          ? {
+              backgroundColor: `${hex}22`,
+              color: hex,
+              borderColor: `${hex}44`,
+            }
+          : undefined
+      }
+    >
+      {row?.icon_url ? (
+        <img src={row.icon_url} alt="" className="h-3.5 w-3.5 rounded-sm object-cover shrink-0" width={14} height={14} />
+      ) : null}
+      <span className="truncate">{label}</span>
     </span>
   );
 }
@@ -262,61 +275,7 @@ async function fetchManagedUsersViaRpc(): Promise<ManagedUser[] | null> {
   });
 }
 
-function BackupButton() {
-  const [loading, setLoading] = useState(false);
-  const handleBackup = async () => {
-    setLoading(true);
-    try {
-      const res = await supabase.functions.invoke("backup-all");
-      if (res.data?.success) {
-        toast.success(`Sauvegarde réussie : ${res.data.file}`);
-      } else {
-        if (!(await toastEdgeInvokeFailure(res, "Erreur de sauvegarde"))) {
-          toast.error((res.data as { error?: string } | null)?.error || "Erreur de sauvegarde");
-        }
-      }
-    } catch {
-      toast.error("Erreur de sauvegarde");
-    }
-    setLoading(false);
-  };
-  return (
-    <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleBackup} disabled={loading}>
-      <FontAwesomeIcon icon={loading ? faSpinner : faDownload} className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
-      <span className="hidden sm:inline">Sauvegarder</span>
-    </Button>
-  );
-}
-
-function SqlBackupButton() {
-  const [loading, setLoading] = useState(false);
-  const handleSqlBackup = async () => {
-    setLoading(true);
-    try {
-      const res = await supabase.functions.invoke("sql-backup");
-      if (res.data && typeof res.data === "object" && (res.data as { success?: boolean }).success) {
-        const d = res.data as { file?: string; path?: string };
-        toast.success(`Dump SQL créé : ${d.file ?? d.path ?? "OK"}`);
-      } else {
-        if (!(await toastEdgeInvokeFailure(res, "Erreur dump SQL"))) {
-          toast.error((res.data as { error?: string } | null)?.error || "Erreur dump SQL");
-        }
-      }
-    } catch {
-      toast.error("Erreur dump SQL");
-    }
-    setLoading(false);
-  };
-  return (
-    <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={handleSqlBackup} disabled={loading} title="Dump SQL (INSERT) vers Storage backups/sql/">
-      <FontAwesomeIcon icon={loading ? faSpinner : faDatabase} className={`h-3 w-3 ${loading ? "animate-spin" : ""}`} />
-      <span className="hidden sm:inline">Dump SQL</span>
-    </Button>
-  );
-}
-
-export default function Admin() {
-  const navigate = useNavigate();
+export default function AdminUsers() {
   const { user: currentUser } = useAuth();
   const { isSuperAdmin, loading: adminRolesLoading } = useAdmin(currentUser);
   const [users, setUsers] = useState<ManagedUser[]>([]);
@@ -751,6 +710,9 @@ export default function Admin() {
             <div className="min-w-0">
               <p className="text-sm font-semibold text-foreground truncate">{u.displayName}</p>
               <p className="text-xs text-muted-foreground truncate">{u.email}</p>
+              <p className="text-[10px] text-muted-foreground tabular-nums">
+                Membre depuis {u.createdAt ? new Date(u.createdAt).toLocaleDateString("fr-FR") : "—"}
+              </p>
             </div>
           </div>
           <div className="flex gap-1 shrink-0">
@@ -790,31 +752,7 @@ export default function Admin() {
   };
 
   return (
-    <AppLayout>
-      <Tabs defaultValue="collaborateurs" className="space-y-4">
-        <div className="flex items-center justify-between flex-wrap gap-2">
-          <TabsList className="grid w-full max-w-lg grid-cols-4">
-            <TabsTrigger value="collaborateurs">Utilisateurs</TabsTrigger>
-            <TabsTrigger value="modules">Modules</TabsTrigger>
-            <TabsTrigger value="audits">Audits</TabsTrigger>
-            <TabsTrigger value="secteurs">Secteurs</TabsTrigger>
-          </TabsList>
-          <div className="flex items-center gap-2 shrink-0">
-            <Button variant="outline" size="sm" className="rounded-md gap-1.5" asChild>
-              <Link to="/admin/roles">
-                <FontAwesomeIcon icon={faKey} className="h-3.5 w-3.5" />
-                <span className="hidden sm:inline">Rôles & droits</span>
-              </Link>
-            </Button>
-            {currentUser && isSuperAdmin && (
-              <>
-                <BackupButton />
-                <SqlBackupButton />
-              </>
-            )}
-          </div>
-        </div>
-        <TabsContent value="collaborateurs">
+    <div className="app-page-shell min-w-0 w-full max-w-full space-y-4 pb-8 sm:space-y-6">
       <div className="space-y-4">
       <div className="bg-card rounded-2xl shadow-soft border border-border/60 p-4 sm:p-5">
         <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
@@ -940,6 +878,7 @@ export default function Admin() {
                     <TableHead className="text-xs uppercase tracking-wider w-10"></TableHead>
                     <TableHead className="text-xs uppercase tracking-wider">Nom</TableHead>
                     <TableHead className="text-xs uppercase tracking-wider">Email</TableHead>
+                    <TableHead className="text-xs uppercase tracking-wider whitespace-nowrap">Membre depuis</TableHead>
                     <TableHead className="text-xs uppercase tracking-wider">Rôle</TableHead>
                     <TableHead className="text-xs uppercase tracking-wider">Paliers</TableHead>
                     <TableHead className="text-xs uppercase tracking-wider">
@@ -972,6 +911,9 @@ export default function Admin() {
                           </TableCell>
                           <TableCell className="text-sm font-medium">{u.displayName}</TableCell>
                           <TableCell className="text-sm text-muted-foreground">{u.email}</TableCell>
+                          <TableCell className="text-sm tabular-nums text-muted-foreground whitespace-nowrap">
+                            {u.createdAt ? new Date(u.createdAt).toLocaleDateString("fr-FR") : "—"}
+                          </TableCell>
                           <TableCell>
                             {canChangeUserRoleFromList(u) ? (
                               <Select value={role} onValueChange={(v) => handleSetRole(u.id, v)}>
@@ -1350,18 +1292,7 @@ export default function Admin() {
         </DialogContent>
       </Dialog>
       </div>
-        </TabsContent>
-        <TabsContent value="modules">
-          <AdminModules />
-        </TabsContent>
-        <TabsContent value="audits">
-          <AdminAuditGridInline />
-        </TabsContent>
-        <TabsContent value="secteurs">
-          <AdminSecteurs />
-        </TabsContent>
-      </Tabs>
-    </AppLayout>
+    </div>
   );
 }
 

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
@@ -98,6 +97,7 @@ export default function AdminRoles() {
   const [deletingRole, setDeletingRole] = useState(false);
   const [roleSearch, setRoleSearch] = useState("");
   const [editRole, setEditRole] = useState<string | null>(null);
+  const [colorBusy, setColorBusy] = useState<string | null>(null);
 
   const labelByKey = useMemo(
     () => Object.fromEntries(catalogRoles.map((r) => [r.role_key, r.label])) as Record<string, string>,
@@ -368,6 +368,18 @@ export default function AdminRoles() {
     }
   };
 
+  const saveRoleColor = async (roleKey: string, hex: string) => {
+    setColorBusy(roleKey);
+    const { error } = await (supabase as any).from("app_roles_catalog").update({ color_hex: hex }).eq("role_key", roleKey);
+    setColorBusy(null);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Couleur mise à jour");
+    await reloadCatalog();
+  };
+
   const totalMembers = useMemo(
     () => matrixRoleKeys.reduce((acc, r) => acc + (roleCounts[r] ?? 0), 0),
     [matrixRoleKeys, roleCounts],
@@ -377,12 +389,11 @@ export default function AdminRoles() {
   const editRow = editRole ? catalogRoles.find((r) => r.role_key === editRole) : undefined;
 
   return (
-    <AppLayout>
-      <div className="app-page-shell min-w-0 w-full max-w-full space-y-5 overflow-x-clip pb-8 sm:space-y-6">
+    <div className="app-page-shell min-w-0 w-full max-w-full space-y-5 overflow-x-clip pb-8 sm:space-y-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 min-w-0">
             <Button variant="outline" size="sm" className="rounded-md gap-2 min-h-11 sm:min-h-10 shrink-0" asChild>
-              <Link to="/admin">
+              <Link to="/admin/users">
                 <FontAwesomeIcon icon={faArrowLeft} className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
                 Administration
               </Link>
@@ -468,6 +479,17 @@ export default function AdminRoles() {
                         {row.is_system && (
                           <p className="text-xs text-muted-foreground mt-0.5 sm:text-[10px]">Rôle système</p>
                         )}
+                      </div>
+                      <div className="flex flex-col items-center gap-0.5 shrink-0">
+                        <span className="text-[9px] text-muted-foreground uppercase tracking-wide">Couleur</span>
+                        <input
+                          type="color"
+                          disabled={colorBusy === row.role_key}
+                          aria-label={`Couleur affichée pour ${row.label}`}
+                          className="h-8 w-10 cursor-pointer rounded border border-border bg-background p-0.5 disabled:opacity-50"
+                          value={/^#[0-9A-Fa-f]{6}$/.test(row.color_hex ?? "") ? (row.color_hex as string) : "#666666"}
+                          onChange={(e) => void saveRoleColor(row.role_key, e.target.value)}
+                        />
                       </div>
                       <div className="flex items-center gap-1.5 text-base text-muted-foreground tabular-nums shrink-0 sm:text-sm">
                         <span>{n}</span>
@@ -647,7 +669,9 @@ export default function AdminRoles() {
                   <SheetTitle className="text-left text-lg sm:text-xl">
                     Permissions — {editRow?.label ?? labelByKey[editRole] ?? editRole}
                   </SheetTitle>
-                  <SheetDescription className="text-left font-mono text-sm sm:text-xs">{editRole}</SheetDescription>
+                  <SheetDescription className="text-left text-xs text-muted-foreground">
+                    Réf. technique : <span className="font-mono">{editRole}</span>
+                  </SheetDescription>
                 </SheetHeader>
                 <ScrollArea className="flex-1 min-h-0 px-5 py-4 sm:px-6">
                   <ul className="space-y-3.5 pr-1 sm:space-y-3 sm:pr-2">
@@ -674,9 +698,11 @@ export default function AdminRoles() {
                               htmlFor={`sheet-${sid}`}
                               className="text-base font-medium cursor-pointer block sm:text-sm"
                             >
-                              <code className="text-sm font-mono sm:text-xs">{perm.key}</code>
+                              {perm.description || perm.key}
                             </label>
-                            <p className="text-sm text-muted-foreground mt-1 sm:text-xs sm:mt-0.5">{perm.description}</p>
+                            <p className="text-[11px] text-muted-foreground font-mono mt-0.5 break-all sm:text-[10px]">
+                              {perm.key}
+                            </p>
                           </div>
                         </li>
                       );
@@ -688,14 +714,14 @@ export default function AdminRoles() {
           </SheetContent>
         </Sheet>
 
-        <details className="rounded-2xl border border-border/60 bg-card shadow-soft group">
+        <details open className="rounded-2xl border border-border/60 bg-card shadow-soft group">
           <summary className="cursor-pointer list-none px-4 py-4 min-h-[3rem] font-medium text-base flex items-center justify-between gap-2 hover:bg-muted/20 rounded-2xl [&::-webkit-details-marker]:hidden sm:py-3 sm:text-sm sm:min-h-0">
-            <span className="min-w-0 pr-2">Vue matrice complète (avancée)</span>
+            <span className="min-w-0 pr-2">Catalogue &amp; matrice des permissions</span>
             <span className="text-sm text-muted-foreground font-normal shrink-0 group-open:hidden sm:text-xs">
-              Afficher
+              Développer
             </span>
             <span className="text-sm text-muted-foreground font-normal shrink-0 hidden group-open:inline sm:text-xs">
-              Masquer
+              Replier
             </span>
           </summary>
           <div className="border-t border-border/60 overflow-hidden">
@@ -734,8 +760,10 @@ export default function AdminRoles() {
                           <TableRow key={perm.key}>
                             <TableCell className="sticky left-0 z-10 bg-card border-r border-border/60 align-top">
                               <div className="space-y-1 pr-2">
-                                <code className="text-xs font-mono break-all">{perm.key}</code>
-                                <p className="text-xs text-muted-foreground leading-snug">{perm.description}</p>
+                                <p className="text-sm font-medium leading-snug">{perm.description || perm.key}</p>
+                                <p className="text-[10px] text-muted-foreground font-mono break-all leading-tight">
+                                  {perm.key}
+                                </p>
                                 <div className="flex gap-1 pt-1">
                                   <Button
                                     type="button"
@@ -774,7 +802,7 @@ export default function AdminRoles() {
                                       checked={checked}
                                       disabled={busy}
                                       onCheckedChange={(v) => void setCell(role, perm.key, v === true)}
-                                      aria-label={`${labelByKey[role] ?? role} — ${perm.key}`}
+                                      aria-label={`${labelByKey[role] ?? role} — ${perm.description || perm.key}`}
                                     />
                                   </div>
                                 </TableCell>
@@ -888,7 +916,6 @@ export default function AdminRoles() {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </div>
-    </AppLayout>
+    </div>
   );
 }

@@ -362,12 +362,19 @@ export default function AuditForm() {
       const { auditPayload, detailPayload } = buildAuditPayloads(szd, ans, ep, sa, sp);
 
       if (draftIdRef.current) {
-        await supabase.from("audits").update(auditPayload).eq("id", draftIdRef.current);
-        const { data: existing } = await supabase.from("audit_details").select("id").eq("audit_id", draftIdRef.current).maybeSingle();
+        const { error: auditErr } = await supabase.from("audits").update(auditPayload).eq("id", draftIdRef.current);
+        if (auditErr) throw auditErr;
+        const { data: existing, error: selErr } = await supabase.from("audit_details").select("id").eq("audit_id", draftIdRef.current).maybeSingle();
+        if (selErr) throw selErr;
         if (existing) {
-          await supabase.from("audit_details").update({ ...detailPayload, audit_id: draftIdRef.current }).eq("audit_id", draftIdRef.current);
+          const { error: detErr } = await supabase
+            .from("audit_details")
+            .update({ ...detailPayload, audit_id: draftIdRef.current })
+            .eq("audit_id", draftIdRef.current);
+          if (detErr) throw detErr;
         } else {
-          await supabase.from("audit_details").insert({ ...detailPayload, audit_id: draftIdRef.current });
+          const { error: insErr } = await supabase.from("audit_details").insert({ ...detailPayload, audit_id: draftIdRef.current });
+          if (insErr) throw insErr;
         }
       } else {
         const { data, error } = await supabase.from("audits")
@@ -376,7 +383,8 @@ export default function AuditForm() {
           .single();
         if (error) throw error;
         draftIdRef.current = data.id;
-        await supabase.from("audit_details").insert({ ...detailPayload, audit_id: data.id });
+        const { error: detErr } = await supabase.from("audit_details").insert({ ...detailPayload, audit_id: data.id });
+        if (detErr) throw detErr;
       }
       setSaveStatus('saved');
     } catch (e) {

@@ -166,7 +166,8 @@ export default function SuiviActiviteForm() {
       const payload = buildSuiviPayload(data, true);
 
       if (draftIdRef.current) {
-        await supabase.from("suivi_activite").update(payload).eq("id", draftIdRef.current);
+        const { error: updErr } = await supabase.from("suivi_activite").update(payload).eq("id", draftIdRef.current);
+        if (updErr) throw updErr;
       } else {
         const { data: row, error } = await supabase.from("suivi_activite").insert(payload).select("id").single();
         if (error) throw error;

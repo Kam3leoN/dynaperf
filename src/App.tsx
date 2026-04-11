@@ -12,6 +12,7 @@ import { InstallPrompt } from "@/components/InstallPrompt";
 import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { MessagingSidebarProvider } from "@/contexts/MessagingSidebarContext";
 import { PermissionsProvider, usePermissionGate } from "@/contexts/PermissionsContext";
+import { useAppBranding } from "@/hooks/useAppBranding";
 import { ResponsiveShellProvider } from "@/contexts/ResponsiveShellContext";
 
 // Eagerly loaded (critical path)
@@ -24,7 +25,12 @@ const Registre = lazy(() => import("./pages/Registre"));
 const NewAudit = lazy(() => import("./pages/NewAudit"));
 const AuditVersionSelect = lazy(() => import("./pages/AuditVersionSelect"));
 const AuditForm = lazy(() => import("./pages/AuditForm"));
-const Admin = lazy(() => import("./pages/Admin"));
+const AdminShell = lazy(() => import("./pages/admin/AdminShell"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminApplication = lazy(() => import("./pages/admin/AdminApplication"));
+const AdminExpression = lazy(() => import("./pages/admin/AdminExpression"));
+const AdminInvitations = lazy(() => import("./pages/admin/AdminInvitations"));
+const AdminBranding = lazy(() => import("./pages/admin/AdminBranding"));
 const AdminAuditGrid = lazy(() => import("./pages/AdminAuditGrid"));
 const AdminRoles = lazy(() => import("./pages/AdminRoles"));
 const BusinessPlan = lazy(() => import("./pages/BusinessPlan"));
@@ -102,6 +108,11 @@ function AuthRoute({ children }: { children: React.ReactNode }) {
 
 const routerBase = import.meta.env.BASE_URL.replace(/\/$/, "") || "/";
 
+function AppBrandingBoot() {
+  useAppBranding();
+  return null;
+}
+
 const App = () => {
   const [splashDone, setSplashDone] = useState(false);
 
@@ -116,6 +127,8 @@ const App = () => {
             <OfflineIndicator />
             {!splashDone && <SplashScreen onFinished={() => setSplashDone(true)} />}
             {splashDone && (
+            <>
+            <AppBrandingBoot />
             <BrowserRouter basename={routerBase}>
               <ResponsiveShellProvider>
               <MessagingSidebarProvider>
@@ -128,9 +141,16 @@ const App = () => {
                     <Route path="/audits/new/version" element={<PermissionRoute permission="nav.audits"><AuditVersionSelect /></PermissionRoute>} />
                     <Route path="/audits/new/form" element={<PermissionRoute permission="nav.audits"><AuditForm /></PermissionRoute>} />
                     <Route path="/audits/edit/:auditId" element={<PermissionRoute permission="nav.audits"><AuditForm /></PermissionRoute>} />
-                    <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+                    <Route path="/admin" element={<AdminRoute><AdminShell /></AdminRoute>}>
+                      <Route index element={<Navigate to="users" replace />} />
+                      <Route path="users" element={<AdminUsers />} />
+                      <Route path="application" element={<AdminApplication />} />
+                      <Route path="roles" element={<AdminRoles />} />
+                      <Route path="expression" element={<AdminExpression />} />
+                      <Route path="invitations" element={<AdminInvitations />} />
+                      <Route path="branding" element={<AdminBranding />} />
+                    </Route>
                     <Route path="/admin/audit-grid" element={<AdminRoute><AdminAuditGrid /></AdminRoute>} />
-                    <Route path="/admin/roles" element={<AdminRoute><AdminRoles /></AdminRoute>} />
                     <Route path="/business-plan" element={<PermissionRoute permission="nav.reseau"><BusinessPlan /></PermissionRoute>} />
                     <Route path="/drive" element={<PermissionRoute permission="nav.drive"><Drive /></PermissionRoute>} />
                     <Route path="/activite/dashboard" element={<PermissionRoute permission="nav.activite"><SuiviActiviteDashboard /></PermissionRoute>} />
@@ -161,6 +181,7 @@ const App = () => {
               </MessagingSidebarProvider>
               </ResponsiveShellProvider>
             </BrowserRouter>
+            </>
             )}
           </TooltipProvider>
         </AuthProvider>

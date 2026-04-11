@@ -77,6 +77,111 @@ export type Database = {
         }
         Relationships: []
       }
+      app_invitations: {
+        Row: {
+          id: string
+          token_hash: string
+          label: string | null
+          role_key: string | null
+          expires_at: string
+          max_uses: number | null
+          uses_count: number
+          created_by: string | null
+          created_at: string
+          revoked_at: string | null
+        }
+        Insert: {
+          id?: string
+          token_hash: string
+          label?: string | null
+          role_key?: string | null
+          expires_at: string
+          max_uses?: number | null
+          uses_count?: number
+          created_by?: string | null
+          created_at?: string
+          revoked_at?: string | null
+        }
+        Update: {
+          id?: string
+          token_hash?: string
+          label?: string | null
+          role_key?: string | null
+          expires_at?: string
+          max_uses?: number | null
+          uses_count?: number
+          created_by?: string | null
+          created_at?: string
+          revoked_at?: string | null
+        }
+        Relationships: []
+      }
+      app_settings: {
+        Row: {
+          id: number
+          app_name: string
+          description: string | null
+          logo_url: string | null
+          favicon_url: string | null
+          icon_512_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          app_name?: string
+          description?: string | null
+          logo_url?: string | null
+          favicon_url?: string | null
+          icon_512_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          app_name?: string
+          description?: string | null
+          logo_url?: string | null
+          favicon_url?: string | null
+          icon_512_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      expression_assets: {
+        Row: {
+          id: string
+          asset_type: string
+          label: string
+          storage_path: string
+          mime_type: string | null
+          sort_order: number
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          asset_type: string
+          label: string
+          storage_path: string
+          mime_type?: string | null
+          sort_order?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          asset_type?: string
+          label?: string
+          storage_path?: string
+          mime_type?: string | null
+          sort_order?: number
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       audit_categories: {
         Row: {
           audit_type_id: string
@@ -1625,6 +1730,25 @@ export type Database = {
       record_activity: {
         Args: { p_score?: number; p_type: string }
         Returns: Json
+      }
+      admin_create_app_invitation: {
+        Args: {
+          p_label: string | null
+          p_role_key: string | null
+          p_expires_at: string
+          p_max_uses: number | null
+        }
+        Returns: {
+          invitation_id: string
+          raw_token: string
+        }[]
+      }
+      verify_app_invitation_token: {
+        Args: { p_token: string }
+        Returns: {
+          invitation_id: string
+          role_key: string | null
+        }[]
       }
     }
     Enums: {

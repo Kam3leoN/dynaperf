@@ -7,6 +7,8 @@ export interface StaffRoleCatalogRow {
   sort_rank: number;
   is_system: boolean;
   created_at: string;
+  color_hex?: string | null;
+  icon_url?: string | null;
 }
 
 /**
@@ -27,7 +29,7 @@ export function useStaffRolesCatalog(enabled = true) {
     setError(null);
     const { data, error: qErr } = await (supabase as any)
       .from("app_roles_catalog")
-      .select("role_key, label, sort_rank, is_system, created_at")
+      .select("role_key, label, sort_rank, is_system, created_at, color_hex, icon_url")
       .order("sort_rank", { ascending: false });
     if (qErr) {
       setError(qErr.message);
