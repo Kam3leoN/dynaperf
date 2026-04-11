@@ -20,21 +20,38 @@ async function toastEdgeInvokeFailure(
   return true;
 }
 
+async function invokeEdge(name: string): Promise<{ data: unknown; error: unknown; response?: Response }> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+  const headers: Record<string, string> = {};
+  if (session?.access_token) {
+    headers.Authorization = `Bearer ${session.access_token}`;
+  }
+  return supabase.functions.invoke(name, { body: {}, headers });
+}
+
 export function BackupButton() {
   const [loading, setLoading] = useState(false);
   const handleBackup = async () => {
     setLoading(true);
     try {
-      const res = await supabase.functions.invoke("backup-all");
-      if (res.data?.success) {
-        toast.success(`Sauvegarde réussie : ${res.data.file}`);
+      const res = await invokeEdge("backup-all");
+      const ok =
+        res.data &&
+        typeof res.data === "object" &&
+        res.data !== null &&
+        (res.data as { success?: boolean }).success === true;
+      if (ok) {
+        const file = (res.data as { file?: string }).file ?? "";
+        toast.success(file ? `Sauvegarde réussie : ${file}` : "Sauvegarde réussie");
       } else {
         if (!(await toastEdgeInvokeFailure(res, "Erreur de sauvegarde"))) {
           toast.error((res.data as { error?: string } | null)?.error || "Erreur de sauvegarde");
         }
       }
-    } catch {
-      toast.error("Erreur de sauvegarde");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erreur de sauvegarde");
     }
     setLoading(false);
   };
@@ -51,7 +68,7 @@ export function SqlBackupButton() {
   const handleSqlBackup = async () => {
     setLoading(true);
     try {
-      const res = await supabase.functions.invoke("sql-backup");
+      const res = await invokeEdge("sql-backup");
       if (res.data && typeof res.data === "object" && (res.data as { success?: boolean }).success) {
         const d = res.data as { file?: string; path?: string };
         toast.success(`Dump SQL créé : ${d.file ?? d.path ?? "OK"}`);
@@ -60,8 +77,8 @@ export function SqlBackupButton() {
           toast.error((res.data as { error?: string } | null)?.error || "Erreur dump SQL");
         }
       }
-    } catch {
-      toast.error("Erreur dump SQL");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Erreur dump SQL");
     }
     setLoading(false);
   };

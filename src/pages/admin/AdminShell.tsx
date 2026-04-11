@@ -57,53 +57,46 @@ function AdminNavLinks({
 }
 
 /**
- * Layout administration : navigation latérale (drawer sur mobile) et zone de contenu (`Outlet`).
+ * Layout administration : menu et sauvegardes dans un drawer à gauche ; le contenu principal occupe toute la largeur.
  */
 export default function AdminShell() {
   const { user } = useAuth();
   const { isSuperAdmin } = useAdmin(user);
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   return (
     <AppLayout>
-      <div className="app-page-shell flex flex-col gap-4 min-w-0 md:flex-row md:gap-6 md:items-start">
-        <div className="flex items-center justify-between gap-2 md:hidden">
-          <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+      <div className="app-page-shell flex min-w-0 w-full max-w-full flex-col gap-4">
+        <div className="flex shrink-0 items-center gap-3">
+          <Sheet open={drawerOpen} onOpenChange={setDrawerOpen}>
             <SheetTrigger asChild>
               <Button type="button" variant="outline" size="sm" className="gap-2 rounded-md">
                 <FontAwesomeIcon icon={faBars} className="h-4 w-4" aria-hidden />
-                Menu admin
+                Menu administration
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[min(100%,280px)] flex flex-col gap-4">
+            <SheetContent side="left" className="flex w-[min(100%,320px)] flex-col gap-4 sm:max-w-md">
               <SheetHeader className="text-left">
                 <SheetTitle>Administration</SheetTitle>
               </SheetHeader>
-              <AdminNavLinks onNavigate={() => setMobileOpen(false)} />
+              <AdminNavLinks onNavigate={() => setDrawerOpen(false)} />
+              {user && isSuperAdmin ? (
+                <div className="mt-auto flex flex-col gap-2 border-t border-border/60 pt-4">
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Sauvegardes</p>
+                  <div className="flex flex-col gap-2">
+                    <BackupButton />
+                    <SqlBackupButton />
+                  </div>
+                </div>
+              ) : null}
             </SheetContent>
           </Sheet>
-          {user && isSuperAdmin ? (
-            <div className="flex gap-1 shrink-0">
-              <BackupButton />
-              <SqlBackupButton />
-            </div>
-          ) : null}
+          <p className="text-sm text-muted-foreground hidden sm:block">
+            Utilisez le menu pour accéder aux sections et aux outils de sauvegarde (super admin).
+          </p>
         </div>
 
-        <aside className="hidden md:flex md:w-56 md:shrink-0 md:flex-col md:gap-4 md:sticky md:top-4 md:self-start border-r border-border/60 pr-4 min-h-[200px]">
-          <AdminNavLinks />
-          {user && isSuperAdmin ? (
-            <div className="mt-auto flex flex-col gap-2 border-t border-border/60 pt-4">
-              <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Sauvegardes</p>
-              <div className="flex flex-col gap-2">
-                <BackupButton />
-                <SqlBackupButton />
-              </div>
-            </div>
-          ) : null}
-        </aside>
-
-        <main className="min-w-0 flex-1 overflow-x-auto">
+        <main className="min-w-0 w-full flex-1 overflow-x-auto">
           <Outlet />
         </main>
       </div>

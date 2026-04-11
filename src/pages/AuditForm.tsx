@@ -27,6 +27,26 @@ import {
 
 const AUDIT_DRAFT_DEBOUNCE_MS = 1600;
 
+/** JSON PostgreSQL : pas de NaN/Infinity, pas de clés undefined (via stringify). */
+function sanitizeItemsJson(items: Record<string, unknown>): Json {
+  try {
+    const s = JSON.stringify(items, (_, v) => (typeof v === "number" && !Number.isFinite(v) ? null : v));
+    return JSON.parse(s) as Json;
+  } catch {
+    return items as Json;
+  }
+}
+
+function formatSupabaseError(e: unknown): string {
+  if (e && typeof e === "object") {
+    const x = e as { message?: string; details?: string; hint?: string };
+    const parts = [x.message, x.details, x.hint].filter((s) => typeof s === "string" && s.trim());
+    if (parts.length) return parts.join(" — ");
+  }
+  if (e instanceof Error) return e.message;
+  return "Erreur d’enregistrement";
+}
+
 export default function AuditForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -299,13 +319,15 @@ export default function AuditForm() {
     const moisVersementIdx = Math.min(month + 1, 11);
     const moisVersement = MOIS_ORDRE[moisVersementIdx];
 
+    const safeNote = Number.isFinite(noteSur10) ? noteSur10 : 0;
+
     const auditPayload = {
       date: dateStr,
       partenaire: szd.partenaireAudite || "—",
       lieu: szd.lieu,
       auditeur: szd.auditeur || "—",
       type_evenement: typeEvenement,
-      note: noteSur10,
+      note: safeNote,
       mois_versement: moisVersement,
     };
 
@@ -323,6 +345,8 @@ export default function AuditForm() {
       itemsJson["__custom_fields"] = szd.customFieldValues;
     }
 
+    const itemsPayload = sanitizeItemsJson(itemsJson);
+
     const detailPayload: Database["public"]["Tables"]["audit_details"]["Insert"] = {
       audit_id: draftIdRef.current || "",
       partenaire_referent: szd.partenaireReferent || null,
@@ -339,9 +363,9 @@ export default function AuditForm() {
       nb_no_show: szd.nbNoShow ?? null,
       nb_participants: szd.nbParticipants ?? null,
       nb_rdv_pris: szd.nbRdvPris ?? null,
-      items: itemsJson as Json,
+      items: itemsPayload,
       total_points: totalPointsCalc,
-      note_sur_10: noteSur10,
+      note_sur_10: safeNote,
       photos: photosList,
       signature_auditeur: sigAuditeur,
       signature_audite: sigAudite,
@@ -359,6 +383,14 @@ export default function AuditForm() {
     setSaveStatus('saving');
 
     try {
+      const { data: authData, error: authErr } = await supabase.auth.getUser();
+      if (authErr || !authData.user) {
+        toast.error("Session expirée — reconnectez-vous pour enregistrer l’audit sur le serveur.");
+        setSaveStatus("error");
+        return;
+      }
+      const uid = authData.user.id;
+
       const { auditPayload, detailPayload } = buildAuditPayloads(szd, ans, ep, sa, sp);
 
       if (draftIdRef.current) {
@@ -377,8 +409,9 @@ export default function AuditForm() {
           if (insErr) throw insErr;
         }
       } else {
-        const { data, error } = await supabase.from("audits")
-          .insert({ ...auditPayload, statut: 'brouillon' })
+        const { data, error } = await supabase
+          .from("audits")
+          .insert({ ...auditPayload, statut: "brouillon", created_by: uid })
           .select("id")
           .single();
         if (error) throw error;
@@ -386,10 +419,11 @@ export default function AuditForm() {
         const { error: detErr } = await supabase.from("audit_details").insert({ ...detailPayload, audit_id: data.id });
         if (detErr) throw detErr;
       }
-      setSaveStatus('saved');
+      setSaveStatus("saved");
     } catch (e) {
       console.error("Auto-save error", e);
-      setSaveStatus('error');
+      toast.error(`Auto-sauvegarde : ${formatSupabaseError(e)}`);
+      setSaveStatus("error");
     } finally {
       isSavingRef.current = false;
     }
