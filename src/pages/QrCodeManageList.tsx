@@ -4,6 +4,7 @@ import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faDownload, faPen, faTrash } from "@fortawesome/free-solid-svg-icons";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ import type { QrRecord } from "@/types/qrCodeRecord";
  */
 export default function QrCodeManageList() {
   const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
   const [records, setRecords] = useState<QrRecord[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -29,6 +31,12 @@ export default function QrCodeManageList() {
   const { byId: shapeById } = useQrShapeLibraryMap();
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setRecords([]);
+      setLoading(false);
+      return;
+    }
     let alive = true;
     const load = async () => {
       setLoading(true);
@@ -59,7 +67,7 @@ export default function QrCodeManageList() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [authLoading, user]);
 
   const persistDelete = async (id: string) => {
     const { error } = await supabase.from("qr_codes").delete().eq("id", id);

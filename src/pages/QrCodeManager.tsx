@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faAlignLeft,
@@ -311,6 +312,8 @@ function ContentFields({
 export default function QrCodeManager() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  /** Sur PWA / mobile la session se restaure après le 1er rendu : ne pas interroger `qr_codes` avant, sinon RLS → [] et faux « introuvable » sur `?edit=`. */
+  const { user, loading: authLoading } = useAuth();
 
   const [records, setRecords] = useState<QrRecord[]>([]);
   const [draft, setDraft] = useState<QrRecord>(() => makeEmpty());
@@ -358,6 +361,12 @@ export default function QrCodeManager() {
   }, [composeKind, composeFields]);
 
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setRecords([]);
+      setLoading(false);
+      return;
+    }
     let alive = true;
     const load = async () => {
       setLoading(true);
@@ -388,7 +397,7 @@ export default function QrCodeManager() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [authLoading, user]);
 
   const resetDraft = () => {
     setDraft(makeEmpty());
@@ -566,7 +575,7 @@ export default function QrCodeManager() {
 
   const editIdParam = searchParams.get("edit");
   useEffect(() => {
-    if (!editIdParam || loading) return;
+    if (!editIdParam || loading || authLoading) return;
     const r = records.find((x) => x.id === editIdParam);
     if (!r) {
       toast.error("QR code introuvable.");

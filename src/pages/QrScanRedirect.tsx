@@ -19,7 +19,19 @@ export default function QrScanRedirect() {
     let cancelled = false;
 
     void (async () => {
-      const { data, error } = await supabase.rpc("qr_resolve_and_track", { p_id: qrId });
+      const runRpc = async () =>
+        supabase.rpc("qr_resolve_and_track", { p_id: qrId });
+
+      let { data, error } = await runRpc();
+      if (cancelled) return;
+      if (!error) {
+        const targetFirst = data != null && typeof data === "string" ? data : "";
+        if (!targetFirst.trim()) {
+          await new Promise((r) => window.setTimeout(r, 400));
+          if (cancelled) return;
+          ({ data, error } = await runRpc());
+        }
+      }
       if (cancelled) return;
       if (error) {
         setMessage(`Erreur : ${error.message}`);
