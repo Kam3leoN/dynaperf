@@ -1002,6 +1002,7 @@ export type Database = {
           logo_url: string | null
           name: string
           qr_style: Record<string, unknown> | null
+          scan_count: number
           size: number
           updated_at: string
           value: string
@@ -1019,6 +1020,7 @@ export type Database = {
           logo_url?: string | null
           name: string
           qr_style?: Record<string, unknown> | null
+          scan_count?: number
           size?: number
           updated_at?: string
           value: string
@@ -1036,6 +1038,7 @@ export type Database = {
           logo_url?: string | null
           name?: string
           qr_style?: Record<string, unknown> | null
+          scan_count?: number
           size?: number
           updated_at?: string
           value?: string
@@ -1767,6 +1770,10 @@ export type Database = {
           invitation_id: string
           role_key: string | null
         }[]
+      }
+      qr_resolve_and_track: {
+        Args: { p_id: string }
+        Returns: string | null
       }
     }
     Enums: {

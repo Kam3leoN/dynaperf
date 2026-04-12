@@ -66,6 +66,7 @@ export function QrStylingPreview({
     style.cornerOuterModuleId,
     style.cornerInnerModuleId,
     style.frame,
+    style.dotsRoundSize,
     JSON.stringify(style.partColors),
   ]);
 

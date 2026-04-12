@@ -54,6 +54,10 @@ export interface QrPartColors {
   dotsFill: "solid" | "gradient";
   /** Couleur fin de dégradé (points uniquement) */
   dotsGradientEnd: string;
+  /**
+   * Angle du dégradé linéaire sur les modules (0° = gauche→droite, 90° = haut→bas), aligné sur `dotsOptions.gradient.rotation` (qr-code-styling).
+   */
+  dotsGradientAngle: number;
 }
 
 /** Style persisté (colonne qr_style) — aligné sur qr-code-styling. */
@@ -68,6 +72,11 @@ export interface QrStyleConfig {
   frame: "none" | "card";
   /** Si absent ou partiel, le rendu complète avec la couleur modules (`fg_color`). */
   partColors?: Partial<QrPartColors>;
+  /**
+   * Rendu des modules : bords adoucis (`roundSize: true` dans qr-code-styling) ou contours nets (`crispEdges` côté SVG).
+   * @default true (adouci)
+   */
+  dotsRoundSize?: boolean;
 }
 
 export const DEFAULT_QR_STYLE: QrStyleConfig = {
@@ -93,7 +102,9 @@ export function resolveQrPartColors(fgFallback: string, style: QrStyleConfig): Q
   const inner = normHex(p.inner, fg);
   const dotsFill = p.dotsFill === "gradient" ? "gradient" : "solid";
   const dotsGradientEnd = normHex(p.dotsGradientEnd, "#2196f3");
-  return { dots, outer, inner, dotsFill, dotsGradientEnd };
+  let dotsGradientAngle = typeof p.dotsGradientAngle === "number" && Number.isFinite(p.dotsGradientAngle) ? p.dotsGradientAngle : 45;
+  dotsGradientAngle = ((dotsGradientAngle % 360) + 360) % 360;
+  return { dots, outer, inner, dotsFill, dotsGradientEnd, dotsGradientAngle };
 }
 
 const DOT_TYPES: DotType[] = ["square", "dots", "rounded", "extra-rounded", "classy", "classy-rounded"];
@@ -159,6 +170,9 @@ export function mergeQrStyle(raw: unknown): QrStyleConfig {
       ...(typeof p.inner === "string" ? { inner: p.inner } : {}),
       ...(dotsFill ? { dotsFill } : {}),
       ...(typeof p.dotsGradientEnd === "string" ? { dotsGradientEnd: p.dotsGradientEnd } : {}),
+      ...(typeof p.dotsGradientAngle === "number" && Number.isFinite(p.dotsGradientAngle)
+        ? { dotsGradientAngle: p.dotsGradientAngle }
+        : {}),
     };
     if (Object.keys(partColors).length === 0) partColors = undefined;
   }
@@ -183,12 +197,15 @@ export function mergeQrStyle(raw: unknown): QrStyleConfig {
     cornerInnerModuleId = LEGACY_CORNER_DOT_TO_INNER_MODULE[o.cornersDotType];
   }
 
+  const dotsRoundSize = typeof o.dotsRoundSize === "boolean" ? o.dotsRoundSize : undefined;
+
   return {
     dotModuleId,
     cornerOuterModuleId,
     cornerInnerModuleId,
     frame: o.frame === "card" ? "card" : "none",
     partColors,
+    ...(dotsRoundSize !== undefined ? { dotsRoundSize } : {}),
   };
 }
 
@@ -212,6 +229,18 @@ export function buildQrStylingOptions(params: {
 }): Options {
   const img = resolveLogoSrc(params.logoUrl);
   const c = resolveQrPartColors(params.fgColor, params.style);
+  const roundSize = params.style.dotsRoundSize !== false;
+  const dotsGradient =
+    c.dotsFill === "gradient"
+      ? {
+          type: "linear" as const,
+          rotation: c.dotsGradientAngle,
+          colorStops: [
+            { offset: 0, color: c.dots },
+            { offset: 1, color: c.dotsGradientEnd },
+          ],
+        }
+      : undefined;
   return {
     type: "svg",
     width: params.size,
@@ -225,6 +254,8 @@ export function buildQrStylingOptions(params: {
     dotsOptions: {
       type: "rounded" as DotType,
       color: c.dots,
+      roundSize,
+      ...(dotsGradient ? { gradient: dotsGradient } : {}),
     },
     cornersSquareOptions: {
       type: "extra-rounded" as CornerSquareType,

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,13 +11,17 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faAlignLeft,
   faBorderAll,
+  faChartPie,
   faCircleInfo,
+  faCopy,
   faCreditCard,
   faEnvelope,
   faFloppyDisk,
+  faDownload,
   faIdCard,
   faImage,
   faLink,
+  faListUl,
   faPen,
   faPhone,
   faPlus,
@@ -36,7 +41,9 @@ import { QrPartColorControls } from "@/components/qr/QrPartColorControls";
 import { QrStyleVisualPickers } from "@/components/qr/QrStyleSwatches";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DEFAULT_QR_STYLE, mergeQrStyle, type QrStyleConfig, type QrPartColors } from "@/lib/qrCodeStyle";
+import { absoluteAppBaseUrl } from "@/lib/basePath";
 import { isTransparentBgColor } from "@/lib/qrBgColor";
+import { renderQrSvgString } from "@/lib/qrSvgRender";
 import { composeQrPayload, type QrComposeFields, type QrContentKind } from "@/lib/qrContentCompose";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { cn } from "@/lib/utils";
@@ -51,6 +58,8 @@ type QrRecord = {
   level: "L" | "M" | "Q" | "H";
   logoUrl?: string;
   qrStyle: QrStyleConfig;
+  /** Renseigné après chargement / enregistrement (colonne `scan_count`). */
+  scanCount: number;
 };
 
 type LogoGalleryItem = { id: string; dataUrl: string };
@@ -58,6 +67,64 @@ type LogoGalleryItem = { id: string; dataUrl: string };
 const LOGO_GALLERY_KEY = "dynaperf_qr_logo_gallery_v2";
 
 const PREVIEW_MAX = 320;
+
+const EXPORT_SIZES = [256, 512, 1024, 2048] as const;
+type ExportSize = (typeof EXPORT_SIZES)[number];
+
+function coerceExportSize(n: number): ExportSize {
+  const xs = EXPORT_SIZES as readonly number[];
+  if (xs.includes(n)) return n as ExportSize;
+  return xs.reduce((best, x) => (Math.abs(x - n) < Math.abs(best - n) ? x : best), 512 as ExportSize);
+}
+
+const LEVEL_OPTIONS: { value: QrRecord["level"]; short: string; label: string }[] = [
+  { value: "L", short: "L", label: "Low" },
+  { value: "M", short: "M", label: "Medium" },
+  { value: "Q", short: "Q", label: "Quartile" },
+  { value: "H", short: "H", label: "High" },
+];
+
+function triggerFileDownload(blob: Blob, filename: string) {
+  const a = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function sanitizeExportBasename(name: string): string {
+  const t = name.trim().replace(/[^\w\d\-_.\sàâäéèêëïîôùûüç]/gi, "").replace(/\s+/g, "-");
+  return t || "qrcode";
+}
+
+async function svgMarkupToPngBlob(svg: string, size: number): Promise<Blob> {
+  const svgBlob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
+  const url = URL.createObjectURL(svgBlob);
+  const img = new Image();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error("image-load"));
+      img.src = url;
+    });
+    const canvas = document.createElement("canvas");
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("canvas");
+    ctx.drawImage(img, 0, 0, size, size);
+    return await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob"))), "image/png");
+    });
+  } finally {
+    URL.revokeObjectURL(url);
+  }
+}
+
+function qrTrackingUrl(qrId: string): string {
+  return `${absoluteAppBaseUrl()}r/${qrId}`;
+}
 
 function isBundledDefaultLogo(url: string | undefined): boolean {
   if (!url) return false;
@@ -69,28 +136,29 @@ type PresetCard = {
   title: string;
   description: string;
   icon: IconDefinition;
-  accent: string;
 };
 
+/** Couleur unique des icônes (alignée sur le preset « Libre »). */
+const PRESET_ICON_CLASS = "h-6 w-6 text-slate-600";
+
 const CONTENT_PRESETS: PresetCard[] = [
-  { kind: "url", title: "Lien", description: "Site web", icon: faLink, accent: "text-emerald-600" },
-  { kind: "email", title: "E-mail", description: "Envoyer un e-mail", icon: faEnvelope, accent: "text-sky-600" },
-  { kind: "text", title: "Texte", description: "Texte brut", icon: faAlignLeft, accent: "text-amber-600" },
-  { kind: "tel", title: "Appel", description: "Numéro à appeler", icon: faPhone, accent: "text-emerald-700" },
-  { kind: "sms", title: "SMS", description: "SMS", icon: faSms, accent: "text-blue-600" },
-  { kind: "whatsapp", title: "WhatsApp", description: "Message WA", icon: faWhatsapp, accent: "text-green-600" },
-  { kind: "wifi", title: "Wi‑Fi", description: "Connexion Wi‑Fi", icon: faWifi, accent: "text-teal-600" },
-  { kind: "vcard", title: "Vcard", description: "Contact", icon: faIdCard, accent: "text-indigo-600" },
-  { kind: "paypal", title: "PayPal", description: "PayPal.me", icon: faPaypal, accent: "text-blue-700" },
-  { kind: "stripe", title: "Stripe", description: "Lien Stripe", icon: faStripe, accent: "text-violet-600" },
+  { kind: "url", title: "Lien", description: "Site web", icon: faLink },
+  { kind: "email", title: "E-mail", description: "Envoyer un e-mail", icon: faEnvelope },
+  { kind: "text", title: "Texte", description: "Texte brut", icon: faAlignLeft },
+  { kind: "tel", title: "Appel", description: "Numéro à appeler", icon: faPhone },
+  { kind: "sms", title: "SMS", description: "SMS", icon: faSms },
+  { kind: "whatsapp", title: "WhatsApp", description: "Message WA", icon: faWhatsapp },
+  { kind: "wifi", title: "Wi‑Fi", description: "Connexion Wi‑Fi", icon: faWifi },
+  { kind: "vcard", title: "Vcard", description: "Contact", icon: faIdCard },
+  { kind: "paypal", title: "PayPal", description: "PayPal.me", icon: faPaypal },
+  { kind: "stripe", title: "Stripe", description: "Lien Stripe", icon: faStripe },
   {
     kind: "payment_url",
     title: "Paiement",
     description: "URL de paiement",
     icon: faCreditCard,
-    accent: "text-orange-600",
   },
-  { kind: "custom", title: "Libre", description: "Coller une chaîne", icon: faQrcode, accent: "text-slate-600" },
+  { kind: "custom", title: "Libre", description: "Coller une chaîne", icon: faQrcode },
 ];
 
 function defaultPartColors(fg: string): QrPartColors {
@@ -100,6 +168,7 @@ function defaultPartColors(fg: string): QrPartColors {
     inner: fg,
     dotsFill: "solid",
     dotsGradientEnd: "#2196f3",
+    dotsGradientAngle: 45,
   };
 }
 
@@ -112,9 +181,10 @@ function makeEmpty(): QrRecord {
     size: 512,
     fgColor: fg,
     bgColor: "#ffffff",
-    level: "H",
-    logoUrl: defaultLogoDynaLipsRed,
+    level: "M",
+    logoUrl: "",
     qrStyle: { ...DEFAULT_QR_STYLE, partColors: defaultPartColors(fg) },
+    scanCount: 0,
   };
 }
 
@@ -305,22 +375,28 @@ function ContentFields({
 }
 
 export default function QrCodeManager() {
+  const location = useLocation();
+  const isCreatePage = location.pathname.endsWith("/new");
+
   const [records, setRecords] = useState<QrRecord[]>([]);
   const [draft, setDraft] = useState<QrRecord>(() => makeEmpty());
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [composeKind, setComposeKind] = useState<QrContentKind>("url");
   const [composeFields, setComposeFields] = useState<QrComposeFields>({});
-  const [useDefaultLogo, setUseDefaultLogo] = useState(true);
+  /** Affiche un logo au centre du QR (désactivé par défaut). */
+  const [showLogo, setShowLogo] = useState(false);
+  /** Format du prochain export fichier (préférence locale, non persistée). */
+  const [exportFormat, setExportFormat] = useState<"png" | "svg">("svg");
   const [logoGallery, setLogoGallery] = useState<LogoGalleryItem[]>(() => loadGallery());
 
   const sorted = useMemo(() => [...records].sort((a, b) => a.name.localeCompare(b.name, "fr")), [records]);
 
   const effectiveLogoUrl = useMemo(() => {
-    if (useDefaultLogo) return defaultLogoDynaLipsRed;
+    if (!showLogo) return undefined;
     const u = (draft.logoUrl || "").trim();
     return u || undefined;
-  }, [useDefaultLogo, draft.logoUrl]);
+  }, [showLogo, draft.logoUrl]);
 
   useEffect(() => {
     localStorage.setItem(LOGO_GALLERY_KEY, JSON.stringify(logoGallery));
@@ -348,12 +424,13 @@ export default function QrCodeManager() {
           id: r.id,
           name: r.name,
           value: r.value,
-          size: r.size,
+          size: coerceExportSize(r.size),
           fgColor: r.fg_color,
           bgColor: r.bg_color,
-          level: (r.level as QrRecord["level"]) || "H",
+          level: (r.level as QrRecord["level"]) || "M",
           logoUrl: r.logo_url ?? "",
           qrStyle: mergeQrStyle(r.qr_style),
+          scanCount: typeof r.scan_count === "number" ? r.scan_count : 0,
         })),
       );
       setLoading(false);
@@ -378,8 +455,15 @@ export default function QrCodeManager() {
     setEditingId(null);
     setComposeKind("url");
     setComposeFields({});
-    setUseDefaultLogo(true);
+    setShowLogo(false);
   };
+
+  useEffect(() => {
+    if (!location.pathname.endsWith("/new")) return;
+    resetDraft();
+    // Intentionnel : réinitialiser le brouillon à chaque entrée sur /qrcodes/new
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
 
   const validatePayload = (value: string): boolean => {
     const v = value.trim();
@@ -397,12 +481,14 @@ export default function QrCodeManager() {
       toast.error("Contenu du QR invalide ou vide.");
       return;
     }
-    const logoPersist = useDefaultLogo ? defaultLogoDynaLipsRed : (draft.logoUrl || "").trim() || null;
+    const logoPersist = showLogo ? (draft.logoUrl || "").trim() || null : null;
     const payload: QrRecord = {
       ...draft,
       name: draft.name.trim(),
       value: draft.value.trim(),
+      size: coerceExportSize(draft.size),
       logoUrl: logoPersist ?? "",
+      scanCount: draft.scanCount ?? 0,
     };
 
     if (editingId) {
@@ -426,7 +512,9 @@ export default function QrCodeManager() {
         toast.error(error.message);
         return;
       }
-      setRecords((prev) => prev.map((r) => (r.id === editingId ? payload : r)));
+      setRecords((prev) =>
+        prev.map((r) => (r.id === editingId ? { ...payload, scanCount: r.scanCount } : r)),
+      );
       toast.success("QrCode modifié.");
     } else {
       const { data, error } = await supabase
@@ -455,12 +543,13 @@ export default function QrCodeManager() {
           id: data.id,
           name: data.name,
           value: data.value,
-          size: data.size,
+          size: coerceExportSize(data.size),
           fgColor: data.fg_color,
           bgColor: data.bg_color,
-          level: (data.level as QrRecord["level"]) || "H",
+          level: (data.level as QrRecord["level"]) || "M",
           logoUrl: data.logo_url ?? "",
           qrStyle: mergeQrStyle(data.qr_style),
+          scanCount: typeof data.scan_count === "number" ? data.scan_count : 0,
         },
         ...prev,
       ]);
@@ -484,7 +573,7 @@ export default function QrCodeManager() {
     }
     if (next.length === 0) return;
     setLogoGallery((prev) => [...next, ...prev]);
-    setUseDefaultLogo(false);
+    setShowLogo(true);
     setDraft((d) => ({ ...d, logoUrl: next[0].dataUrl }));
     toast.success(next.length > 1 ? `${next.length} logos ajoutés` : "Logo ajouté à la bibliothèque");
   };
@@ -495,11 +584,11 @@ export default function QrCodeManager() {
       if (!item) return prev;
       const rest = prev.filter((x) => x.id !== id);
       setDraft((d) => {
-        if (useDefaultLogo || d.logoUrl !== item.dataUrl) return d;
+        if (d.logoUrl !== item.dataUrl) return d;
         const next = rest[0]?.dataUrl;
         if (!next) {
-          setTimeout(() => setUseDefaultLogo(true), 0);
-          return { ...d, logoUrl: defaultLogoDynaLipsRed };
+          setTimeout(() => setShowLogo(false), 0);
+          return { ...d, logoUrl: "" };
         }
         return { ...d, logoUrl: next };
       });
@@ -519,78 +608,124 @@ export default function QrCodeManager() {
     setEditingId(r.id);
     setComposeKind("custom");
     setComposeFields({});
-    const def = isBundledDefaultLogo(r.logoUrl) || !r.logoUrl?.trim();
-    setUseDefaultLogo(def);
+    const raw = (r.logoUrl || "").trim();
+    const hadBundledOnly = !raw || isBundledDefaultLogo(r.logoUrl);
+    setShowLogo(!hadBundledOnly && Boolean(raw));
     setDraft({
       ...r,
-      logoUrl: def ? defaultLogoDynaLipsRed : (r.logoUrl || ""),
-      level: r.level || "H",
-      size: r.size || 512,
+      logoUrl: hadBundledOnly ? "" : raw,
+      level: r.level || "M",
+      size: coerceExportSize(r.size || 512),
+      scanCount: r.scanCount ?? 0,
     });
   };
 
   const previewSize = Math.min(PREVIEW_MAX, Math.max(160, draft.size));
 
+  const copyTrackingLink = async (id: string) => {
+    try {
+      await navigator.clipboard.writeText(qrTrackingUrl(id));
+      toast.success("Lien de suivi copié.");
+    } catch {
+      toast.error("Copie impossible.");
+    }
+  };
+
+  const downloadExportedQr = async () => {
+    if (!validatePayload(draft.value)) {
+      toast.error("Contenu du QR invalide — corrigez le brouillon avant export.");
+      return;
+    }
+    const size = coerceExportSize(draft.size);
+    try {
+      const svg = await renderQrSvgString({
+        value: draft.value,
+        size,
+        fgColor: draft.fgColor,
+        bgColor: draft.bgColor,
+        level: draft.level,
+        style: draft.qrStyle,
+        logoUrl: effectiveLogoUrl,
+      });
+      const base = sanitizeExportBasename(draft.name || "qrcode");
+      if (exportFormat === "svg") {
+        triggerFileDownload(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }), `${base}.svg`);
+        toast.success("SVG téléchargé.");
+        return;
+      }
+      const png = await svgMarkupToPngBlob(svg, size);
+      triggerFileDownload(png, `${base}.png`);
+      toast.success("PNG téléchargé.");
+    } catch {
+      toast.error("Export impossible (vérifiez le contenu et le logo).");
+    }
+  };
+
   return (
     <AppLayout>
       <section className="app-page-shell-wide min-w-0 w-full space-y-6 pb-10">
         <div>
-          <h1 className="text-2xl font-semibold">Gestion QrCode</h1>
+          <h1 className="text-2xl font-semibold">{isCreatePage ? "Créer un QrCode" : "Gérer les QrCode"}</h1>
           <p className="text-sm text-muted-foreground">
-            Contenu à gauche, aperçu à droite, bibliothèque et liste enregistrée en dessous — personnalisation visuelle (SVG, pastilles de couleur).
+            {isCreatePage
+              ? "Renseignez le contenu et l’apparence, puis enregistrez — aperçu à droite."
+              : "Liste des codes enregistrés, édition et personnalisation par sections repliables (aperçu à droite)."}
           </p>
         </div>
 
         <div className="grid min-w-0 gap-6 xl:grid-cols-[1fr_min(360px,34%)] xl:items-start">
           {/* Colonne édition */}
           <div className="min-w-0 space-y-4 rounded-2xl border border-border/40 bg-card p-4 sm:p-5">
-            <div className="space-y-2">
-              <p className="text-sm font-medium">Type de contenu</p>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
-                {CONTENT_PRESETS.map((p) => (
-                  <button
-                    key={p.kind}
-                    type="button"
-                    onClick={() => pickPreset(p.kind)}
-                    className={cn(
-                      "flex flex-col items-center gap-1 rounded-xl border bg-background p-2.5 text-center transition hover:bg-muted/50",
-                      composeKind === p.kind ? "border-primary ring-1 ring-primary/30" : "border-border/60",
-                    )}
-                  >
-                    <FontAwesomeIcon icon={p.icon} className={cn("h-6 w-6", p.accent)} />
-                    <span className="text-xs font-semibold leading-tight">{p.title}</span>
-                    <span className="line-clamp-2 text-[10px] text-muted-foreground">{p.description}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-1">
-              <Label>Nom</Label>
-              <Input value={draft.name} onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))} placeholder="Ex: Flyer printemps" />
-            </div>
-
-            <ContentFields
-              kind={composeKind}
-              fields={composeFields}
-              onChange={(patch) => setComposeFields((f) => ({ ...f, ...patch }))}
-              valueCustom={draft.value}
-              onValueCustom={(v) => setDraft((d) => ({ ...d, value: v }))}
-            />
-
-            <div className="space-y-2">
-              <Label className="text-base">Apparence du QR</Label>
-              <p className="text-xs text-muted-foreground">
-                Dépliez chaque section pour ajuster le cadre, le motif, les coins ou le logo.
-              </p>
-              <QrAppearanceAccordion
-                defaultOpen={["cadre", "motif", "coins"]}
-                sections={[
+            <QrAppearanceAccordion
+              defaultOpen={["contenu", "cadre"]}
+              sections={[
+                {
+                  value: "contenu",
+                  icon: faListUl,
+                  title: "Type de contenu",
+                  description: "Preset, nom du QR et champs selon le format choisi.",
+                  content: (
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                        {CONTENT_PRESETS.map((p) => (
+                          <button
+                            key={p.kind}
+                            type="button"
+                            onClick={() => pickPreset(p.kind)}
+                            className={cn(
+                              "flex flex-col items-center gap-1 rounded-xl border bg-background p-2.5 text-center transition hover:bg-muted/50",
+                              composeKind === p.kind ? "border-primary ring-1 ring-primary/30" : "border-border/60",
+                            )}
+                          >
+                            <FontAwesomeIcon icon={p.icon} className={PRESET_ICON_CLASS} />
+                            <span className="text-xs font-semibold leading-tight">{p.title}</span>
+                            <span className="line-clamp-2 text-[10px] text-muted-foreground">{p.description}</span>
+                          </button>
+                        ))}
+                      </div>
+                      <div className="space-y-1">
+                        <Label>Nom</Label>
+                        <Input
+                          value={draft.name}
+                          onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))}
+                          placeholder="Ex: Flyer printemps"
+                        />
+                      </div>
+                      <ContentFields
+                        kind={composeKind}
+                        fields={composeFields}
+                        onChange={(patch) => setComposeFields((f) => ({ ...f, ...patch }))}
+                        valueCustom={draft.value}
+                        onValueCustom={(v) => setDraft((d) => ({ ...d, value: v }))}
+                      />
+                    </div>
+                  ),
+                },
                   {
                     value: "cadre",
                     icon: faBorderAll,
-                    title: "Cadre & export",
-                    description: "Fond, taille d’image, précision et cadre visuel sur l’aperçu.",
+                    title: "Cadre",
+                    description: "Fond, taille d’export, précision et cadre visuel sur l’aperçu.",
                     content: (
                       <div className="space-y-4">
                         <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border/40 bg-background/80 px-3 py-2.5">
@@ -634,30 +769,76 @@ export default function QrCodeManager() {
                               onChange={(e) => setDraft((p) => ({ ...p, bgColor: e.target.value }))}
                             />
                           </div>
-                          <div className="space-y-2">
-                            <Label>Taille export (px)</Label>
-                            <Input
-                              type="number"
-                              min={120}
-                              max={2048}
-                              step={8}
-                              value={draft.size}
-                              onChange={(e) => setDraft((p) => ({ ...p, size: Number(e.target.value || 512) }))}
-                            />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-xs text-muted-foreground">Taille (px)</Label>
+                          <div className="flex flex-wrap gap-2">
+                            {EXPORT_SIZES.map((s) => (
+                              <Button
+                                key={s}
+                                type="button"
+                                size="sm"
+                                variant={draft.size === s ? "default" : "outline"}
+                                className="min-w-[4.25rem] tabular-nums"
+                                onClick={() => setDraft((p) => ({ ...p, size: s }))}
+                              >
+                                {s}
+                              </Button>
+                            ))}
                           </div>
                         </div>
+
                         <div className="space-y-2">
-                          <Label>Précision (correction d&apos;erreurs)</Label>
-                          <select
-                            className="h-10 w-full max-w-md rounded-md border border-input bg-background px-3 text-sm"
-                            value={draft.level}
-                            onChange={(e) => setDraft((p) => ({ ...p, level: e.target.value as QrRecord["level"] }))}
-                          >
-                            <option value="L">L</option>
-                            <option value="M">M</option>
-                            <option value="Q">Q</option>
-                            <option value="H">H (recommandé + logo)</option>
-                          </select>
+                          <Label className="text-xs text-muted-foreground">Précision (correction d&apos;erreurs)</Label>
+                          <div className="flex flex-wrap gap-2">
+                            {LEVEL_OPTIONS.map((opt) => (
+                              <Button
+                                key={opt.value}
+                                type="button"
+                                size="sm"
+                                variant={draft.level === opt.value ? "default" : "outline"}
+                                className="gap-1"
+                                title={`${opt.label} (${opt.value})`}
+                                onClick={() => setDraft((p) => ({ ...p, level: opt.value }))}
+                              >
+                                <span className="font-semibold">{opt.short}</span>
+                                <span className="hidden text-xs font-normal opacity-90 sm:inline">{opt.label}</span>
+                              </Button>
+                            ))}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">
+                            Par défaut : <strong className="font-medium text-foreground">512 px</strong> et{" "}
+                            <strong className="font-medium text-foreground">Medium (M)</strong>. Haute (H) recommandée si vous affichez un logo au centre.
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-xs text-muted-foreground">Export fichier</Label>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant={exportFormat === "png" ? "default" : "outline"}
+                                onClick={() => setExportFormat("png")}
+                              >
+                                PNG
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant={exportFormat === "svg" ? "default" : "outline"}
+                                onClick={() => setExportFormat("svg")}
+                              >
+                                SVG
+                              </Button>
+                            </div>
+                            <Button type="button" size="sm" variant="secondary" className="gap-2" onClick={() => void downloadExportedQr()}>
+                              <FontAwesomeIcon icon={faDownload} className="h-3.5 w-3.5" />
+                              Télécharger
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ),
@@ -665,8 +846,8 @@ export default function QrCodeManager() {
                   {
                     value: "motif",
                     icon: faQrcode,
-                    title: "Motif du code QR",
-                    description: "Forme des modules et couleurs des points (dégradé diagonal possible).",
+                    title: "Motif du QR Code",
+                    description: "Forme des modules (presets type qr-code-styling), couleurs et dégradé.",
                     content: (
                       <div className="space-y-5">
                         <QrStyleVisualPickers
@@ -674,6 +855,28 @@ export default function QrCodeManager() {
                           style={draft.qrStyle}
                           onChange={(qrStyle) => setDraft((p) => ({ ...p, qrStyle }))}
                         />
+                        <div className="flex flex-col gap-2 rounded-lg border border-border/40 bg-muted/10 px-3 py-3">
+                          <div className="flex flex-wrap items-center gap-3">
+                            <Switch
+                              id="qr-dots-round-size"
+                              checked={draft.qrStyle.dotsRoundSize !== false}
+                              onCheckedChange={(c) =>
+                                setDraft((p) => ({
+                                  ...p,
+                                  qrStyle: { ...p.qrStyle, dotsRoundSize: c },
+                                }))
+                              }
+                            />
+                            <Label htmlFor="qr-dots-round-size" className="cursor-pointer text-sm font-normal leading-snug">
+                              Contours adoucis sur les modules (équivalent{" "}
+                              <span className="font-mono text-xs">dotsOptions.roundSize</span> · qr-code-styling)
+                            </Label>
+                          </div>
+                          <p className="pl-1 text-[11px] leading-snug text-muted-foreground">
+                            Désactiver applique un rendu plus net sur l’export SVG (<span className="font-mono">shape-rendering: crispEdges</span>),
+                            proche du comportement « carré » lorsque la lib désactive <span className="font-mono">roundSize</span>.
+                          </p>
+                        </div>
                         <div className="space-y-2">
                           <Label className="text-xs uppercase tracking-wide text-muted-foreground">Couleur du motif</Label>
                           <QrPartColorControls
@@ -702,7 +905,7 @@ export default function QrCodeManager() {
                   {
                     value: "coins",
                     icon: faUpRightAndDownLeftFromCenter,
-                    title: "Coins du code QR",
+                    title: "Coins du QR Code",
                     description: "Style des repères et couleurs des bordures et du centre des yeux.",
                     content: (
                       <div className="space-y-6">
@@ -740,45 +943,144 @@ export default function QrCodeManager() {
                     value: "logo",
                     icon: faImage,
                     title: "Ajouter un logo",
-                    description: "Logo DynaPerf par défaut ou image importée au centre du code.",
+                    description: "Activer l’affichage, importer des images et choisir dans la bibliothèque.",
                     content: (
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <div className="flex items-center gap-3">
+                      <div className="flex flex-col gap-5">
+                        <div className="flex flex-wrap items-center gap-3">
                           <Switch
-                            id="qr-default-logo"
-                            checked={useDefaultLogo}
-                            onCheckedChange={(c) => {
-                              setUseDefaultLogo(c);
-                              if (c) {
-                                setDraft((d) => ({ ...d, logoUrl: defaultLogoDynaLipsRed }));
+                            id="qr-show-logo"
+                            checked={showLogo}
+                            onCheckedChange={(on) => {
+                              setShowLogo(on);
+                              if (on) {
+                                setDraft((d) => {
+                                  const cur = (d.logoUrl || "").trim();
+                                  if (cur) return d;
+                                  const first = logoGallery[0]?.dataUrl;
+                                  return first ? { ...d, logoUrl: first } : d;
+                                });
                               } else {
-                                setDraft((d) => ({
-                                  ...d,
-                                  logoUrl: d.logoUrl && !isBundledDefaultLogo(d.logoUrl) ? d.logoUrl : logoGallery[0]?.dataUrl ?? "",
-                                }));
+                                setDraft((d) => ({ ...d, logoUrl: "" }));
                               }
                             }}
                           />
-                          <Label htmlFor="qr-default-logo" className="cursor-pointer text-sm font-medium leading-snug">
-                            Logo DynaPerf par défaut
+                          <Label htmlFor="qr-show-logo" className="cursor-pointer text-sm font-medium leading-snug">
+                            Afficher logo
                           </Label>
                         </div>
-                        <div className="flex min-w-0 flex-1 flex-col gap-1 sm:max-w-md sm:items-end">
-                          <Label className="text-xs text-muted-foreground">Importer des logos (plusieurs fichiers possibles)</Label>
-                          <Input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            className="cursor-pointer text-sm"
-                            onChange={(e) => void addFilesToGallery(e.target.files)}
-                          />
-                        </div>
+                        {showLogo ? (
+                          <div className="flex flex-col gap-5 border-l-2 border-primary/20 pl-4 sm:gap-6 sm:pl-5">
+                            <div className="space-y-2">
+                              <Label className="text-xs text-muted-foreground">Importer des images (plusieurs fichiers possibles)</Label>
+                              <Input
+                                type="file"
+                                accept="image/*"
+                                multiple
+                                className="cursor-pointer text-sm"
+                                onChange={(e) => void addFilesToGallery(e.target.files)}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs font-medium text-foreground">Bibliothèque</Label>
+                              {logoGallery.length === 0 ? (
+                                <p className="text-sm text-muted-foreground">
+                                  Aucune image — importez ci-dessus pour remplir la bibliothèque et sélectionner un logo.
+                                </p>
+                              ) : (
+                                <div className="flex flex-wrap gap-3">
+                                  {logoGallery.map((item) => {
+                                    const active = draft.logoUrl === item.dataUrl;
+                                    return (
+                                      <div key={item.id} className="relative">
+                                        <button
+                                          type="button"
+                                          onClick={() => setDraft((d) => ({ ...d, logoUrl: item.dataUrl }))}
+                                          className={cn(
+                                            "relative h-20 w-20 overflow-hidden rounded-xl border-2 bg-background p-1 transition",
+                                            active ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/40",
+                                          )}
+                                        >
+                                          <img src={item.dataUrl} alt="" className="h-full w-full object-contain" />
+                                        </button>
+                                        <button
+                                          type="button"
+                                          title="Retirer de la bibliothèque"
+                                          className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow hover:bg-destructive/10 hover:text-destructive"
+                                          onClick={() => removeGalleryItem(item.id)}
+                                        >
+                                          <FontAwesomeIcon icon={faXmark} className="h-3 w-3" />
+                                        </button>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
+                    ),
+                  },
+                  {
+                    value: "stats",
+                    icon: faChartPie,
+                    title: "Statistiques",
+                    description: "Outils et données pour évaluer la performance (scans du lien public).",
+                    content: (
+                      <div className="space-y-4">
+                        {!editingId ? (
+                          <p className="text-sm text-muted-foreground">
+                            Enregistrez le QR code puis rouvrez-le depuis la liste pour afficher le compteur de scans et le lien de suivi dédié.
+                          </p>
+                        ) : (
+                          <>
+                            <div className="rounded-lg border border-border/40 bg-muted/10 px-3 py-3">
+                              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Scans enregistrés</p>
+                              <p className="text-2xl font-semibold tabular-nums">{draft.scanCount ?? 0}</p>
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-xs text-muted-foreground">
+                                Lien de suivi — à encoder dans le QR pour compter les ouvertures
+                              </Label>
+                              <div className="flex flex-wrap gap-2">
+                                <Input readOnly value={qrTrackingUrl(editingId)} className="min-w-0 flex-1 font-mono text-xs" />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  className="shrink-0 gap-2"
+                                  onClick={() => void copyTrackingLink(editingId)}
+                                >
+                                  <FontAwesomeIcon icon={faCopy} className="h-3.5 w-3.5" />
+                                  Copier
+                                </Button>
+                              </div>
+                              <Button
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                className="mt-1"
+                                onClick={() => {
+                                  setComposeKind("custom");
+                                  const u = qrTrackingUrl(editingId);
+                                  setDraft((d) => ({ ...d, value: u }));
+                                  toast.success("Contenu du QR remplacé par le lien de suivi.");
+                                }}
+                              >
+                                Utiliser ce lien comme contenu du QR
+                              </Button>
+                              <p className="text-[11px] leading-snug text-muted-foreground">
+                                Chaque scan du lien public <span className="font-mono">/r/…</span> incrémente le compteur puis redirige vers la cible
+                                actuellement enregistrée.
+                              </p>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ),
                   },
                 ]}
-              />
-            </div>
+            />
 
             <div className="flex flex-wrap gap-2">
               <Button onClick={submit} className="gap-2">
@@ -798,7 +1100,10 @@ export default function QrCodeManager() {
             <Card className="border-border/50 shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">Aperçu</CardTitle>
-                <CardDescription>Taille affichée : {previewSize}px (export : {draft.size}px, précision {draft.level})</CardDescription>
+                <CardDescription>
+                  Aperçu {previewSize}px · export {draft.size}px ·{" "}
+                  {LEVEL_OPTIONS.find((o) => o.value === draft.level)?.label ?? draft.level} ({draft.level})
+                </CardDescription>
               </CardHeader>
               <CardContent className="flex justify-center overflow-x-auto pb-4 pt-0">
                 <QrStylingPreview
@@ -814,52 +1119,6 @@ export default function QrCodeManager() {
             </Card>
           </div>
         </div>
-
-        {/* Bibliothèque logos */}
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="text-base">Bibliothèque de logos</CardTitle>
-            <CardDescription>
-              Cliquez sur une vignette pour l&apos;appliquer au brouillon (désactive le logo par défaut). Retirer de la liste ne supprime pas les QR déjà enregistrés.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {logoGallery.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aucun logo importé — utilisez le champ ci-dessus pour en ajouter.</p>
-            ) : (
-              <div className="flex flex-wrap gap-3">
-                {logoGallery.map((item) => {
-                  const active = !useDefaultLogo && draft.logoUrl === item.dataUrl;
-                  return (
-                    <div key={item.id} className="relative">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setUseDefaultLogo(false);
-                          setDraft((d) => ({ ...d, logoUrl: item.dataUrl }));
-                        }}
-                        className={cn(
-                          "relative h-20 w-20 overflow-hidden rounded-xl border-2 bg-background p-1 transition",
-                          active ? "border-primary ring-2 ring-primary/20" : "border-border hover:border-primary/40",
-                        )}
-                      >
-                        <img src={item.dataUrl} alt="" className="h-full w-full object-contain" />
-                      </button>
-                      <button
-                        type="button"
-                        title="Retirer de la bibliothèque"
-                        className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full border border-border bg-card text-muted-foreground shadow hover:bg-destructive/10 hover:text-destructive"
-                        onClick={() => removeGalleryItem(item.id)}
-                      >
-                        <FontAwesomeIcon icon={faXmark} className="h-3 w-3" />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
         {/* Liste des QR enregistrés */}
         <Card className="border-border/50">
@@ -877,7 +1136,10 @@ export default function QrCodeManager() {
                 {sorted.map((r) => (
                   <div key={r.id} className="flex flex-col gap-2 rounded-xl border border-border/50 bg-muted/10 p-3">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="truncate text-sm font-medium">{r.name}</p>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium">{r.name}</p>
+                        <p className="text-[11px] text-muted-foreground tabular-nums">{r.scanCount ?? 0} scan(s)</p>
+                      </div>
                       <div className="flex shrink-0 gap-1">
                         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEdit(r)}>
                           <FontAwesomeIcon icon={faPen} className="h-3.5 w-3.5" />
@@ -894,7 +1156,9 @@ export default function QrCodeManager() {
                         fgColor={r.fgColor}
                         bgColor={r.bgColor}
                         level={r.level}
-                        logoUrl={isBundledDefaultLogo(r.logoUrl) ? defaultLogoDynaLipsRed : r.logoUrl}
+                        logoUrl={
+                          isBundledDefaultLogo(r.logoUrl) || !(r.logoUrl || "").trim() ? undefined : r.logoUrl
+                        }
                         style={r.qrStyle}
                       />
                     </div>

@@ -22,6 +22,9 @@ import {
   faMoneyBill,
   faBell,
   faQrcode,
+  faList,
+  faShapes,
+  faChartColumn,
   faImages,
   faPalette,
   faIcons,
@@ -81,7 +84,10 @@ const home: RailSection = {
     { label: "Profil", to: "/profile", icon: faUser },
     { label: "Mot de passe", to: "/change-password", icon: faKey },
     { label: "Mes primes", to: "/primes", icon: faMoneyBill },
-    { label: "Gestion QrCode", to: "/qrcodes", icon: faQrcode },
+    { label: "Créer un QrCode", to: "/qrcodes/new", icon: faPlus, requiredModule: "qrcode" },
+    { label: "Gérer les QrCode", to: "/qrcodes", icon: faList, requiredModule: "qrcode" },
+    { label: "Gérer les shapes", to: "/qrcodes/shapes", icon: faShapes, requiredModule: "qrcode" },
+    { label: "Consulter les statistiques", to: "/qrcodes/stats", icon: faChartColumn, requiredModule: "qrcode" },
     { label: "Notifications", to: "/notifications", icon: faBell },
   ],
   /** Raccourci maison retiré du rail : le logo en bandeau joue le rôle d’accueil. */
@@ -178,7 +184,12 @@ const qrcodes: RailSection = {
   requiredPermission: "nav.hub",
   requiredModule: "qrcode",
   pathPrefixes: ["/qrcodes"],
-  children: [{ label: "Gestion QrCode", to: "/qrcodes", icon: faQrcode }],
+  children: [
+    { label: "Créer un QrCode", to: "/qrcodes/new", icon: faPlus },
+    { label: "Gérer les QrCode", to: "/qrcodes", icon: faList },
+    { label: "Gérer les shapes", to: "/qrcodes/shapes", icon: faShapes },
+    { label: "Consulter les statistiques", to: "/qrcodes/stats", icon: faChartColumn },
+  ],
 };
 
 const sondages: RailSection = {
@@ -316,7 +327,7 @@ export function getActiveRailSection(pathname: string, sections: RailSection[]):
 export function getRailHeaderLabel(pathname: string, sections: RailSection[]): string | null {
   const active = getActiveRailSection(pathname, sections);
   if (!active) return null;
-  if (active.id === "home" || active.id === "admin") {
+  if (active.id === "home" || active.id === "admin" || active.id === "qrcodes") {
     const normalized = pathname.split("?")[0];
     for (const c of active.children) {
       const base = c.to.split("?")[0];

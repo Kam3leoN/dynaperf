@@ -59,7 +59,10 @@ const Preferences = lazy(() => import("./pages/Preferences"));
 const DashboardHub = lazy(() => import("./pages/DashboardHub"));
 const Primes = lazy(() => import("./pages/Primes"));
 const QrCodeManager = lazy(() => import("./pages/QrCodeManager"));
+const QrCodeShapes = lazy(() => import("./pages/QrCodeShapes"));
+const QrCodeStats = lazy(() => import("./pages/QrCodeStats"));
 const Galerie = lazy(() => import("./pages/Galerie"));
+const QrScanRedirect = lazy(() => import("./pages/QrScanRedirect"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -178,9 +181,20 @@ const App = () => {
                     <Route path="/preferences" element={<PermissionRoute permission="nav.hub"><Preferences /></PermissionRoute>} />
                     <Route path="/hub" element={<PermissionRoute permission="nav.hub"><DashboardHub /></PermissionRoute>} />
                     <Route path="/primes" element={<PermissionRoute permission="nav.hub"><Primes /></PermissionRoute>} />
+                    <Route path="/qrcodes/new" element={<PermissionRoute permission="nav.hub"><QrCodeManager /></PermissionRoute>} />
+                    <Route path="/qrcodes/shapes" element={<PermissionRoute permission="nav.hub"><QrCodeShapes /></PermissionRoute>} />
+                    <Route path="/qrcodes/stats" element={<PermissionRoute permission="nav.hub"><QrCodeStats /></PermissionRoute>} />
                     <Route path="/qrcodes" element={<PermissionRoute permission="nav.hub"><QrCodeManager /></PermissionRoute>} />
                     <Route path="/galerie" element={<PermissionRoute permission="nav.audits"><Galerie /></PermissionRoute>} />
                     <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
+                    <Route
+                      path="/r/:qrId"
+                      element={
+                        <Suspense fallback={<FullPageLoader />}>
+                          <QrScanRedirect />
+                        </Suspense>
+                      }
+                    />
                     <Route path="/reset-password" element={<Suspense fallback={<FullPageLoader />}><ResetPassword /></Suspense>} />
                     <Route path="*" element={<Suspense fallback={<FullPageLoader />}><NotFound /></Suspense>} />
                   </Routes>

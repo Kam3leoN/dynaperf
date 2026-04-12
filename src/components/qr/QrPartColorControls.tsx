@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faRightLeft } from "@fortawesome/free-solid-svg-icons";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
@@ -6,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { QrFgColorSwatches } from "@/components/qr/QrFgColorSwatches";
 import { resolveQrPartColors, type QrPartColors, type QrStyleConfig } from "@/lib/qrCodeStyle";
 import { cn } from "@/lib/utils";
+
+const GRADIENT_ANGLE_PRESETS = [0, 45, 90, 135, 180, 270] as const;
 
 /** `dots` : modules uniquement · `corners` : repères ext. + centre œil · `all` : les trois zones (onglets). */
 export type QrPartColorScope = "dots" | "corners" | "all";
@@ -89,6 +93,21 @@ export function QrPartColorControls({ fgFallback, qrStyle, onUpdate, scope = "al
             })}
           </div>
 
+          {scope === "corners" ? (
+            <div className="flex justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                onClick={() => patch({ outer: pc.inner, inner: pc.outer })}
+              >
+                <FontAwesomeIcon icon={faRightLeft} className="h-3.5 w-3.5" aria-hidden />
+                Échanger ext. ↔ int.
+              </Button>
+            </div>
+          ) : null}
+
           <p className="text-[11px] leading-snug text-muted-foreground">
             {partList.find((p) => p.id === part)?.hint}
           </p>
@@ -138,27 +157,65 @@ export function QrPartColorControls({ fgFallback, qrStyle, onUpdate, scope = "al
               onCheckedChange={(g) => patch({ dotsFill: g ? "gradient" : "solid" })}
             />
             <Label htmlFor="qr-dots-gradient" className="cursor-pointer text-sm font-normal leading-snug">
-              Dégradé diagonal sur tout le code
+              Dégradé linéaire sur les modules
             </Label>
           </div>
           {pc.dotsFill === "gradient" ? (
-            <div className="space-y-2 border-t border-border/30 pt-3">
-              <Label className="text-xs text-muted-foreground">Seconde couleur du dégradé</Label>
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-                <div className="min-w-0 flex-1">
-                  <QrFgColorSwatches
-                    value={pc.dotsGradientEnd}
-                    onChange={(hex) => patch({ dotsGradientEnd: hex })}
-                    compact
+            <div className="space-y-3 border-t border-border/30 pt-3">
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Angle du dégradé (comme qr-code-styling)</Label>
+                <div className="flex flex-wrap gap-2">
+                  {GRADIENT_ANGLE_PRESETS.map((deg) => (
+                    <Button
+                      key={deg}
+                      type="button"
+                      size="sm"
+                      variant={pc.dotsGradientAngle === deg ? "secondary" : "outline"}
+                      className="h-8 min-w-[2.75rem] px-2 text-xs"
+                      onClick={() => patch({ dotsGradientAngle: deg })}
+                    >
+                      {deg}°
+                    </Button>
+                  ))}
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Label htmlFor="qr-dots-grad-angle" className="text-xs text-muted-foreground">
+                    Valeur (0–359)
+                  </Label>
+                  <Input
+                    id="qr-dots-grad-angle"
+                    type="number"
+                    min={0}
+                    max={359}
+                    step={1}
+                    className="h-9 w-24"
+                    value={Math.round(pc.dotsGradientAngle)}
+                    onChange={(e) => {
+                      const n = Number(e.target.value);
+                      if (!Number.isFinite(n)) return;
+                      patch({ dotsGradientAngle: ((n % 360) + 360) % 360 });
+                    }}
                   />
                 </div>
-                <Input
-                  type="color"
-                  className="h-11 w-full shrink-0 cursor-pointer rounded-lg border border-border/60 p-1 sm:w-[7.5rem]"
-                  value={pc.dotsGradientEnd}
-                  onChange={(e) => patch({ dotsGradientEnd: e.target.value })}
-                  aria-label="Couleur fin de dégradé — points"
-                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs text-muted-foreground">Seconde couleur du dégradé</Label>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                  <div className="min-w-0 flex-1">
+                    <QrFgColorSwatches
+                      value={pc.dotsGradientEnd}
+                      onChange={(hex) => patch({ dotsGradientEnd: hex })}
+                      compact
+                    />
+                  </div>
+                  <Input
+                    type="color"
+                    className="h-11 w-full shrink-0 cursor-pointer rounded-lg border border-border/60 p-1 sm:w-[7.5rem]"
+                    value={pc.dotsGradientEnd}
+                    onChange={(e) => patch({ dotsGradientEnd: e.target.value })}
+                    aria-label="Couleur fin de dégradé — points"
+                  />
+                </div>
               </div>
             </div>
           ) : null}

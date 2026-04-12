@@ -165,14 +165,19 @@ export async function renderQrSvgString(params: {
   const logoStart = Math.floor((n - logoSide) / 2);
 
   const useGradient = pc.dotsFill === "gradient";
+  const crispDots = params.style.dotsRoundSize === false;
   const uid = Math.random().toString(36).slice(2, 11);
   const dotsGradId = `qd_grad_${uid}`;
   const dotsMaskId = `qd_mask_${uid}`;
 
+  const gradRad = (pc.dotsGradientAngle * Math.PI) / 180;
+  const gx2 = params.size * Math.cos(gradRad);
+  const gy2 = params.size * Math.sin(gradRad);
+
   const defsParts: string[] = [];
   if (useGradient) {
     defsParts.push(
-      `<linearGradient id="${dotsGradId}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${params.size}" y2="${params.size}"><stop offset="0%" stop-color="${escapeXmlAttr(pc.dots)}"/><stop offset="100%" stop-color="${escapeXmlAttr(pc.dotsGradientEnd)}"/></linearGradient>`,
+      `<linearGradient id="${dotsGradId}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${gx2}" y2="${gy2}"><stop offset="0%" stop-color="${escapeXmlAttr(pc.dots)}"/><stop offset="100%" stop-color="${escapeXmlAttr(pc.dotsGradientEnd)}"/></linearGradient>`,
     );
     const maskCells: string[] = [];
     for (let r = 0; r < n; r += 1) {
@@ -226,10 +231,15 @@ export async function renderQrSvgString(params: {
     parts.push(`<g transform="translate(${ix},${iy}) scale(${cell})">${innerUse}</g>`);
   }
 
+  const dotsShapeRendering = crispDots ? 'shape-rendering="crispEdges"' : 'shape-rendering="auto"';
+
   if (useGradient) {
-    parts.push(`<rect width="100%" height="100%" fill="url(#${dotsGradId})" mask="url(#${dotsMaskId})"/>`);
+    parts.push(
+      `<g ${dotsShapeRendering}><rect width="100%" height="100%" fill="url(#${dotsGradId})" mask="url(#${dotsMaskId})"/></g>`,
+    );
   } else {
     const dotUse = applyPaintToFragment(dotFrag, pc.dots);
+    parts.push(`<g ${dotsShapeRendering}>`);
     for (let r = 0; r < n; r += 1) {
       for (let c = 0; c < n; c += 1) {
         if (isInFinderBlock(r, c, n)) continue;
@@ -240,6 +250,7 @@ export async function renderQrSvgString(params: {
         parts.push(`<g transform="translate(${x},${y}) scale(${cell})">${dotUse}</g>`);
       }
     }
+    parts.push(`</g>`);
   }
 
   if (logoSrc) {

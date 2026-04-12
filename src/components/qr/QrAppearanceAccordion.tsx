@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
 
-export type QrAppearancePanelId = "cadre" | "motif" | "coins" | "logo";
+export type QrAppearancePanelId = "contenu" | "cadre" | "motif" | "coins" | "logo" | "stats";
 
 type SectionDef = {
   value: QrAppearancePanelId;
@@ -57,7 +57,7 @@ export function QrAppearanceAccordion({
   /** Valeurs ouvertes par défaut (ex. motif + cadre). */
   defaultOpen?: QrAppearancePanelId[];
 }) {
-  const defaultValue = defaultOpen ?? ["cadre", "motif"];
+  const defaultValue = defaultOpen ?? ["contenu", "cadre"];
   return (
     <Accordion
       type="multiple"
