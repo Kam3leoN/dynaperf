@@ -59,6 +59,7 @@ const ActivityLog = lazy(() => import("./pages/ActivityLog"));
 const Preferences = lazy(() => import("./pages/Preferences"));
 const DashboardHub = lazy(() => import("./pages/DashboardHub"));
 const Primes = lazy(() => import("./pages/Primes"));
+const QrCodeManageList = lazy(() => import("./pages/QrCodeManageList"));
 const QrCodeManager = lazy(() => import("./pages/QrCodeManager"));
 const QrCodeShapes = lazy(() => import("./pages/QrCodeShapes"));
 const AdminQrShapes = lazy(() => import("./pages/admin/AdminQrShapes"));
@@ -188,7 +189,7 @@ const App = () => {
                     <Route path="/qrcodes/new" element={<PermissionRoute permission="nav.hub"><QrCodeManager /></PermissionRoute>} />
                     <Route path="/qrcodes/shapes" element={<PermissionRoute permission="nav.hub"><QrCodeShapes /></PermissionRoute>} />
                     <Route path="/qrcodes/stats" element={<PermissionRoute permission="nav.hub"><QrCodeStats /></PermissionRoute>} />
-                    <Route path="/qrcodes" element={<PermissionRoute permission="nav.hub"><QrCodeManager /></PermissionRoute>} />
+                    <Route path="/qrcodes" element={<PermissionRoute permission="nav.hub"><QrCodeManageList /></PermissionRoute>} />
                     <Route path="/galerie" element={<PermissionRoute permission="nav.audits"><Galerie /></PermissionRoute>} />
                     <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
                     <Route

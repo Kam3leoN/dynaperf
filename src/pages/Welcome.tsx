@@ -6,8 +6,7 @@ import { GamificationWidget } from "@/components/GamificationWidget";
 import { useGamification } from "@/hooks/useGamification";
 import { BadgeReward } from "@/components/BadgeReward";
 import installDesktopIcon from "@/assets/install-desktop.svg";
-import { QRCodeSVG } from "qrcode.react";
-import { absoluteAppBaseUrl, publicAssetUrl } from "@/lib/basePath";
+import { publicAssetUrl } from "@/lib/basePath";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -66,20 +65,8 @@ export default function Welcome() {
   }, []);
 
   const greeting = firstName ?? user?.email?.split("@")[0] ?? "Utilisateur";
-  /** Déploiement courant (GitHub Pages, Lovable, etc.) — correct avec `base` Vite. */
-  const appUrl = absoluteAppBaseUrl();
-  const pwaIconUrl = publicAssetUrl("pwaDynaperf.svg");
-  const welcomeAppsValue = (() => {
-    try {
-      const raw = localStorage.getItem("dynaperf_qrcodes_v1");
-      if (!raw) return appUrl;
-      const parsed = JSON.parse(raw) as Array<{ name?: string; value?: string }>;
-      const match = parsed.find((q) => (q.name || "").trim().toLowerCase() === "welcomeapps");
-      return match?.value?.trim() || appUrl;
-    } catch {
-      return appUrl;
-    }
-  })();
+  /** QR d’installation smartphone (`public/dynaperf.svg`). */
+  const welcomeQrImageUrl = publicAssetUrl("dynaperf.svg");
 
   const installOnPc = async () => {
     if (!deferredInstall) {
@@ -160,17 +147,14 @@ export default function Welcome() {
             <DialogTitle>Flashez le Qr Code !</DialogTitle>
           </DialogHeader>
           <p className="text-sm text-muted-foreground text-center">Pour une utilisation sur smartphone</p>
-          <div className="mx-auto rounded-2xl bg-white p-4 shadow-soft">
-            <QRCodeSVG
-              value={welcomeAppsValue}
-              size={220}
-              level="M"
-              imageSettings={{
-                src: pwaIconUrl,
-                height: 32,
-                width: 32,
-                excavate: true,
-              }}
+          <div className="mx-auto flex max-w-[min(100%,280px)] justify-center rounded-2xl bg-white p-4 shadow-soft">
+            <img
+              src={welcomeQrImageUrl}
+              alt="QR code pour installer DynaPerf sur smartphone"
+              width={220}
+              height={220}
+              className="h-auto w-full max-w-[220px] object-contain"
+              decoding="async"
             />
           </div>
         </DialogContent>

@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
-import { useLocation } from "react-router-dom";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,48 +21,33 @@ import {
   faImage,
   faLink,
   faListUl,
-  faPen,
   faPhone,
   faPlus,
   faQrcode,
   faSms,
-  faTrash,
   faUpRightAndDownLeftFromCenter,
   faWifi,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import { faPaypal, faStripe, faWhatsapp } from "@fortawesome/free-brands-svg-icons";
 import { toast } from "sonner";
-import defaultLogoDynaLipsRed from "@/assets/logo-dynalips-red.svg";
 import { QrStylingPreview } from "@/components/qr/QrStylingPreview";
 import { QrAppearanceAccordion } from "@/components/qr/QrAppearanceAccordion";
 import { QrPartColorControls } from "@/components/qr/QrPartColorControls";
 import { QrStyleVisualPickers } from "@/components/qr/QrStyleSwatches";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DEFAULT_QR_STYLE, mergeQrStyle, type QrStyleConfig, type QrPartColors } from "@/lib/qrCodeStyle";
-import { absoluteAppBaseUrl } from "@/lib/basePath";
 import { isTransparentBgColor } from "@/lib/qrBgColor";
-import { buildQrShapeInnerFragments, type QrShapeLibraryRow } from "@/lib/qrShapeMarkup";
+import { buildQrShapeInnerFragments } from "@/lib/qrShapeMarkup";
 import { renderQrSvgString } from "@/lib/qrSvgRender";
 import { useQrShapeLibraryMap } from "@/hooks/useQrShapeLibrary";
+import { sanitizeExportBasename, svgMarkupToPngBlob, triggerFileDownload } from "@/lib/qrExportDownload";
+import { coerceExportSize, isBundledDefaultLogo, qrTrackingUrl } from "@/lib/qrRecordHelpers";
 import { composeQrPayload, type QrComposeFields, type QrContentKind } from "@/lib/qrContentCompose";
+import type { QrRecord } from "@/types/qrCodeRecord";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { cn } from "@/lib/utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-type QrRecord = {
-  id: string;
-  name: string;
-  value: string;
-  size: number;
-  fgColor: string;
-  bgColor: string;
-  level: "L" | "M" | "Q" | "H";
-  logoUrl?: string;
-  qrStyle: QrStyleConfig;
-  /** Renseigné après chargement / enregistrement (colonne `scan_count`). */
-  scanCount: number;
-};
 
 type LogoGalleryItem = { id: string; dataUrl: string };
 
@@ -70,17 +55,8 @@ const LOGO_GALLERY_KEY = "dynaperf_qr_logo_gallery_v2";
 
 const PREVIEW_MAX = 320;
 
-const EXPORT_SIZES = [256, 512, 1024, 2048] as const;
-type ExportSize = (typeof EXPORT_SIZES)[number];
-
 const EXPORT_DPIS = [72, 150, 300, 600] as const;
 type ExportDpi = (typeof EXPORT_DPIS)[number];
-
-function coerceExportSize(n: number): ExportSize {
-  const xs = EXPORT_SIZES as readonly number[];
-  if (xs.includes(n)) return n as ExportSize;
-  return xs.reduce((best, x) => (Math.abs(x - n) < Math.abs(best - n) ? x : best), 512 as ExportSize);
-}
 
 const LEVEL_OPTIONS: { value: QrRecord["level"]; short: string; label: string }[] = [
   { value: "L", short: "L", label: "Low" },
@@ -88,71 +64,6 @@ const LEVEL_OPTIONS: { value: QrRecord["level"]; short: string; label: string }[
   { value: "Q", short: "Q", label: "Quartile" },
   { value: "H", short: "H", label: "High" },
 ];
-
-function triggerFileDownload(blob: Blob, filename: string) {
-  const a = document.createElement("a");
-  const url = URL.createObjectURL(blob);
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-}
-
-function sanitizeExportBasename(name: string): string {
-  const t = name.trim().replace(/[^\w\d\-_.\sàâäéèêëïîôùûüç]/gi, "").replace(/\s+/g, "-");
-  return t || "qrcode";
-}
-
-/**
- * Rasterise le SVG en PNG. `designSizePx` = côté logique du QR ; `dpi` scale la sortie (référence 72 dpi).
- */
-async function svgMarkupToPngBlob(svg: string, designSizePx: number, dpi: number): Promise<Blob> {
-  const svgBlob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
-  const url = URL.createObjectURL(svgBlob);
-  const img = new Image();
-  try {
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error("image-load"));
-      img.src = url;
-    });
-    const rasterSize = Math.max(1, Math.round((designSizePx * dpi) / 72));
-    const canvas = document.createElement("canvas");
-    canvas.width = rasterSize;
-    canvas.height = rasterSize;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("canvas");
-    ctx.drawImage(img, 0, 0, rasterSize, rasterSize);
-    return await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("toBlob"))), "image/png");
-    });
-  } finally {
-    URL.revokeObjectURL(url);
-  }
-}
-
-function qrTrackingUrl(qrId: string): string {
-  return `${absoluteAppBaseUrl()}r/${qrId}`;
-}
-
-function isBundledDefaultLogo(url: string | undefined): boolean {
-  if (!url) return false;
-  return url === defaultLogoDynaLipsRed || url.includes("logo-dynalips-red");
-}
-
-/** Contenu encodé pour un QR enregistré (lien /r/:id si suivi activé). */
-function encodedPayloadForRecord(record: QrRecord): string {
-  if (record.qrStyle.encodeTrackingLink !== false) {
-    return qrTrackingUrl(record.id);
-  }
-  return record.value;
-}
-
-function logoUrlForExport(record: QrRecord): string | undefined {
-  const raw = (record.logoUrl || "").trim();
-  if (!raw || isBundledDefaultLogo(record.logoUrl)) return undefined;
-  return raw;
-}
 
 type PresetCard = {
   kind: QrContentKind;
@@ -397,34 +308,9 @@ function ContentFields({
   return null;
 }
 
-function QrSavedCardPreview({
-  record,
-  shapeById,
-}: {
-  record: QrRecord;
-  shapeById: Map<string, QrShapeLibraryRow>;
-}) {
-  const fr = useMemo(
-    () => (shapeById.size > 0 ? buildQrShapeInnerFragments(record.qrStyle, shapeById) : null),
-    [record.qrStyle, shapeById],
-  );
-  return (
-    <QrStylingPreview
-      value={encodedPayloadForRecord(record)}
-      size={Math.min(200, record.size)}
-      fgColor={record.fgColor}
-      bgColor={record.bgColor}
-      level={record.level}
-      logoUrl={logoUrlForExport(record)}
-      style={record.qrStyle}
-      shapeInnerFragments={fr}
-    />
-  );
-}
-
 export default function QrCodeManager() {
   const location = useLocation();
-  const isCreatePage = location.pathname.endsWith("/new");
+  const [searchParams, setSearchParams] = useSearchParams();
 
   const [records, setRecords] = useState<QrRecord[]>([]);
   const [draft, setDraft] = useState<QrRecord>(() => makeEmpty());
@@ -439,8 +325,6 @@ export default function QrCodeManager() {
   /** DPI pour l’export PNG (référence 72) — préférence locale, non persistée. */
   const [exportDpi, setExportDpi] = useState<ExportDpi>(300);
   const [logoGallery, setLogoGallery] = useState<LogoGalleryItem[]>(() => loadGallery());
-
-  const sorted = useMemo(() => [...records].sort((a, b) => a.name.localeCompare(b.name, "fr")), [records]);
 
   const { byId: shapeById, byKind } = useQrShapeLibraryMap();
 
@@ -506,15 +390,6 @@ export default function QrCodeManager() {
     };
   }, []);
 
-  const persistDelete = async (id: string) => {
-    const { error } = await supabase.from("qr_codes").delete().eq("id", id);
-    if (error) {
-      toast.error(error.message);
-      return;
-    }
-    setRecords((prev) => prev.filter((x) => x.id !== id));
-  };
-
   const resetDraft = () => {
     setDraft(makeEmpty());
     setEditingId(null);
@@ -523,12 +398,16 @@ export default function QrCodeManager() {
     setShowLogo(false);
   };
 
+  /** Chaîne vide au 1er rendu pour détecter l’« entrée » sur `/qrcodes/new`. */
+  const prevPathnameRef = useRef("");
   useEffect(() => {
-    if (!location.pathname.endsWith("/new")) return;
+    const onNewRoute = location.pathname.endsWith("/new");
+    const enteredNew = onNewRoute && !prevPathnameRef.current.endsWith("/new");
+    prevPathnameRef.current = location.pathname;
+    if (!enteredNew) return;
+    if (new URLSearchParams(location.search).get("edit")) return;
     resetDraft();
-    // Intentionnel : réinitialiser le brouillon à chaque entrée sur /qrcodes/new
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
+  }, [location.pathname, location.search]);
 
   const validatePayload = (value: string): boolean => {
     const v = value.trim();
@@ -685,6 +564,32 @@ export default function QrCodeManager() {
     });
   };
 
+  const editIdParam = searchParams.get("edit");
+  useEffect(() => {
+    if (!editIdParam || loading) return;
+    const r = records.find((x) => x.id === editIdParam);
+    if (!r) {
+      toast.error("QR code introuvable.");
+      setSearchParams(
+        (p) => {
+          p.delete("edit");
+          return p;
+        },
+        { replace: true },
+      );
+      return;
+    }
+    startEdit(r);
+    setSearchParams(
+      (p) => {
+        p.delete("edit");
+        return p;
+      },
+      { replace: true },
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- appliquer une seule fois quand les lignes sont chargées
+  }, [editIdParam, loading, records]);
+
   const previewSize = Math.min(PREVIEW_MAX, Math.max(160, draft.size));
 
   const copyTrackingLink = async (id: string) => {
@@ -732,52 +637,15 @@ export default function QrCodeManager() {
     }
   };
 
-  const downloadSavedQr = async (record: QrRecord) => {
-    if (shapeById.size === 0) {
-      toast.error("Bibliothèque de formes indisponible — réessayez dans un instant.");
-      return;
-    }
-    const payload = encodedPayloadForRecord(record).trim();
-    if (!payload) {
-      toast.error("Contenu du QR vide — ouvrez l’édition pour corriger.");
-      return;
-    }
-    const size = coerceExportSize(record.size);
-    try {
-      const fr = buildQrShapeInnerFragments(record.qrStyle, shapeById);
-      const svg = renderQrSvgString({
-        value: payload,
-        size,
-        fgColor: record.fgColor,
-        bgColor: record.bgColor,
-        level: record.level,
-        style: record.qrStyle,
-        logoUrl: logoUrlForExport(record),
-        shapeInnerFragments: fr,
-      });
-      const base = sanitizeExportBasename(record.name || "qrcode");
-      if (exportFormat === "svg") {
-        triggerFileDownload(new Blob([svg], { type: "image/svg+xml;charset=utf-8" }), `${base}.svg`);
-        toast.success("SVG téléchargé.");
-        return;
-      }
-      const png = await svgMarkupToPngBlob(svg, size, exportDpi);
-      triggerFileDownload(png, `${base}-${size}px-${exportDpi}dpi.png`);
-      toast.success("PNG téléchargé.");
-    } catch {
-      toast.error("Export impossible (vérifiez le logo et les formes).");
-    }
-  };
-
   return (
     <AppLayout>
       <section className="app-page-shell-wide min-w-0 w-full space-y-6 pb-10">
         <div>
-          <h1 className="text-2xl font-semibold">{isCreatePage ? "Créer un QrCode" : "Gérer les QrCode"}</h1>
+          <h1 className="text-2xl font-semibold">{editingId ? "Modifier le QrCode" : "Créer un QrCode"}</h1>
           <p className="text-sm text-muted-foreground">
-            {isCreatePage
-              ? "Renseignez le contenu et l’apparence, puis enregistrez — aperçu à droite."
-              : "Liste des codes enregistrés, édition et personnalisation par sections repliables (aperçu à droite)."}
+            {editingId
+              ? "Personnalisez le contenu et l’apparence, puis enregistrez — aperçu à droite."
+              : "Renseignez le contenu et l’apparence, puis enregistrez — aperçu à droite."}
           </p>
         </div>
 
@@ -1280,56 +1148,6 @@ export default function QrCodeManager() {
             </Card>
           </div>
         </div>
-
-        {/* Liste des QR enregistrés */}
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="text-base">QR codes enregistrés</CardTitle>
-            <CardDescription>{loading ? "Chargement…" : `${sorted.length} élément(s)`}</CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <p className="text-sm text-muted-foreground">Chargement…</p>
-            ) : sorted.length === 0 ? (
-              <p className="text-sm text-muted-foreground">Aucun QR code pour le moment.</p>
-            ) : (
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {sorted.map((r) => (
-                  <div key={r.id} className="flex flex-col gap-2 rounded-xl border border-border/50 bg-muted/10 p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">{r.name}</p>
-                        <p className="text-[11px] text-muted-foreground tabular-nums">{r.scanCount ?? 0} scan(s)</p>
-                      </div>
-                      <div className="flex shrink-0 gap-1">
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          title="Télécharger"
-                          onClick={() => void downloadSavedQr(r)}
-                        >
-                          <FontAwesomeIcon icon={faDownload} className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => startEdit(r)}>
-                          <FontAwesomeIcon icon={faPen} className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive" onClick={() => void persistDelete(r.id)}>
-                          <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                    <div className="flex justify-center">
-                      <QrSavedCardPreview record={r} shapeById={shapeById} />
-                    </div>
-                    <p className="line-clamp-2 break-all text-[11px] text-muted-foreground">{r.value}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </section>
     </AppLayout>
   );

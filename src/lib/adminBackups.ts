@@ -8,7 +8,11 @@ function supabaseUrlConfigured(): boolean {
   return Boolean(SUPABASE_URL?.trim());
 }
 
-async function invokeEdge(name: string, body?: Record<string, unknown>): Promise<{
+/**
+ * Appelle une Edge Function comme le client SQL inline : `fetch` + en-têtes `apikey` + JWT.
+ * Plus fiable que `supabase.functions.invoke` sur certains hébergeurs (ex. Pages) où « Failed to fetch » apparaît sans réponse HTTP.
+ */
+async function invokeEdgeFetch(name: string, body?: Record<string, unknown>): Promise<{
   data: unknown;
   error: unknown;
   response?: Response;
@@ -20,14 +24,56 @@ async function invokeEdge(name: string, body?: Record<string, unknown>): Promise
       response: undefined,
     };
   }
+  if (!SUPABASE_PUBLISHABLE_KEY?.trim()) {
+    return {
+      data: null,
+      error: Object.assign(new Error("VITE_SUPABASE_PUBLISHABLE_KEY manquant"), { name: "ConfigError" }),
+      response: undefined,
+    };
+  }
   const {
     data: { session },
   } = await supabase.auth.getSession();
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+    apikey: SUPABASE_PUBLISHABLE_KEY,
+  };
   if (session?.access_token) {
     headers.Authorization = `Bearer ${session.access_token}`;
   }
-  return supabase.functions.invoke(name, { body: body ?? {}, headers });
+  const base = SUPABASE_URL!.replace(/\/$/, "");
+  let res: Response;
+  try {
+    res = await fetch(`${base}/functions/v1/${name}`, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body ?? {}),
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : "fetch failed";
+    return {
+      data: null,
+      error: Object.assign(new Error(msg), { name: "FunctionsFetchError" }),
+      response: undefined,
+    };
+  }
+  const text = await res.text();
+  let data: unknown = null;
+  if (text) {
+    try {
+      data = JSON.parse(text) as unknown;
+    } catch {
+      data = { raw: text };
+    }
+  }
+  if (!res.ok) {
+    return {
+      data,
+      error: Object.assign(new Error(`Edge Function returned ${res.status}`), { name: "FunctionsHttpError" }),
+      response: res,
+    };
+  }
+  return { data, error: null, response: res };
 }
 
 export async function runBackupAllJson(): Promise<{
@@ -35,7 +81,7 @@ export async function runBackupAllJson(): Promise<{
   message: string;
   file?: string;
 }> {
-  const res = await invokeEdge("backup-all");
+  const res = await invokeEdgeFetch("backup-all");
   const err = res.error as { name?: string; message?: string } | undefined;
   if (err?.name === "ConfigError" && typeof err.message === "string") {
     return { ok: false, message: `${err.message} Rebuild du front avec les variables d’environnement Supabase.` };
@@ -62,7 +108,7 @@ export async function runSqlBackupToStorage(): Promise<{
   message: string;
   file?: string;
 }> {
-  const res = await invokeEdge("sql-backup");
+  const res = await invokeEdgeFetch("sql-backup");
   const err = res.error as { name?: string; message?: string } | undefined;
   if (err?.name === "ConfigError" && typeof err.message === "string") {
     return { ok: false, message: `${err.message} Rebuild du front avec les variables d’environnement Supabase.` };
