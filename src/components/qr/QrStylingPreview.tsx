@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { isTransparentBgColor } from "@/lib/qrBgColor";
 import type { QrStyleConfig } from "@/lib/qrCodeStyle";
+import type { QrShapeInnerFragments } from "@/lib/qrShapeMarkup";
 import { renderQrSvgString } from "@/lib/qrSvgRender";
 
 export interface QrStylingPreviewProps {
@@ -12,11 +13,13 @@ export interface QrStylingPreviewProps {
   level: "L" | "M" | "Q" | "H";
   logoUrl?: string;
   style: QrStyleConfig;
+  /** Fragments issus du catalogue `qr_shape_library` ; `null` tant que le catalogue charge. */
+  shapeInnerFragments: QrShapeInnerFragments | null;
   className?: string;
 }
 
 /**
- * Aperçu QR : rendu SVG avec formes `public/qrcode/dots/`, `corners/`, `covers/default.svg` (fichiers optionnels).
+ * Aperçu QR : rendu SVG avec formes depuis `qr_shape_library`.
  */
 export function QrStylingPreview({
   value,
@@ -26,6 +29,7 @@ export function QrStylingPreview({
   level,
   logoUrl,
   style,
+  shapeInnerFragments,
   className,
 }: QrStylingPreviewProps) {
   const hostRef = useRef<HTMLDivElement>(null);
@@ -33,28 +37,25 @@ export function QrStylingPreview({
   useEffect(() => {
     const el = hostRef.current;
     if (!el) return;
-
-    let cancelled = false;
-    void (async () => {
-      try {
-        const svg = await renderQrSvgString({
-          value,
-          size,
-          fgColor,
-          bgColor,
-          level,
-          style,
-          logoUrl,
-        });
-        if (!cancelled) el.innerHTML = svg;
-      } catch {
-        if (!cancelled) el.innerHTML = "";
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-    };
+    if (!shapeInnerFragments) {
+      el.innerHTML = "";
+      return;
+    }
+    try {
+      const svg = renderQrSvgString({
+        value,
+        size,
+        fgColor,
+        bgColor,
+        level,
+        style,
+        logoUrl,
+        shapeInnerFragments,
+      });
+      el.innerHTML = svg;
+    } catch {
+      el.innerHTML = "";
+    }
   }, [
     value,
     size,
@@ -62,16 +63,18 @@ export function QrStylingPreview({
     bgColor,
     level,
     logoUrl,
-    style.dotModuleId,
-    style.cornerOuterModuleId,
-    style.cornerInnerModuleId,
+    style.dotShapeId,
+    style.cornerOuterShapeId,
+    style.cornerInnerShapeId,
+    style.coverShapeId,
     style.frame,
     style.dotsRoundSize,
+    style.encodeTrackingLink,
     JSON.stringify(style.partColors),
+    shapeInnerFragments,
   ]);
 
-  const showChecker =
-    style.frame !== "card" && isTransparentBgColor(bgColor);
+  const showChecker = style.frame !== "card" && isTransparentBgColor(bgColor);
 
   return (
     <div
@@ -90,7 +93,7 @@ export function QrStylingPreview({
           : undefined
       }
     >
-      <div ref={hostRef} className="flex items-center justify-center [&_svg]:max-h-none [&_svg]:max-w-none" />
+      <div ref={hostRef} className="flex min-h-[120px] min-w-[120px] items-center justify-center [&_svg]:max-h-none [&_svg]:max-w-none" />
     </div>
   );
 }

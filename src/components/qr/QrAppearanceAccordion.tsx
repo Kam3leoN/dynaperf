@@ -9,7 +9,14 @@ import {
 } from "@/components/ui/accordion";
 import { cn } from "@/lib/utils";
 
-export type QrAppearancePanelId = "contenu" | "cadre" | "motif" | "coins" | "logo" | "stats";
+export type QrAppearancePanelId =
+  | "contenu"
+  | "cadre"
+  | "motif"
+  | "coins"
+  | "logo"
+  | "taille_export"
+  | "stats";
 
 type SectionDef = {
   value: QrAppearancePanelId;

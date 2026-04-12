@@ -60,6 +60,7 @@ const DashboardHub = lazy(() => import("./pages/DashboardHub"));
 const Primes = lazy(() => import("./pages/Primes"));
 const QrCodeManager = lazy(() => import("./pages/QrCodeManager"));
 const QrCodeShapes = lazy(() => import("./pages/QrCodeShapes"));
+const AdminQrShapes = lazy(() => import("./pages/admin/AdminQrShapes"));
 const QrCodeStats = lazy(() => import("./pages/QrCodeStats"));
 const Galerie = lazy(() => import("./pages/Galerie"));
 const QrScanRedirect = lazy(() => import("./pages/QrScanRedirect"));
@@ -159,6 +160,7 @@ const App = () => {
                       <Route path="expression" element={<AdminExpression />} />
                       <Route path="invitations" element={<AdminInvitations />} />
                       <Route path="branding" element={<AdminBranding />} />
+                      <Route path="qr-shapes" element={<AdminQrShapes />} />
                     </Route>
                     <Route path="/admin/audit-grid" element={<AdminRoute><AdminAuditGrid /></AdminRoute>} />
                     <Route path="/business-plan" element={<PermissionRoute permission="nav.reseau"><BusinessPlan /></PermissionRoute>} />

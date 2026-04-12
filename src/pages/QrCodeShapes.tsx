@@ -1,81 +1,51 @@
+import { Link } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { publicAssetUrl } from "@/lib/basePath";
+import { Button } from "@/components/ui/button";
+import { useAdmin } from "@/hooks/useAdmin";
+import { useAuth } from "@/hooks/useAuth";
 
 /**
- * Guide d’ajout des formes SVG (modules, repères, habillage) utilisées par le moteur de rendu QR.
+ * Rappel : les formes SVG du moteur QR sont stockées en base (`qr_shape_library`) et gérées depuis l’administration.
  */
 export default function QrCodeShapes() {
+  const { user } = useAuth();
+  const { isAdmin, isSuperAdmin } = useAdmin(user);
+
   return (
     <AppLayout>
       <section className="app-page-shell-wide min-w-0 w-full space-y-6 pb-10">
         <div>
-          <h1 className="text-2xl font-semibold">Gérer les shapes</h1>
+          <h1 className="text-2xl font-semibold">Formes du QR</h1>
           <p className="text-sm text-muted-foreground">
-            Les motifs du QR sont des fichiers SVG dans <code className="rounded bg-muted px-1 py-0.5 text-xs">public/qrcode/</code> :{" "}
-            <strong>dots</strong> (modules données), <strong>corners</strong> (repères), <strong>covers</strong> (cadre / texture de fond
-            optionnelle).
+            Les modules, repères et voiles sont fournis par la bibliothèque centrale (table{" "}
+            <span className="font-mono text-xs">qr_shape_library</span>), identique pour tous les utilisateurs de
+            l’application.
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-2">
-          <Card className="border-border/50">
-            <CardHeader>
-              <CardTitle className="text-base">Dots — modules</CardTitle>
-              <CardDescription>Fichiers numérotés <code className="text-xs">0.svg</code> … <code className="text-xs">15.svg</code></CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
-              <p>
-                Dossier : <code className="rounded bg-muted px-1 py-0.5 text-xs">public/qrcode/dots/</code>
-              </p>
-              <p>
-                Chaque fichier décrit la forme d&apos;un module (cellule). Le rendu applique vos couleurs et le dégradé éventuel sur ces
-                tracés.
-              </p>
-              <p className="text-xs">
-                Exemple d&apos;URL servie :{" "}
-                <a className="text-primary underline" href={publicAssetUrl("qrcode/dots/7.svg")} target="_blank" rel="noreferrer">
-                  dots/7.svg
-                </a>
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50">
-            <CardHeader>
-              <CardTitle className="text-base">Corners — repères</CardTitle>
-              <CardDescription>Fichiers numérotés pour le cadre extérieur des trois coins</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
-              <p>
-                Dossier : <code className="rounded bg-muted px-1 py-0.5 text-xs">public/qrcode/corners/</code>
-              </p>
-              <p>Ces SVG définissent la silhouette du grand carré de repérage (œil extérieur). Le centre de l&apos;œil réutilise souvent une forme du dossier dots.</p>
-              <p className="text-xs">
-                Exemple :{" "}
-                <a className="text-primary underline" href={publicAssetUrl("qrcode/corners/3.svg")} target="_blank" rel="noreferrer">
-                  corners/3.svg
-                </a>
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 md:col-span-2">
-            <CardHeader>
-              <CardTitle className="text-base">Covers — cadre / habillage</CardTitle>
-              <CardDescription>Texture ou voile léger sur l&apos;ensemble du code (optionnel)</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm text-muted-foreground">
-              <p>
-                Dossier : <code className="rounded bg-muted px-1 py-0.5 text-xs">public/qrcode/covers/</code> — ex.{" "}
-                <code className="text-xs">default.svg</code> pour un léger voile si le fond n&apos;est pas transparent.
-              </p>
-              <p>
-                Après ajout ou modification d&apos;un fichier, redéployez ou rechargez l&apos;app sans cache pour voir le résultat dans
-                l&apos;aperçu et l&apos;export SVG.
-              </p>
-            </CardContent>
-          </Card>
+        <div className="rounded-xl border border-border/50 bg-muted/15 px-4 py-5 text-sm text-muted-foreground">
+          {isAdmin ? (
+            <p className="mb-4">
+              {isSuperAdmin ? (
+                <>
+                  En tant que super administrateur, vous pouvez <strong className="text-foreground">créer, modifier et supprimer</strong> les
+                  formes depuis la console d’administration.
+                </>
+              ) : (
+                <>
+                  Les <strong className="text-foreground">administrateurs</strong> peuvent consulter le catalogue. Seuls les{" "}
+                  <strong className="text-foreground">super administrateurs</strong> peuvent modifier les fichiers SVG.
+                </>
+              )}
+            </p>
+          ) : (
+            <p className="mb-4">La personnalisation des formes est réservée à l’équipe d’administration.</p>
+          )}
+          {isAdmin ? (
+            <Button asChild>
+              <Link to="/admin/qr-shapes">Ouvrir la bibliothèque de formes (admin)</Link>
+            </Button>
+          ) : null}
         </div>
       </section>
     </AppLayout>

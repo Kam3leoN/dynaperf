@@ -51,6 +51,11 @@ export default function QrCodeStats() {
           <p className="text-sm text-muted-foreground">
             Totaux de scans enregistrés via les liens de suivi publics — même principe qu’un tableau de bord de librairie ou de service QR.
           </p>
+          <p className="mt-2 max-w-3xl text-sm text-muted-foreground">
+            Un scan n’est compté que si le QR ouvre le lien public <span className="font-mono">/r/…</span> de l’application (réglage « Encoder le
+            lien de suivi » dans l’éditeur). Un QR qui pointe directement vers votre site, sans passer par ce lien, ne peut pas alimenter ces
+            statistiques.
+          </p>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

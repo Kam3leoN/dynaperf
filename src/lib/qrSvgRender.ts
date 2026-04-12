@@ -1,8 +1,8 @@
 import qrcodeFactory from "qrcode-generator";
-import { publicAssetUrl } from "@/lib/basePath";
 import { isTransparentBgColor } from "@/lib/qrBgColor";
-import { resolveLogoSrc, resolveQrPartColors, type QrStyleConfig } from "@/lib/qrCodeStyle";
+import { resolveLogoSrc, resolveQrPartColors, type QrDotsGradientPreset, type QrPartColors, type QrStyleConfig } from "@/lib/qrCodeStyle";
 import { BUILTIN_CORNER_OUTER_FALLBACK, BUILTIN_DOT_FALLBACK } from "@/lib/qrSvgBuiltinShapes";
+import type { QrShapeInnerFragments } from "@/lib/qrShapeMarkup";
 
 const QR_MARGIN = 4;
 
@@ -26,15 +26,37 @@ function applyPaintToFragment(fragment: string, fill: string): string {
   return `<g fill="${repl}" stroke="none">${patched}</g>`;
 }
 
-/** Charge le contenu interne d’un SVG ou `null` si absent / vide. */
-async function tryLoadSvgInner(path: string): Promise<string | null> {
-  try {
-    const res = await fetch(publicAssetUrl(path), { cache: "force-cache" });
-    if (!res.ok) return null;
-    const inner = extractSvgInner(await res.text());
-    return inner || null;
-  } catch {
-    return null;
+function buildDotsGradientDef(
+  preset: QrDotsGradientPreset,
+  size: number,
+  gradId: string,
+  pc: QrPartColors,
+): string {
+  const c0 = escapeXmlAttr(pc.dots);
+  const c1 = escapeXmlAttr(pc.dotsGradientEnd);
+  const stops = `<stop offset="0%" stop-color="${c0}"/><stop offset="100%" stop-color="${c1}"/>`;
+
+  switch (preset) {
+    case "linear-horizontal":
+      return `<linearGradient id="${gradId}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${size}" y2="0">${stops}</linearGradient>`;
+    case "linear-vertical":
+      return `<linearGradient id="${gradId}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="0" y2="${size}">${stops}</linearGradient>`;
+    case "diagonal-right": {
+      const rad = (45 * Math.PI) / 180;
+      return `<linearGradient id="${gradId}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${size * Math.cos(rad)}" y2="${size * Math.sin(rad)}">${stops}</linearGradient>`;
+    }
+    case "diagonal-left": {
+      const rad = (135 * Math.PI) / 180;
+      return `<linearGradient id="${gradId}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${size * Math.cos(rad)}" y2="${size * Math.sin(rad)}">${stops}</linearGradient>`;
+    }
+    case "radial": {
+      const r = (size * Math.SQRT2) / 2;
+      const cx = size / 2;
+      const cy = size / 2;
+      return `<radialGradient id="${gradId}" gradientUnits="userSpaceOnUse" cx="${cx}" cy="${cy}" r="${r}" fx="${cx}" fy="${cy}">${stops}</radialGradient>`;
+    }
+    default:
+      return `<linearGradient id="${gradId}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${size}" y2="${size}">${stops}</linearGradient>`;
   }
 }
 
@@ -113,10 +135,9 @@ function inLogoSquare(
 }
 
 /**
- * Rendu SVG du QR en utilisant les formes `public/qrcode/dots/`, `corners/`, `covers/`
- * (fichiers optionnels ; secours intégré si dégradé ou fichier absent).
+ * Rendu SVG du QR à partir des fragments issus de `qr_shape_library` (voir `buildQrShapeInnerFragments`).
  */
-export async function renderQrSvgString(params: {
+export function renderQrSvgString(params: {
   value: string;
   size: number;
   fgColor: string;
@@ -124,7 +145,8 @@ export async function renderQrSvgString(params: {
   level: "L" | "M" | "Q" | "H";
   style: QrStyleConfig;
   logoUrl?: string;
-}): Promise<string> {
+  shapeInnerFragments: QrShapeInnerFragments;
+}): string {
   const qr = qrcodeFactory(0, params.level);
   qr.addData(params.value.trim() || " ");
   qr.make();
@@ -135,29 +157,15 @@ export async function renderQrSvgString(params: {
   const bg = params.bgColor;
   const bgTransparent = isTransparentBgColor(bg);
 
-  const dotId = params.style.dotModuleId;
-  const outerId = params.style.cornerOuterModuleId;
-  const innerModuleId = params.style.cornerInnerModuleId;
+  const { dotInner, cornerOuterInner, innerFinderDotInner, coverSvgFull } = params.shapeInnerFragments;
 
-  const [dotRaw, outerRaw, innerDotRaw] = await Promise.all([
-    tryLoadSvgInner(`qrcode/dots/${dotId}.svg`),
-    tryLoadSvgInner(`qrcode/corners/${outerId}.svg`),
-    tryLoadSvgInner(`qrcode/dots/${innerModuleId}.svg`),
-  ]);
-
-  const dotFrag = singleDotCellFragment(dotRaw);
-  const innerBase = scaleInnerFinderSingleModule(singleDotCellFragment(innerDotRaw));
-  const outerBase = outerRaw ? wrapCornerOuterFragment(outerRaw) : BUILTIN_CORNER_OUTER_FALLBACK;
+  const dotFrag = singleDotCellFragment(dotInner);
+  const innerBase = scaleInnerFinderSingleModule(singleDotCellFragment(innerFinderDotInner));
+  const outerBase = cornerOuterInner ? wrapCornerOuterFragment(cornerOuterInner) : BUILTIN_CORNER_OUTER_FALLBACK;
 
   let coverHref: string | null = null;
-  if (!bgTransparent) {
-    try {
-      const coverUrl = publicAssetUrl("qrcode/covers/default.svg");
-      const cr = await fetch(coverUrl, { cache: "force-cache" });
-      if (cr.ok) coverHref = coverUrl;
-    } catch {
-      coverHref = null;
-    }
+  if (!bgTransparent && coverSvgFull?.trim()) {
+    coverHref = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(coverSvgFull)}`;
   }
 
   const logoSrc = resolveLogoSrc(params.logoUrl);
@@ -170,15 +178,9 @@ export async function renderQrSvgString(params: {
   const dotsGradId = `qd_grad_${uid}`;
   const dotsMaskId = `qd_mask_${uid}`;
 
-  const gradRad = (pc.dotsGradientAngle * Math.PI) / 180;
-  const gx2 = params.size * Math.cos(gradRad);
-  const gy2 = params.size * Math.sin(gradRad);
-
   const defsParts: string[] = [];
   if (useGradient) {
-    defsParts.push(
-      `<linearGradient id="${dotsGradId}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${gx2}" y2="${gy2}"><stop offset="0%" stop-color="${escapeXmlAttr(pc.dots)}"/><stop offset="100%" stop-color="${escapeXmlAttr(pc.dotsGradientEnd)}"/></linearGradient>`,
-    );
+    defsParts.push(buildDotsGradientDef(pc.dotsGradientPreset, params.size, dotsGradId, pc));
     const maskCells: string[] = [];
     for (let r = 0; r < n; r += 1) {
       for (let c = 0; c < n; c += 1) {

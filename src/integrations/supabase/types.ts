@@ -988,6 +988,42 @@ export type Database = {
           },
         ]
       }
+      qr_shape_library: {
+        Row: {
+          id: string
+          kind: "dot" | "corner" | "cover"
+          name: string
+          svg_markup: string
+          legacy_key: string | null
+          sort_order: number
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          kind: "dot" | "corner" | "cover"
+          name: string
+          svg_markup: string
+          legacy_key?: string | null
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          kind?: "dot" | "corner" | "cover"
+          name?: string
+          svg_markup?: string
+          legacy_key?: string | null
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       qr_codes: {
         Row: {
           bg_color: string

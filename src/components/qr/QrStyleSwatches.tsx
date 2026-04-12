@@ -1,54 +1,11 @@
-import { publicAssetUrl } from "@/lib/basePath";
+import type { QrStyleConfig } from "@/lib/qrCodeStyle";
+import type { QrShapeLibraryRow } from "@/lib/qrShapeMarkup";
 import { cn } from "@/lib/utils";
-import {
-  QR_CORNER_OUTER_MODULE_IDS,
-  QR_DOT_MODULE_IDS,
-  type QrCornerOuterModuleId,
-  type QrDotModuleId,
-  type QrStyleConfig,
-} from "@/lib/qrCodeStyle";
 
-/** Miniature alignée sur `public/qrcode/dots/<id>.svg` (même rendu que l’aperçu QR). */
-function DotShapeThumb({ id }: { id: QrDotModuleId }) {
-  return (
-    <img
-      src={publicAssetUrl(`qrcode/dots/${id}.svg`)}
-      alt=""
-      className="h-8 w-8 object-contain"
-      loading="lazy"
-      draggable={false}
-    />
-  );
+function ShapeThumb({ svgMarkup }: { svgMarkup: string }) {
+  const src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgMarkup)}`;
+  return <img src={src} alt="" className="h-8 w-8 object-contain" loading="lazy" draggable={false} />;
 }
-
-/** Miniature alignée sur `public/qrcode/corners/<id>.svg`. */
-function CornerOuterThumb({ id }: { id: QrCornerOuterModuleId }) {
-  return (
-    <img
-      src={publicAssetUrl(`qrcode/corners/${id}.svg`)}
-      alt=""
-      className="h-8 w-8 object-contain"
-      loading="lazy"
-      draggable={false}
-    />
-  );
-}
-
-const DOT_MODULE_OPTIONS: { value: QrDotModuleId; label: string }[] = QR_DOT_MODULE_IDS.map((id) => ({
-  value: id,
-  label: `Module ${id}`,
-}));
-
-const OUTER_MODULE_OPTIONS: { value: QrCornerOuterModuleId; label: string }[] =
-  QR_CORNER_OUTER_MODULE_IDS.map((id) => ({
-    value: id,
-    label: `Repère ${id}`,
-  }));
-
-const INNER_MODULE_OPTIONS: { value: QrDotModuleId; label: string }[] = QR_DOT_MODULE_IDS.map((id) => ({
-  value: id,
-  label: `Centre ${id}`,
-}));
 
 function SwatchButton({
   selected,
@@ -76,7 +33,7 @@ function SwatchButton({
   );
 }
 
-export type QrStylePickerSection = "modules" | "outer" | "inner";
+export type QrStylePickerSection = "modules" | "outer" | "inner" | "cover";
 
 const DEFAULT_SECTIONS: QrStylePickerSection[] = ["modules", "outer", "inner"];
 
@@ -84,11 +41,16 @@ export function QrStyleVisualPickers({
   style,
   onChange,
   sections = DEFAULT_SECTIONS,
+  dotShapes,
+  cornerShapes,
+  coverShapes,
 }: {
   style: QrStyleConfig;
   onChange: (next: QrStyleConfig) => void;
-  /** Sous-ensembles affichés (par défaut les trois). */
   sections?: QrStylePickerSection[];
+  dotShapes: QrShapeLibraryRow[];
+  cornerShapes: QrShapeLibraryRow[];
+  coverShapes: QrShapeLibraryRow[];
 }) {
   const show = (s: QrStylePickerSection) => sections.includes(s);
 
@@ -98,14 +60,14 @@ export function QrStyleVisualPickers({
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Style de motif (modules)</p>
           <div className="flex flex-wrap gap-2">
-            {DOT_MODULE_OPTIONS.map((o) => (
+            {dotShapes.map((o) => (
               <SwatchButton
-                key={o.value}
-                label={o.label}
-                selected={style.dotModuleId === o.value}
-                onClick={() => onChange({ ...style, dotModuleId: o.value })}
+                key={o.id}
+                label={o.name}
+                selected={style.dotShapeId === o.id}
+                onClick={() => onChange({ ...style, dotShapeId: o.id })}
               >
-                <DotShapeThumb id={o.value} />
+                <ShapeThumb svgMarkup={o.svg_markup} />
               </SwatchButton>
             ))}
           </div>
@@ -115,14 +77,14 @@ export function QrStyleVisualPickers({
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Bordure autour des repères</p>
           <div className="flex flex-wrap gap-2">
-            {OUTER_MODULE_OPTIONS.map((o) => (
+            {cornerShapes.map((o) => (
               <SwatchButton
-                key={o.value}
-                label={o.label}
-                selected={style.cornerOuterModuleId === o.value}
-                onClick={() => onChange({ ...style, cornerOuterModuleId: o.value })}
+                key={o.id}
+                label={o.name}
+                selected={style.cornerOuterShapeId === o.id}
+                onClick={() => onChange({ ...style, cornerOuterShapeId: o.id })}
               >
-                <CornerOuterThumb id={o.value} />
+                <ShapeThumb svgMarkup={o.svg_markup} />
               </SwatchButton>
             ))}
           </div>
@@ -132,14 +94,38 @@ export function QrStyleVisualPickers({
         <div>
           <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Centre des repères</p>
           <div className="flex flex-wrap gap-2">
-            {INNER_MODULE_OPTIONS.map((o) => (
+            {dotShapes.map((o) => (
               <SwatchButton
-                key={o.value}
-                label={o.label}
-                selected={style.cornerInnerModuleId === o.value}
-                onClick={() => onChange({ ...style, cornerInnerModuleId: o.value })}
+                key={o.id}
+                label={o.name}
+                selected={style.cornerInnerShapeId === o.id}
+                onClick={() => onChange({ ...style, cornerInnerShapeId: o.id })}
               >
-                <DotShapeThumb id={o.value} />
+                <ShapeThumb svgMarkup={o.svg_markup} />
+              </SwatchButton>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {show("cover") ? (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Voile / texture (fond non transparent)</p>
+          <div className="flex flex-wrap gap-2">
+            <SwatchButton
+              label="Aucun voile"
+              selected={style.coverShapeId === null}
+              onClick={() => onChange({ ...style, coverShapeId: null })}
+            >
+              <span className="text-[10px] font-medium text-muted-foreground">∅</span>
+            </SwatchButton>
+            {coverShapes.map((o) => (
+              <SwatchButton
+                key={o.id}
+                label={o.name}
+                selected={style.coverShapeId === o.id}
+                onClick={() => onChange({ ...style, coverShapeId: o.id })}
+              >
+                <ShapeThumb svgMarkup={o.svg_markup} />
               </SwatchButton>
             ))}
           </div>

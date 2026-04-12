@@ -5,11 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { QrFgColorSwatches } from "@/components/qr/QrFgColorSwatches";
-import { resolveQrPartColors, type QrPartColors, type QrStyleConfig } from "@/lib/qrCodeStyle";
+import {
+  QR_DOTS_GRADIENT_PRESETS,
+  QR_DOTS_GRADIENT_LABELS,
+  resolveQrPartColors,
+  type QrDotsGradientPreset,
+  type QrPartColors,
+  type QrStyleConfig,
+} from "@/lib/qrCodeStyle";
 import { cn } from "@/lib/utils";
-
-const GRADIENT_ANGLE_PRESETS = [0, 45, 90, 135, 180, 270] as const;
 
 /** `dots` : modules uniquement · `corners` : repères ext. + centre œil · `all` : les trois zones (onglets). */
 export type QrPartColorScope = "dots" | "corners" | "all";
@@ -157,46 +163,28 @@ export function QrPartColorControls({ fgFallback, qrStyle, onUpdate, scope = "al
               onCheckedChange={(g) => patch({ dotsFill: g ? "gradient" : "solid" })}
             />
             <Label htmlFor="qr-dots-gradient" className="cursor-pointer text-sm font-normal leading-snug">
-              Dégradé linéaire sur les modules
+              Dégradé sur les modules
             </Label>
           </div>
           {pc.dotsFill === "gradient" ? (
             <div className="space-y-3 border-t border-border/30 pt-3">
               <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground">Angle du dégradé (comme qr-code-styling)</Label>
-                <div className="flex flex-wrap gap-2">
-                  {GRADIENT_ANGLE_PRESETS.map((deg) => (
-                    <Button
-                      key={deg}
-                      type="button"
-                      size="sm"
-                      variant={pc.dotsGradientAngle === deg ? "secondary" : "outline"}
-                      className="h-8 min-w-[2.75rem] px-2 text-xs"
-                      onClick={() => patch({ dotsGradientAngle: deg })}
-                    >
-                      {deg}°
-                    </Button>
-                  ))}
-                </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Label htmlFor="qr-dots-grad-angle" className="text-xs text-muted-foreground">
-                    Valeur (0–359)
-                  </Label>
-                  <Input
-                    id="qr-dots-grad-angle"
-                    type="number"
-                    min={0}
-                    max={359}
-                    step={1}
-                    className="h-9 w-24"
-                    value={Math.round(pc.dotsGradientAngle)}
-                    onChange={(e) => {
-                      const n = Number(e.target.value);
-                      if (!Number.isFinite(n)) return;
-                      patch({ dotsGradientAngle: ((n % 360) + 360) % 360 });
-                    }}
-                  />
-                </div>
+                <Label className="text-xs text-muted-foreground">Type de dégradé</Label>
+                <Select
+                  value={pc.dotsGradientPreset}
+                  onValueChange={(v) => patch({ dotsGradientPreset: v as QrDotsGradientPreset })}
+                >
+                  <SelectTrigger id="qr-dots-grad-preset" className="h-10 w-full max-w-sm">
+                    <SelectValue placeholder="Choisir…" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {QR_DOTS_GRADIENT_PRESETS.map((preset) => (
+                      <SelectItem key={preset} value={preset}>
+                        {QR_DOTS_GRADIENT_LABELS[preset]}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label className="text-xs text-muted-foreground">Seconde couleur du dégradé</Label>
