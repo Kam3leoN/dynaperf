@@ -1,9 +1,9 @@
 import qrcodeFactory from "qrcode-generator";
 import { publicAssetUrl } from "@/lib/basePath";
 import { isTransparentBgColor } from "@/lib/qrBgColor";
-import { resolveLogoSrc, type QrStyleConfig } from "@/lib/qrCodeStyle";
-import { QR_CORNER_OUTER_ASSET_ID, QR_DOT_ASSET_ID } from "@/lib/qrShapeAssetIds";
-import { BUILTIN_CORNER_INNER, BUILTIN_CORNER_OUTER, BUILTIN_DOT_SVG } from "@/lib/qrSvgBuiltinShapes";
+import { resolveLogoSrc, resolveQrPartColors, type QrStyleConfig } from "@/lib/qrCodeStyle";
+import { QR_CORNER_OUTER_ASSET_ID } from "@/lib/qrShapeAssetIds";
+import { BUILTIN_CORNER_INNER, BUILTIN_CORNER_OUTER, BUILTIN_DOT_FALLBACK } from "@/lib/qrSvgBuiltinShapes";
 
 const QR_MARGIN = 4;
 
@@ -16,9 +16,10 @@ function extractSvgInner(svg: string): string {
   return m ? m[1].trim() : "";
 }
 
-/** Remplace currentColor par la couleur d’avant-plan (les SVG dans public/qrcode doivent utiliser currentColor). */
-function applyFgToSvgFragment(fragment: string, fgHex: string): string {
-  return fragment.replace(/currentColor/gi, escapeXmlAttr(fgHex));
+/** Remplace currentColor par une couleur hex échappée ou par une référence `url(#id)` pour dégradé. */
+function applyFillToFragment(fragment: string, fill: string): string {
+  const repl = fill.startsWith("url(") ? fill : escapeXmlAttr(fill);
+  return fragment.replace(/currentColor/gi, repl);
 }
 
 async function loadSvgFragment(path: string, fallback: string): Promise<string> {
@@ -91,11 +92,11 @@ export async function renderQrSvgString(params: {
   const n = qr.getModuleCount();
   const margin = QR_MARGIN;
   const cell = params.size / (n + 2 * margin);
-  const fg = params.fgColor;
+  const pc = resolveQrPartColors(params.fgColor, params.style);
   const bg = params.bgColor;
   const bgTransparent = isTransparentBgColor(bg);
 
-  const dotId = QR_DOT_ASSET_ID[params.style.dotsType];
+  const dotId = params.style.dotModuleId;
   const outerId = QR_CORNER_OUTER_ASSET_ID[params.style.cornersSquareType];
 
   const [dotRaw, outerRaw, innerFrag] = await Promise.all([
@@ -107,9 +108,7 @@ export async function renderQrSvgString(params: {
     ),
   ]);
 
-  const dotFrag = dotRaw
-    ? wrapDotModuleFragment(dotRaw)
-    : BUILTIN_DOT_SVG[params.style.dotsType];
+  const dotFrag = dotRaw ? wrapDotModuleFragment(dotRaw) : BUILTIN_DOT_FALLBACK;
   const outerFrag = outerRaw
     ? wrapCornerOuterFragment(outerRaw)
     : BUILTIN_CORNER_OUTER[params.style.cornersSquareType];
@@ -125,9 +124,21 @@ export async function renderQrSvgString(params: {
     }
   }
 
-  const dotUse = applyFgToSvgFragment(dotFrag, fg);
-  const outerUse = applyFgToSvgFragment(outerFrag, fg);
-  const innerUse = applyFgToSvgFragment(innerFrag, fg);
+  let dotsFillAttr: string;
+  const defsGrad: string[] = [];
+  if (pc.dotsFill === "gradient") {
+    const gradId = `qd_${Math.random().toString(36).slice(2, 11)}`;
+    defsGrad.push(
+      `<linearGradient id="${gradId}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${params.size}" y2="${params.size}"><stop offset="0%" stop-color="${escapeXmlAttr(pc.dots)}"/><stop offset="100%" stop-color="${escapeXmlAttr(pc.dotsGradientEnd)}"/></linearGradient>`,
+    );
+    dotsFillAttr = `url(#${gradId})`;
+  } else {
+    dotsFillAttr = pc.dots;
+  }
+
+  const dotUse = applyFillToFragment(dotFrag, dotsFillAttr);
+  const outerUse = applyFillToFragment(outerFrag, pc.outer);
+  const innerUse = applyFillToFragment(innerFrag, pc.inner);
 
   const logoSrc = resolveLogoSrc(params.logoUrl);
   const logoSide = Math.max(3, Math.floor(n * 0.38));
@@ -137,6 +148,9 @@ export async function renderQrSvgString(params: {
   parts.push(
     `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${params.size}" height="${params.size}" viewBox="0 0 ${params.size} ${params.size}" role="img" aria-label="QR code">`,
   );
+  if (defsGrad.length > 0) {
+    parts.push(`<defs>${defsGrad.join("")}</defs>`);
+  }
   if (!bgTransparent) {
     parts.push(`<rect width="100%" height="100%" fill="${escapeXmlAttr(bg)}"/>`);
   }

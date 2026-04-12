@@ -1,19 +1,7 @@
-import type { CornerDotType, CornerSquareType, DotType } from "qr-code-styling";
+import type { CornerDotType, CornerSquareType } from "qr-code-styling";
 
-/**
- * Formes de secours (inline SVG) si le fichier sous `public/qrcode/` est absent.
- * Les fichiers remplacent ces formes lorsqu’ils sont présents (même noms que les clés de style).
- */
-export const BUILTIN_DOT_SVG: Record<DotType, string> = {
-  square: '<rect x="0" y="0" width="1" height="1" fill="currentColor"/>',
-  dots: '<circle cx="0.5" cy="0.5" r="0.42" fill="currentColor"/>',
-  rounded: '<rect x="0.05" y="0.05" width="0.9" height="0.9" rx="0.2" fill="currentColor"/>',
-  "extra-rounded": '<rect x="0.05" y="0.05" width="0.9" height="0.9" rx="0.38" fill="currentColor"/>',
-  classy:
-    '<rect x="0.08" y="0.08" width="0.84" height="0.84" rx="0.12" fill="currentColor" opacity="0.92"/>',
-  "classy-rounded":
-    '<rect x="0.08" y="0.08" width="0.84" height="0.84" rx="0.28" fill="currentColor" opacity="0.92"/>',
-};
+/** Secours si `public/qrcode/dots/<id>.svg` est introuvable (viewBox module 0..1). */
+export const BUILTIN_DOT_FALLBACK = '<rect x="0" y="0" width="1" height="1" fill="currentColor"/>';
 
 /** Repère 7×7 (coins) — cadre extérieur */
 export const BUILTIN_CORNER_OUTER: Record<CornerSquareType, string> = {

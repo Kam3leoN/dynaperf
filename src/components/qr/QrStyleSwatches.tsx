@@ -1,12 +1,11 @@
-import type { CornerDotType, CornerSquareType, DotType } from "qr-code-styling";
+import type { CornerDotType, CornerSquareType } from "qr-code-styling";
 import { publicAssetUrl } from "@/lib/basePath";
-import { QR_CORNER_OUTER_ASSET_ID, QR_DOT_ASSET_ID } from "@/lib/qrShapeAssetIds";
+import { QR_CORNER_OUTER_ASSET_ID } from "@/lib/qrShapeAssetIds";
 import { cn } from "@/lib/utils";
-import type { QrStyleConfig } from "@/lib/qrCodeStyle";
+import { QR_DOT_MODULE_IDS, type QrDotModuleId, type QrStyleConfig } from "@/lib/qrCodeStyle";
 
 /** Miniature alignée sur `public/qrcode/dots/<id>.svg` (même rendu que l’aperçu QR). */
-function DotShapeThumb({ type }: { type: DotType }) {
-  const id = QR_DOT_ASSET_ID[type];
+function DotShapeThumb({ id }: { id: QrDotModuleId }) {
   return (
     <img
       src={publicAssetUrl(`qrcode/dots/${id}.svg`)}
@@ -57,14 +56,10 @@ function CornerInnerThumb({ type }: { type: CornerDotType }) {
   );
 }
 
-const DOT_OPTIONS: { value: DotType; label: string }[] = [
-  { value: "square", label: "Carrés" },
-  { value: "dots", label: "Points" },
-  { value: "rounded", label: "Arrondis" },
-  { value: "extra-rounded", label: "Très arrondis" },
-  { value: "classy", label: "Élégant" },
-  { value: "classy-rounded", label: "Élégant rond" },
-];
+const DOT_MODULE_OPTIONS: { value: QrDotModuleId; label: string }[] = QR_DOT_MODULE_IDS.map((id) => ({
+  value: id,
+  label: `Module ${id}`,
+}));
 
 const OUTER_OPTIONS: { value: CornerSquareType; label: string }[] = [
   { value: "square", label: "Carré" },
@@ -124,14 +119,14 @@ export function QrStyleVisualPickers({
       <div>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Modules (données)</p>
         <div className="flex flex-wrap gap-2">
-          {DOT_OPTIONS.map((o) => (
+          {DOT_MODULE_OPTIONS.map((o) => (
             <SwatchButton
               key={o.value}
               label={o.label}
-              selected={style.dotsType === o.value}
-              onClick={() => onChange({ ...style, dotsType: o.value })}
+              selected={style.dotModuleId === o.value}
+              onClick={() => onChange({ ...style, dotModuleId: o.value })}
             >
-              <DotShapeThumb type={o.value} />
+              <DotShapeThumb id={o.value} />
             </SwatchButton>
           ))}
         </div>

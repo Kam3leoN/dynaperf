@@ -27,9 +27,9 @@ import { faPaypal, faStripe, faWhatsapp } from "@fortawesome/free-brands-svg-ico
 import { toast } from "sonner";
 import defaultLogoDynaLipsRed from "@/assets/logo-dynalips-red.svg";
 import { QrStylingPreview } from "@/components/qr/QrStylingPreview";
-import { QrFgColorSwatches } from "@/components/qr/QrFgColorSwatches";
+import { QrPartColorControls } from "@/components/qr/QrPartColorControls";
 import { QrStyleVisualPickers } from "@/components/qr/QrStyleSwatches";
-import { DEFAULT_QR_STYLE, mergeQrStyle, type QrStyleConfig } from "@/lib/qrCodeStyle";
+import { DEFAULT_QR_STYLE, mergeQrStyle, type QrStyleConfig, type QrPartColors } from "@/lib/qrCodeStyle";
 import { isTransparentBgColor } from "@/lib/qrBgColor";
 import { composeQrPayload, type QrComposeFields, type QrContentKind } from "@/lib/qrContentCompose";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
@@ -87,17 +87,28 @@ const CONTENT_PRESETS: PresetCard[] = [
   { kind: "custom", title: "Libre", description: "Coller une chaîne", icon: faQrcode, accent: "text-slate-600" },
 ];
 
+function defaultPartColors(fg: string): QrPartColors {
+  return {
+    dots: fg,
+    outer: fg,
+    inner: fg,
+    dotsFill: "solid",
+    dotsGradientEnd: "#2196f3",
+  };
+}
+
 function makeEmpty(): QrRecord {
+  const fg = "#111827";
   return {
     id: crypto.randomUUID(),
     name: "",
     value: "https://",
     size: 512,
-    fgColor: "#111827",
+    fgColor: fg,
     bgColor: "#ffffff",
     level: "H",
     logoUrl: defaultLogoDynaLipsRed,
-    qrStyle: { ...DEFAULT_QR_STYLE },
+    qrStyle: { ...DEFAULT_QR_STYLE, partColors: defaultPartColors(fg) },
   };
 }
 
@@ -563,16 +574,21 @@ export default function QrCodeManager() {
 
             <div className="space-y-3">
               <div className="space-y-2">
-                <Label>Couleur modules</Label>
-                <QrFgColorSwatches
-                  value={draft.fgColor}
-                  onChange={(hex) => setDraft((p) => ({ ...p, fgColor: hex }))}
-                />
-                <Input
-                  type="color"
-                  className="h-10 max-w-[120px] cursor-pointer"
-                  value={draft.fgColor}
-                  onChange={(e) => setDraft((p) => ({ ...p, fgColor: e.target.value }))}
+                <Label>Couleurs du QR</Label>
+                <p className="text-xs text-muted-foreground">
+                  Pastilles puis sélecteur fin pour chaque partie. Les points peuvent être en dégradé (diagonal sur
+                  l’ensemble du code). La colonne « couleur principale » en base suit la couleur des points.
+                </p>
+                <QrPartColorControls
+                  fgFallback={draft.fgColor}
+                  qrStyle={draft.qrStyle}
+                  onUpdate={(merged) =>
+                    setDraft((d) => ({
+                      ...d,
+                      fgColor: merged.dots,
+                      qrStyle: { ...d.qrStyle, partColors: merged },
+                    }))
+                  }
                 />
               </div>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">

@@ -62,10 +62,11 @@ export function QrStylingPreview({
     bgColor,
     level,
     logoUrl,
-    style.dotsType,
+    style.dotModuleId,
     style.cornersSquareType,
     style.cornersDotType,
     style.frame,
+    JSON.stringify(style.partColors),
   ]);
 
   const showChecker =

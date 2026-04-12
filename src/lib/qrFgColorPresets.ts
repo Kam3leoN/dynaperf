@@ -1,17 +1,28 @@
 /**
- * Première ligne de couleurs « modules » (aperçu type M3) — clic pour appliquer.
- * Le premier jeton est la marque #ee4540.
+ * Palette Material-like pour les modules / parties du QR (pastilles + pickers).
+ * Ordre aligné sur la demande produit.
  */
 export const QR_FG_COLOR_PRESETS: readonly string[] = [
-  "#ee4540",
-  "#26a69a",
-  "#66bb6a",
-  "#42a5f5",
-  "#ab47bc",
-  "#ec407a",
-  "#ffca28",
-  "#ff7043",
-  "#90a4ae",
+  "#f44336",
+  "#e91e63",
+  "#9c27b0",
+  "#673ab7",
+  "#3f51b5",
+  "#2196f3",
+  "#03a9f4",
+  "#00bcd4",
+  "#009688",
+  "#4caf50",
+  "#8bc34a",
+  "#cddc39",
+  "#ffeb3b",
+  "#ffc107",
+  "#ff9800",
+  "#ff5722",
+  "#795548",
+  "#9e9e9e",
   "#607d8b",
   "#455a64",
+  "#000000",
+  "#ffffff",
 ] as const;
