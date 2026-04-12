@@ -33,8 +33,11 @@ openssl rand -hex 32
 
 1. Dépôt GitHub → **Settings** → **Secrets and variables** → **Actions**
 2. **New repository secret** : `BACKUP_CRON_SECRET` = **exactement la même valeur** qu’en (A).
+3. **New repository secret** : `SUPABASE_ANON_KEY` = la clé **anon** du projet (Dashboard → **Settings** → **API** → *anon public*) — même valeur que dans le `.env` de l’app.
 
-Les workflows `.github/workflows/supabase-backups-cron.yml` et les fonctions `backup-all` / `sql-backup` utilisent ce secret pour l’en-tête `Authorization: Bearer …` sans JWT utilisateur.
+Sans ces deux secrets, le workflow CRON échoue immédiatement (les logs affichent des variables vides si elles ne sont pas configurées sur le dépôt).
+
+Les workflows `.github/workflows/supabase-backups-cron.yml` et les fonctions `backup-all` / `sql-backup` utilisent `BACKUP_CRON_SECRET` pour l’en-tête `Authorization: Bearer …` sans JWT utilisateur.
 
 ### C) Variables déjà présentes sur Edge
 

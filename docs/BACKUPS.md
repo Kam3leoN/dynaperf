@@ -44,3 +44,13 @@ Planification quotidienne : le workflow appelle `backup-all` puis `sql-backup`.
 L’URL du projet n’a plus besoin d’être dupliquée en secret : elle suit le `project_id` versionné dans le dépôt.
 
 **Secret `BACKUP_CRON_SECRET` :** à créer à la fois dans **Supabase → Edge Functions → Secrets** et dans **GitHub → Actions secrets** (même valeur). Voir [`docs/SUPABASE_SECURITY.md`](SUPABASE_SECURITY.md).
+
+### Dépannage « Secrets manquants » sur GitHub Actions
+
+1. Les secrets doivent être créés sur **le dépôt qui exécute le workflow** (branche par défaut, ex. `main`), pas seulement en local : **Settings → Secrets and variables → Actions → New repository secret**.
+2. Noms **exactes** : `SUPABASE_ANON_KEY` et `BACKUP_CRON_SECRET` (casse, pas d’espace).
+3. Un fork sans secrets échouera tant que vous n’y ajoutez pas vos propres valeurs (ou vous utilisez des [environments](https://docs.github.com/en/actions/deployment/targeting-different-environments/using-environments-for-deployment) avec secrets d’environnement).
+4. Après ajout des secrets, relancez manuellement le workflow (**Actions → Supabase backups (CRON) → Run workflow**).
+5. **Secrets d’organisation** : si vous utilisez *Organization secrets*, le dépôt doit être **explicitement autorisé** (liste des repos autorisés). Sinon les variables arrivent vides dans le job.
+6. **Même projet partout** : la clé `SUPABASE_ANON_KEY` est liée au *project ref* dans le JWT. Elle doit être celle du **même** projet que `project_id` dans `supabase/config.toml` (ou que l’URL si vous surchargez `SUPABASE_URL`). Sinon le workflow échoue avec une erreur « ref incohérent ».
+7. **Collage** : un retour à la ligne en trop dans un secret peut casser les en-têtes HTTP ; le workflow **normalise** (trim) les valeurs.

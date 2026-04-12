@@ -1,23 +1,23 @@
 # Déclenche quotidiennement les Edge Functions de sauvegarde (JSON + dump SQL).
 #
-# Secrets GitHub (Settings → Secrets and variables → Actions) — 2 obligatoires :
-#   SUPABASE_ANON_KEY   — clé anon (header apikey), même valeur que côté app / .env
-#   BACKUP_CRON_SECRET  — même valeur que le secret Edge BACKUP_CRON_SECRET (Supabase)
+# Secrets GitHub OBLIGATOIRES (Settings → Secrets and variables → Actions) :
+#   SUPABASE_ANON_KEY   — clé anon (header apikey)
+#   BACKUP_CRON_SECRET  — identique au secret Edge BACKUP_CRON_SECRET (Supabase)
 #
-# SUPABASE_URL n’est plus requis : dérivée de `project_id` dans supabase/config.toml
-# (https://<project_id>.supabase.co). Optionnel : secret SUPABASE_URL pour surcharger
-# (domaine personnalisé ou autre URL de projet).
+# Optionnel : SUPABASE_URL (surcharge). Sinon : https://<project_id>.supabase.co
+# depuis supabase/config.toml (project_id versionné).
 #
-# Sur Supabase : déployer backup-all et sql-backup, définir BACKUP_CRON_SECRET,
-# SUPABASE_DB_URL (sql-backup), et config.toml verify_jwt = false pour ces fonctions.
+# Sur Supabase : déployer backup-all et sql-backup, secrets Edge, verify_jwt = false.
 
 name: Supabase backups (CRON)
 
 on:
   schedule:
-    # 04:15 UTC tous les jours — ajuster si besoin
     - cron: "15 4 * * *"
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
   trigger-backups:
@@ -25,69 +25,88 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Définir SUPABASE_URL (config ou secret optionnel)
+      - name: Appeler backup-all puis sql-backup
         env:
-          OVERRIDE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_URL_OVERRIDE: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          BACKUP_CRON_SECRET: ${{ secrets.BACKUP_CRON_SECRET }}
+        shell: bash
         run: |
           set -euo pipefail
-          if [ -n "${OVERRIDE_URL:-}" ]; then
-            base="$(printf '%s' "$OVERRIDE_URL" | sed 's|/*$||')"
-            echo "SUPABASE_URL=$base" >> "$GITHUB_ENV"
+
+          # GitHub peut conserver un saut de ligne final au collage → curl envoie un header invalide
+          trim() { printf '%s' "$1" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'; }
+          SUPABASE_ANON_KEY="$(trim "$SUPABASE_ANON_KEY")"
+          BACKUP_CRON_SECRET="$(trim "$BACKUP_CRON_SECRET")"
+          SUPABASE_URL_OVERRIDE="$(trim "${SUPABASE_URL_OVERRIDE:-}")"
+
+          if [ -z "$SUPABASE_ANON_KEY" ] || [ -z "$BACKUP_CRON_SECRET" ]; then
+            echo "::error title=Secrets Actions manquants::Variables vides côté Actions. Vérifiez : (1) secrets bien sur CE dépôt (Repository secrets), pas seulement Organization sans accès au repo ; (2) pas de faute dans les noms SUPABASE_ANON_KEY et BACKUP_CRON_SECRET ; (3) pour les secrets d’organisation : « Repository access » inclut ce dépôt. Voir docs/BACKUPS.md"
+            exit 1
+          fi
+
+          echo "::notice::Clés chargées (longueurs) : anon=${#SUPABASE_ANON_KEY} chars, cron_secret=${#BACKUP_CRON_SECRET} chars."
+
+          if [ -n "$SUPABASE_URL_OVERRIDE" ]; then
+            BASE_URL="$(printf '%s' "$SUPABASE_URL_OVERRIDE" | sed 's|/*$||')"
             echo "Using SUPABASE_URL from repository secret (override)."
-            exit 0
-          fi
-          if [ ! -f supabase/config.toml ]; then
-            echo "::error title=config manquant::Fichier supabase/config.toml introuvable après checkout."
-            exit 1
-          fi
-          project_id="$(grep -E '^project_id[[:space:]]*=' supabase/config.toml | head -1 | sed -E 's/^project_id[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/')"
-          if [ -z "$project_id" ]; then
-            echo "::error title=project_id introuvable::Impossible de lire project_id dans supabase/config.toml."
-            exit 1
-          fi
-          echo "SUPABASE_URL=https://${project_id}.supabase.co" >> "$GITHUB_ENV"
-          echo "SUPABASE_URL dérivée du project_id : ${project_id}"
-
-      - name: backup-all (JSON)
-        env:
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          BACKUP_CRON_SECRET: ${{ secrets.BACKUP_CRON_SECRET }}
-        run: |
-          set -euo pipefail
-          missing=""
-          for v in SUPABASE_URL SUPABASE_ANON_KEY BACKUP_CRON_SECRET; do
-            if [ -z "${!v:-}" ]; then
-              missing="${missing} ${v}"
+          else
+            if [ ! -f supabase/config.toml ]; then
+              echo "::error title=config manquant::supabase/config.toml introuvable après checkout."
+              exit 1
             fi
-          done
-          if [ -n "$missing" ]; then
-            echo "::error title=Secrets manquants::Configurez les secrets Actions : SUPABASE_ANON_KEY et BACKUP_CRON_SECRET. SUPABASE_URL est définie automatiquement depuis supabase/config.toml (project_id)."
-            exit 1
-          fi
-          BASE_URL="$(printf '%s' "$SUPABASE_URL" | sed 's|/*$||')"
-          curl -sfS -X POST \
-            -H "Authorization: Bearer ${BACKUP_CRON_SECRET}" \
-            -H "apikey: ${SUPABASE_ANON_KEY}" \
-            "${BASE_URL}/functions/v1/backup-all"
-
-      - name: sql-backup (SQL)
-        env:
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-          BACKUP_CRON_SECRET: ${{ secrets.BACKUP_CRON_SECRET }}
-        run: |
-          set -euo pipefail
-          missing=""
-          for v in SUPABASE_URL SUPABASE_ANON_KEY BACKUP_CRON_SECRET; do
-            if [ -z "${!v:-}" ]; then
-              missing="${missing} ${v}"
+            project_id="$(
+              grep -E '^[[:space:]]*project_id[[:space:]]*=' supabase/config.toml \
+                | head -1 \
+                | sed -E 's/^[[:space:]]*project_id[[:space:]]*=[[:space:]]*"([^"]+)".*/\1/'
+            )"
+            if [ -z "$project_id" ]; then
+              echo "::error title=project_id introuvable::Vérifiez project_id dans supabase/config.toml."
+              exit 1
             fi
-          done
-          if [ -n "$missing" ]; then
-            echo "::error title=Secrets manquants::Configurez SUPABASE_ANON_KEY et BACKUP_CRON_SECRET dans les secrets Actions du dépôt."
-            exit 1
+            BASE_URL="https://${project_id}.supabase.co"
+            echo "SUPABASE_URL=https://${project_id}.supabase.co (depuis config.toml)"
           fi
-          BASE_URL="$(printf '%s' "$SUPABASE_URL" | sed 's|/*$||')"
-          curl -sfS -X POST \
-            -H "Authorization: Bearer ${BACKUP_CRON_SECRET}" \
-            -H "apikey: ${SUPABASE_ANON_KEY}" \
-            "${BASE_URL}/functions/v1/sql-backup"
+
+          # Le JWT anon contient "ref" = project ref ; doit correspondre à l’hôte *.supabase.co
+          REF_FROM_JWT="$(python3 - <<'PY'
+          import os, base64, json
+          k = os.environ.get("SUPABASE_ANON_KEY", "")
+          try:
+              p = k.split(".")[1]
+              p += "=" * (-len(p) % 4)
+              d = json.loads(base64.urlsafe_b64decode(p.encode("ascii")))
+              print(d.get("ref") or "")
+          except Exception:
+              print("")
+          PY
+          )"
+          if echo "$BASE_URL" | grep -qE '\.supabase\.co$'; then
+            HOST_REF="$(printf '%s' "$BASE_URL" | sed -E 's|^https?://||;s|\.supabase\.co/?$||')"
+            if [ -n "$REF_FROM_JWT" ] && [ "$REF_FROM_JWT" != "$HOST_REF" ]; then
+              echo "::error title=Clé / projet incohérents::Le JWT anon indique ref=\"${REF_FROM_JWT}\" mais l’URL appelle \"${HOST_REF}\". Utilisez la clé anon du même projet que l’URL, ou corrigez SUPABASE_URL / project_id dans config.toml."
+              exit 1
+            fi
+          fi
+
+          echo "::notice::Sauvegardes → ${BASE_URL}/functions/v1/…"
+
+          curl_post() {
+            local path="$1"
+            local out code
+            out="$(mktemp)"
+            code="$(curl -sS -o "$out" -w "%{http_code}" -X POST \
+              -H "Authorization: Bearer ${BACKUP_CRON_SECRET}" \
+              -H "apikey: ${SUPABASE_ANON_KEY}" \
+              "${BASE_URL}/functions/v1/${path}")"
+            if [[ ! "$code" =~ ^2[0-9]{2}$ ]]; then
+              echo "::error title=${path} HTTP ${code}::Réponse : $(head -c 2000 "$out" | tr '\n' ' ')"
+              exit 1
+            fi
+            rm -f "$out"
+          }
+
+          curl_post "backup-all"
+          curl_post "sql-backup"
+
+          echo "OK — backup-all et sql-backup ont répondu 2xx."
