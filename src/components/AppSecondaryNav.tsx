@@ -80,6 +80,7 @@ export function AppSecondaryNavPanel({
                 <NavLink
                   key={item.to}
                   to={item.to}
+                  end
                   className="group relative flex items-center gap-3 overflow-hidden rounded-full px-3 py-2.5 text-sm outline-none transition-[color] duration-200 ease-[cubic-bezier(0.2,0,0,1)] focus-visible:ring-2 focus-visible:ring-primary/35"
                 >
                   {({ isActive }) => (
@@ -87,7 +88,7 @@ export function AppSecondaryNavPanel({
                       {isActive ? (
                         <motion.span
                           layoutId={SECONDARY_ACTIVE_LAYOUT_ID}
-                          className="absolute inset-0 z-0 rounded-full bg-primary/12 shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.12)]"
+                          className="absolute inset-0 z-0 rounded-full bg-primary/12 transition-colors duration-200 ease-[cubic-bezier(0.2,0,0,1)] group-hover:bg-primary/18"
                           transition={{ duration: 0.36, ease: M3_EASE }}
                         />
                       ) : (
