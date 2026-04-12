@@ -4,6 +4,7 @@
  */
 
 import { normalizeClubNameForImport } from "@/lib/clubDisplayName";
+import { normalizeDepartementForStorage } from "@/lib/departementDisplay";
 import { normalizePresidentImportName } from "@/lib/personNameNormalize";
 
 export interface ParsedClubRow {
@@ -133,7 +134,7 @@ export function cellsToParsedRow(cells: string[]): ParsedClubRow | null {
     telephone_president: emptyToNull(cells[5]),
     email_president: emptyToNull(cells[6]),
     adresse: emptyToNull(cells[7]),
-    departement: emptyToNull(cells[8]),
+    departement: normalizeDepartementForStorage(emptyToNull(cells[8])),
     statut: mapStatutCsv(cells[9]),
     nb_membres_actifs: parseIntSafe(cells[10]),
     nb_leads_transformes: parseIntSafe(cells[11]),

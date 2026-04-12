@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +23,8 @@ import {
   type ParsedClubRow,
   type FieldChange,
 } from "@/lib/clubsCsvParse";
+import { syncClubPresidentPartenaire } from "@/lib/clubPresidentPartenaire";
+import { extractDepartementCode, findSecteurIdForDepartementCode, normalizeDepartementForStorage } from "@/lib/departementDisplay";
 interface ClubRow {
   id: string;
   nom: string;
@@ -94,6 +96,26 @@ function csvToDbUpdate(row: ParsedClubRow) {
   };
 }
 
+function csvRowToDbInsert(row: ParsedClubRow, secteurs: { id: string; departements: string[] }[]) {
+  const dept = normalizeDepartementForStorage(row.departement);
+  const sid = findSecteurIdForDepartementCode(extractDepartementCode(dept ?? row.departement), secteurs);
+  return {
+    ...csvToDbInsert(row),
+    departement: dept,
+    secteur_id: sid,
+  };
+}
+
+function csvRowToDbUpdate(row: ParsedClubRow, secteurs: { id: string; departements: string[] }[]) {
+  const dept = normalizeDepartementForStorage(row.departement);
+  const sid = findSecteurIdForDepartementCode(extractDepartementCode(dept ?? row.departement), secteurs);
+  return {
+    ...csvToDbUpdate(row),
+    departement: dept,
+    secteur_id: sid,
+  };
+}
+
 function buildPlan(clubs: ClubRow[], csvRows: ParsedClubRow[]): PlanItem[] {
   const byNorm = new Map<string, ClubRow>();
   for (const c of clubs) {
@@ -129,7 +151,15 @@ export interface ClubsCsvImportDialogProps {
 }
 
 export function ClubsCsvImportDialog({ open, onOpenChange, clubs, onApplied }: ClubsCsvImportDialogProps) {
+  const [secteurs, setSecteurs] = useState<{ id: string; departements: string[] }[]>([]);
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    void supabase.from("secteurs").select("id, departements").then(({ data }) => {
+      if (data) setSecteurs(data);
+    });
+  }, [open]);
   const [fileLabel, setFileLabel] = useState<string | null>(null);
   const [parseError, setParseError] = useState<string | null>(null);
   const [meta, setMeta] = useState<{ duplicateNomInCsv: number; linesSkipped: number } | null>(null);
@@ -222,21 +252,29 @@ export function ClubsCsvImportDialog({ open, onOpenChange, clubs, onApplied }: C
 
     const chunk = 40;
     for (let i = 0; i < toInsert.length; i += chunk) {
-      const batch = toInsert.slice(i, i + chunk).map(csvToDbInsert);
-      const { error } = await supabase.from("clubs").insert(batch);
+      const batch = toInsert.slice(i, i + chunk).map((r) => csvRowToDbInsert(r, secteurs));
+      const { data: inserted, error } = await supabase.from("clubs").insert(batch).select("id");
       if (error) {
         insertFailed = true;
         toast.error(`Insertion : ${error.message}`);
         break;
       }
       insertOk += batch.length;
+      if (inserted?.length) {
+        for (const ins of inserted) {
+          if (ins?.id) await syncClubPresidentPartenaire(ins.id);
+        }
+      }
     }
 
     let updateOk = 0;
     for (const { id, row } of toUpdate) {
-      const { error } = await supabase.from("clubs").update(csvToDbUpdate(row)).eq("id", id);
+      const { error } = await supabase.from("clubs").update(csvRowToDbUpdate(row, secteurs)).eq("id", id);
       if (error) toast.error(`Mise à jour ${row.nom} : ${error.message}`);
-      else updateOk++;
+      else {
+        updateOk++;
+        await syncClubPresidentPartenaire(id);
+      }
     }
 
     setBusy(false);

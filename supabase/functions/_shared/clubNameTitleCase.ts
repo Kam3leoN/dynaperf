@@ -2,12 +2,25 @@
  * Aligné avec `src/lib/clubDisplayName.ts` — toute évolution doit être reportée des deux côtés.
  */
 
+function trimClubNameSeparatorsEnds(raw: string | null | undefined): string {
+  let s = (raw ?? "").replace(/\s+/g, " ").trim();
+  if (!s) return "";
+  const reLead = /^[\s\-–—:·]+/;
+  const reTail = /[\s\-–—:·]+$/;
+  for (let i = 0; i < 8; i++) {
+    const next = s.replace(reLead, "").replace(reTail, "").replace(/\s+/g, " ").trim();
+    if (next === s) break;
+    s = next;
+  }
+  return s;
+}
+
 function normalizeImportClubName(raw: string | null | undefined): string {
   let t = (raw ?? "").replace(/\s+/g, " ").trim();
   while (/^\s*dynabuy\s+club\s+/i.test(t)) {
     t = t.replace(/^\s*dynabuy\s+club\s+/i, "").replace(/\s+/g, " ").trim();
   }
-  return t;
+  return trimClubNameSeparatorsEnds(t);
 }
 
 /** Aligné avec `stripClubNameMarketingNoise` dans `src/lib/clubDisplayName.ts`. */
@@ -30,7 +43,7 @@ function stripClubNameMarketingNoise(raw: string | null | undefined): string {
     if (next === s) break;
     s = next;
   }
-  return s;
+  return trimClubNameSeparatorsEnds(s);
 }
 
 function normalizeClubNameTitleCase(raw: string | null | undefined): string {

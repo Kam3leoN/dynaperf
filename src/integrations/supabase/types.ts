@@ -572,6 +572,7 @@ export type Database = {
           nb_leads_transformes: number
           nb_membres_actifs: number
           nom: string
+          president_partenaire_id: string | null
           president_nom: string
           secteur_id: string | null
           statut: string
@@ -598,6 +599,7 @@ export type Database = {
           nb_leads_transformes?: number
           nb_membres_actifs?: number
           nom: string
+          president_partenaire_id?: string | null
           president_nom?: string
           secteur_id?: string | null
           statut?: string
@@ -624,6 +626,7 @@ export type Database = {
           nb_leads_transformes?: number
           nb_membres_actifs?: number
           nom?: string
+          president_partenaire_id?: string | null
           president_nom?: string
           secteur_id?: string | null
           statut?: string
@@ -633,6 +636,13 @@ export type Database = {
           vice_president_nom?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "clubs_president_partenaire_id_fkey"
+            columns: ["president_partenaire_id"]
+            isOneToOne: false
+            referencedRelation: "partenaires"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "clubs_secteur_id_fkey"
             columns: ["secteur_id"]

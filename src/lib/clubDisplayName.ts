@@ -11,7 +11,7 @@ export function displayClubName(raw: string | null | undefined): string {
   const t = (raw ?? "").replace(/\s+/g, " ").trim();
   if (!t) return "";
   const withoutPrefix = normalizeImportClubName(raw);
-  const base = withoutPrefix || t;
+  const base = trimClubNameSeparatorsEnds(withoutPrefix || t);
   return normalizeClubNameTitleCase(stripClubNameMarketingNoise(base));
 }
 
@@ -32,7 +32,7 @@ export function normalizeImportClubName(raw: string | null | undefined): string 
   while (/^\s*dynabuy\s+club\s+/i.test(t)) {
     t = t.replace(/^\s*dynabuy\s+club\s+/i, "").replace(/\s+/g, " ").trim();
   }
-  return t;
+  return trimClubNameSeparatorsEnds(t);
 }
 
 /**
@@ -55,6 +55,23 @@ export function stripClubNameMarketingNoise(raw: string | null | undefined): str
       next = next.replace(re, " ");
     }
     next = next.replace(/\s+/g, " ").trim();
+    if (next === s) break;
+    s = next;
+  }
+  return trimClubNameSeparatorsEnds(s);
+}
+
+/**
+ * Après découpe « Dynabuy Club - … », retire les tirets / espaces résiduels en tête et fin
+ * (ex. « - Mellois en Poitou » → « Mellois en Poitou »).
+ */
+export function trimClubNameSeparatorsEnds(raw: string | null | undefined): string {
+  let s = (raw ?? "").replace(/\s+/g, " ").trim();
+  if (!s) return "";
+  const reLead = /^[\s\-–—:·]+/;
+  const reTail = /[\s\-–—:·]+$/;
+  for (let i = 0; i < 8; i++) {
+    const next = s.replace(reLead, "").replace(reTail, "").replace(/\s+/g, " ").trim();
     if (next === s) break;
     s = next;
   }
@@ -89,5 +106,7 @@ export function normalizeClubNameTitleCase(raw: string | null | undefined): stri
  * Import CSV : préfixe DYNABUY retiré, fragments marketing supprimés, puis casse « titre ».
  */
 export function normalizeClubNameForImport(raw: string | null | undefined): string {
-  return normalizeClubNameTitleCase(stripClubNameMarketingNoise(normalizeImportClubName(raw)));
+  return normalizeClubNameTitleCase(
+    stripClubNameMarketingNoise(normalizeImportClubName(raw)),
+  );
 }
