@@ -1,6 +1,26 @@
 import type { CornerDotType, CornerSquareType, DotType, Options } from "qr-code-styling";
 import { publicAssetUrl } from "@/lib/basePath";
 
+/** Fichiers `public/qrcode/corners/<id>.svg` — cadre des repères (coins extérieurs). */
+export const QR_CORNER_OUTER_MODULE_IDS = [
+  "0",
+  "1",
+  "2",
+  "3",
+  "4",
+  "5",
+  "6",
+  "7",
+  "8",
+  "9",
+  "10",
+  "11",
+  "12",
+  "13",
+  "14",
+] as const;
+export type QrCornerOuterModuleId = (typeof QR_CORNER_OUTER_MODULE_IDS)[number];
+
 /** Identifiants des fichiers `public/qrcode/dots/<id>.svg` (16 formes de module). */
 export const QR_DOT_MODULE_IDS = [
   "0",
@@ -40,8 +60,10 @@ export interface QrPartColors {
 export interface QrStyleConfig {
   /** Forme du module données : fichier `public/qrcode/dots/<0–15>.svg`. */
   dotModuleId: QrDotModuleId;
-  cornersSquareType: CornerSquareType;
-  cornersDotType: CornerDotType;
+  /** Cadre des repères : fichier `public/qrcode/corners/<0–14>.svg`. */
+  cornerOuterModuleId: QrCornerOuterModuleId;
+  /** Centre 3×3 des repères : mêmes fichiers que les modules (`qrcode/dots/<0–15>.svg`), pavés. */
+  cornerInnerModuleId: QrDotModuleId;
   /** Cadre visuel autour de l’aperçu (CSS), pas une API externe. */
   frame: "none" | "card";
   /** Si absent ou partiel, le rendu complète avec la couleur modules (`fg_color`). */
@@ -50,8 +72,8 @@ export interface QrStyleConfig {
 
 export const DEFAULT_QR_STYLE: QrStyleConfig = {
   dotModuleId: "7",
-  cornersSquareType: "extra-rounded",
-  cornersDotType: "dot",
+  cornerOuterModuleId: "3",
+  cornerInnerModuleId: "6",
   frame: "none",
 };
 
@@ -88,12 +110,38 @@ const LEGACY_DOTS_TYPE_TO_MODULE: Record<DotType, QrDotModuleId> = {
   "classy-rounded": "4",
 };
 
+/** Ancien `cornersSquareType` → fichier sous `qrcode/corners/`. */
+const LEGACY_CORNER_SQUARE_TO_OUTER_MODULE: Record<CornerSquareType, QrCornerOuterModuleId> = {
+  square: "0",
+  dot: "10",
+  "extra-rounded": "3",
+  rounded: "4",
+  dots: "8",
+  classy: "5",
+  "classy-rounded": "12",
+};
+
+/** Ancien `cornersDotType` → fichier sous `qrcode/dots/` (œil central). */
+const LEGACY_CORNER_DOT_TO_INNER_MODULE: Record<CornerDotType, QrDotModuleId> = {
+  square: "0",
+  dot: "6",
+  rounded: "7",
+  "extra-rounded": "5",
+  dots: "6",
+  classy: "3",
+  "classy-rounded": "4",
+};
+
 function isMember<T extends string>(v: unknown, arr: readonly T[]): v is T {
   return typeof v === "string" && (arr as readonly string[]).includes(v);
 }
 
 function isQrDotModuleId(v: unknown): v is QrDotModuleId {
   return typeof v === "string" && (QR_DOT_MODULE_IDS as readonly string[]).includes(v);
+}
+
+function isQrCornerOuterModuleId(v: unknown): v is QrCornerOuterModuleId {
+  return typeof v === "string" && (QR_CORNER_OUTER_MODULE_IDS as readonly string[]).includes(v);
 }
 
 /** Fusionne une valeur JSONB éventuelle avec les défauts (style type-safe). */
@@ -121,10 +169,24 @@ export function mergeQrStyle(raw: unknown): QrStyleConfig {
     dotModuleId = LEGACY_DOTS_TYPE_TO_MODULE[o.dotsType];
   }
 
+  let cornerOuterModuleId: QrCornerOuterModuleId = DEFAULT_QR_STYLE.cornerOuterModuleId;
+  if (isQrCornerOuterModuleId(o.cornerOuterModuleId)) {
+    cornerOuterModuleId = o.cornerOuterModuleId;
+  } else if (isMember(o.cornersSquareType, CORNER_SQ)) {
+    cornerOuterModuleId = LEGACY_CORNER_SQUARE_TO_OUTER_MODULE[o.cornersSquareType];
+  }
+
+  let cornerInnerModuleId: QrDotModuleId = DEFAULT_QR_STYLE.cornerInnerModuleId;
+  if (isQrDotModuleId(o.cornerInnerModuleId)) {
+    cornerInnerModuleId = o.cornerInnerModuleId;
+  } else if (isMember(o.cornersDotType, CORNER_DOT)) {
+    cornerInnerModuleId = LEGACY_CORNER_DOT_TO_INNER_MODULE[o.cornersDotType];
+  }
+
   return {
     dotModuleId,
-    cornersSquareType: isMember(o.cornersSquareType, CORNER_SQ) ? o.cornersSquareType : DEFAULT_QR_STYLE.cornersSquareType,
-    cornersDotType: isMember(o.cornersDotType, CORNER_DOT) ? o.cornersDotType : DEFAULT_QR_STYLE.cornersDotType,
+    cornerOuterModuleId,
+    cornerInnerModuleId,
     frame: o.frame === "card" ? "card" : "none",
     partColors,
   };
@@ -165,11 +227,11 @@ export function buildQrStylingOptions(params: {
       color: c.dots,
     },
     cornersSquareOptions: {
-      type: params.style.cornersSquareType,
+      type: "extra-rounded" as CornerSquareType,
       color: c.outer,
     },
     cornersDotOptions: {
-      type: params.style.cornersDotType,
+      type: "dot" as CornerDotType,
       color: c.inner,
     },
     backgroundOptions: {

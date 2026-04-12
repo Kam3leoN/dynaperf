@@ -2,8 +2,7 @@ import qrcodeFactory from "qrcode-generator";
 import { publicAssetUrl } from "@/lib/basePath";
 import { isTransparentBgColor } from "@/lib/qrBgColor";
 import { resolveLogoSrc, resolveQrPartColors, type QrStyleConfig } from "@/lib/qrCodeStyle";
-import { QR_CORNER_OUTER_ASSET_ID } from "@/lib/qrShapeAssetIds";
-import { BUILTIN_CORNER_INNER, BUILTIN_CORNER_OUTER, BUILTIN_DOT_FALLBACK } from "@/lib/qrSvgBuiltinShapes";
+import { BUILTIN_CORNER_OUTER_FALLBACK, BUILTIN_DOT_FALLBACK } from "@/lib/qrSvgBuiltinShapes";
 
 const QR_MARGIN = 4;
 
@@ -22,18 +21,6 @@ function applyFillToFragment(fragment: string, fill: string): string {
   return fragment.replace(/currentColor/gi, repl);
 }
 
-async function loadSvgFragment(path: string, fallback: string): Promise<string> {
-  try {
-    const res = await fetch(publicAssetUrl(path), { cache: "force-cache" });
-    if (!res.ok) return fallback;
-    const t = await res.text();
-    const inner = extractSvgInner(t);
-    return inner || fallback;
-  } catch {
-    return fallback;
-  }
-}
-
 /** Charge le contenu interne d’un SVG ou `null` si absent / vide. */
 async function tryLoadSvgInner(path: string): Promise<string | null> {
   try {
@@ -49,6 +36,22 @@ async function tryLoadSvgInner(path: string): Promise<string | null> {
 /** Assets `dots/*.svg` : viewBox 0 0 6 6 → une cellule module = 0..1. */
 function wrapDotModuleFragment(inner: string): string {
   return `<g transform="scale(${1 / 6})">${inner}</g>`;
+}
+
+/** Une cellule module (données ou centre de repère) : 0..1 dans l’espace parent. */
+function singleDotCellFragment(raw: string | null): string {
+  return raw ? wrapDotModuleFragment(raw) : BUILTIN_DOT_FALLBACK;
+}
+
+/** Œil central du repère : grille 3×3 avec la même forme de module que les données. */
+function tileInnerFinder3x3(cellFrag: string): string {
+  const cells: string[] = [];
+  for (let row = 0; row < 3; row += 1) {
+    for (let col = 0; col < 3; col += 1) {
+      cells.push(`<g transform="translate(${col},${row})">${cellFrag}</g>`);
+    }
+  }
+  return `<g>${cells.join("")}</g>`;
 }
 
 /** Assets `corners/*.svg` (repère) : viewBox 0 0 14 14 → repère 7×7 = 0..7. */
@@ -97,21 +100,18 @@ export async function renderQrSvgString(params: {
   const bgTransparent = isTransparentBgColor(bg);
 
   const dotId = params.style.dotModuleId;
-  const outerId = QR_CORNER_OUTER_ASSET_ID[params.style.cornersSquareType];
+  const outerId = params.style.cornerOuterModuleId;
+  const innerModuleId = params.style.cornerInnerModuleId;
 
-  const [dotRaw, outerRaw, innerFrag] = await Promise.all([
+  const [dotRaw, outerRaw, innerDotRaw] = await Promise.all([
     tryLoadSvgInner(`qrcode/dots/${dotId}.svg`),
     tryLoadSvgInner(`qrcode/corners/${outerId}.svg`),
-    loadSvgFragment(
-      `qrcode/corners/inner-${params.style.cornersDotType}.svg`,
-      BUILTIN_CORNER_INNER[params.style.cornersDotType],
-    ),
+    tryLoadSvgInner(`qrcode/dots/${innerModuleId}.svg`),
   ]);
 
-  const dotFrag = dotRaw ? wrapDotModuleFragment(dotRaw) : BUILTIN_DOT_FALLBACK;
-  const outerFrag = outerRaw
-    ? wrapCornerOuterFragment(outerRaw)
-    : BUILTIN_CORNER_OUTER[params.style.cornersSquareType];
+  const dotFrag = singleDotCellFragment(dotRaw);
+  const innerFrag = tileInnerFinder3x3(singleDotCellFragment(innerDotRaw));
+  const outerFrag = outerRaw ? wrapCornerOuterFragment(outerRaw) : BUILTIN_CORNER_OUTER_FALLBACK;
 
   let coverHref: string | null = null;
   if (!bgTransparent) {

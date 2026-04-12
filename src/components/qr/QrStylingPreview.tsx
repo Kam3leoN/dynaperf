@@ -63,8 +63,8 @@ export function QrStylingPreview({
     level,
     logoUrl,
     style.dotModuleId,
-    style.cornersSquareType,
-    style.cornersDotType,
+    style.cornerOuterModuleId,
+    style.cornerInnerModuleId,
     style.frame,
     JSON.stringify(style.partColors),
   ]);

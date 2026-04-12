@@ -1,8 +1,12 @@
-import type { CornerDotType, CornerSquareType } from "qr-code-styling";
 import { publicAssetUrl } from "@/lib/basePath";
-import { QR_CORNER_OUTER_ASSET_ID } from "@/lib/qrShapeAssetIds";
 import { cn } from "@/lib/utils";
-import { QR_DOT_MODULE_IDS, type QrDotModuleId, type QrStyleConfig } from "@/lib/qrCodeStyle";
+import {
+  QR_CORNER_OUTER_MODULE_IDS,
+  QR_DOT_MODULE_IDS,
+  type QrCornerOuterModuleId,
+  type QrDotModuleId,
+  type QrStyleConfig,
+} from "@/lib/qrCodeStyle";
 
 /** Miniature alignée sur `public/qrcode/dots/<id>.svg` (même rendu que l’aperçu QR). */
 function DotShapeThumb({ id }: { id: QrDotModuleId }) {
@@ -18,8 +22,7 @@ function DotShapeThumb({ id }: { id: QrDotModuleId }) {
 }
 
 /** Miniature alignée sur `public/qrcode/corners/<id>.svg`. */
-function CornerOuterThumb({ type }: { type: CornerSquareType }) {
-  const id = QR_CORNER_OUTER_ASSET_ID[type];
+function CornerOuterThumb({ id }: { id: QrCornerOuterModuleId }) {
   return (
     <img
       src={publicAssetUrl(`qrcode/corners/${id}.svg`)}
@@ -31,55 +34,21 @@ function CornerOuterThumb({ type }: { type: CornerSquareType }) {
   );
 }
 
-function CornerInnerThumb({ type }: { type: CornerDotType }) {
-  if (type === "dot") {
-    return (
-      <img
-        src={publicAssetUrl("qrcode/corners/inner-dot.svg")}
-        alt=""
-        className="h-8 w-8 object-contain"
-        loading="lazy"
-        draggable={false}
-      />
-    );
-  }
-  return (
-    <svg viewBox="0 0 24 24" className="h-8 w-8 text-foreground" aria-hidden>
-      {type === "rounded" ? (
-        <circle cx="12" cy="12" r={6} fill="currentColor" />
-      ) : type === "square" ? (
-        <rect x="7" y="7" width="10" height="10" fill="currentColor" />
-      ) : (
-        <rect x="7" y="7" width="10" height="10" rx="2" fill="currentColor" />
-      )}
-    </svg>
-  );
-}
-
 const DOT_MODULE_OPTIONS: { value: QrDotModuleId; label: string }[] = QR_DOT_MODULE_IDS.map((id) => ({
   value: id,
   label: `Module ${id}`,
 }));
 
-const OUTER_OPTIONS: { value: CornerSquareType; label: string }[] = [
-  { value: "square", label: "Carré" },
-  { value: "dot", label: "Disque" },
-  { value: "extra-rounded", label: "Coins ronds" },
-  { value: "rounded", label: "Arrondi" },
-  { value: "dots", label: "Points" },
-  { value: "classy", label: "Élégant" },
-  { value: "classy-rounded", label: "Élégant rond" },
-];
+const OUTER_MODULE_OPTIONS: { value: QrCornerOuterModuleId; label: string }[] =
+  QR_CORNER_OUTER_MODULE_IDS.map((id) => ({
+    value: id,
+    label: `Repère ${id}`,
+  }));
 
-const INNER_OPTIONS: { value: CornerDotType; label: string }[] = [
-  { value: "square", label: "Carré" },
-  { value: "dot", label: "Point" },
-  { value: "rounded", label: "Arrondi" },
-  { value: "extra-rounded", label: "Très rond" },
-  { value: "dots", label: "Points" },
-  { value: "classy", label: "Élégant" },
-  { value: "classy-rounded", label: "Élégant rond" },
-];
+const INNER_MODULE_OPTIONS: { value: QrDotModuleId; label: string }[] = QR_DOT_MODULE_IDS.map((id) => ({
+  value: id,
+  label: `Centre ${id}`,
+}));
 
 function SwatchButton({
   selected,
@@ -134,14 +103,14 @@ export function QrStyleVisualPickers({
       <div>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Coins extérieurs</p>
         <div className="flex flex-wrap gap-2">
-          {OUTER_OPTIONS.map((o) => (
+          {OUTER_MODULE_OPTIONS.map((o) => (
             <SwatchButton
               key={o.value}
               label={o.label}
-              selected={style.cornersSquareType === o.value}
-              onClick={() => onChange({ ...style, cornersSquareType: o.value })}
+              selected={style.cornerOuterModuleId === o.value}
+              onClick={() => onChange({ ...style, cornerOuterModuleId: o.value })}
             >
-              <CornerOuterThumb type={o.value} />
+              <CornerOuterThumb id={o.value} />
             </SwatchButton>
           ))}
         </div>
@@ -149,14 +118,14 @@ export function QrStyleVisualPickers({
       <div>
         <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Centre des coins</p>
         <div className="flex flex-wrap gap-2">
-          {INNER_OPTIONS.map((o) => (
+          {INNER_MODULE_OPTIONS.map((o) => (
             <SwatchButton
               key={o.value}
               label={o.label}
-              selected={style.cornersDotType === o.value}
-              onClick={() => onChange({ ...style, cornersDotType: o.value })}
+              selected={style.cornerInnerModuleId === o.value}
+              onClick={() => onChange({ ...style, cornerInnerModuleId: o.value })}
             >
-              <CornerInnerThumb type={o.value} />
+              <DotShapeThumb id={o.value} />
             </SwatchButton>
           ))}
         </div>
