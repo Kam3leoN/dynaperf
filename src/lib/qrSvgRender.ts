@@ -2,6 +2,7 @@ import qrcodeFactory from "qrcode-generator";
 import { publicAssetUrl } from "@/lib/basePath";
 import { isTransparentBgColor } from "@/lib/qrBgColor";
 import { resolveLogoSrc, type QrStyleConfig } from "@/lib/qrCodeStyle";
+import { QR_CORNER_OUTER_ASSET_ID, QR_DOT_ASSET_ID } from "@/lib/qrShapeAssetIds";
 import { BUILTIN_CORNER_INNER, BUILTIN_CORNER_OUTER, BUILTIN_DOT_SVG } from "@/lib/qrSvgBuiltinShapes";
 
 const QR_MARGIN = 4;
@@ -30,6 +31,28 @@ async function loadSvgFragment(path: string, fallback: string): Promise<string> 
   } catch {
     return fallback;
   }
+}
+
+/** Charge le contenu interne d’un SVG ou `null` si absent / vide. */
+async function tryLoadSvgInner(path: string): Promise<string | null> {
+  try {
+    const res = await fetch(publicAssetUrl(path), { cache: "force-cache" });
+    if (!res.ok) return null;
+    const inner = extractSvgInner(await res.text());
+    return inner || null;
+  } catch {
+    return null;
+  }
+}
+
+/** Assets `dots/*.svg` : viewBox 0 0 6 6 → une cellule module = 0..1. */
+function wrapDotModuleFragment(inner: string): string {
+  return `<g transform="scale(${1 / 6})">${inner}</g>`;
+}
+
+/** Assets `corners/*.svg` (repère) : viewBox 0 0 14 14 → repère 7×7 = 0..7. */
+function wrapCornerOuterFragment(inner: string): string {
+  return `<g transform="scale(${7 / 14})">${inner}</g>`;
 }
 
 function isInFinderBlock(r: number, c: number, n: number): boolean {
@@ -72,17 +95,24 @@ export async function renderQrSvgString(params: {
   const bg = params.bgColor;
   const bgTransparent = isTransparentBgColor(bg);
 
-  const [dotFrag, outerFrag, innerFrag] = await Promise.all([
-    loadSvgFragment(`qrcode/dots/${params.style.dotsType}.svg`, BUILTIN_DOT_SVG[params.style.dotsType]),
-    loadSvgFragment(
-      `qrcode/corners/outer-${params.style.cornersSquareType}.svg`,
-      BUILTIN_CORNER_OUTER[params.style.cornersSquareType],
-    ),
+  const dotId = QR_DOT_ASSET_ID[params.style.dotsType];
+  const outerId = QR_CORNER_OUTER_ASSET_ID[params.style.cornersSquareType];
+
+  const [dotRaw, outerRaw, innerFrag] = await Promise.all([
+    tryLoadSvgInner(`qrcode/dots/${dotId}.svg`),
+    tryLoadSvgInner(`qrcode/corners/${outerId}.svg`),
     loadSvgFragment(
       `qrcode/corners/inner-${params.style.cornersDotType}.svg`,
       BUILTIN_CORNER_INNER[params.style.cornersDotType],
     ),
   ]);
+
+  const dotFrag = dotRaw
+    ? wrapDotModuleFragment(dotRaw)
+    : BUILTIN_DOT_SVG[params.style.dotsType];
+  const outerFrag = outerRaw
+    ? wrapCornerOuterFragment(outerRaw)
+    : BUILTIN_CORNER_OUTER[params.style.cornersSquareType];
 
   let coverHref: string | null = null;
   if (!bgTransparent) {
@@ -149,13 +179,20 @@ export async function renderQrSvgString(params: {
     const lz = logoSide * cell;
     const lx = (margin + logoStart) * cell;
     const ly = (margin + logoStart) * cell;
-    const logoPadFill = bgTransparent ? "#ffffff" : bg;
-    parts.push(
-      `<rect x="${lx}" y="${ly}" width="${lz}" height="${lz}" rx="${lz * 0.08}" fill="${escapeXmlAttr(logoPadFill)}" stroke="${escapeXmlAttr(fg)}" stroke-opacity="0.15" stroke-width="${cell * 0.5}"/>`,
-    );
-    parts.push(
-      `<image href="${escapeXmlAttr(logoSrc)}" x="${lx + lz * 0.1}" y="${ly + lz * 0.1}" width="${lz * 0.8}" height="${lz * 0.8}" preserveAspectRatio="xMidYMid meet" crossorigin="anonymous"/>`,
-    );
+    if (bgTransparent) {
+      const inset = lz * 0.06;
+      const side = lz - 2 * inset;
+      parts.push(
+        `<image href="${escapeXmlAttr(logoSrc)}" x="${lx + inset}" y="${ly + inset}" width="${side}" height="${side}" preserveAspectRatio="xMidYMid meet" crossorigin="anonymous"/>`,
+      );
+    } else {
+      parts.push(
+        `<rect x="${lx}" y="${ly}" width="${lz}" height="${lz}" rx="${lz * 0.08}" fill="${escapeXmlAttr(bg)}"/>`,
+      );
+      parts.push(
+        `<image href="${escapeXmlAttr(logoSrc)}" x="${lx + lz * 0.1}" y="${ly + lz * 0.1}" width="${lz * 0.8}" height="${lz * 0.8}" preserveAspectRatio="xMidYMid meet" crossorigin="anonymous"/>`,
+      );
+    }
   }
 
   parts.push(`</svg>`);
