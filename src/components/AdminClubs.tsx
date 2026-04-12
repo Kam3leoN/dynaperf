@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Slider } from "@/components/ui/slider";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFilter, faXmark, faCamera, faTrash, faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faEye } from "@fortawesome/free-solid-svg-icons";
+import { faFilter, faXmark, faCamera, faTrash, faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faEye, faSort, faSortUp, faSortDown, faFileImport } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { toast } from "sonner";
 import { useAdmin } from "@/hooks/useAdmin";
 import { X } from "lucide-react";
+import { ClubsCsvImportDialog } from "@/components/ClubsCsvImportDialog";
 
 interface Club {
   id: string;
@@ -73,6 +74,53 @@ function formatDate(d: string | null) {
   if (!d) return "—";
   const [y, m, day] = d.split("-");
   return `${day}/${m}/${y}`;
+}
+
+type SortKey =
+  | "nom"
+  | "format"
+  | "president_nom"
+  | "departement"
+  | "statut"
+  | "nb_membres_actifs"
+  | "nb_leads_transformes"
+  | "montant_ca"
+  | "date_creation";
+
+const SORT_LABELS: Record<SortKey, string> = {
+  nom: "Nom",
+  format: "Format",
+  president_nom: "Président",
+  departement: "Département",
+  statut: "Statut",
+  nb_membres_actifs: "Membres",
+  nb_leads_transformes: "Leads",
+  montant_ca: "CA",
+  date_creation: "Date de création",
+};
+
+function compareClubs(a: Club, b: Club, key: SortKey, dir: "asc" | "desc"): number {
+  const mul = dir === "asc" ? 1 : -1;
+  const str = (x: string | null | undefined) => (x ?? "").toLocaleLowerCase();
+  switch (key) {
+    case "nom":
+    case "format":
+    case "president_nom":
+    case "departement":
+    case "statut":
+      return mul * str(a[key]).localeCompare(str(b[key]), "fr", { numeric: true });
+    case "nb_membres_actifs":
+    case "nb_leads_transformes":
+    case "montant_ca":
+      return mul * ((a[key] ?? 0) - (b[key] ?? 0));
+    case "date_creation": {
+      const ta = a.date_creation ? new Date(a.date_creation).getTime() : 0;
+      const tb = b.date_creation ? new Date(b.date_creation).getTime() : 0;
+      return mul * (ta - tb);
+    }
+    default:
+      return 0;
+  }
 }
 
 function ClubLogo({ club, isAdmin, onUpdate }: { club: Club; isAdmin: boolean; onUpdate: () => void }) {
@@ -157,6 +205,9 @@ export default function AdminClubs() {
   const [filterAnnee, setFilterAnnee] = useState("Tous");
   const [filterDept, setFilterDept] = useState("Tous");
   const [filterSecteur, setFilterSecteur] = useState("Tous");
+  const [filterAgenceRattachement, setFilterAgenceRattachement] = useState("Tous");
+  const [sortKey, setSortKey] = useState<SortKey>("nom");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [membresMin, setMembresMin] = useState(0);
   const [leadsMin, setLeadsMin] = useState(0);
   const [caMin, setCaMin] = useState(0);
@@ -170,6 +221,7 @@ export default function AdminClubs() {
   const [deleteClub, setDeleteClub] = useState<Club | null>(null);
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
+  const [csvImportOpen, setCsvImportOpen] = useState(false);
 
   const loadClubs = useCallback(async () => {
     setLoading(true);
@@ -277,20 +329,34 @@ export default function AdminClubs() {
     return ["Tous", ...Array.from(secteurs).sort()];
   }, [clubs]);
 
+  const uniqueAgencesRattachement = useMemo(() => {
+    const set = new Set<string>();
+    clubs.forEach(c => { if (c.agence_rattachement) set.add(c.agence_rattachement); });
+    return ["Tous", ...Array.from(set).sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }))];
+  }, [clubs]);
+
   const maxMembres = useMemo(() => Math.max(1, ...clubs.map(c => c.nb_membres_actifs)), [clubs]);
   const maxLeads = useMemo(() => Math.max(1, ...clubs.map(c => c.nb_leads_transformes)), [clubs]);
   const maxCA = useMemo(() => Math.max(1, ...clubs.map(c => c.montant_ca)), [clubs]);
 
   const activeFiltersCount = [
     filterFormat !== "Tous", filterStatut !== "Tous", filterAnnee !== "Tous",
-    filterDept !== "Tous", filterSecteur !== "Tous",
+    filterDept !== "Tous", filterSecteur !== "Tous", filterAgenceRattachement !== "Tous",
     membresMin > 0, leadsMin > 0, caMin > 0,
   ].filter(Boolean).length;
 
   const resetFilters = () => {
     setFilterFormat("Tous"); setFilterStatut("Tous"); setFilterAnnee("Tous");
-    setFilterDept("Tous"); setFilterSecteur("Tous");
+    setFilterDept("Tous"); setFilterSecteur("Tous"); setFilterAgenceRattachement("Tous");
     setMembresMin(0); setLeadsMin(0); setCaMin(0);
+  };
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) setSortDir(d => (d === "asc" ? "desc" : "asc"));
+    else {
+      setSortKey(key);
+      setSortDir("asc");
+    }
   };
 
   const filtered = useMemo(() => clubs.filter(c => {
@@ -299,18 +365,50 @@ export default function AdminClubs() {
     if (filterAnnee !== "Tous" && (!c.date_creation || !c.date_creation.startsWith(filterAnnee))) return false;
     if (filterDept !== "Tous" && c.departement !== filterDept) return false;
     if (filterSecteur !== "Tous" && c.agence_mere !== filterSecteur) return false;
+    if (filterAgenceRattachement !== "Tous" && c.agence_rattachement !== filterAgenceRattachement) return false;
     if (c.nb_membres_actifs < membresMin) return false;
     if (c.nb_leads_transformes < leadsMin) return false;
     if (c.montant_ca < caMin) return false;
     const term = searchQuery.toLowerCase().trim();
     if (!term) return true;
-    const hay = `${c.nom} ${c.president_nom} ${c.departement || ""} ${c.agence_mere || ""} ${c.adresse || ""}`.toLowerCase();
+    const hay = `${c.nom} ${c.president_nom} ${c.departement || ""} ${c.agence_mere || ""} ${c.agence_rattachement || ""} ${c.adresse || ""}`.toLowerCase();
     return term.split(/\s+/).every(w => hay.includes(w));
-  }), [clubs, filterFormat, filterStatut, filterAnnee, filterDept, filterSecteur, membresMin, leadsMin, caMin, searchQuery]);
+  }), [clubs, filterFormat, filterStatut, filterAnnee, filterDept, filterSecteur, filterAgenceRattachement, membresMin, leadsMin, caMin, searchQuery]);
+
+  const sortedList = useMemo(() => {
+    const copy = [...filtered];
+    copy.sort((a, b) => compareClubs(a, b, sortKey, sortDir));
+    return copy;
+  }, [filtered, sortKey, sortDir]);
 
   const totalMembres = filtered.reduce((s, c) => s + c.nb_membres_actifs, 0);
   const totalLeads = filtered.reduce((s, c) => s + c.nb_leads_transformes, 0);
   const totalCA = filtered.reduce((s, c) => s + c.montant_ca, 0);
+
+  const SortableTh = ({
+    label,
+    colKey,
+    className,
+  }: {
+    label: string;
+    colKey: SortKey;
+    className?: string;
+  }) => (
+    <TableHead className={className}>
+      <button
+        type="button"
+        className="inline-flex items-center gap-1 font-medium text-left hover:text-foreground text-muted-foreground hover:bg-secondary/50 rounded px-0.5 -mx-0.5 w-full min-w-0"
+        onClick={() => handleSort(colKey)}
+      >
+        <span className="truncate">{label}</span>
+        {sortKey === colKey ? (
+          <FontAwesomeIcon icon={sortDir === "asc" ? faSortUp : faSortDown} className="h-3 w-3 shrink-0 opacity-90" aria-hidden />
+        ) : (
+          <FontAwesomeIcon icon={faSort} className="h-3 w-3 shrink-0 opacity-40" aria-hidden />
+        )}
+      </button>
+    </TableHead>
+  );
 
   const ActionButtons = ({ c }: { c: Club }) => (
     <div className="flex gap-1">
@@ -365,6 +463,13 @@ export default function AdminClubs() {
         <Select value={filterSecteur} onValueChange={setFilterSecteur}>
           <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>{uniqueSecteurs.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div>
+        <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Agence de rattachement</label>
+        <Select value={filterAgenceRattachement} onValueChange={setFilterAgenceRattachement}>
+          <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+          <SelectContent>{uniqueAgencesRattachement.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
         </Select>
       </div>
       <div>
@@ -544,6 +649,17 @@ export default function AdminClubs() {
             </SheetContent>
           </Sheet>
           {isAdmin && (
+            <>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="gap-1.5 text-xs shrink-0"
+              onClick={() => setCsvImportOpen(true)}
+            >
+              <FontAwesomeIcon icon={faFileImport} className="h-3.5 w-3.5" />
+              <span className="hidden sm:inline">Importer CSV</span>
+            </Button>
             <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) resetForm(); }}>
               <DialogTrigger asChild>
                 <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5 shrink-0">
@@ -567,8 +683,34 @@ export default function AdminClubs() {
                 </form>
               </DialogContent>
             </Dialog>
+            <ClubsCsvImportDialog
+              open={csvImportOpen}
+              onOpenChange={setCsvImportOpen}
+              clubs={clubs}
+              onApplied={loadClubs}
+            />
+            </>
           )}
         </div>
+      </div>
+
+      <div className="md:hidden flex flex-wrap gap-2 items-center mb-3">
+        <span className="text-xs text-muted-foreground shrink-0">Tri</span>
+        <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
+          <SelectTrigger className="h-8 text-xs flex-1 min-w-[140px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            {(Object.keys(SORT_LABELS) as SortKey[]).map(k => (
+              <SelectItem key={k} value={k}>{SORT_LABELS[k]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={sortDir} onValueChange={(v) => setSortDir(v as "asc" | "desc")}>
+          <SelectTrigger className="h-8 text-xs w-[130px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="asc">Croissant</SelectItem>
+            <SelectItem value="desc">Décroissant</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex flex-wrap gap-3 mb-4">
@@ -596,9 +738,9 @@ export default function AdminClubs() {
         <>
           <div className="md:hidden space-y-2">
             <AnimatePresence>
-              {filtered.map(c => <MobileCard key={c.id} c={c} />)}
+              {sortedList.map(c => <MobileCard key={c.id} c={c} />)}
             </AnimatePresence>
-            {filtered.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">Aucun club trouvé</p>}
+            {sortedList.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">Aucun club trouvé</p>}
           </div>
 
           <div className="hidden md:block">
@@ -606,20 +748,20 @@ export default function AdminClubs() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-10"></TableHead>
-                  <TableHead>Club</TableHead>
-                  <TableHead>Format</TableHead>
-                  <TableHead>Président</TableHead>
-                  <TableHead>Dpt.</TableHead>
-                  <TableHead>Statut</TableHead>
-                  <TableHead className="text-right">Membres</TableHead>
-                  <TableHead className="text-right">Leads</TableHead>
-                  <TableHead className="text-right">CA</TableHead>
-                  <TableHead>Créé le</TableHead>
+                  <SortableTh label="Club" colKey="nom" />
+                  <SortableTh label="Format" colKey="format" />
+                  <SortableTh label="Président" colKey="president_nom" />
+                  <SortableTh label="Dpt." colKey="departement" />
+                  <SortableTh label="Statut" colKey="statut" />
+                  <SortableTh label="Membres" colKey="nb_membres_actifs" className="text-right [&>button]:justify-end" />
+                  <SortableTh label="Leads" colKey="nb_leads_transformes" className="text-right [&>button]:justify-end" />
+                  <SortableTh label="CA" colKey="montant_ca" className="text-right [&>button]:justify-end" />
+                  <SortableTh label="Créé le" colKey="date_creation" />
                   <TableHead className="w-24">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filtered.map(c => (
+                {sortedList.map(c => (
                   <TableRow key={c.id}>
                     <TableCell><ClubLogo club={c} isAdmin={isAdmin} onUpdate={loadClubs} /></TableCell>
                     <TableCell className="font-medium text-sm">{c.nom}</TableCell>
@@ -634,7 +776,7 @@ export default function AdminClubs() {
                     <TableCell><ActionButtons c={c} /></TableCell>
                   </TableRow>
                 ))}
-                {filtered.length === 0 && (
+                {sortedList.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={11} className="text-center text-sm text-muted-foreground py-8">Aucun club trouvé</TableCell>
                   </TableRow>

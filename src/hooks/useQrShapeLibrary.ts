@@ -15,7 +15,8 @@ export function useQrShapeLibraryMap() {
         .select("id, kind, name, svg_markup, legacy_key, sort_order, is_active")
         .eq("is_active", true)
         .order("sort_order", { ascending: true });
-      if (error) throw error;
+      // Ne pas faire échouer toute la page QR : le rendu utilise des formes intégrées en secours.
+      if (error) return [] as QrShapeLibraryRow[];
       return (data ?? []) as QrShapeLibraryRow[];
     },
     staleTime: 5 * 60 * 1000,

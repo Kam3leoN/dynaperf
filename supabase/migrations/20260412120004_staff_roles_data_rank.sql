@@ -1,5 +1,5 @@
 -- Étape 2/2 : migration des données user_roles, contrainte unique, staff_role_rank, handle_new_user.
--- À appliquer après 20260412120000 (les valeurs member, moderator, bot, super_moderator existent).
+-- À appliquer après 20260412120003 (les valeurs member, moderator, bot, super_moderator existent).
 
 -- --- Données existantes ---
 UPDATE public.user_roles SET role = 'member'::public.app_role
@@ -41,7 +41,20 @@ WHERE NOT EXISTS (SELECT 1 FROM public.user_roles ur WHERE ur.user_id = p.user_i
 
 -- --- Contrainte une ligne par utilisateur ---
 ALTER TABLE public.user_roles DROP CONSTRAINT IF EXISTS user_roles_user_id_role_key;
-ALTER TABLE public.user_roles ADD CONSTRAINT user_roles_user_id_key UNIQUE (user_id);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint c
+    JOIN pg_class rel ON rel.oid = c.conrelid
+    JOIN pg_namespace nsp ON nsp.oid = rel.relnamespace
+    WHERE nsp.nspname = 'public'
+      AND rel.relname = 'user_roles'
+      AND c.conname = 'user_roles_user_id_key'
+  ) THEN
+    ALTER TABLE public.user_roles ADD CONSTRAINT user_roles_user_id_key UNIQUE (user_id);
+  END IF;
+END $$;
 
 -- --- Table de rang (référence pour RLS / salons) ---
 CREATE TABLE IF NOT EXISTS public.staff_role_rank (
@@ -80,7 +93,7 @@ AS $$
     (
       SELECT r.rank
       FROM public.user_roles ur
-      JOIN public.staff_role_rank r ON r.role = ur.role
+      JOIN public.staff_role_rank r ON r.role::text = ur.role::text
       WHERE ur.user_id = _user_id
       LIMIT 1
     ),

@@ -107,10 +107,22 @@ function defaultPartColors(fg: string): QrPartColors {
   };
 }
 
+/** Identifiant local (HTTP non sécurisé, vieux navigateurs : `randomUUID` peut être absent). */
+function newRandomId(): string {
+  try {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+      return crypto.randomUUID();
+    }
+  } catch {
+    /* ignore */
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`;
+}
+
 function makeEmpty(): QrRecord {
   const fg = "#111827";
   return {
-    id: crypto.randomUUID(),
+    id: newRandomId(),
     name: "",
     value: "https://",
     size: 512,
@@ -519,7 +531,7 @@ export default function QrCodeManager() {
       if (!f.type.startsWith("image/")) continue;
       try {
         const dataUrl = await readFileAsDataUrl(f);
-        next.push({ id: crypto.randomUUID(), dataUrl });
+        next.push({ id: newRandomId(), dataUrl });
       } catch {
         toast.error(`Impossible de lire ${f.name}`);
       }

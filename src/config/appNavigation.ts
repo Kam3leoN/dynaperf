@@ -90,7 +90,6 @@ const home: RailSection = {
     { label: "Mes primes", to: "/primes", icon: faMoneyBill },
     { label: "Créer un QrCode", to: "/qrcodes/new", icon: faPlus, requiredModule: "qrcode" },
     { label: "Gérer les QrCode", to: "/qrcodes", icon: faList, requiredModule: "qrcode" },
-    { label: "Gérer les shapes", to: "/qrcodes/shapes", icon: faShapes, requiredModule: "qrcode" },
     { label: "Consulter les statistiques", to: "/qrcodes/stats", icon: faChartColumn, requiredModule: "qrcode" },
     { label: "Notifications", to: "/notifications", icon: faBell },
   ],
@@ -121,7 +120,6 @@ const audits: RailSection = {
   children: [
     { label: "Tableau de bord", to: "/dashboard", icon: faChartLine },
     { label: "Tous les audits", to: "/audits", icon: faClipboardList },
-    { label: "Galerie photos", to: "/galerie", icon: faImages },
     { label: "Nouvel audit", to: "/audits/new", icon: faPlus },
     { label: "Planifier un audit", to: "/audits?plan=1", icon: faCalendarPlus },
   ],
@@ -192,7 +190,6 @@ const qrcodes: RailSection = {
   children: [
     { label: "Créer un QrCode", to: "/qrcodes/new", icon: faPlus },
     { label: "Gérer les QrCode", to: "/qrcodes", icon: faList },
-    { label: "Gérer les shapes", to: "/qrcodes/shapes", icon: faShapes },
     { label: "Consulter les statistiques", to: "/qrcodes/stats", icon: faChartColumn },
   ],
 };
