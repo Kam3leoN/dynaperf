@@ -10,14 +10,16 @@ async function toastEdgeInvokeFailure(
   res: { data: unknown; error: unknown; response?: Response },
   fallback: string,
 ): Promise<boolean> {
-  const dataErr =
-    res.data && typeof res.data === "object" && res.data !== null && typeof (res.data as { error?: unknown }).error === "string"
-      ? (res.data as { error: string }).error
-      : null;
-  if (!res.error && !dataErr) return false;
-  const detail = (await readEdgeFunctionErrorMessage(res)) ?? dataErr;
-  toast.error(detail?.trim() ? detail : fallback);
-  return true;
+  const detail = await readEdgeFunctionErrorMessage(res);
+  if (detail?.trim()) {
+    toast.error(detail);
+    return true;
+  }
+  if (res.error) {
+    toast.error(fallback);
+    return true;
+  }
+  return false;
 }
 
 async function invokeEdge(name: string): Promise<{ data: unknown; error: unknown; response?: Response }> {

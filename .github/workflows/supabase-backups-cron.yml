@@ -1,13 +1,13 @@
 # Déclenche quotidiennement les Edge Functions de sauvegarde (JSON + dump SQL).
 #
-# Secrets GitHub OBLIGATOIRES (Settings → Secrets and variables → Actions) :
-#   SUPABASE_ANON_KEY   — clé anon (header apikey)
-#   BACKUP_CRON_SECRET  — identique au secret Edge BACKUP_CRON_SECRET (Supabase)
+# Secrets GitHub (au moins un couple ci-dessous + BACKUP_CRON_SECRET) :
+#   BACKUP_CRON_SECRET — obligatoire, même valeur que sur Supabase Edge
+#   Clé « apikey » : SUPABASE_ANON_KEY **ou** VITE_SUPABASE_PUBLISHABLE_KEY (souvent la même valeur)
+#   URL projet : SUPABASE_URL **ou** VITE_SUPABASE_URL — sinon déduit de supabase/config.toml
 #
-# Optionnel : SUPABASE_URL (surcharge). Sinon : https://<project_id>.supabase.co
-# depuis supabase/config.toml (project_id versionné).
+# SUPABASE_DB_URL sur GitHub ne sert pas à ce workflow (sql-backup lit Postgres côté Edge uniquement).
 #
-# Sur Supabase : déployer backup-all et sql-backup, secrets Edge, verify_jwt = false.
+# Sur Supabase Edge : secrets + deploy backup-all / sql-backup, verify_jwt = false.
 
 name: Supabase backups (CRON)
 
@@ -27,8 +27,10 @@ jobs:
 
       - name: Appeler backup-all puis sql-backup
         env:
-          SUPABASE_URL_OVERRIDE: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          GH_SECRET_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          GH_SECRET_VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          GH_SECRET_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          GH_SECRET_VITE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
           BACKUP_CRON_SECRET: ${{ secrets.BACKUP_CRON_SECRET }}
         shell: bash
         run: |
@@ -36,20 +38,30 @@ jobs:
 
           # GitHub peut conserver un saut de ligne final au collage → curl envoie un header invalide
           trim() { printf '%s' "$1" | tr -d '\r\n' | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//'; }
-          SUPABASE_ANON_KEY="$(trim "$SUPABASE_ANON_KEY")"
-          BACKUP_CRON_SECRET="$(trim "$BACKUP_CRON_SECRET")"
-          SUPABASE_URL_OVERRIDE="$(trim "${SUPABASE_URL_OVERRIDE:-}")"
+
+          SUPABASE_ANON_KEY="$(trim "${GH_SECRET_SUPABASE_ANON_KEY:-}")"
+          if [ -z "$SUPABASE_ANON_KEY" ]; then
+            SUPABASE_ANON_KEY="$(trim "${GH_SECRET_VITE_PUBLISHABLE_KEY:-}")"
+          fi
+          BACKUP_CRON_SECRET="$(trim "${BACKUP_CRON_SECRET:-}")"
+
+          SUPABASE_URL_OVERRIDE="$(trim "${GH_SECRET_SUPABASE_URL:-}")"
+          if [ -z "$SUPABASE_URL_OVERRIDE" ]; then
+            SUPABASE_URL_OVERRIDE="$(trim "${GH_SECRET_VITE_SUPABASE_URL:-}")"
+          fi
 
           if [ -z "$SUPABASE_ANON_KEY" ] || [ -z "$BACKUP_CRON_SECRET" ]; then
-            echo "::error title=Secrets Actions manquants::Variables vides côté Actions. Vérifiez : (1) secrets bien sur CE dépôt (Repository secrets), pas seulement Organization sans accès au repo ; (2) pas de faute dans les noms SUPABASE_ANON_KEY et BACKUP_CRON_SECRET ; (3) pour les secrets d’organisation : « Repository access » inclut ce dépôt. Voir docs/BACKUPS.md"
+            echo "::error title=Secrets Actions manquants::Définissez BACKUP_CRON_SECRET et une clé apikey : SUPABASE_ANON_KEY **ou** VITE_SUPABASE_PUBLISHABLE_KEY (comme dans votre .env). Optionnel : SUPABASE_URL ou VITE_SUPABASE_URL, sinon le workflow utilise supabase/config.toml."
             exit 1
           fi
 
-          echo "::notice::Clés chargées (longueurs) : anon=${#SUPABASE_ANON_KEY} chars, cron_secret=${#BACKUP_CRON_SECRET} chars."
+          echo "::notice::Clés chargées (longueurs) : apikey=${#SUPABASE_ANON_KEY} chars, cron_secret=${#BACKUP_CRON_SECRET} chars."
+
+          export SUPABASE_ANON_KEY
 
           if [ -n "$SUPABASE_URL_OVERRIDE" ]; then
             BASE_URL="$(printf '%s' "$SUPABASE_URL_OVERRIDE" | sed 's|/*$||')"
-            echo "Using SUPABASE_URL from repository secret (override)."
+            echo "Using project URL from repository secret (SUPABASE_URL ou VITE_SUPABASE_URL)."
           else
             if [ ! -f supabase/config.toml ]; then
               echo "::error title=config manquant::supabase/config.toml introuvable après checkout."

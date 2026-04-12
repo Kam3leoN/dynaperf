@@ -55,6 +55,7 @@ Deno.serve(async (req) => {
       "audits", "audit_details", "audit_types", "audit_categories", "audit_items_config",
       "suivi_activite", "suivi_activite_items_config",
       "messages", "activity_log", "prenoms_genre",
+      "app_settings", "app_modules", "qr_codes", "qr_shape_library",
     ];
 
     const backup: Record<string, unknown> = { created_at: new Date().toISOString() };

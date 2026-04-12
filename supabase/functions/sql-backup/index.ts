@@ -102,12 +102,20 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: authz.message }, authz.status);
   }
 
-  const dbUrl = Deno.env.get("SUPABASE_DB_URL") ?? Deno.env.get("DATABASE_URL");
-  if (!dbUrl) {
+  const dbUrlRaw = Deno.env.get("SUPABASE_DB_URL") ?? Deno.env.get("DATABASE_URL");
+  if (!dbUrlRaw?.trim()) {
     return jsonResponse({
       error:
-        "Secret SUPABASE_DB_URL (ou DATABASE_URL) manquant : chaîne de connexion Postgres directe (port 5432), Dashboard → Database → Connection string → URI",
+        "Secret SUPABASE_DB_URL (ou DATABASE_URL) manquant sur les Edge Functions : chaîne Postgres **directe** (port **5432**, mode session). Dashboard → Project Settings → Database → Connection string → URI. Redéployez `sql-backup` après avoir ajouté le secret.",
     }, 503);
+  }
+
+  const dbUrl = dbUrlRaw.trim();
+  if (dbUrl.includes(":6543")) {
+    return jsonResponse({
+      error:
+        "URL Postgres : utilisez le port **5432** (connexion directe / session), pas le pooler transactionnel (6543). Copiez l’URI « Session mode » depuis Supabase.",
+    }, 400);
   }
 
   const maxRowsRaw = Deno.env.get("MAX_BACKUP_ROWS_PER_TABLE");
@@ -117,10 +125,20 @@ Deno.serve(async (req) => {
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 
+  const isLocal =
+    /localhost|127\.0\.0\.1/.test(dbUrl) ||
+    dbUrl.includes("@localhost") ||
+    dbUrl.includes("@127.0.0.1");
+
   let db: ReturnType<typeof postgres> | null = null;
 
   try {
-    db = postgres(dbUrl, { max: 1, prepare: false, connect_timeout: 30 });
+    db = postgres(dbUrl, {
+      max: 1,
+      prepare: false,
+      connect_timeout: 45,
+      ssl: isLocal ? false : true,
+    });
 
     const tables = await db<{ tablename: string }[]>`
       SELECT tablename

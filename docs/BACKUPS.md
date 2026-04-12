@@ -9,8 +9,14 @@
 ## `sql-backup` (dump INSERT)
 
 - **Auth** : idem `backup-all` (super admin ou `BACKUP_CRON_SECRET`).
-- **Obligatoire** : `SUPABASE_DB_URL` **ou** `DATABASE_URL` = chaîne **Postgres directe** (port **5432**, *Session mode* dans le dashboard Supabase). Le pooler transactionnel (port 6543) peut faire échouer `postgresjs`.
+- **Obligatoire** : secret Edge `SUPABASE_DB_URL` **ou** `DATABASE_URL` = chaîne **Postgres directe** (port **5432**, *Session mode* dans le dashboard Supabase). Le pooler transactionnel (port **6543**) fait échouer la connexion : la fonction renvoie une erreur explicite. Après ajout du secret, **redéployer** `sql-backup`.
 - **Sortie** : `avatars/backups/sql/dump_<timestamp>.sql`.
+
+### Important : GitHub ≠ Supabase (où mettre `SUPABASE_DB_URL`)
+
+- **`SUPABASE_DB_URL` dans GitHub** (Secrets Actions) **ne sert pas** au code de l’Edge Function. Le workflow CRON n’envoie que des en-têtes HTTP ; il ne transmet pas la chaîne Postgres à Deno.
+- Pour que **`sql-backup` fonctionne** (bouton « Dump SQL » dans l’app **ou** appel CRON), le secret doit exister dans **Supabase → Project Settings → Edge Functions → Secrets** sous le nom `SUPABASE_DB_URL` ou `DATABASE_URL` — **même valeur** que vous utiliseriez pour une connexion directe (port 5432).
+- En résumé : déclarer `SUPABASE_DB_URL` **uniquement** sur GitHub ne suffit pas ; il faut aussi (ou seulement, selon le besoin) la **même variable côté Supabase Edge**.
 
 ## Déploiement
 
@@ -37,11 +43,11 @@ Planification quotidienne : le workflow appelle `backup-all` puis `sql-backup`.
 
 | Secret | Obligatoire | Rôle |
 |--------|-------------|------|
-| `SUPABASE_ANON_KEY` | oui | Même clé anon que l’app (`apikey` pour les Edge Functions). |
 | `BACKUP_CRON_SECRET` | oui | Identique au secret Edge `BACKUP_CRON_SECRET` sur Supabase. |
-| `SUPABASE_URL` | non | Surcharge de l’URL ; sinon `https://<project_id>.supabase.co` est déduit de `supabase/config.toml`. |
+| `SUPABASE_ANON_KEY` **ou** `VITE_SUPABASE_PUBLISHABLE_KEY` | oui (l’un des deux) | Même valeur que dans le `.env` / build Vite (`apikey` pour les appels `curl`). |
+| `SUPABASE_URL` **ou** `VITE_SUPABASE_URL` | non | Surcharge de l’URL projet ; sinon `https://<project_id>.supabase.co` est déduit de `supabase/config.toml`. |
 
-L’URL du projet n’a plus besoin d’être dupliquée en secret : elle suit le `project_id` versionné dans le dépôt.
+Tu peux réutiliser **exactement** les mêmes noms que pour le front (`VITE_*`) : le workflow les accepte sans dupliquer les secrets sous d’autres noms.
 
 **Secret `BACKUP_CRON_SECRET` :** à créer à la fois dans **Supabase → Edge Functions → Secrets** et dans **GitHub → Actions secrets** (même valeur). Voir [`docs/SUPABASE_SECURITY.md`](SUPABASE_SECURITY.md).
 
