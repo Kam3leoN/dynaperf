@@ -4,7 +4,30 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Slider } from "@/components/ui/slider";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFilter, faXmark, faCamera, faTrash, faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faEye, faSort, faSortUp, faSortDown, faFileImport, faFileArrowDown } from "@fortawesome/free-solid-svg-icons";
+import {
+  faFilter,
+  faXmark,
+  faCamera,
+  faTrash,
+  faPlus,
+  faTrashCan,
+  faPenToSquare,
+  faFloppyDisk,
+  faEye,
+  faSort,
+  faSortUp,
+  faSortDown,
+  faFileImport,
+  faFileArrowDown,
+  faBuilding,
+  faUsers,
+  faBullseye,
+  faEuroSign,
+  faTowerBroadcast,
+  faVenusMars,
+  faMapLocationDot,
+  type IconDefinition,
+} from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -19,8 +42,8 @@ import { ClubsCsvImportDialog } from "@/components/ClubsCsvImportDialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { syncClubPresidentPartenaire } from "@/lib/clubPresidentPartenaire";
 import { clubNameInitials, displayClubName } from "@/lib/clubDisplayName";
+import { DepartementTableCell } from "@/components/DepartementTableCell";
 import {
-  DepartementTableCell,
   extractDepartementCode,
   findSecteurIdForDepartementCode,
   normalizeDepartementForStorage,
@@ -59,6 +82,15 @@ interface SecteurRow {
   departements: string[];
 }
 
+/**
+ * `secteur_id` en base, ou secteur déduit du département selon la carte Administration › Secteurs.
+ */
+function resolveSecteurIdForClub(c: Club, secteurs: SecteurRow[]): string | null {
+  if (c.secteur_id) return c.secteur_id;
+  const code = extractDepartementCode(c.departement);
+  return findSecteurIdForDepartementCode(code, secteurs);
+}
+
 const FORMAT_OPTIONS = ["Tous", "Développement", "Intensif", "Convivial"];
 const STATUT_OPTIONS = [
   { value: "Tous", label: "Tous", color: "" },
@@ -87,6 +119,11 @@ function formatCA(n: number) {
   return `${n.toFixed(0)}€`;
 }
 
+/** Moyenne par club (membres, leads, etc.) — jusqu’à une décimale, format fr-FR. */
+function formatAvgMembresParClub(n: number): string {
+  return n.toLocaleString("fr-FR", { maximumFractionDigits: 1, minimumFractionDigits: 0 });
+}
+
 function formatDate(d: string | null) {
   if (!d) return "—";
   const [y, m, day] = d.split("-");
@@ -95,6 +132,31 @@ function formatDate(d: string | null) {
 
 function stripDiacritics(s: string): string {
   return s.normalize("NFD").replace(/\p{M}/gu, "");
+}
+
+/** Affichage (tableau, KPI, export) : retire le préfixe « Secteur » si présent. */
+function formatSecteurDisplayName(nom: string): string {
+  const t = nom.trim();
+  if (!t) return "";
+  const stripped = t.replace(/^secteur\s+/i, "").trim();
+  return stripped || t;
+}
+
+function normalizePartenaireGenre(raw: string | null | undefined): "M" | "F" | null {
+  if (raw == null) return null;
+  const s = raw.trim();
+  if (!s) return null;
+  const c = s.charAt(0).toUpperCase();
+  if (c === "M") return "M";
+  if (c === "F") return "F";
+  return null;
+}
+
+/** Premier token du prénom (Dynabuy / slash), pour inférence H/F via `prenoms_genre`. */
+function presidentPrenomTokenForGenre(c: Club): string {
+  const norm = normalizePresidentImportName(c.president_nom).trim();
+  if (!norm) return "";
+  return norm.split(/[-\s]/)[0]?.toLowerCase() ?? "";
 }
 
 /** Référent « en direct » Geoffroy L'HONNEN : agence ou libellé référent. */
@@ -113,31 +175,126 @@ function presidentIdentityKey(c: Club): string {
   return `n:${normalizePresidentImportName(c.president_nom).toLowerCase().replace(/\s+/g, " ").trim()}`;
 }
 
-function sectorKindFromNom(nom: string): "cedric" | "geoffroy" | "other" {
-  const n = stripDiacritics(nom).toLowerCase();
-  if (n.includes("cedric")) return "cedric";
-  if (n.includes("geoffroy")) return "geoffroy";
-  return "other";
-}
-
 function AdminKpiCard({
   value,
   label,
   title,
   className,
+  icon,
+  subline,
 }: {
   value: ReactNode;
   label: string;
   title?: string;
   className?: string;
+  icon?: IconDefinition;
+  /** Ligne sous le total (ex. moyenne / club). */
+  subline?: string;
 }) {
   return (
     <div
-      className={`bg-secondary/50 rounded-md px-3 py-1.5 text-center min-w-[4.5rem] max-w-[220px] ${className ?? ""}`}
+      className={`group relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all duration-200 hover:border-border hover:shadow-md min-w-0 w-full h-full ${className ?? ""}`}
       title={title}
     >
-      <p className="text-sm font-bold text-foreground tabular-nums">{value}</p>
-      <p className="text-[10px] text-muted-foreground leading-tight">{label}</p>
+      <div className="relative flex flex-col items-center justify-center gap-1 px-3 py-2.5 text-center sm:gap-1.5 sm:px-3 sm:py-3">
+        {icon ? (
+          <div
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/80 bg-muted/50 text-muted-foreground shadow-sm transition-transform duration-200 group-hover:scale-[1.03] dark:border-border/60 dark:bg-muted/35"
+            aria-hidden
+          >
+            <FontAwesomeIcon icon={icon} className="h-[0.95rem] w-[0.95rem] sm:h-[1rem] sm:w-[1rem]" />
+          </div>
+        ) : null}
+        <p className="text-2xl font-bold tabular-nums leading-none tracking-tight text-foreground sm:text-3xl">
+          {value}
+        </p>
+        {subline ? (
+          <p className="max-w-[14rem] text-[10px] font-medium tabular-nums leading-tight text-muted-foreground sm:text-[11px]">
+            {subline}
+          </p>
+        ) : null}
+        <p className="max-w-[14rem] text-[10px] font-medium uppercase tracking-wide text-muted-foreground leading-snug sm:text-[11px]">
+          {label}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/** Répartition compacte : présidents distincts par nombre exact de clubs (1 à 10). */
+function PresidentMultiClubChips({ hist }: { hist: Record<number, number> }) {
+  const bins = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10] as const;
+  return (
+    <div
+      className="rounded-2xl border border-border/50 bg-muted/15 px-4 py-4 sm:px-5 sm:py-5"
+      role="list"
+      aria-label="Nombre de présidents distincts par nombre de clubs gérés"
+    >
+      <div className="flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
+        {bins.map((n) => {
+          const count = hist[n] ?? 0;
+          const clubWord = n === 1 ? "club" : "clubs";
+          const title =
+            count === 0
+              ? `Aucun président avec exactement ${n} ${clubWord}`
+              : `${count} président${count > 1 ? "s" : ""} avec exactement ${n} ${clubWord}`;
+          return (
+            <span
+              key={n}
+              role="listitem"
+              title={title}
+              className={`inline-flex items-stretch overflow-hidden rounded-lg border text-sm shadow-sm ring-0 transition-colors sm:text-base ${
+                count === 0
+                  ? "border-border/50 text-muted-foreground/80"
+                  : "border-border/80 text-foreground hover:border-border"
+              }`}
+            >
+              <span
+                className={`flex min-h-10 min-w-[2.75rem] items-center justify-center border-r border-border/70 px-3 font-semibold tabular-nums sm:min-h-11 sm:min-w-[3rem] sm:px-4 ${
+                  count === 0 ? "bg-muted/50" : "bg-muted/90 dark:bg-muted/70"
+                }`}
+              >
+                {n}
+              </span>
+              <span className="flex min-h-10 min-w-[3rem] items-center justify-center bg-background px-3 font-bold tabular-nums sm:min-h-11 sm:min-w-[3.5rem] sm:px-4">
+                {count}
+              </span>
+            </span>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function KpiSectionTitle({
+  children,
+  hint,
+  centered,
+}: {
+  children: ReactNode;
+  hint?: ReactNode;
+  /** Titre + hint centrés (ex. bloc Répartition). */
+  centered?: boolean;
+}) {
+  return (
+    <div
+      className={
+        centered
+          ? "flex flex-col items-center gap-1 text-center"
+          : "flex flex-col gap-0.5 sm:flex-row sm:items-end sm:justify-between sm:gap-3"
+      }
+    >
+      <h4 className="text-[11px] font-semibold uppercase tracking-[0.12em] text-muted-foreground/90">
+        {children}
+      </h4>
+      {hint ? (
+        <div
+          className={`text-[10px] text-muted-foreground/80 ${centered ? "max-w-md text-center" : "sm:text-right"}`}
+        >
+          {hint}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -146,6 +303,7 @@ type SortKey =
   | "nom"
   | "format"
   | "president_nom"
+  | "referent_nom"
   | "secteur_nom"
   | "departement"
   | "statut"
@@ -158,6 +316,7 @@ const SORT_LABELS: Record<SortKey, string> = {
   nom: "Nom",
   format: "Format",
   president_nom: "Président",
+  referent_nom: "Référent",
   secteur_nom: "Secteur",
   departement: "Département",
   statut: "Statut",
@@ -167,12 +326,16 @@ const SORT_LABELS: Record<SortKey, string> = {
   date_creation: "Date de création",
 };
 
+/** Valeur sentinelle du filtre « club sans référent affiché » (évite collision avec un libellé métier). */
+const FILTER_REFERENT_SANS = "__sans_ref__";
+
 function compareClubs(
   a: Club,
   b: Club,
   key: SortKey,
   dir: "asc" | "desc",
-  secteurNom: (id: string | null) => string,
+  secteurLabelForClub: (c: Club) => string,
+  referentLabel: (c: Club) => string,
 ): number {
   const mul = dir === "asc" ? 1 : -1;
   const str = (x: string | null | undefined) => (x ?? "").toLocaleLowerCase();
@@ -188,8 +351,14 @@ function compareClubs(
           { numeric: true },
         )
       );
+    case "referent_nom":
+      return mul * referentLabel(a).localeCompare(referentLabel(b), "fr", { numeric: true });
     case "secteur_nom":
-      return mul * secteurNom(a.secteur_id).localeCompare(secteurNom(b.secteur_id), "fr", { numeric: true });
+      return mul * formatSecteurDisplayName(secteurLabelForClub(a)).localeCompare(
+        formatSecteurDisplayName(secteurLabelForClub(b)),
+        "fr",
+        { numeric: true },
+      );
     case "format":
     case "departement":
     case "statut":
@@ -219,7 +388,7 @@ function downloadClubsCsv(
   rows: Club[],
   basename: string,
   ctx: {
-    secteurNom: (secteurId: string | null) => string;
+    secteurLabelForClub: (c: Club) => string;
     referentLabel: (c: Club) => string;
   },
 ) {
@@ -260,7 +429,7 @@ function downloadClubsCsv(
       c.telephone_president ?? "",
       c.agence_mere ?? "",
       c.agence_rattachement ?? "",
-      ctx.secteurNom(c.secteur_id),
+      formatSecteurDisplayName(ctx.secteurLabelForClub(c)),
       ctx.referentLabel(c),
     ].map(escapeCsvCell).join(sep);
 
@@ -355,6 +524,8 @@ export default function AdminClubs() {
   const [partenairesById, setPartenairesById] = useState<
     Record<string, { partenaire_referent: string; genre: string | null }>
   >({});
+  /** Prénom → M/F (table `prenoms_genre`), pour compléter les genres partenaires absents. */
+  const [prenomsGenreMap, setPrenomsGenreMap] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterFormat, setFilterFormat] = useState("Tous");
@@ -363,6 +534,7 @@ export default function AdminClubs() {
   const [filterDept, setFilterDept] = useState("Tous");
   const [filterSecteurId, setFilterSecteurId] = useState("Tous");
   const [filterAgenceRattachement, setFilterAgenceRattachement] = useState("Tous");
+  const [filterReferent, setFilterReferent] = useState("Tous");
   const [sortKey, setSortKey] = useState<SortKey>("nom");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [membresMin, setMembresMin] = useState(0);
@@ -384,21 +556,50 @@ export default function AdminClubs() {
 
   const loadClubs = useCallback(async () => {
     setLoading(true);
-    const [clubsRes, sectRes, parRes] = await Promise.all([
-      supabase.from("clubs").select("*").order("nom"),
-      supabase.from("secteurs").select("id, nom, departements").order("nom"),
-      supabase.from("partenaires").select("id, partenaire_referent, genre"),
-    ]);
-    if (clubsRes.data) setClubs(clubsRes.data as Club[]);
-    if (sectRes.data) setSecteurs(sectRes.data as SecteurRow[]);
-    if (parRes.data) {
-      const m: Record<string, { partenaire_referent: string; genre: string | null }> = {};
-      for (const p of parRes.data as { id: string; partenaire_referent: string; genre: string | null }[]) {
-        m[p.id] = { partenaire_referent: p.partenaire_referent, genre: p.genre ?? null };
+    try {
+      const [clubsRes, sectRes, parRes, pgRes] = await Promise.all([
+        supabase.from("clubs").select("*").order("nom"),
+        supabase.from("secteurs").select("id, nom, departements").order("nom"),
+        supabase.from("partenaires").select("id, partenaire_referent, genre"),
+        supabase.from("prenoms_genre").select("prenom, genre"),
+      ]);
+      if (clubsRes.error) {
+        toast.error("Clubs : " + clubsRes.error.message);
+        setClubs([]);
+      } else if (clubsRes.data) {
+        setClubs(clubsRes.data as Club[]);
       }
-      setPartenairesById(m);
+      if (sectRes.error) {
+        toast.error("Secteurs : " + sectRes.error.message);
+        setSecteurs([]);
+      } else if (sectRes.data) {
+        setSecteurs(sectRes.data as SecteurRow[]);
+      }
+      if (parRes.error) {
+        toast.error("Partenaires : " + parRes.error.message);
+        setPartenairesById({});
+      } else if (parRes.data) {
+        const m: Record<string, { partenaire_referent: string; genre: string | null }> = {};
+        for (const p of parRes.data as { id: string; partenaire_referent: string; genre: string | null }[]) {
+          m[p.id] = { partenaire_referent: p.partenaire_referent, genre: p.genre ?? null };
+        }
+        setPartenairesById(m);
+      }
+      if (pgRes.error) {
+        setPrenomsGenreMap({});
+      } else if (pgRes.data) {
+        const map: Record<string, string> = {};
+        for (const d of pgRes.data as { prenom: string; genre: string }[]) {
+          map[d.prenom.toLowerCase()] = d.genre;
+        }
+        setPrenomsGenreMap(map);
+      }
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      toast.error("Chargement impossible : " + msg);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => { loadClubs(); }, [loadClubs]);
@@ -523,14 +724,18 @@ export default function AdminClubs() {
   const activeFiltersCount = [
     filterFormat !== "Tous", filterStatut !== "Tous", filterAnnee !== "Tous",
     filterDept !== "Tous", filterSecteurId !== "Tous", filterAgenceRattachement !== "Tous",
+    filterReferent !== "Tous",
     membresMin > 0, leadsMin > 0, caMin > 0, hideDuplicateNoms,
+    searchQuery.trim().length > 0,
   ].filter(Boolean).length;
 
   const resetFilters = () => {
     setFilterFormat("Tous"); setFilterStatut("Tous"); setFilterAnnee("Tous");
     setFilterDept("Tous"); setFilterSecteurId("Tous"); setFilterAgenceRattachement("Tous");
+    setFilterReferent("Tous");
     setMembresMin(0); setLeadsMin(0); setCaMin(0);
     setHideDuplicateNoms(false);
+    setSearchQuery("");
   };
 
   const handleSort = (key: SortKey) => {
@@ -541,28 +746,17 @@ export default function AdminClubs() {
     }
   };
 
-  const filtered = useMemo(() => clubs.filter(c => {
-    if (filterFormat !== "Tous" && c.format !== filterFormat) return false;
-    if (filterStatut !== "Tous" && c.statut !== filterStatut) return false;
-    if (filterAnnee !== "Tous" && (!c.date_creation || !c.date_creation.startsWith(filterAnnee))) return false;
-    if (filterDept !== "Tous") {
-      const fc = extractDepartementCode(c.departement) ?? c.departement?.trim() ?? "";
-      if (fc !== filterDept) return false;
-    }
-    if (filterSecteurId !== "Tous" && c.secteur_id !== filterSecteurId) return false;
-    if (filterAgenceRattachement !== "Tous" && c.agence_rattachement !== filterAgenceRattachement) return false;
-    if (c.nb_membres_actifs < membresMin) return false;
-    if (c.nb_leads_transformes < leadsMin) return false;
-    if (c.montant_ca < caMin) return false;
-    const term = searchQuery.toLowerCase().trim();
-    if (!term) return true;
-    const sn = c.secteur_id ? secteurs.find(s => s.id === c.secteur_id)?.nom ?? "" : "";
-    const hay = `${c.nom} ${displayClubName(c.nom)} ${c.president_nom} ${normalizePresidentImportName(c.president_nom)} ${c.email_president || ""} ${c.departement || ""} ${c.agence_mere || ""} ${c.agence_rattachement || ""} ${sn} ${c.adresse || ""}`.toLowerCase();
-    return term.split(/\s+/).every(w => hay.includes(w));
-  }), [clubs, filterFormat, filterStatut, filterAnnee, filterDept, filterSecteurId, filterAgenceRattachement, membresMin, leadsMin, caMin, searchQuery, secteurs]);
-
   const secteurNom = useCallback(
     (id: string | null) => (id ? secteurs.find(s => s.id === id)?.nom ?? "" : ""),
+    [secteurs],
+  );
+
+  /** Libellé secteur affiché : en base ou déduit du département (même règle qu’Admin › Secteurs). */
+  const secteurLabelForClub = useCallback(
+    (c: Club) => {
+      const id = resolveSecteurIdForClub(c, secteurs);
+      return id ? secteurs.find((s) => s.id === id)?.nom ?? "" : "";
+    },
     [secteurs],
   );
 
@@ -573,11 +767,50 @@ export default function AdminClubs() {
     [partenairesById],
   );
 
+  const uniqueReferentLabels = useMemo(() => {
+    const set = new Set<string>();
+    clubs.forEach((c) => {
+      const r = referentLabel(c).trim();
+      if (r) set.add(r);
+    });
+    return Array.from(set).sort((a, b) => a.localeCompare(b, "fr", { sensitivity: "base" }));
+  }, [clubs, referentLabel]);
+
+  const filtered = useMemo(() => clubs.filter(c => {
+    if (filterFormat !== "Tous" && c.format !== filterFormat) return false;
+    if (filterStatut !== "Tous" && c.statut !== filterStatut) return false;
+    if (filterAnnee !== "Tous" && (!c.date_creation || !c.date_creation.startsWith(filterAnnee))) return false;
+    if (filterDept !== "Tous") {
+      const fc = extractDepartementCode(c.departement) ?? c.departement?.trim() ?? "";
+      if (fc !== filterDept) return false;
+    }
+    if (filterSecteurId !== "Tous" && resolveSecteurIdForClub(c, secteurs) !== filterSecteurId) return false;
+    if (filterAgenceRattachement !== "Tous" && c.agence_rattachement !== filterAgenceRattachement) return false;
+    if (filterReferent !== "Tous") {
+      const ref = referentLabel(c).trim();
+      if (filterReferent === FILTER_REFERENT_SANS) {
+        if (ref) return false;
+      } else if (ref !== filterReferent) {
+        return false;
+      }
+    }
+    if (c.nb_membres_actifs < membresMin) return false;
+    if (c.nb_leads_transformes < leadsMin) return false;
+    if (c.montant_ca < caMin) return false;
+    const term = searchQuery.toLowerCase().trim();
+    if (!term) return true;
+    const sn = secteurLabelForClub(c);
+    const snDisplay = formatSecteurDisplayName(sn);
+    const refL = referentLabel(c);
+    const hay = `${c.nom} ${displayClubName(c.nom)} ${c.president_nom} ${normalizePresidentImportName(c.president_nom)} ${c.email_president || ""} ${c.departement || ""} ${c.agence_mere || ""} ${c.agence_rattachement || ""} ${refL} ${sn} ${snDisplay} ${c.adresse || ""}`.toLowerCase();
+    return term.split(/\s+/).every(w => hay.includes(w));
+  }), [clubs, filterFormat, filterStatut, filterAnnee, filterDept, filterSecteurId, filterAgenceRattachement, filterReferent, membresMin, leadsMin, caMin, searchQuery, secteurs, secteurLabelForClub, referentLabel]);
+
   const sortedList = useMemo(() => {
     const copy = [...filtered];
-    copy.sort((a, b) => compareClubs(a, b, sortKey, sortDir, secteurNom));
+    copy.sort((a, b) => compareClubs(a, b, sortKey, sortDir, secteurLabelForClub, referentLabel));
     return copy;
-  }, [filtered, sortKey, sortDir, secteurNom]);
+  }, [filtered, sortKey, sortDir, secteurLabelForClub, referentLabel]);
 
   const rowsToDisplay = useMemo(() => {
     if (!hideDuplicateNoms) return sortedList;
@@ -595,6 +828,13 @@ export default function AdminClubs() {
   const totalMembres = rowsToDisplay.reduce((s, c) => s + c.nb_membres_actifs, 0);
   const totalLeads = rowsToDisplay.reduce((s, c) => s + c.nb_leads_transformes, 0);
   const totalCA = rowsToDisplay.reduce((s, c) => s + c.montant_ca, 0);
+  const nClubsVue = rowsToDisplay.length;
+  const sublineMoyMembres =
+    nClubsVue > 0 ? `Moy. ${formatAvgMembresParClub(totalMembres / nClubsVue)} / club` : undefined;
+  const sublineMoyLeads =
+    nClubsVue > 0 ? `Moy. ${formatAvgMembresParClub(totalLeads / nClubsVue)} / club` : undefined;
+  const sublineMoyCA =
+    nClubsVue > 0 ? `Moy. ${formatCA(totalCA / nClubsVue)} / club` : undefined;
 
   /** KPIs étendus : toujours calculés sur tous les clubs en base (indépendamment des filtres). */
   const extendedKpis = useMemo(() => {
@@ -602,32 +842,47 @@ export default function AdminClubs() {
       c.president_partenaire_id ? partenairesById[c.president_partenaire_id]?.partenaire_referent ?? "" : "";
 
     let clubsGeoffroyReferent = 0;
-    let clubsSecteurCedric = 0;
-    let clubsSecteurGeoffroy = 0;
-    const hist: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0 };
+    const hist: Record<number, number> = {
+      1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0, 9: 0, 10: 0,
+    };
 
     const byPresident = new Map<string, number>();
     for (const c of clubs) {
       const pk = presidentIdentityKey(c);
       byPresident.set(pk, (byPresident.get(pk) ?? 0) + 1);
       if (isGeoffroyLHonnenReferent(c.agence_rattachement, referentP(c))) clubsGeoffroyReferent++;
-
-      const sn = c.secteur_id ? secteurs.find((s) => s.id === c.secteur_id)?.nom ?? "" : "";
-      const sk = sectorKindFromNom(sn);
-      if (sk === "cedric") clubsSecteurCedric++;
-      else if (sk === "geoffroy") clubsSecteurGeoffroy++;
     }
+
+    /** Carte admin : compte les clubs avec ce secteur en base ou déduit du département. */
+    const clubsPerSecteur = secteurs.map((s) => ({
+      id: s.id,
+      nom: s.nom,
+      count: clubs.filter((c) => resolveSecteurIdForClub(c, secteurs) === s.id).length,
+    }));
 
     for (const nClub of byPresident.values()) {
-      if (nClub >= 1 && nClub <= 9) hist[nClub]++;
+      if (nClub >= 1 && nClub <= 10) hist[nClub]++;
     }
 
-    const genreByPresident = new Map<string, string | null>();
+    const genreByPresident = new Map<string, "M" | "F" | null>();
+    const sampleClubByPresident = new Map<string, Club>();
     for (const c of clubs) {
       const pk = presidentIdentityKey(c);
-      const g = c.president_partenaire_id ? partenairesById[c.president_partenaire_id]?.genre ?? null : null;
+      if (!sampleClubByPresident.has(pk)) sampleClubByPresident.set(pk, c);
+      const raw = c.president_partenaire_id ? partenairesById[c.president_partenaire_id]?.genre : null;
+      const g = normalizePartenaireGenre(raw);
       if (!genreByPresident.has(pk)) genreByPresident.set(pk, g);
       else if (genreByPresident.get(pk) == null && g) genreByPresident.set(pk, g);
+    }
+    for (const [pk, g] of [...genreByPresident.entries()]) {
+      if (g === "M" || g === "F") continue;
+      const club = sampleClubByPresident.get(pk);
+      if (!club) continue;
+      const token = presidentPrenomTokenForGenre(club);
+      if (!token) continue;
+      const inferred = prenomsGenreMap[token];
+      const inf = inferred === "M" || inferred === "F" ? inferred : normalizePartenaireGenre(inferred);
+      if (inf === "M" || inf === "F") genreByPresident.set(pk, inf);
     }
     let presidentsH = 0;
     let presidentsF = 0;
@@ -638,13 +893,12 @@ export default function AdminClubs() {
 
     return {
       clubsGeoffroyReferent,
-      clubsSecteurCedric,
-      clubsSecteurGeoffroy,
+      clubsPerSecteur,
       presidentsH,
       presidentsF,
       hist,
     };
-  }, [clubs, secteurs, partenairesById]);
+  }, [clubs, secteurs, partenairesById, prenomsGenreMap]);
 
   const SortableTh = ({
     label,
@@ -726,7 +980,9 @@ export default function AdminClubs() {
           <SelectContent>
             <SelectItem value="Tous">Tous</SelectItem>
             {secteurs.map(s => (
-              <SelectItem key={s.id} value={s.id}>{s.nom}</SelectItem>
+              <SelectItem key={s.id} value={s.id}>
+                {formatSecteurDisplayName(s.nom)}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -736,6 +992,19 @@ export default function AdminClubs() {
         <Select value={filterAgenceRattachement} onValueChange={setFilterAgenceRattachement}>
           <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>{uniqueAgencesRattachement.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
+      <div>
+        <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Référent</label>
+        <Select value={filterReferent} onValueChange={setFilterReferent}>
+          <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Tous">Tous</SelectItem>
+            <SelectItem value={FILTER_REFERENT_SANS}>Sans référent</SelectItem>
+            {uniqueReferentLabels.map((r) => (
+              <SelectItem key={r} value={r}>{r}</SelectItem>
+            ))}
+          </SelectContent>
         </Select>
       </div>
       <div>
@@ -836,7 +1105,9 @@ export default function AdminClubs() {
             <SelectContent>
               <SelectItem value="__auto">Auto selon département</SelectItem>
               {secteurs.map(s => (
-                <SelectItem key={s.id} value={s.id}>{s.nom}</SelectItem>
+                <SelectItem key={s.id} value={s.id}>
+                  {formatSecteurDisplayName(s.nom)}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -877,7 +1148,9 @@ export default function AdminClubs() {
     </div>
   );
 
-  const MobileCard = ({ c }: { c: Club }) => (
+  const MobileCard = ({ c }: { c: Club }) => {
+    const refMobile = referentLabel(c);
+    return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-card border border-border rounded-lg p-3 space-y-2">
       <div className="flex items-start justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0">
@@ -885,8 +1158,10 @@ export default function AdminClubs() {
           <div className="min-w-0">
             <p className="text-sm font-semibold text-foreground truncate">{displayClubName(c.nom)}</p>
             <p className="text-xs text-muted-foreground truncate">{normalizePresidentImportName(c.president_nom)}</p>
-            {c.email_president ? (
-              <p className="text-[10px] text-muted-foreground/90 truncate">{c.email_president}</p>
+            {refMobile ? (
+              <p className="text-[10px] text-muted-foreground/90 truncate" title="Référent">
+                {refMobile}
+              </p>
             ) : null}
           </div>
         </div>
@@ -913,21 +1188,242 @@ export default function AdminClubs() {
         </div>
       </div>
       <div className="flex items-center justify-between text-[10px] text-muted-foreground gap-2">
-        <span className="min-w-0">{secteurNom(c.secteur_id) || "Sans secteur"}</span>
+        <span className="min-w-0">{formatSecteurDisplayName(secteurLabelForClub(c)) || "Sans secteur"}</span>
         <span className="shrink-0">{formatDate(c.date_creation)}</span>
       </div>
       <div className="text-[10px] text-muted-foreground border-t border-border/60 pt-1">
         <DepartementTableCell raw={c.departement} />
       </div>
     </motion.div>
-  );
+    );
+  };
+
+  const kpiSection = !loading ? (
+    <section className="space-y-6 min-w-0" aria-label="Indicateurs clubs">
+      <div className="space-y-2.5">
+        <KpiSectionTitle hint="Sommes et effectifs selon filtres actuels">Vue filtrée</KpiSectionTitle>
+        <div className="grid grid-cols-12 gap-3 sm:gap-3.5">
+          <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+            <AdminKpiCard
+              value={rowsToDisplay.length}
+              label="Clubs"
+              title="Vue filtrée (tableau ci-dessous)"
+              icon={faBuilding}
+            />
+          </div>
+          <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+            <AdminKpiCard
+              value={totalMembres}
+              label="Membres"
+              title={
+                nClubsVue > 0
+                  ? `Somme sur la vue filtrée — moyenne ${formatAvgMembresParClub(totalMembres / nClubsVue)} / club`
+                  : "Somme sur la vue filtrée"
+              }
+              icon={faUsers}
+              subline={sublineMoyMembres}
+            />
+          </div>
+          <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+            <AdminKpiCard
+              value={totalLeads}
+              label="Leads"
+              title={
+                nClubsVue > 0
+                  ? `Somme sur la vue filtrée — moyenne ${formatAvgMembresParClub(totalLeads / nClubsVue)} / club`
+                  : "Somme sur la vue filtrée"
+              }
+              icon={faBullseye}
+              subline={sublineMoyLeads}
+            />
+          </div>
+          <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+            <AdminKpiCard
+              value={formatCA(totalCA)}
+              label="CA Total"
+              title={
+                nClubsVue > 0
+                  ? `Somme sur la vue filtrée — moyenne ${formatCA(totalCA / nClubsVue)} / club`
+                  : "Somme sur la vue filtrée"
+              }
+              icon={faEuroSign}
+              subline={sublineMoyCA}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-2.5 rounded-2xl border border-dashed border-border/60 bg-muted/25 p-3 sm:p-4">
+        <KpiSectionTitle
+          hint={
+            <span className="inline-flex max-w-prose items-start gap-1.5 rounded-lg bg-background/80 px-2 py-1.5 text-[10px] leading-snug text-muted-foreground ring-1 ring-border/50">
+              Les cartes suivantes utilisent <strong className="font-medium text-foreground/90">toute la base</strong>, sans tenir compte des filtres du tableau.
+            </span>
+          }
+        >
+          Base complète
+        </KpiSectionTitle>
+        <div className="grid grid-cols-12 gap-3 sm:gap-3.5">
+          <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+            <AdminKpiCard
+              value={extendedKpis.clubsGeoffroyReferent}
+              label="Clubs en Direct"
+              title="Clubs avec référent Geoffroy L'HONNEN (agence de rattachement ou référent partenaire)"
+              icon={faTowerBroadcast}
+            />
+          </div>
+          <div className="col-span-12 sm:col-span-6 lg:col-span-3">
+            <AdminKpiCard
+              value={`${extendedKpis.presidentsH} / ${extendedKpis.presidentsF}`}
+              label="Présidents H / F"
+              title="Présidents distincts : genre du partenaire lié, sinon inféré par le prénom (table prenoms_genre)"
+              icon={faVenusMars}
+            />
+          </div>
+          {extendedKpis.clubsPerSecteur.map((row) => (
+            <div key={row.id} className="col-span-12 sm:col-span-6 lg:col-span-3">
+              <AdminKpiCard
+                value={row.count}
+                label={formatSecteurDisplayName(row.nom)}
+                title="Clubs dont le secteur en base ou le département (carte Admin › Secteurs) correspond à ce secteur."
+                icon={faMapLocationDot}
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="space-y-2.5">
+        <KpiSectionTitle centered hint="Nombre de présidents distincts par multi‑clubs">
+          Répartition
+        </KpiSectionTitle>
+        <PresidentMultiClubChips hist={extendedKpis.hist} />
+      </div>
+    </section>
+  ) : null;
 
   return (
-    <div className="bg-card rounded-2xl shadow-soft border border-border/60 p-4 sm:p-5">
+    <div className="min-w-0 space-y-4">
+      {kpiSection}
+      <div className="bg-card rounded-2xl shadow-soft border border-border/60 p-4 sm:p-5">
+      <div
+        className="mb-4 rounded-xl border border-border/50 bg-muted/15 p-3 sm:p-4"
+        aria-label="Filtres du tableau"
+      >
+        <p className="mb-3 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+          Filtrer l’affichage
+        </p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          <div className="space-y-1.5 min-w-0">
+            <label htmlFor="filter-inline-format" className="text-[10px] font-medium text-muted-foreground">
+              Format
+            </label>
+            <Select value={filterFormat} onValueChange={setFilterFormat}>
+              <SelectTrigger id="filter-inline-format" className="h-9 w-full text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {FORMAT_OPTIONS.map((f) => (
+                  <SelectItem key={f} value={f}>
+                    {f}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5 min-w-0">
+            <label htmlFor="filter-inline-statut" className="text-[10px] font-medium text-muted-foreground">
+              Statut
+            </label>
+            <Select value={filterStatut} onValueChange={setFilterStatut}>
+              <SelectTrigger id="filter-inline-statut" className="h-9 w-full text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {STATUT_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5 min-w-0">
+            <label htmlFor="filter-inline-agence" className="text-[10px] font-medium text-muted-foreground">
+              Agence
+            </label>
+            <Select value={filterAgenceRattachement} onValueChange={setFilterAgenceRattachement}>
+              <SelectTrigger id="filter-inline-agence" className="h-9 w-full text-sm">
+                <SelectValue placeholder="Agence de rattachement" />
+              </SelectTrigger>
+              <SelectContent>
+                {uniqueAgencesRattachement.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {s}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5 min-w-0">
+            <label htmlFor="filter-inline-dept" className="text-[10px] font-medium text-muted-foreground">
+              Département
+            </label>
+            <Select value={filterDept} onValueChange={setFilterDept}>
+              <SelectTrigger id="filter-inline-dept" className="h-9 w-full text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {uniqueDepts.map((d) => (
+                  <SelectItem key={d} value={d}>
+                    {d}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1.5 min-w-0">
+            <label htmlFor="filter-inline-secteur" className="text-[10px] font-medium text-muted-foreground">
+              Zone / secteur
+            </label>
+            <Select value={filterSecteurId} onValueChange={setFilterSecteurId}>
+              <SelectTrigger id="filter-inline-secteur" className="h-9 w-full text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Tous">Tous</SelectItem>
+                {secteurs.map((s) => (
+                  <SelectItem key={s.id} value={s.id}>
+                    {formatSecteurDisplayName(s.nom)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
       <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
         <h3 className="text-sm font-semibold text-foreground">Clubs d'affaires</h3>
         <div className="flex items-center gap-2 sm:gap-3 flex-1 sm:flex-none justify-end">
-          <Input placeholder="Rechercher…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-48 sm:w-[260px] h-9 text-sm rounded-md" />
+          <div className="relative w-48 sm:w-[260px] shrink-0">
+            <Input
+              placeholder="Rechercher…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-9 text-sm rounded-md pr-8"
+              aria-label="Rechercher dans les clubs"
+            />
+            {searchQuery ? (
+              <button
+                type="button"
+                className="absolute right-1 top-1/2 -translate-y-1/2 p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-secondary"
+                onClick={() => setSearchQuery("")}
+                aria-label="Effacer la recherche"
+              >
+                <FontAwesomeIcon icon={faXmark} className="h-3 w-3" />
+              </button>
+            ) : null}
+          </div>
           <Button
             type="button"
             variant="outline"
@@ -937,7 +1433,7 @@ export default function AdminClubs() {
               downloadClubsCsv(
                 rowsToDisplay,
                 `clubs-dynaperf-${new Date().toISOString().slice(0, 10)}`,
-                { secteurNom, referentLabel },
+                { secteurLabelForClub, referentLabel },
               )
             }
             disabled={rowsToDisplay.length === 0}
@@ -1010,42 +1506,6 @@ export default function AdminClubs() {
         <div className="text-center py-12 text-muted-foreground text-sm">Chargement…</div>
       ) : (
         <>
-          <div className="space-y-3 mb-4">
-            <div className="flex flex-wrap gap-3">
-              <AdminKpiCard value={rowsToDisplay.length} label="Clubs" title="Vue filtrée (tableau ci-dessous)" />
-              <AdminKpiCard value={totalMembres} label="Membres" title="Somme sur la vue filtrée" />
-              <AdminKpiCard value={totalLeads} label="Leads" title="Somme sur la vue filtrée" />
-              <AdminKpiCard value={formatCA(totalCA)} label="CA Total" title="Somme sur la vue filtrée" />
-            </div>
-            <p className="text-[10px] text-muted-foreground -mt-1 px-0.5">
-              Indicateurs ci-dessous : tous les clubs en base (hors filtres).
-            </p>
-            <div className="flex flex-wrap gap-3">
-              <AdminKpiCard
-                value={extendedKpis.clubsGeoffroyReferent}
-                label="Clubs réf. Geoffroy L'HONNEN"
-                title="Agence rattachement ou référent partenaire contenant « Geoffroy » et « Honnen »"
-              />
-              <AdminKpiCard
-                value={`${extendedKpis.presidentsH} / ${extendedKpis.presidentsF}`}
-                label="Présidents H / F"
-                title="Présidents distincts (email ou nom), genre depuis le partenaire lié"
-              />
-              <AdminKpiCard value={extendedKpis.clubsSecteurCedric} label="Clubs secteur Cédric" title="Nom de secteur contenant « Cédric »" />
-              <AdminKpiCard value={extendedKpis.clubsSecteurGeoffroy} label="Clubs secteur Geoffroy" title="Nom de secteur contenant « Geoffroy »" />
-            </div>
-            <div className="flex flex-wrap gap-3">
-              {([1, 2, 3, 4, 5, 6, 7, 8, 9] as const).map((n) => (
-                <AdminKpiCard
-                  key={n}
-                  value={extendedKpis.hist[n]}
-                  label={n === 1 ? "Présidents à 1 club" : `Présidents à ${n} clubs`}
-                  title="Nombre de présidents distincts ayant exactement ce nombre de clubs en base"
-                />
-              ))}
-            </div>
-          </div>
-
           <div className="md:hidden flex flex-wrap gap-2 items-center mb-3">
             <span className="text-xs text-muted-foreground shrink-0">Tri</span>
             <Select value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
@@ -1079,7 +1539,8 @@ export default function AdminClubs() {
                   <TableHead className="w-10"></TableHead>
                   <SortableTh label="Club" colKey="nom" />
                   <SortableTh label="Format" colKey="format" />
-                  <SortableTh label="Président" colKey="president_nom" className="min-w-[220px]" />
+                  <SortableTh label="Président" colKey="president_nom" className="min-w-[160px]" />
+                  <SortableTh label="Référent" colKey="referent_nom" className="min-w-[140px]" />
                   <SortableTh label="Secteur" colKey="secteur_nom" />
                   <SortableTh label="Dpt." colKey="departement" />
                   <SortableTh label="Statut" colKey="statut" />
@@ -1097,19 +1558,16 @@ export default function AdminClubs() {
                     <TableCell className="font-medium text-sm">{displayClubName(c.nom)}</TableCell>
                     <TableCell><FormatBadge format={c.format} /></TableCell>
                     <TableCell className="text-sm align-top">
-                      <div className="flex gap-3 items-start min-w-0">
-                        <div className="min-w-0 flex-1 space-y-0.5">
-                          <div>{normalizePresidentImportName(c.president_nom)}</div>
-                          {c.email_president ? (
-                            <div className="text-[11px] text-muted-foreground break-all leading-snug">{c.email_president}</div>
-                          ) : null}
-                        </div>
-                        <div className="shrink-0 text-right text-[11px] text-muted-foreground max-w-[120px] leading-tight" title="Référent / agence">
-                          {referentLabel(c) || "—"}
-                        </div>
-                      </div>
+                      {normalizePresidentImportName(c.president_nom)}
                     </TableCell>
-                    <TableCell className="text-sm text-foreground">{secteurNom(c.secteur_id) || "—"}</TableCell>
+                    <TableCell className="text-sm text-foreground align-top min-w-0">
+                      <span className="line-clamp-2" title={referentLabel(c) || undefined}>
+                        {referentLabel(c) || "—"}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-sm text-foreground">
+                      {formatSecteurDisplayName(secteurLabelForClub(c)) || "—"}
+                    </TableCell>
                     <TableCell className="align-top"><DepartementTableCell raw={c.departement} /></TableCell>
                     <TableCell><StatutBadge statut={c.statut} /></TableCell>
                     <TableCell className="text-right text-sm">{c.nb_membres_actifs}</TableCell>
@@ -1121,7 +1579,7 @@ export default function AdminClubs() {
                 ))}
                 {rowsToDisplay.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={12} className="text-center text-sm text-muted-foreground py-8">Aucun club trouvé</TableCell>
+                    <TableCell colSpan={13} className="text-center text-sm text-muted-foreground py-8">Aucun club trouvé</TableCell>
                   </TableRow>
                 )}
               </TableBody>
@@ -1177,10 +1635,16 @@ export default function AdminClubs() {
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div><span className="text-xs text-muted-foreground block">Président</span><span className="font-medium text-foreground">{normalizePresidentImportName(viewClub.president_nom) || "—"}</span></div>
+                <div><span className="text-xs text-muted-foreground block">Référent</span><span className="font-medium text-foreground">{referentLabel(viewClub) || "—"}</span></div>
                 <div><span className="text-xs text-muted-foreground block">Vice-président</span><span className="font-medium text-foreground">{viewClub.vice_president_nom || "—"}</span></div>
                 <div><span className="text-xs text-muted-foreground block">Tél. président</span><span className="font-medium text-foreground">{viewClub.telephone_president || "—"}</span></div>
                 <div><span className="text-xs text-muted-foreground block">Email</span><span className="font-medium text-foreground break-all">{viewClub.email_president || "—"}</span></div>
-                <div><span className="text-xs text-muted-foreground block">Secteur</span><span className="font-medium text-foreground">{secteurNom(viewClub.secteur_id) || "—"}</span></div>
+                <div>
+                  <span className="text-xs text-muted-foreground block">Secteur</span>
+                  <span className="font-medium text-foreground">
+                    {formatSecteurDisplayName(secteurLabelForClub(viewClub)) || "—"}
+                  </span>
+                </div>
                 <div className="col-span-2"><span className="text-xs text-muted-foreground block">Département</span><div className="font-medium text-foreground"><DepartementTableCell raw={viewClub.departement} /></div></div>
                 <div><span className="text-xs text-muted-foreground block">Agence mère</span><span className="font-medium text-foreground">{viewClub.agence_mere || "—"}</span></div>
                 <div><span className="text-xs text-muted-foreground block">Agence rattachement</span><span className="font-medium text-foreground">{viewClub.agence_rattachement || "—"}</span></div>
@@ -1231,6 +1695,7 @@ export default function AdminClubs() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
     </div>
   );
 }

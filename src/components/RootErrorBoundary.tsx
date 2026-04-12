@@ -18,8 +18,6 @@ interface Props {
 interface State {
   error: Error | null;
   retrying: boolean;
-  /** La récupération auto était bloquée (anti-boucle 10 s) : afficher un bouton. */
-  chunkReloadThrottled: boolean;
 }
 
 /**
@@ -27,19 +25,16 @@ interface State {
  * Les erreurs de chunk après déploiement affichent un écran neutre « mise à jour », pas une page d’erreur technique.
  */
 export class RootErrorBoundary extends Component<Props, State> {
-  state: State = { error: null, retrying: false, chunkReloadThrottled: false };
+  state: State = { error: null, retrying: false };
 
   static getDerivedStateFromError(error: Error): Partial<State> {
-    return { error, retrying: false, chunkReloadThrottled: false };
+    return { error, retrying: false };
   }
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error("[RootErrorBoundary]", error, info.componentStack);
     if (isStaleChunkLoadFailure(error.message)) {
-      const scheduled = scheduleChunkLoadRecovery(error);
-      if (!scheduled) {
-        this.setState({ chunkReloadThrottled: true });
-      }
+      void scheduleChunkLoadRecovery(error);
     }
   }
 
@@ -81,32 +76,32 @@ export class RootErrorBoundary extends Component<Props, State> {
           <p style={{ fontSize: "1.05rem", fontWeight: 600, margin: "0 0 8px", textAlign: "center" }}>
             Mise à jour de l’application…
           </p>
-          <p style={{ fontSize: "0.875rem", color: "#64748b", textAlign: "center", maxWidth: 360, margin: 0 }}>
-            Une nouvelle version vient d’être déployée. Le chargement reprend automatiquement.
+          <p style={{ fontSize: "0.875rem", color: "#64748b", textAlign: "center", maxWidth: 420, margin: 0 }}>
+            Une nouvelle version vient d’être déployée. Le chargement reprend automatiquement. Si rien ne change,
+            désinscrivez le service worker : ajoutez{" "}
+            <code style={{ fontSize: "0.8rem" }}>?dp-sw-reset=1</code> à l’URL puis Entrée.
           </p>
-          {this.state.chunkReloadThrottled && (
-            <button
-              type="button"
-              onClick={() => {
-                this.setState({ retrying: true });
-                void purgeAndReload();
-              }}
-              disabled={this.state.retrying}
-              style={{
-                marginTop: 24,
-                padding: "10px 20px",
-                borderRadius: 8,
-                border: "1px solid #cbd5e1",
-                background: "#fff",
-                color: "#0f172a",
-                fontWeight: 600,
-                cursor: "pointer",
-                fontSize: "0.9rem",
-              }}
-            >
-              {this.state.retrying ? "Actualisation…" : "Actualiser la page"}
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => {
+              this.setState({ retrying: true });
+              void purgeAndReload();
+            }}
+            disabled={this.state.retrying}
+            style={{
+              marginTop: 24,
+              padding: "10px 20px",
+              borderRadius: 8,
+              border: "1px solid #cbd5e1",
+              background: "#fff",
+              color: "#0f172a",
+              fontWeight: 600,
+              cursor: "pointer",
+              fontSize: "0.9rem",
+            }}
+          >
+            {this.state.retrying ? "Actualisation…" : "Purger le cache & recharger"}
+          </button>
         </div>
       );
     }

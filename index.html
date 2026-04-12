@@ -25,8 +25,16 @@
     <link rel="manifest" href="/manifest.json" />
   </head>
 
-  <body style="background-color:#ee4540;margin:0">
-    <div id="root"></div>
+  <!-- Fond neutre : si le JS ne charge pas, éviter un écran rouge « vide » (le splash applique le rouge en overlay dans React). -->
+  <body style="margin:0;background-color:#f8fafc">
+    <div id="root">
+      <div
+        style="min-height:100vh;display:flex;align-items:center;justify-content:center;background-color:#f8fafc;color:#64748b;font-family:system-ui,-apple-system,sans-serif;font-size:0.95rem"
+        aria-live="polite"
+      >
+        Chargement…
+      </div>
+    </div>
     <!-- GitHub Pages SPA redirect handler -->
     <script>
       (function(){

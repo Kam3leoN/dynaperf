@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useRef } from "react";
+import { motion } from "framer-motion";
 
-const SPLASH_DURATION = 1600;
+const SPLASH_SHOW_MS = 1600;
+/** Durée approx. de l’anim de sortie + marge — ne pas dépendre uniquement de `onExitComplete` Framer (peut ne pas fire). */
+const SPLASH_EXIT_MS = 450;
 
 /** Inlined SVG logo – zero network request, instant render */
 function LogoInline({ className }: { className?: string }) {
@@ -26,46 +28,48 @@ function LogoInline({ className }: { className?: string }) {
 }
 
 export function SplashScreen({ onFinished }: { onFinished: () => void }) {
-  const [visible, setVisible] = useState(true);
+  const finishedRef = useRef(false);
 
   useEffect(() => {
-    document.body.style.backgroundColor = "#ee4540";
-    const timer = setTimeout(() => setVisible(false), SPLASH_DURATION);
-    return () => clearTimeout(timer);
-  }, []);
+    /** Ne pas teinter `document.body` en rouge : `index.html` utilisait #ee4540 — si le JS échoue, l’utilisateur voyait un écran rouge sans contenu. Le splash couvre déjà tout l’écran. */
+    const finish = () => {
+      if (finishedRef.current) return;
+      finishedRef.current = true;
+      onFinished();
+    };
+
+    const totalMs = SPLASH_SHOW_MS + SPLASH_EXIT_MS;
+    const doneId = window.setTimeout(finish, totalMs);
+
+    return () => {
+      window.clearTimeout(doneId);
+    };
+  }, [onFinished]);
 
   return (
-    <AnimatePresence onExitComplete={() => {
-      document.body.style.backgroundColor = "";
-      onFinished();
-    }}>
-      {visible && (
-        <motion.div
-          key="splash"
-          initial={{ opacity: 1 }}
-          exit={{ opacity: 0, scale: 1.08 }}
-          transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
-          className="fixed inset-0 z-[9999] flex flex-col items-center justify-center px-6"
-          style={{ backgroundColor: "#ee4540" }}
-        >
-          <motion.div
-            className="w-[80%] sm:w-[60%] lg:w-[40%] max-w-md mb-6"
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
-          >
-            <LogoInline />
-          </motion.div>
-          <motion.p
-            className="text-white/80 text-base sm:text-lg mt-2 font-medium"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
-          >
-            Performance &amp; Excellence
-          </motion.p>
-        </motion.div>
-      )}
-    </AnimatePresence>
+    <motion.div
+      initial={{ opacity: 1 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+      className="fixed inset-0 z-[9999] flex flex-col items-center justify-center px-6"
+      style={{ backgroundColor: "#ee4540" }}
+    >
+      <motion.div
+        className="w-[80%] sm:w-[60%] lg:w-[40%] max-w-md mb-6"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
+      >
+        <LogoInline />
+      </motion.div>
+      <motion.p
+        className="text-white/80 text-base sm:text-lg mt-2 font-medium"
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+      >
+        Performance &amp; Excellence
+      </motion.p>
+    </motion.div>
   );
 }

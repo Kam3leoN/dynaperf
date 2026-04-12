@@ -34,6 +34,9 @@ const isPreviewHost =
   window.location.hostname.includes("id-preview--") ||
   window.location.hostname.includes("lovableproject.com");
 
+/** Limite d’attente : `getRegistrations` / `unregister` / `caches` peuvent ne jamais résoudre (Chrome bloqué, onglet en arrière-plan). */
+const DP_SW_RESET_MAX_MS = 5000;
+
 /**
  * Secours déploiement (cPanel, cache agressif, ancien SW) : ouvrir une fois
  * `https://votre-site/?dp-sw-reset=1` — désinscription SW, vidage des caches API, rechargement.
@@ -45,18 +48,36 @@ async function applySwResetFromQuery(): Promise<boolean> {
     u.searchParams.delete("dp-sw-reset");
     const next = `${u.pathname}${u.search}${u.hash}` || u.pathname;
 
-    if ("serviceWorker" in navigator) {
-      const registrations = await navigator.serviceWorker.getRegistrations();
-      await Promise.all(registrations.map((r) => r.unregister()));
-    }
-    if ("caches" in window) {
-      const keys = await caches.keys();
-      await Promise.all(keys.map((k) => caches.delete(k)));
-    }
+    const work = async () => {
+      if ("serviceWorker" in navigator) {
+        const registrations = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(registrations.map((r) => r.unregister()));
+      }
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+    };
+
+    await Promise.race([
+      work(),
+      new Promise<void>((resolve) => setTimeout(resolve, DP_SW_RESET_MAX_MS)),
+    ]);
+
     window.location.replace(next);
     return true;
   } catch (e) {
     console.warn("[main] dp-sw-reset a échoué:", e);
+    try {
+      const u = new URL(window.location.href);
+      if (u.searchParams.get("dp-sw-reset") === "1") {
+        u.searchParams.delete("dp-sw-reset");
+        window.location.replace(`${u.pathname}${u.search}${u.hash}`);
+        return true;
+      }
+    } catch {
+      /* ignore */
+    }
     return false;
   }
 }
@@ -85,6 +106,8 @@ async function cleanupCaches() {
 }
 
 async function registerSW() {
+  /** En dev (`npm run dev`), ne pas enregistrer le SW : sinon caches / precache obsolètes → chunks 404, écran « mise à jour » bloqué. */
+  if (!import.meta.env.PROD) return;
   // Only register SW in production, outside iframes and preview hosts
   if (isPreviewHost || isInIframe) return;
   if (!("serviceWorker" in navigator)) return;
@@ -118,19 +141,20 @@ void (async function bootstrap() {
   applyDeviceClasses();
   listenDeviceChanges();
 
-  await cleanupCaches();
-
   const el = document.getElementById("root");
   if (!el) {
     console.error("[main] Élément #root introuvable");
     return;
   }
+  /** Monter l’app tout de suite : ne pas attendre `cleanupCaches` (peut être lent / bloquant sur certains hôtes). */
   createRoot(el).render(
     <RootErrorBoundary>
       <App />
     </RootErrorBoundary>,
   );
   void registerSW();
+
+  await cleanupCaches();
 })();
 
 /**

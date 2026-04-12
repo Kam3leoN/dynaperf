@@ -1,4 +1,4 @@
-import { useState, lazy, Suspense, useEffect } from "react";
+import { useState, lazy, Suspense, useEffect, useCallback } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -22,6 +22,8 @@ import Welcome from "./pages/Welcome";
 import Auth from "./pages/Auth";
 /** Chargé en eager : évite un chunk séparé souvent cassé (cache / SW) sur GitHub Pages pour `/qrcodes/new`. */
 import QrCodeManager from "./pages/QrCodeManager";
+/** Même logique : `/reseau/clubs` (AdminClubs) sinon import dynamique souvent 404 après build / SW. */
+import Clubs from "./pages/Clubs";
 
 // Lazy-loaded routes for better code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -54,7 +56,6 @@ const Profile = lazy(() => import("./pages/Profile"));
 const ChangePassword = lazy(() => import("./pages/ChangePassword"));
 const Reseau = lazy(() => import("./pages/Reseau"));
 const Partenaires = lazy(() => import("./pages/Partenaires"));
-const Clubs = lazy(() => import("./pages/Clubs"));
 const Secteurs = lazy(() => import("./pages/Secteurs"));
 const Notifications = lazy(() => import("./pages/Notifications"));
 const Messages = lazy(() => import("./pages/Messages"));
@@ -146,6 +147,11 @@ function ScrollToTopOnRouteChange() {
 const App = () => {
   const [splashDone, setSplashDone] = useState(false);
 
+  /** Référence stable : évite de relancer les effets du splash à chaque rendu parent (Auth, etc.). */
+  const onSplashFinished = useCallback(() => {
+    setSplashDone(true);
+  }, []);
+
   useEffect(() => {
     if (!splashDone) return;
     prefetchPageChunksDeferred();
@@ -161,7 +167,7 @@ const App = () => {
             <Sonner />
             <InstallPrompt />
             <OfflineIndicator />
-            {!splashDone && <SplashScreen onFinished={() => setSplashDone(true)} />}
+            {!splashDone && <SplashScreen onFinished={onSplashFinished} />}
             {splashDone && (
             <>
             <AppBrandingBoot />

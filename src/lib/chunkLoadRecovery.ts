@@ -21,12 +21,16 @@ export function isStaleChunkLoadFailure(message: string): boolean {
     m.includes("error loading dynamically imported module") ||
     m.includes("loading chunk") ||
     m.includes("loading css chunk") ||
-    /** Réponse HTML (404) à la place du .js — déploiement / mauvais chemin de base. */
-    m.includes("unexpected token") ||
+    /**
+     * Réponse HTML (404) à la place du .js — pas « toute » erreur Unexpected token (sinon bugs applicatifs
+     * affichent à tort l’écran « mise à jour »).
+     */
+    m.includes("unexpected token '<'") ||
+    m.includes('unexpected token "<"') ||
     m.includes("text/html") ||
     m.includes("mime type") ||
     m.includes("failed to load module script") ||
-    m.includes("failed to fetch") && m.includes("import")
+    (m.includes("failed to fetch") && m.includes("import"))
   );
 }
 
