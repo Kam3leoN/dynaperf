@@ -20,6 +20,8 @@ import { prefetchPageChunksDeferred } from "@/lib/prefetchPageChunks";
 // Eagerly loaded (critical path)
 import Welcome from "./pages/Welcome";
 import Auth from "./pages/Auth";
+/** Chargé en eager : évite un chunk séparé souvent cassé (cache / SW) sur GitHub Pages pour `/qrcodes/new`. */
+import QrCodeManager from "./pages/QrCodeManager";
 
 // Lazy-loaded routes for better code splitting
 const Index = lazy(() => import("./pages/Index"));
@@ -62,7 +64,6 @@ const Preferences = lazy(() => import("./pages/Preferences"));
 const DashboardHub = lazy(() => import("./pages/DashboardHub"));
 const Primes = lazy(() => import("./pages/Primes"));
 const QrCodeManageList = lazy(() => import("./pages/QrCodeManageList"));
-const QrCodeManager = lazy(() => import("./pages/QrCodeManager"));
 const QrCodeShapes = lazy(() => import("./pages/QrCodeShapes"));
 const AdminQrShapes = lazy(() => import("./pages/admin/AdminQrShapes"));
 const AdminPresenceStatuses = lazy(() => import("./pages/admin/AdminPresenceStatuses"));

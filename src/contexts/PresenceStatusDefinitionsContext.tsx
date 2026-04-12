@@ -33,7 +33,7 @@ export function PresenceStatusDefinitionsProvider({ children }: { children: Reac
         .from("presence_status_definitions")
         .select("*")
         .order("sort_order", { ascending: true });
-      if (error) throw error;
+      if (error) return STATIC_PRESENCE_DEFINITIONS;
       return (data ?? []) as PresenceStatusDefinitionRow[];
     },
     staleTime: 5 * 60 * 1000,

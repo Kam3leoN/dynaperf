@@ -14,13 +14,19 @@ export function messageFromChunkFailure(reason: unknown): string {
  * Indique un échec typique après déploiement (hashes de chunks changés, cache navigateur / SW).
  */
 export function isStaleChunkLoadFailure(message: string): boolean {
-  const m = message || "";
+  const m = (message || "").toLowerCase();
   return (
-    m.includes("Failed to fetch dynamically imported module") ||
-    m.includes("Importing a module script failed") ||
+    m.includes("failed to fetch dynamically imported module") ||
+    m.includes("importing a module script failed") ||
     m.includes("error loading dynamically imported module") ||
-    m.includes("Loading chunk") ||
-    m.includes("Loading CSS chunk")
+    m.includes("loading chunk") ||
+    m.includes("loading css chunk") ||
+    /** Réponse HTML (404) à la place du .js — déploiement / mauvais chemin de base. */
+    m.includes("unexpected token") ||
+    m.includes("text/html") ||
+    m.includes("mime type") ||
+    m.includes("failed to load module script") ||
+    m.includes("failed to fetch") && m.includes("import")
   );
 }
 
