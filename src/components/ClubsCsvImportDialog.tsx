@@ -76,6 +76,7 @@ function csvToDbInsert(row: ParsedClubRow) {
 
 function csvToDbUpdate(row: ParsedClubRow) {
   return {
+    nom: row.nom,
     format: row.format,
     president_nom: row.president_nom,
     agence_rattachement: row.agence_rattachement,
@@ -268,7 +269,8 @@ export function ClubsCsvImportDialog({ open, onOpenChange, clubs, onApplied }: C
           <DialogDescription>
             Format attendu : séparateur <code className="text-xs">;</code>, encodage UTF-8 (BOM) ou Windows-1252, comme
             l’export source. Colonnes : nom, format, président, agences, téléphone, e-mail, adresse, département, statut,
-            membres, leads, CA, dates (JJ/MM/AAAA).
+            membres, leads, CA, dates (JJ/MM/AAAA). Les préfixes « DYNABUY CLUB » en tête de nom sont retirés à
+            l’import ; la colonne président « NOM/Prénom » est convertie en « Prénom NOM ».
           </DialogDescription>
         </DialogHeader>
 

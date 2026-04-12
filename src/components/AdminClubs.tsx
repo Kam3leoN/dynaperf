@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Slider } from "@/components/ui/slider";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faFilter, faXmark, faCamera, faTrash, faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faEye, faSort, faSortUp, faSortDown, faFileImport } from "@fortawesome/free-solid-svg-icons";
+import { faFilter, faXmark, faCamera, faTrash, faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faEye, faSort, faSortUp, faSortDown, faFileImport, faFileArrowDown } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,9 @@ import { toast } from "sonner";
 import { useAdmin } from "@/hooks/useAdmin";
 import { X } from "lucide-react";
 import { ClubsCsvImportDialog } from "@/components/ClubsCsvImportDialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { clubNameInitials, displayClubName } from "@/lib/clubDisplayName";
+import { normalizePresidentImportName } from "@/lib/personNameNormalize";
 
 interface Club {
   id: string;
@@ -104,8 +107,17 @@ function compareClubs(a: Club, b: Club, key: SortKey, dir: "asc" | "desc"): numb
   const str = (x: string | null | undefined) => (x ?? "").toLocaleLowerCase();
   switch (key) {
     case "nom":
-    case "format":
+      return mul * displayClubName(a.nom).localeCompare(displayClubName(b.nom), "fr", { numeric: true });
     case "president_nom":
+      return (
+        mul *
+        normalizePresidentImportName(a.president_nom).localeCompare(
+          normalizePresidentImportName(b.president_nom),
+          "fr",
+          { numeric: true },
+        )
+      );
+    case "format":
     case "departement":
     case "statut":
       return mul * str(a[key]).localeCompare(str(b[key]), "fr", { numeric: true });
@@ -121,6 +133,62 @@ function compareClubs(a: Club, b: Club, key: SortKey, dir: "asc" | "desc"): numb
     default:
       return 0;
   }
+}
+
+function escapeCsvCell(v: string | number | null | undefined): string {
+  const s = v == null ? "" : String(v);
+  if (/[";\r\n]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
+/** Exporte la vue actuelle (filtres + option masquer doublons), séparateur `;`, UTF-8 BOM pour Excel. */
+function downloadClubsCsv(rows: Club[], basename: string) {
+  const sep = ";";
+  const headers = [
+    "Nom",
+    "Format",
+    "Président",
+    "Vice-président",
+    "Département",
+    "Statut",
+    "Membres actifs",
+    "Leads transformés",
+    "CA (€)",
+    "Date création",
+    "Adresse",
+    "Email président",
+    "Tél. président",
+    "Agence mère",
+    "Agence rattachement",
+  ];
+  const line = (c: Club) =>
+    [
+      displayClubName(c.nom),
+      c.format,
+      normalizePresidentImportName(c.president_nom),
+      c.vice_president_nom ?? "",
+      c.departement ?? "",
+      c.statut,
+      c.nb_membres_actifs,
+      c.nb_leads_transformes,
+      Math.round(c.montant_ca * 100) / 100,
+      c.date_creation ?? "",
+      c.adresse ?? "",
+      c.email_president ?? "",
+      c.telephone_president ?? "",
+      c.agence_mere ?? "",
+      c.agence_rattachement ?? "",
+    ].map(escapeCsvCell).join(sep);
+
+  const bom = "\uFEFF";
+  const body = [headers.join(sep), ...rows.map(line)].join("\r\n");
+  const blob = new Blob([bom + body], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${basename}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
 }
 
 function ClubLogo({ club, isAdmin, onUpdate }: { club: Club; isAdmin: boolean; onUpdate: () => void }) {
@@ -154,9 +222,9 @@ function ClubLogo({ club, isAdmin, onUpdate }: { club: Club; isAdmin: boolean; o
   return (
     <div className="relative group">
       <Avatar className="h-8 w-8 shrink-0">
-        <AvatarImage src={club.logo_url || undefined} alt={club.nom} />
+        <AvatarImage src={club.logo_url || undefined} alt={displayClubName(club.nom)} />
         <AvatarFallback className="text-[10px] font-bold bg-primary/10 text-primary">
-          {club.nom.substring(0, 2).toUpperCase()}
+          {clubNameInitials(club.nom)}
         </AvatarFallback>
       </Avatar>
       {isAdmin && (
@@ -212,6 +280,8 @@ export default function AdminClubs() {
   const [leadsMin, setLeadsMin] = useState(0);
   const [caMin, setCaMin] = useState(0);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  /** Masque les lignes en double après import (même `nom` exact, insensible à la casse des espaces). */
+  const [hideDuplicateNoms, setHideDuplicateNoms] = useState(false);
   const { isAdmin } = useAdmin();
 
   // CRUD state
@@ -342,13 +412,14 @@ export default function AdminClubs() {
   const activeFiltersCount = [
     filterFormat !== "Tous", filterStatut !== "Tous", filterAnnee !== "Tous",
     filterDept !== "Tous", filterSecteur !== "Tous", filterAgenceRattachement !== "Tous",
-    membresMin > 0, leadsMin > 0, caMin > 0,
+    membresMin > 0, leadsMin > 0, caMin > 0, hideDuplicateNoms,
   ].filter(Boolean).length;
 
   const resetFilters = () => {
     setFilterFormat("Tous"); setFilterStatut("Tous"); setFilterAnnee("Tous");
     setFilterDept("Tous"); setFilterSecteur("Tous"); setFilterAgenceRattachement("Tous");
     setMembresMin(0); setLeadsMin(0); setCaMin(0);
+    setHideDuplicateNoms(false);
   };
 
   const handleSort = (key: SortKey) => {
@@ -371,7 +442,7 @@ export default function AdminClubs() {
     if (c.montant_ca < caMin) return false;
     const term = searchQuery.toLowerCase().trim();
     if (!term) return true;
-    const hay = `${c.nom} ${c.president_nom} ${c.departement || ""} ${c.agence_mere || ""} ${c.agence_rattachement || ""} ${c.adresse || ""}`.toLowerCase();
+    const hay = `${c.nom} ${displayClubName(c.nom)} ${c.president_nom} ${normalizePresidentImportName(c.president_nom)} ${c.departement || ""} ${c.agence_mere || ""} ${c.agence_rattachement || ""} ${c.adresse || ""}`.toLowerCase();
     return term.split(/\s+/).every(w => hay.includes(w));
   }), [clubs, filterFormat, filterStatut, filterAnnee, filterDept, filterSecteur, filterAgenceRattachement, membresMin, leadsMin, caMin, searchQuery]);
 
@@ -381,9 +452,22 @@ export default function AdminClubs() {
     return copy;
   }, [filtered, sortKey, sortDir]);
 
-  const totalMembres = filtered.reduce((s, c) => s + c.nb_membres_actifs, 0);
-  const totalLeads = filtered.reduce((s, c) => s + c.nb_leads_transformes, 0);
-  const totalCA = filtered.reduce((s, c) => s + c.montant_ca, 0);
+  const rowsToDisplay = useMemo(() => {
+    if (!hideDuplicateNoms) return sortedList;
+    const seen = new Set<string>();
+    const out: Club[] = [];
+    for (const c of sortedList) {
+      const key = c.nom.trim().toLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push(c);
+    }
+    return out;
+  }, [sortedList, hideDuplicateNoms]);
+
+  const totalMembres = rowsToDisplay.reduce((s, c) => s + c.nb_membres_actifs, 0);
+  const totalLeads = rowsToDisplay.reduce((s, c) => s + c.nb_leads_transformes, 0);
+  const totalCA = rowsToDisplay.reduce((s, c) => s + c.montant_ca, 0);
 
   const SortableTh = ({
     label,
@@ -483,6 +567,17 @@ export default function AdminClubs() {
       <div>
         <label className="text-xs font-medium text-muted-foreground mb-1.5 block">CA min : {formatCA(caMin)}</label>
         <Slider value={[caMin]} onValueChange={([v]) => setCaMin(v)} min={0} max={maxCA} step={1000} />
+      </div>
+      <div className="flex items-start gap-2 rounded-md border border-border/80 p-3">
+        <Checkbox
+          id="hide-dup-clubs"
+          checked={hideDuplicateNoms}
+          onCheckedChange={(v) => setHideDuplicateNoms(!!v)}
+          className="mt-0.5"
+        />
+        <label htmlFor="hide-dup-clubs" className="text-xs leading-snug cursor-pointer text-foreground">
+          Masquer les doublons (même nom exact en base) — utile si un import a dupliqué des lignes.
+        </label>
       </div>
       {activeFiltersCount > 0 && (
         <Button variant="outline" size="sm" onClick={resetFilters} className="w-full gap-1.5 text-xs">
@@ -594,8 +689,8 @@ export default function AdminClubs() {
         <div className="flex items-center gap-2 min-w-0">
           <ClubLogo club={c} isAdmin={isAdmin} onUpdate={loadClubs} />
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-foreground truncate">{c.nom}</p>
-            <p className="text-xs text-muted-foreground truncate">{c.president_nom}</p>
+            <p className="text-sm font-semibold text-foreground truncate">{displayClubName(c.nom)}</p>
+            <p className="text-xs text-muted-foreground truncate">{normalizePresidentImportName(c.president_nom)}</p>
           </div>
         </div>
         <div className="flex items-center gap-1 shrink-0">
@@ -633,6 +728,22 @@ export default function AdminClubs() {
         <h3 className="text-sm font-semibold text-foreground">Clubs d'affaires</h3>
         <div className="flex items-center gap-2 sm:gap-3 flex-1 sm:flex-none justify-end">
           <Input placeholder="Rechercher…" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-48 sm:w-[260px] h-9 text-sm rounded-md" />
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="gap-1.5 text-xs shrink-0"
+            onClick={() =>
+              downloadClubsCsv(
+                rowsToDisplay,
+                `clubs-dynaperf-${new Date().toISOString().slice(0, 10)}`,
+              )
+            }
+            disabled={rowsToDisplay.length === 0}
+          >
+            <FontAwesomeIcon icon={faFileArrowDown} className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Exporter CSV</span>
+          </Button>
           <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
             <SheetTrigger asChild>
               <Button variant="outline" size="sm" className="gap-1.5 text-xs relative shrink-0">
@@ -715,7 +826,7 @@ export default function AdminClubs() {
 
       <div className="flex flex-wrap gap-3 mb-4">
         <div className="bg-secondary/50 rounded-md px-3 py-1.5 text-center">
-          <p className="text-sm font-bold text-foreground">{filtered.length}</p>
+          <p className="text-sm font-bold text-foreground">{rowsToDisplay.length}</p>
           <p className="text-[10px] text-muted-foreground">Clubs</p>
         </div>
         <div className="bg-secondary/50 rounded-md px-3 py-1.5 text-center">
@@ -738,9 +849,9 @@ export default function AdminClubs() {
         <>
           <div className="md:hidden space-y-2">
             <AnimatePresence>
-              {sortedList.map(c => <MobileCard key={c.id} c={c} />)}
+              {rowsToDisplay.map(c => <MobileCard key={c.id} c={c} />)}
             </AnimatePresence>
-            {sortedList.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">Aucun club trouvé</p>}
+            {rowsToDisplay.length === 0 && <p className="text-center text-sm text-muted-foreground py-8">Aucun club trouvé</p>}
           </div>
 
           <div className="hidden md:block">
@@ -761,12 +872,12 @@ export default function AdminClubs() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {sortedList.map(c => (
+                {rowsToDisplay.map(c => (
                   <TableRow key={c.id}>
                     <TableCell><ClubLogo club={c} isAdmin={isAdmin} onUpdate={loadClubs} /></TableCell>
-                    <TableCell className="font-medium text-sm">{c.nom}</TableCell>
+                    <TableCell className="font-medium text-sm">{displayClubName(c.nom)}</TableCell>
                     <TableCell><FormatBadge format={c.format} /></TableCell>
-                    <TableCell className="text-sm">{c.president_nom}</TableCell>
+                    <TableCell className="text-sm">{normalizePresidentImportName(c.president_nom)}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{c.departement || "—"}</TableCell>
                     <TableCell><StatutBadge statut={c.statut} /></TableCell>
                     <TableCell className="text-right text-sm">{c.nb_membres_actifs}</TableCell>
@@ -776,7 +887,7 @@ export default function AdminClubs() {
                     <TableCell><ActionButtons c={c} /></TableCell>
                   </TableRow>
                 ))}
-                {sortedList.length === 0 && (
+                {rowsToDisplay.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={11} className="text-center text-sm text-muted-foreground py-8">Aucun club trouvé</TableCell>
                   </TableRow>
@@ -794,9 +905,9 @@ export default function AdminClubs() {
             <>
               <div className="absolute -top-12 left-1/2 -translate-x-1/2">
                 <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
-                  <AvatarImage src={viewClub.logo_url || undefined} alt={viewClub.nom} />
+                  <AvatarImage src={viewClub.logo_url || undefined} alt={displayClubName(viewClub.nom)} />
                   <AvatarFallback className="text-lg font-bold bg-primary/10 text-primary">
-                    {viewClub.nom.substring(0, 2).toUpperCase()}
+                    {clubNameInitials(viewClub.nom)}
                   </AvatarFallback>
                 </Avatar>
               </div>
@@ -812,7 +923,7 @@ export default function AdminClubs() {
           {viewClub && (
             <div className="space-y-4 py-2">
               <div className="text-center">
-                <p className="text-sm font-semibold text-foreground">{viewClub.nom}</p>
+                <p className="text-sm font-semibold text-foreground">{displayClubName(viewClub.nom)}</p>
                 <div className="mt-1 flex items-center justify-center gap-2">
                   <FormatBadge format={viewClub.format} />
                   <StatutBadge statut={viewClub.statut} />
@@ -833,7 +944,7 @@ export default function AdminClubs() {
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><span className="text-xs text-muted-foreground block">Président</span><span className="font-medium text-foreground">{viewClub.president_nom || "—"}</span></div>
+                <div><span className="text-xs text-muted-foreground block">Président</span><span className="font-medium text-foreground">{normalizePresidentImportName(viewClub.president_nom) || "—"}</span></div>
                 <div><span className="text-xs text-muted-foreground block">Vice-président</span><span className="font-medium text-foreground">{viewClub.vice_president_nom || "—"}</span></div>
                 <div><span className="text-xs text-muted-foreground block">Tél. président</span><span className="font-medium text-foreground">{viewClub.telephone_president || "—"}</span></div>
                 <div><span className="text-xs text-muted-foreground block">Email</span><span className="font-medium text-foreground break-all">{viewClub.email_president || "—"}</span></div>
@@ -874,7 +985,8 @@ export default function AdminClubs() {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirmer la suppression</AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer le club <strong>{deleteClub?.nom}</strong> ? Cette action est irréversible.
+              Êtes-vous sûr de vouloir supprimer le club{" "}
+              <strong>{deleteClub ? displayClubName(deleteClub.nom) : ""}</strong> ? Cette action est irréversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

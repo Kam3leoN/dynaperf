@@ -3,6 +3,9 @@
  * aligné sur `scripts/import-clubs-csv.mjs`.
  */
 
+import { normalizeImportClubName } from "@/lib/clubDisplayName";
+import { normalizePresidentImportName } from "@/lib/personNameNormalize";
+
 export interface ParsedClubRow {
   nom: string;
   format: string;
@@ -28,9 +31,9 @@ export interface FieldChange {
   after: string;
 }
 
-/** Clé de rapprochement : insensible à la casse, espaces normalisés. */
+/** Clé de rapprochement : même règle que l’import (préfixe retiré, espaces normalisés). */
 export function normalizeClubKey(nom: string): string {
-  return nom.trim().replace(/\s+/g, " ").toLowerCase();
+  return normalizeImportClubName(nom).toLowerCase();
 }
 
 export function parseCsvLine(line: string): string[] {
@@ -119,12 +122,12 @@ function emptyToNull(s: string | undefined): string | null {
 
 export function cellsToParsedRow(cells: string[]): ParsedClubRow | null {
   if (cells.length < 10) return null;
-  const nom = cells[0]?.trim();
+  const nom = normalizeImportClubName(cells[0]);
   if (!nom) return null;
   return {
     nom,
     format: cells[1]?.trim() || "Développement",
-    president_nom: cells[2]?.trim() || "",
+    president_nom: normalizePresidentImportName(cells[2]),
     agence_rattachement: emptyToNull(cells[3]),
     agence_mere: emptyToNull(cells[4]),
     telephone_president: emptyToNull(cells[5]),
@@ -181,6 +184,7 @@ export function parseClubsCsvText(raw: string): ParseClubsCsvResult {
 }
 
 const FIELD_LABELS: Record<string, string> = {
+  nom: "Nom",
   format: "Format",
   president_nom: "Président",
   agence_rattachement: "Agence de rattachement",
@@ -232,6 +236,7 @@ export type ClubLike = {
 };
 
 const COMPARE_KEYS: (keyof ParsedClubRow)[] = [
+  "nom",
   "format",
   "president_nom",
   "agence_rattachement",
@@ -251,6 +256,12 @@ const COMPARE_KEYS: (keyof ParsedClubRow)[] = [
 function valuesEqual(key: keyof ParsedClubRow, a: ParsedClubRow, b: ClubLike): boolean {
   const av = a[key];
   const bv = b[key as keyof ClubLike];
+  if (key === "nom") {
+    return normalizeImportClubName(String(av ?? "")) === normalizeImportClubName(String(bv ?? ""));
+  }
+  if (key === "president_nom") {
+    return normalizePresidentImportName(String(av ?? "")) === normalizePresidentImportName(String(bv ?? ""));
+  }
   if (key === "montant_ca") {
     return Math.abs((av as number) - (bv as number)) < 0.005;
   }

@@ -5,6 +5,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { displayClubName } from "@/lib/clubDisplayName";
+import { normalizePresidentImportName } from "@/lib/personNameNormalize";
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+}
 
 type MapLibreModule = any;
 
@@ -220,10 +226,10 @@ export default function Secteurs() {
 
         const popup = new maplibregl.Popup({ offset: 14, maxWidth: "240px" }).setHTML(`
           <div style="font-family:system-ui;font-size:13px;">
-            <p style="font-weight:700;margin:0 0 4px;">🏢 ${c.nom}</p>
+            <p style="font-weight:700;margin:0 0 4px;">🏢 ${escapeHtml(displayClubName(c.nom))}</p>
             <p style="color:#888;font-size:11px;margin:0 0 6px;">${sectorName}</p>
             <div style="border-top:1px solid #eee;padding-top:6px;font-size:11px;line-height:1.6;">
-              <p style="margin:0;">👤 ${c.president_nom}</p>
+              <p style="margin:0;">👤 ${escapeHtml(normalizePresidentImportName(c.president_nom))}</p>
               <p style="margin:0;">📍 Dpt. ${c.departement || "—"}</p>
               <p style="margin:0;">👥 ${c.nb_membres_actifs} membres</p>
               <p style="margin:0;">💰 ${formatCA(c.montant_ca)}</p>
@@ -313,7 +319,7 @@ export default function Secteurs() {
                 <SelectContent>
                   <SelectItem value="all">Tous les clubs</SelectItem>
                   {(selectedSecteur !== "all" ? clubs.filter(c => selectedSecteur === "__none" ? !c.secteur_id : c.secteur_id === selectedSecteur) : clubs).map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.nom}</SelectItem>
+                    <SelectItem key={c.id} value={c.id}>{displayClubName(c.nom)}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
