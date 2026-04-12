@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { collapseDuplicatePathSlashes } from "@/lib/basePath";
 
 /**
  * Route publique : appelle le RPC de suivi puis redirige vers la cible enregistrée.
@@ -42,7 +43,7 @@ export default function QrScanRedirect() {
         setMessage("QR code introuvable.");
         return;
       }
-      const t = target.trim();
+      const t = collapseDuplicatePathSlashes(target.trim());
       try {
         if (/^(https?:|mailto:|tel:|sms:|geo:)/i.test(t)) {
           window.location.replace(t);

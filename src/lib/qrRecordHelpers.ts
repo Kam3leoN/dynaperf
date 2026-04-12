@@ -1,5 +1,5 @@
 import defaultLogoDynaLipsRed from "@/assets/logo-dynalips-red.svg";
-import { absoluteAppBaseUrl } from "@/lib/basePath";
+import { absoluteAppHomeUrl, collapseDuplicatePathSlashes } from "@/lib/basePath";
 import type { QrRecord } from "@/types/qrCodeRecord";
 
 const EXPORT_SIZES = [256, 512, 1024, 2048] as const;
@@ -13,7 +13,8 @@ export function coerceExportSize(n: number): QrExportSize {
 }
 
 export function qrTrackingUrl(qrId: string): string {
-  return `${absoluteAppBaseUrl()}r/${qrId}`;
+  const base = absoluteAppHomeUrl().replace(/\/+$/, "");
+  return collapseDuplicatePathSlashes(`${base}/r/${qrId}`);
 }
 
 /** Logo bundle DynaPerf (masqué à l’export si seul logo). */

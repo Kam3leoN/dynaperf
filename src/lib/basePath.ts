@@ -24,3 +24,23 @@ export function absoluteAppBaseUrl(): string {
   const pathOnly = raw.replace(/\/+$/, "");
   return `${window.location.origin}${pathOnly ? `${pathOnly}/` : "/"}`;
 }
+
+/**
+ * Racine publique de l’app avec un seul « / » final (évite les concaténations du type `…/dynaperf//auth`).
+ */
+export function absoluteAppHomeUrl(): string {
+  if (typeof window === "undefined") return "";
+  const raw = viteBase();
+  const pathOnly = raw.replace(/\/+$/, "");
+  const withoutTrailing = pathOnly ? `${window.location.origin}${pathOnly}` : window.location.origin;
+  return `${withoutTrailing.replace(/\/+$/, "")}/`;
+}
+
+/**
+ * Supprime les barres obliques dupliquées dans le chemin d’une URL http(s) (ne casse pas `https://`).
+ */
+export function collapseDuplicatePathSlashes(url: string): string {
+  const t = url.trim();
+  if (!t) return t;
+  return t.replace(/([^:]\/)\/+/g, "$1");
+}
