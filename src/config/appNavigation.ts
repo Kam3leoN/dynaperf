@@ -121,6 +121,7 @@ const audits: RailSection = {
   children: [
     { label: "Tableau de bord", to: "/dashboard", icon: faChartLine },
     { label: "Tous les audits", to: "/audits", icon: faClipboardList },
+    { label: "Galerie photos", to: "/galerie", icon: faImages },
     { label: "Nouvel audit", to: "/audits/new", icon: faPlus },
     { label: "Planifier un audit", to: "/audits?plan=1", icon: faCalendarPlus },
   ],
@@ -174,8 +175,8 @@ const galerie: RailSection = {
   label: "Galerie",
   icon: faImages,
   to: "/galerie",
+  /** Aligné sur la route `/galerie` : même droit que les audits (pas de module `galerie` séparé). */
   requiredPermission: "nav.audits",
-  requiredModule: "galerie",
   pathPrefixes: ["/galerie"],
   children: [{ label: "Galerie photos", to: "/galerie", icon: faImages }],
 };
