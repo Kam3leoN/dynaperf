@@ -43,7 +43,7 @@ import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PresenceAvatarBadge } from "@/components/PresenceAvatarBadge";
 import type { UserPresenceRow } from "@/lib/presence";
-import { presenceLabelFor } from "@/lib/presence";
+import { usePresenceStatusDefinitions } from "@/contexts/PresenceStatusDefinitionsContext";
 import { messageComposerChromeClassName } from "@/lib/bottomBarChrome";
 import { cn } from "@/lib/utils";
 import { ContextSubHeader } from "@/components/context-sub-header";
@@ -493,6 +493,7 @@ function MessagesInputBar({ value, onChange, onSend, sendDisabled }: MessagesInp
 
 export default function Messages() {
   const { user } = useAuth();
+  const { labelForRow } = usePresenceStatusDefinitions();
   const { isAdmin } = useAdmin(user);
   const { hasPermission } = usePermissionGate();
   const canManageSalons = hasPermission("messaging.manage_salons");
@@ -1741,7 +1742,7 @@ export default function Messages() {
     !target
       ? null
       : target.type === "user"
-        ? `| ${presenceLabelFor(presenceByUser[target.id])}`
+        ? `| ${labelForRow(presenceByUser[target.id])}`
         : activeGroup?.is_public === true
           ? `| Salon public · ${allProfiles.length} membres`
           : `| Groupe privé · ${groupMembers.filter((gm) => gm.group_id === target.id).length} membres`;

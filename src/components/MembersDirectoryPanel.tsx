@@ -2,7 +2,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDirectoryMembers } from "@/hooks/useDirectoryMembers";
 import { ORG_TITLE_LABELS, sectionTitleForRole } from "@/lib/memberDirectory";
 import type { UserPresenceRow } from "@/lib/presence";
-import { presenceLabelFor } from "@/lib/presence";
+import { usePresenceStatusDefinitions } from "@/contexts/PresenceStatusDefinitionsContext";
 import { PresenceAvatarBadge } from "@/components/PresenceAvatarBadge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -36,6 +36,7 @@ export function MembersDirectoryPanel({
   currentUserPresence,
 }: MembersDirectoryPanelProps) {
   const { user } = useAuth();
+  const { labelForRow } = usePresenceStatusDefinitions();
   const navigate = useNavigate();
   const { bySection, sectionLabels, rolePriorityOrder, loading, error } = useDirectoryMembers(!!user);
 
@@ -97,7 +98,7 @@ export function MembersDirectoryPanel({
                                 m.title?.trim() || null,
                               ]
                                 .filter(Boolean)
-                                .join(" · ") || presenceLabelFor(effectiveRow)}
+                                .join(" · ") || labelForRow(effectiveRow)}
                             </p>
                           </div>
                           <span className="shrink-0 text-muted-foreground/70" title="Message privé">

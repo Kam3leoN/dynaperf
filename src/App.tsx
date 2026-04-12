@@ -1,6 +1,6 @@
-import { useState, lazy, Suspense } from "react";
+import { useState, lazy, Suspense, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate, ScrollRestoration } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,6 +14,8 @@ import { MessagingSidebarProvider } from "@/contexts/MessagingSidebarContext";
 import { PermissionsProvider, usePermissionGate } from "@/contexts/PermissionsContext";
 import { useAppBranding } from "@/hooks/useAppBranding";
 import { ResponsiveShellProvider } from "@/contexts/ResponsiveShellContext";
+import { PresenceStatusDefinitionsProvider } from "@/contexts/PresenceStatusDefinitionsContext";
+import { prefetchPageChunksDeferred } from "@/lib/prefetchPageChunks";
 
 // Eagerly loaded (critical path)
 import Welcome from "./pages/Welcome";
@@ -63,6 +65,7 @@ const QrCodeManageList = lazy(() => import("./pages/QrCodeManageList"));
 const QrCodeManager = lazy(() => import("./pages/QrCodeManager"));
 const QrCodeShapes = lazy(() => import("./pages/QrCodeShapes"));
 const AdminQrShapes = lazy(() => import("./pages/admin/AdminQrShapes"));
+const AdminPresenceStatuses = lazy(() => import("./pages/admin/AdminPresenceStatuses"));
 const QrCodeStats = lazy(() => import("./pages/QrCodeStats"));
 const Galerie = lazy(() => import("./pages/Galerie"));
 const QrScanRedirect = lazy(() => import("./pages/QrScanRedirect"));
@@ -79,7 +82,15 @@ const queryClient = new QueryClient({
 });
 
 function FullPageLoader() {
-  return <div className="min-h-screen bg-background flex items-center justify-center"><p className="text-muted-foreground">Chargement…</p></div>;
+  return (
+    <div
+      className="min-h-screen bg-background flex items-center justify-center motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150"
+      aria-busy="true"
+      aria-live="polite"
+    >
+      <p className="text-muted-foreground text-sm">Chargement…</p>
+    </div>
+  );
 }
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
@@ -125,10 +136,16 @@ function AppBrandingBoot() {
 const App = () => {
   const [splashDone, setSplashDone] = useState(false);
 
+  useEffect(() => {
+    if (!splashDone) return;
+    prefetchPageChunksDeferred();
+  }, [splashDone]);
+
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
+          <PresenceStatusDefinitionsProvider>
           <TooltipProvider>
             <Toaster />
             <Sonner />
@@ -138,7 +155,8 @@ const App = () => {
             {splashDone && (
             <>
             <AppBrandingBoot />
-            <BrowserRouter basename={routerBase}>
+            <BrowserRouter basename={routerBase} future={{ v7_startTransition: true }}>
+              <ScrollRestoration />
               <ResponsiveShellProvider>
               <MessagingSidebarProvider>
                 <PermissionsProvider>
@@ -164,6 +182,7 @@ const App = () => {
                       <Route path="invitations" element={<AdminInvitations />} />
                       <Route path="branding" element={<AdminBranding />} />
                       <Route path="qr-shapes" element={<AdminQrShapes />} />
+                      <Route path="presence-statuses" element={<AdminPresenceStatuses />} />
                     </Route>
                     <Route path="/admin/audit-grid" element={<AdminRoute><AdminAuditGrid /></AdminRoute>} />
                     <Route path="/business-plan" element={<PermissionRoute permission="nav.reseau"><BusinessPlan /></PermissionRoute>} />
@@ -210,6 +229,7 @@ const App = () => {
             </>
             )}
           </TooltipProvider>
+          </PresenceStatusDefinitionsProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>

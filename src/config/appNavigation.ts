@@ -31,6 +31,7 @@ import {
   faEnvelope,
   faCubes,
   faDatabase,
+  faCircleDot,
 } from "@fortawesome/free-solid-svg-icons";
 
 /** Entrée du rail (icône seule). */
@@ -235,6 +236,7 @@ const admin: RailSection = {
     { label: "Expression", to: "/admin/expression", icon: faIcons },
     { label: "Invitations", to: "/admin/invitations", icon: faEnvelope },
     { label: "Formes QR", to: "/admin/qr-shapes", icon: faShapes },
+    { label: "Statuts présence", to: "/admin/presence-statuses", icon: faCircleDot },
   ],
 };
 

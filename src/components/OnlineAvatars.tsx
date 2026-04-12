@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PresenceAvatarBadge } from "@/components/PresenceAvatarBadge";
-import { effectivePresence, type UserPresenceRow } from "@/lib/presence";
+import { isPresenceListedOnline, type UserPresenceRow } from "@/lib/presence";
 
 interface Profile {
   user_id: string;
@@ -56,9 +56,7 @@ export function OnlineAvatars() {
     };
   }, []);
 
-  const onlineProfiles = profiles.filter(
-    (p) => effectivePresence(presenceByUser[p.user_id]) !== "invisible",
-  );
+  const onlineProfiles = profiles.filter((p) => isPresenceListedOnline(presenceByUser[p.user_id]));
 
   if (onlineProfiles.length === 0) return null;
 
@@ -93,7 +91,7 @@ export function OnlineAvatars() {
                 </Avatar>
                 <PresenceAvatarBadge
                   presence={presenceByUser[p.user_id]}
-                  className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 border-2 border-card"
+                  className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5"
                 />
               </button>
             </TooltipTrigger>

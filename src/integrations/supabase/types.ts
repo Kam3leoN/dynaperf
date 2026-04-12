@@ -1024,6 +1024,39 @@ export type Database = {
         }
         Relationships: []
       }
+      presence_status_definitions: {
+        Row: {
+          status_key: string
+          label_fr: string
+          sort_order: number
+          svg_markup: string
+          fill_color: string | null
+          show_on_avatar: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          status_key: string
+          label_fr: string
+          sort_order?: number
+          svg_markup?: string
+          fill_color?: string | null
+          show_on_avatar?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          status_key?: string
+          label_fr?: string
+          sort_order?: number
+          svg_markup?: string
+          fill_color?: string | null
+          show_on_avatar?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       qr_codes: {
         Row: {
           bg_color: string

@@ -1,5 +1,8 @@
-/** Statuts de présence (style Discord). */
-export type PresenceStatus = "online" | "idle" | "dnd" | "invisible";
+/** Statuts persistés en base (`user_presence.status`). */
+export type PresenceStatus = "online" | "idle" | "dnd" | "stream" | "invisible";
+
+/** Clé d’affichage (inclut « offline » dérivé du heartbeat, absent de la colonne status). */
+export type PresenceDisplayKey = PresenceStatus | "offline";
 
 export interface UserPresenceRow {
   user_id: string;
@@ -8,22 +11,25 @@ export interface UserPresenceRow {
   updated_at: string;
 }
 
-/** Fenêtre max sans heartbeat avant de considérer l'utilisateur déconnecté. */
+/** Fenêtre max sans heartbeat avant de considérer l’utilisateur déconnecté. */
 export const PRESENCE_HEARTBEAT_TIMEOUT_MS = 20_000;
 
-export const PRESENCE_COLORS: Record<PresenceStatus, string> = {
-  online: "#23a559",
-  idle: "#f0b232",
-  /** Ne pas déranger (rouge demandé). */
+/** Couleurs par défaut (si les définitions DB ne sont pas chargées). */
+export const PRESENCE_COLORS: Record<PresenceDisplayKey, string> = {
+  offline: "#8c95a0",
+  online: "#3ba45c",
+  idle: "#f9a51a",
   dnd: "#ee4540",
-  /** Hors ligne / invisible (gris). */
+  stream: "#593694",
   invisible: "#80848e",
 };
 
-export const PRESENCE_LABELS: Record<PresenceStatus, string> = {
+export const PRESENCE_LABELS: Record<PresenceDisplayKey, string> = {
+  offline: "Hors ligne",
   online: "En ligne",
   idle: "Inactif",
   dnd: "Ne pas déranger",
+  stream: "En diffusion",
   invisible: "Invisible",
 };
 
@@ -38,23 +44,54 @@ export function isPresenceConnected(row: UserPresenceRow | null | undefined): bo
 }
 
 /**
- * Statut affiché :
- * - déconnecté => invisible (pas de dot),
- * - connecté => statut choisi (online/idle/dnd/invisible),
- * - idle/dnd temporisés expirés => online.
+ * Applique la fin de durée (idle/dnd/invisible temporisés) => retour en ligne.
  */
-export function effectivePresence(row: UserPresenceRow | null | undefined): PresenceStatus {
-  if (!row) return "invisible";
-  if (!isPresenceConnected(row)) return "invisible";
+export function applyPresenceExpiry(row: UserPresenceRow): PresenceStatus {
+  let st = row.status;
   if (row.expires_at) {
     const exp = new Date(row.expires_at).getTime();
-    if (!Number.isNaN(exp) && Date.now() >= exp) return "online";
+    if (!Number.isNaN(exp) && Date.now() >= exp) st = "online";
   }
-  return row.status;
+  return st;
 }
 
-export function presenceLabelFor(row: UserPresenceRow | null | undefined): string {
-  return PRESENCE_LABELS[effectivePresence(row)];
+/**
+ * Statut logique affiché (libellé) :
+ * - pas de ligne / déconnecté => offline,
+ * - connecté => statut effectif après expiration.
+ */
+export function effectivePresence(row: UserPresenceRow | null | undefined): PresenceDisplayKey {
+  if (!row) return "offline";
+  if (!isPresenceConnected(row)) return "offline";
+  return applyPresenceExpiry(row);
+}
+
+/**
+ * Indique si l’utilisateur apparaît dans la liste « en ligne » (avatars, annuaire).
+ */
+export function isPresenceListedOnline(row: UserPresenceRow | null | undefined): boolean {
+  if (!row) return false;
+  if (!isPresenceConnected(row)) return false;
+  return applyPresenceExpiry(row) !== "invisible";
+}
+
+/**
+ * Clé visuelle pour l’avatar : null = pas d’indicateur (invisible connecté).
+ */
+export function avatarPresenceVisualKey(row: UserPresenceRow | null | undefined): PresenceDisplayKey | null {
+  if (!row) return "offline";
+  if (!isPresenceConnected(row)) return "offline";
+  const st = applyPresenceExpiry(row);
+  if (st === "invisible") return null;
+  return st;
+}
+
+export function presenceLabelFor(
+  row: UserPresenceRow | null | undefined,
+  labelOverrides?: Partial<Record<PresenceDisplayKey, string>>,
+): string {
+  const key = effectivePresence(row);
+  return labelOverrides?.[key] ?? PRESENCE_LABELS[key];
 }
 
 export type DurationKey = "15m" | "1h" | "8h" | "24h" | "3d" | "forever";

@@ -33,12 +33,12 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useMyPresence } from "@/hooks/useMyPresence";
 import { PresenceAvatarBadge } from "./PresenceAvatarBadge";
+import { PresenceStatusMenuIcon } from "./PresenceStatusMenuIcon";
+import { usePresenceStatusDefinitions } from "@/contexts/PresenceStatusDefinitionsContext";
 import {
   DURATION_OPTIONS,
-  PRESENCE_COLORS,
   PRESENCE_LABELS,
   expiresAtForDuration,
-  presenceLabelFor,
   type PresenceStatus,
   type DurationKey,
 } from "@/lib/presence";
@@ -87,6 +87,7 @@ export function AppLayout({
   const { unreadCount: unreadNotifications } = useNotifications();
   const [pinnedMessagesCount, setPinnedMessagesCount] = useState(0);
   const { row: presenceRow, setPresence } = useMyPresence(user?.id);
+  const { labelForRow, defsByKey } = usePresenceStatusDefinitions();
   const [membersSheetOpen, setMembersSheetOpen] = useState(false);
 
   const railSection = getActiveRailSection(location.pathname, RAIL_SECTIONS_ALL);
@@ -228,29 +229,6 @@ export function AppLayout({
   const messagingViewPinned =
     location.pathname.startsWith("/messages") && messagingSearch.get("view") === "pinned";
 
-  const presenceStatusRow = (st: PresenceStatus) =>
-    st === "invisible" ? (
-      <span
-        className="mr-2.5 h-2.5 w-2.5 shrink-0 rounded-full box-border bg-transparent border-2 border-border/80"
-        style={{ borderColor: PRESENCE_COLORS.invisible }}
-        aria-hidden
-      />
-    ) : st === "dnd" ? (
-      <span
-        className="mr-2.5 h-2.5 w-2.5 shrink-0 rounded-full box-border border border-border/70 flex items-center justify-center"
-        style={{ backgroundColor: PRESENCE_COLORS.dnd }}
-        aria-hidden
-      >
-        <span className="block w-[7px] h-[2px] bg-white rounded-full shrink-0" />
-      </span>
-    ) : (
-      <span
-        className="mr-2.5 h-2.5 w-2.5 shrink-0 rounded-full box-border border border-border/70"
-        style={{ backgroundColor: PRESENCE_COLORS[st] }}
-        aria-hidden
-      />
-    );
-
   const setPresenceWithDuration = (status: PresenceStatus, key: DurationKey) => {
     void setPresence(status, expiresAtForDuration(new Date(), key));
   };
@@ -279,7 +257,7 @@ export function AppLayout({
                 {displayName || "Utilisateur"}
               </span>
               <span className="text-[11px] text-muted-foreground truncate max-w-[140px]">
-                {presenceLabelFor(presenceRow)}
+                {labelForRow(presenceRow)}
               </span>
             </div>
           )}
@@ -289,19 +267,19 @@ export function AppLayout({
         <div className="px-3 py-2.5 border-b border-border">
           <p className="text-sm font-semibold text-foreground truncate">{displayName || "Utilisateur"}</p>
           <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-          <p className="text-[11px] text-muted-foreground mt-1">{presenceLabelFor(presenceRow)}</p>
+          <p className="text-[11px] text-muted-foreground mt-1">{labelForRow(presenceRow)}</p>
         </div>
         <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground px-2 py-1.5">
           Statut
         </DropdownMenuLabel>
         <DropdownMenuItem className="cursor-pointer" onClick={() => void setPresence("online", null)}>
-          {presenceStatusRow("online")}
-          {PRESENCE_LABELS.online}
+          <PresenceStatusMenuIcon status="online" />
+          {defsByKey.online?.label_fr ?? PRESENCE_LABELS.online}
         </DropdownMenuItem>
         <DropdownMenuSub>
           <DropdownMenuSubTrigger className="cursor-pointer">
-            {presenceStatusRow("idle")}
-            {PRESENCE_LABELS.idle}
+            <PresenceStatusMenuIcon status="idle" />
+            {defsByKey.idle?.label_fr ?? PRESENCE_LABELS.idle}
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="rounded-xl">
             {DURATION_OPTIONS.map((d) => (
@@ -313,8 +291,8 @@ export function AppLayout({
         </DropdownMenuSub>
         <DropdownMenuSub>
           <DropdownMenuSubTrigger className="cursor-pointer">
-            {presenceStatusRow("dnd")}
-            {PRESENCE_LABELS.dnd}
+            <PresenceStatusMenuIcon status="dnd" />
+            {defsByKey.dnd?.label_fr ?? PRESENCE_LABELS.dnd}
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="rounded-xl">
             {DURATION_OPTIONS.map((d) => (
@@ -326,8 +304,21 @@ export function AppLayout({
         </DropdownMenuSub>
         <DropdownMenuSub>
           <DropdownMenuSubTrigger className="cursor-pointer">
-            {presenceStatusRow("invisible")}
-            {PRESENCE_LABELS.invisible}
+            <PresenceStatusMenuIcon status="stream" />
+            {defsByKey.stream?.label_fr ?? PRESENCE_LABELS.stream}
+          </DropdownMenuSubTrigger>
+          <DropdownMenuSubContent className="rounded-xl">
+            {DURATION_OPTIONS.map((d) => (
+              <DropdownMenuItem key={d.key} className="cursor-pointer" onClick={() => setPresenceWithDuration("stream", d.key)}>
+                {d.label}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuSubContent>
+        </DropdownMenuSub>
+        <DropdownMenuSub>
+          <DropdownMenuSubTrigger className="cursor-pointer">
+            <PresenceStatusMenuIcon status="invisible" />
+            {defsByKey.invisible?.label_fr ?? PRESENCE_LABELS.invisible}
           </DropdownMenuSubTrigger>
           <DropdownMenuSubContent className="rounded-xl">
             {DURATION_OPTIONS.map((d) => (
