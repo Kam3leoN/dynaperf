@@ -76,60 +76,75 @@ function SwatchButton({
   );
 }
 
+export type QrStylePickerSection = "modules" | "outer" | "inner";
+
+const DEFAULT_SECTIONS: QrStylePickerSection[] = ["modules", "outer", "inner"];
+
 export function QrStyleVisualPickers({
   style,
   onChange,
+  sections = DEFAULT_SECTIONS,
 }: {
   style: QrStyleConfig;
   onChange: (next: QrStyleConfig) => void;
+  /** Sous-ensembles affichés (par défaut les trois). */
+  sections?: QrStylePickerSection[];
 }) {
+  const show = (s: QrStylePickerSection) => sections.includes(s);
+
   return (
     <div className="space-y-5">
-      <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Modules (données)</p>
-        <div className="flex flex-wrap gap-2">
-          {DOT_MODULE_OPTIONS.map((o) => (
-            <SwatchButton
-              key={o.value}
-              label={o.label}
-              selected={style.dotModuleId === o.value}
-              onClick={() => onChange({ ...style, dotModuleId: o.value })}
-            >
-              <DotShapeThumb id={o.value} />
-            </SwatchButton>
-          ))}
+      {show("modules") ? (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Style de motif (modules)</p>
+          <div className="flex flex-wrap gap-2">
+            {DOT_MODULE_OPTIONS.map((o) => (
+              <SwatchButton
+                key={o.value}
+                label={o.label}
+                selected={style.dotModuleId === o.value}
+                onClick={() => onChange({ ...style, dotModuleId: o.value })}
+              >
+                <DotShapeThumb id={o.value} />
+              </SwatchButton>
+            ))}
+          </div>
         </div>
-      </div>
-      <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Coins extérieurs</p>
-        <div className="flex flex-wrap gap-2">
-          {OUTER_MODULE_OPTIONS.map((o) => (
-            <SwatchButton
-              key={o.value}
-              label={o.label}
-              selected={style.cornerOuterModuleId === o.value}
-              onClick={() => onChange({ ...style, cornerOuterModuleId: o.value })}
-            >
-              <CornerOuterThumb id={o.value} />
-            </SwatchButton>
-          ))}
+      ) : null}
+      {show("outer") ? (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Bordure autour des repères</p>
+          <div className="flex flex-wrap gap-2">
+            {OUTER_MODULE_OPTIONS.map((o) => (
+              <SwatchButton
+                key={o.value}
+                label={o.label}
+                selected={style.cornerOuterModuleId === o.value}
+                onClick={() => onChange({ ...style, cornerOuterModuleId: o.value })}
+              >
+                <CornerOuterThumb id={o.value} />
+              </SwatchButton>
+            ))}
+          </div>
         </div>
-      </div>
-      <div>
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Centre des coins</p>
-        <div className="flex flex-wrap gap-2">
-          {INNER_MODULE_OPTIONS.map((o) => (
-            <SwatchButton
-              key={o.value}
-              label={o.label}
-              selected={style.cornerInnerModuleId === o.value}
-              onClick={() => onChange({ ...style, cornerInnerModuleId: o.value })}
-            >
-              <DotShapeThumb id={o.value} />
-            </SwatchButton>
-          ))}
+      ) : null}
+      {show("inner") ? (
+        <div>
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Centre des repères</p>
+          <div className="flex flex-wrap gap-2">
+            {INNER_MODULE_OPTIONS.map((o) => (
+              <SwatchButton
+                key={o.value}
+                label={o.label}
+                selected={style.cornerInnerModuleId === o.value}
+                onClick={() => onChange({ ...style, cornerInnerModuleId: o.value })}
+              >
+                <DotShapeThumb id={o.value} />
+              </SwatchButton>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
     </div>
   );
 }

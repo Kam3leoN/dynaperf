@@ -15,10 +15,15 @@ function extractSvgInner(svg: string): string {
   return m ? m[1].trim() : "";
 }
 
-/** Remplace currentColor par une couleur hex échappée ou par une référence `url(#id)` pour dégradé. */
-function applyFillToFragment(fragment: string, fill: string): string {
+/**
+ * Applique une couleur ou un dégradé (`url(#…)`) au fragment.
+ * Les fichiers n’exposent souvent `fill` que sur la balise `<svg>` : le contenu extrait n’a pas de
+ * `currentColor` dans le markup, d’où un groupe avec `fill` pour l’héritage.
+ */
+function applyPaintToFragment(fragment: string, fill: string): string {
   const repl = fill.startsWith("url(") ? fill : escapeXmlAttr(fill);
-  return fragment.replace(/currentColor/gi, repl);
+  const patched = fragment.replace(/currentColor/gi, repl);
+  return `<g fill="${repl}" stroke="none">${patched}</g>`;
 }
 
 /** Charge le contenu interne d’un SVG ou `null` si absent / vide. */
@@ -56,6 +61,40 @@ function wrapCornerOuterFragment(inner: string): string {
   return `<g transform="scale(${7 / 14})">${inner}</g>`;
 }
 
+/** Repère haut-droite : miroir horizontal du repère haut-gauche. */
+function mirrorOuterTopRight(outer: string): string {
+  return `<g transform="translate(7,0) scale(-1,1)">${outer}</g>`;
+}
+
+/** Repère bas-gauche : miroir vertical du repère haut-gauche. */
+function mirrorOuterBottomLeft(outer: string): string {
+  return `<g transform="translate(0,7) scale(1,-1)">${outer}</g>`;
+}
+
+/** Centre œil haut-droite : miroir horizontal (zone 3×3 en unités module). */
+function mirrorInnerTopRight(inner: string): string {
+  return `<g transform="translate(3,0) scale(-1,1)">${inner}</g>`;
+}
+
+/** Centre œil bas-gauche : miroir vertical. */
+function mirrorInnerBottomLeft(inner: string): string {
+  return `<g transform="translate(0,3) scale(1,-1)">${inner}</g>`;
+}
+
+type FinderKind = "tl" | "tr" | "bl";
+
+function mapFinderOuter(kind: FinderKind, outer: string): string {
+  if (kind === "tr") return mirrorOuterTopRight(outer);
+  if (kind === "bl") return mirrorOuterBottomLeft(outer);
+  return outer;
+}
+
+function mapFinderInner(kind: FinderKind, inner: string): string {
+  if (kind === "tr") return mirrorInnerTopRight(inner);
+  if (kind === "bl") return mirrorInnerBottomLeft(inner);
+  return inner;
+}
+
 function isInFinderBlock(r: number, c: number, n: number): boolean {
   if (r < 7 && c < 7) return true;
   if (r < 7 && c >= n - 7) return true;
@@ -75,7 +114,7 @@ function inLogoSquare(
 
 /**
  * Rendu SVG du QR en utilisant les formes `public/qrcode/dots/`, `corners/`, `covers/`
- * (fichiers optionnels ; secours intégré si absent).
+ * (fichiers optionnels ; secours intégré si dégradé ou fichier absent).
  */
 export async function renderQrSvgString(params: {
   value: string;
@@ -107,8 +146,8 @@ export async function renderQrSvgString(params: {
   ]);
 
   const dotFrag = singleDotCellFragment(dotRaw);
-  const innerFrag = scaleInnerFinderSingleModule(singleDotCellFragment(innerDotRaw));
-  const outerFrag = outerRaw ? wrapCornerOuterFragment(outerRaw) : BUILTIN_CORNER_OUTER_FALLBACK;
+  const innerBase = scaleInnerFinderSingleModule(singleDotCellFragment(innerDotRaw));
+  const outerBase = outerRaw ? wrapCornerOuterFragment(outerRaw) : BUILTIN_CORNER_OUTER_FALLBACK;
 
   let coverHref: string | null = null;
   if (!bgTransparent) {
@@ -121,32 +160,44 @@ export async function renderQrSvgString(params: {
     }
   }
 
-  let dotsFillAttr: string;
-  const defsGrad: string[] = [];
-  if (pc.dotsFill === "gradient") {
-    const gradId = `qd_${Math.random().toString(36).slice(2, 11)}`;
-    defsGrad.push(
-      `<linearGradient id="${gradId}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${params.size}" y2="${params.size}"><stop offset="0%" stop-color="${escapeXmlAttr(pc.dots)}"/><stop offset="100%" stop-color="${escapeXmlAttr(pc.dotsGradientEnd)}"/></linearGradient>`,
-    );
-    dotsFillAttr = `url(#${gradId})`;
-  } else {
-    dotsFillAttr = pc.dots;
-  }
-
-  const dotUse = applyFillToFragment(dotFrag, dotsFillAttr);
-  const outerUse = applyFillToFragment(outerFrag, pc.outer);
-  const innerUse = applyFillToFragment(innerFrag, pc.inner);
-
   const logoSrc = resolveLogoSrc(params.logoUrl);
   const logoSide = Math.max(3, Math.floor(n * 0.38));
   const logoStart = Math.floor((n - logoSide) / 2);
+
+  const useGradient = pc.dotsFill === "gradient";
+  const uid = Math.random().toString(36).slice(2, 11);
+  const dotsGradId = `qd_grad_${uid}`;
+  const dotsMaskId = `qd_mask_${uid}`;
+
+  const defsParts: string[] = [];
+  if (useGradient) {
+    defsParts.push(
+      `<linearGradient id="${dotsGradId}" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="${params.size}" y2="${params.size}"><stop offset="0%" stop-color="${escapeXmlAttr(pc.dots)}"/><stop offset="100%" stop-color="${escapeXmlAttr(pc.dotsGradientEnd)}"/></linearGradient>`,
+    );
+    const maskCells: string[] = [];
+    for (let r = 0; r < n; r += 1) {
+      for (let c = 0; c < n; c += 1) {
+        if (isInFinderBlock(r, c, n)) continue;
+        if (logoSrc && inLogoSquare(r, c, n, logoSide, logoStart)) continue;
+        if (!qr.isDark(r, c)) continue;
+        const x = (margin + c) * cell;
+        const y = (margin + r) * cell;
+        maskCells.push(
+          `<g transform="translate(${x},${y}) scale(${cell})"><g fill="#ffffff">${dotFrag}</g></g>`,
+        );
+      }
+    }
+    defsParts.push(
+      `<mask id="${dotsMaskId}" maskUnits="userSpaceOnUse" maskContentUnits="userSpaceOnUse" x="0" y="0" width="${params.size}" height="${params.size}"><rect width="100%" height="100%" fill="#000000"/>${maskCells.join("")}</mask>`,
+    );
+  }
 
   const parts: string[] = [];
   parts.push(
     `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="${params.size}" height="${params.size}" viewBox="0 0 ${params.size} ${params.size}" role="img" aria-label="QR code">`,
   );
-  if (defsGrad.length > 0) {
-    parts.push(`<defs>${defsGrad.join("")}</defs>`);
+  if (defsParts.length > 0) {
+    parts.push(`<defs>${defsParts.join("")}</defs>`);
   }
   if (!bgTransparent) {
     parts.push(`<rect width="100%" height="100%" fill="${escapeXmlAttr(bg)}"/>`);
@@ -158,31 +209,36 @@ export async function renderQrSvgString(params: {
     );
   }
 
-  const finderPositions: { r: number; c: number }[] = [
-    { r: 0, c: 0 },
-    { r: 0, c: n - 7 },
-    { r: n - 7, c: 0 },
+  const finderSpecs: { kind: FinderKind; r: number; c: number }[] = [
+    { kind: "tl", r: 0, c: 0 },
+    { kind: "tr", r: 0, c: n - 7 },
+    { kind: "bl", r: n - 7, c: 0 },
   ];
 
-  for (const { r, c } of finderPositions) {
+  for (const { kind, r, c } of finderSpecs) {
     const x = (margin + c) * cell;
     const y = (margin + r) * cell;
+    const outerUse = applyPaintToFragment(mapFinderOuter(kind, outerBase), pc.outer);
     parts.push(`<g transform="translate(${x},${y}) scale(${cell})">${outerUse}</g>`);
     const ix = (margin + c + 2) * cell;
     const iy = (margin + r + 2) * cell;
+    const innerUse = applyPaintToFragment(mapFinderInner(kind, innerBase), pc.inner);
     parts.push(`<g transform="translate(${ix},${iy}) scale(${cell})">${innerUse}</g>`);
   }
 
-  for (let r = 0; r < n; r += 1) {
-    for (let c = 0; c < n; c += 1) {
-      if (isInFinderBlock(r, c, n)) continue;
-      if (logoSrc && inLogoSquare(r, c, n, logoSide, logoStart)) continue;
-      if (!qr.isDark(r, c)) continue;
-      const x = (margin + c) * cell;
-      const y = (margin + r) * cell;
-      parts.push(
-        `<g transform="translate(${x},${y}) scale(${cell})">${dotUse}</g>`,
-      );
+  if (useGradient) {
+    parts.push(`<rect width="100%" height="100%" fill="url(#${dotsGradId})" mask="url(#${dotsMaskId})"/>`);
+  } else {
+    const dotUse = applyPaintToFragment(dotFrag, pc.dots);
+    for (let r = 0; r < n; r += 1) {
+      for (let c = 0; c < n; c += 1) {
+        if (isInFinderBlock(r, c, n)) continue;
+        if (logoSrc && inLogoSquare(r, c, n, logoSide, logoStart)) continue;
+        if (!qr.isDark(r, c)) continue;
+        const x = (margin + c) * cell;
+        const y = (margin + r) * cell;
+        parts.push(`<g transform="translate(${x},${y}) scale(${cell})">${dotUse}</g>`);
+      }
     }
   }
 

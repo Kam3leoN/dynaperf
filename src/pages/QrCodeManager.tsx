@@ -9,10 +9,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faAlignLeft,
+  faBorderAll,
+  faCircleInfo,
   faCreditCard,
   faEnvelope,
   faFloppyDisk,
   faIdCard,
+  faImage,
   faLink,
   faPen,
   faPhone,
@@ -20,6 +23,7 @@ import {
   faQrcode,
   faSms,
   faTrash,
+  faUpRightAndDownLeftFromCenter,
   faWifi,
   faXmark,
 } from "@fortawesome/free-solid-svg-icons";
@@ -27,8 +31,10 @@ import { faPaypal, faStripe, faWhatsapp } from "@fortawesome/free-brands-svg-ico
 import { toast } from "sonner";
 import defaultLogoDynaLipsRed from "@/assets/logo-dynalips-red.svg";
 import { QrStylingPreview } from "@/components/qr/QrStylingPreview";
+import { QrAppearanceAccordion } from "@/components/qr/QrAppearanceAccordion";
 import { QrPartColorControls } from "@/components/qr/QrPartColorControls";
 import { QrStyleVisualPickers } from "@/components/qr/QrStyleSwatches";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { DEFAULT_QR_STYLE, mergeQrStyle, type QrStyleConfig, type QrPartColors } from "@/lib/qrCodeStyle";
 import { isTransparentBgColor } from "@/lib/qrBgColor";
 import { composeQrPayload, type QrComposeFields, type QrContentKind } from "@/lib/qrContentCompose";
@@ -572,125 +578,206 @@ export default function QrCodeManager() {
               onValueCustom={(v) => setDraft((d) => ({ ...d, value: v }))}
             />
 
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label>Couleurs du QR</Label>
-                <p className="text-xs text-muted-foreground">
-                  Choisissez la zone (modules, repères extérieurs ou centre des yeux), puis le nuancier ou la pipette.
-                  La couleur principale du tableau suit celle des modules. Le dégradé ne s’applique qu’aux modules.
-                </p>
-                <QrPartColorControls
-                  fgFallback={draft.fgColor}
-                  qrStyle={draft.qrStyle}
-                  onUpdate={(merged) =>
-                    setDraft((d) => ({
-                      ...d,
-                      fgColor: merged.dots,
-                      qrStyle: { ...d.qrStyle, partColors: merged },
-                    }))
-                  }
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <Label>Fond</Label>
-                    <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
-                      <input
-                        type="checkbox"
-                        className="rounded border-input"
-                        checked={isTransparentBgColor(draft.bgColor)}
-                        onChange={(e) =>
-                          setDraft((p) => ({
-                            ...p,
-                            bgColor: e.target.checked ? "transparent" : "#ffffff",
-                          }))
-                        }
-                      />
-                      Transparent
-                    </label>
-                  </div>
-                  <Input
-                    type="color"
-                    className="h-10 w-full cursor-pointer disabled:pointer-events-none disabled:opacity-40"
-                    disabled={isTransparentBgColor(draft.bgColor)}
-                    value={draft.bgColor.startsWith("#") ? draft.bgColor : "#ffffff"}
-                    onChange={(e) => setDraft((p) => ({ ...p, bgColor: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <Label>Taille (px)</Label>
-                  <Input type="number" min={120} max={2048} step={8} value={draft.size} onChange={(e) => setDraft((p) => ({ ...p, size: Number(e.target.value || 512) }))} />
-                </div>
-                <div className="space-y-1 sm:col-span-1">
-                  <Label>Précision</Label>
-                  <select
-                    className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                    value={draft.level}
-                    onChange={(e) => setDraft((p) => ({ ...p, level: e.target.value as QrRecord["level"] }))}
-                  >
-                    <option value="L">L</option>
-                    <option value="M">M</option>
-                    <option value="Q">Q</option>
-                    <option value="H">H (recommandé + logo)</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-border/50 bg-muted/20 p-4">
-              <p className="mb-3 text-sm font-semibold text-foreground">Forme du QR</p>
-              <QrStyleVisualPickers
-                style={draft.qrStyle}
-                onChange={(qrStyle) => setDraft((p) => ({ ...p, qrStyle }))}
+            <div className="space-y-2">
+              <Label className="text-base">Apparence du QR</Label>
+              <p className="text-xs text-muted-foreground">
+                Dépliez chaque section pour ajuster le cadre, le motif, les coins ou le logo.
+              </p>
+              <QrAppearanceAccordion
+                defaultOpen={["cadre", "motif", "coins"]}
+                sections={[
+                  {
+                    value: "cadre",
+                    icon: faBorderAll,
+                    title: "Cadre & export",
+                    description: "Fond, taille d’image, précision et cadre visuel sur l’aperçu.",
+                    content: (
+                      <div className="space-y-4">
+                        <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-border/40 bg-background/80 px-3 py-2.5">
+                          <input
+                            type="checkbox"
+                            className="rounded border-input"
+                            checked={draft.qrStyle.frame === "card"}
+                            onChange={(e) =>
+                              setDraft((p) => ({
+                                ...p,
+                                qrStyle: { ...p.qrStyle, frame: e.target.checked ? "card" : "none" },
+                              }))
+                            }
+                          />
+                          <span className="text-sm text-foreground">Cadre carte sur l&apos;aperçu</span>
+                        </label>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div className="space-y-2">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <Label>Fond</Label>
+                              <label className="flex cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+                                <input
+                                  type="checkbox"
+                                  className="rounded border-input"
+                                  checked={isTransparentBgColor(draft.bgColor)}
+                                  onChange={(e) =>
+                                    setDraft((p) => ({
+                                      ...p,
+                                      bgColor: e.target.checked ? "transparent" : "#ffffff",
+                                    }))
+                                  }
+                                />
+                                Transparent
+                              </label>
+                            </div>
+                            <Input
+                              type="color"
+                              className="h-10 w-full max-w-[200px] cursor-pointer disabled:pointer-events-none disabled:opacity-40"
+                              disabled={isTransparentBgColor(draft.bgColor)}
+                              value={draft.bgColor.startsWith("#") ? draft.bgColor : "#ffffff"}
+                              onChange={(e) => setDraft((p) => ({ ...p, bgColor: e.target.value }))}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Taille export (px)</Label>
+                            <Input
+                              type="number"
+                              min={120}
+                              max={2048}
+                              step={8}
+                              value={draft.size}
+                              onChange={(e) => setDraft((p) => ({ ...p, size: Number(e.target.value || 512) }))}
+                            />
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Précision (correction d&apos;erreurs)</Label>
+                          <select
+                            className="h-10 w-full max-w-md rounded-md border border-input bg-background px-3 text-sm"
+                            value={draft.level}
+                            onChange={(e) => setDraft((p) => ({ ...p, level: e.target.value as QrRecord["level"] }))}
+                          >
+                            <option value="L">L</option>
+                            <option value="M">M</option>
+                            <option value="Q">Q</option>
+                            <option value="H">H (recommandé + logo)</option>
+                          </select>
+                        </div>
+                      </div>
+                    ),
+                  },
+                  {
+                    value: "motif",
+                    icon: faQrcode,
+                    title: "Motif du code QR",
+                    description: "Forme des modules et couleurs des points (dégradé diagonal possible).",
+                    content: (
+                      <div className="space-y-5">
+                        <QrStyleVisualPickers
+                          sections={["modules"]}
+                          style={draft.qrStyle}
+                          onChange={(qrStyle) => setDraft((p) => ({ ...p, qrStyle }))}
+                        />
+                        <div className="space-y-2">
+                          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Couleur du motif</Label>
+                          <QrPartColorControls
+                            scope="dots"
+                            fgFallback={draft.fgColor}
+                            qrStyle={draft.qrStyle}
+                            onUpdate={(merged) =>
+                              setDraft((d) => ({
+                                ...d,
+                                fgColor: merged.dots,
+                                qrStyle: { ...d.qrStyle, partColors: merged },
+                              }))
+                            }
+                          />
+                        </div>
+                        <Alert className="border-border/50 bg-muted/30">
+                          <FontAwesomeIcon icon={faCircleInfo} className="h-4 w-4 text-muted-foreground" />
+                          <AlertDescription className="text-xs text-muted-foreground sm:text-sm">
+                            Pour une lecture fiable, privilégiez un <strong className="font-medium text-foreground">contraste élevé</strong>{" "}
+                            entre les modules et le fond.
+                          </AlertDescription>
+                        </Alert>
+                      </div>
+                    ),
+                  },
+                  {
+                    value: "coins",
+                    icon: faUpRightAndDownLeftFromCenter,
+                    title: "Coins du code QR",
+                    description: "Style des repères et couleurs des bordures et du centre des yeux.",
+                    content: (
+                      <div className="space-y-6">
+                        <div className="grid gap-6 lg:grid-cols-2">
+                          <QrStyleVisualPickers
+                            sections={["outer"]}
+                            style={draft.qrStyle}
+                            onChange={(qrStyle) => setDraft((p) => ({ ...p, qrStyle }))}
+                          />
+                          <QrStyleVisualPickers
+                            sections={["inner"]}
+                            style={draft.qrStyle}
+                            onChange={(qrStyle) => setDraft((p) => ({ ...p, qrStyle }))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Couleurs des coins</Label>
+                          <QrPartColorControls
+                            scope="corners"
+                            fgFallback={draft.fgColor}
+                            qrStyle={draft.qrStyle}
+                            onUpdate={(merged) =>
+                              setDraft((d) => ({
+                                ...d,
+                                fgColor: merged.dots,
+                                qrStyle: { ...d.qrStyle, partColors: merged },
+                              }))
+                            }
+                          />
+                        </div>
+                      </div>
+                    ),
+                  },
+                  {
+                    value: "logo",
+                    icon: faImage,
+                    title: "Ajouter un logo",
+                    description: "Logo DynaPerf par défaut ou image importée au centre du code.",
+                    content: (
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex items-center gap-3">
+                          <Switch
+                            id="qr-default-logo"
+                            checked={useDefaultLogo}
+                            onCheckedChange={(c) => {
+                              setUseDefaultLogo(c);
+                              if (c) {
+                                setDraft((d) => ({ ...d, logoUrl: defaultLogoDynaLipsRed }));
+                              } else {
+                                setDraft((d) => ({
+                                  ...d,
+                                  logoUrl: d.logoUrl && !isBundledDefaultLogo(d.logoUrl) ? d.logoUrl : logoGallery[0]?.dataUrl ?? "",
+                                }));
+                              }
+                            }}
+                          />
+                          <Label htmlFor="qr-default-logo" className="cursor-pointer text-sm font-medium leading-snug">
+                            Logo DynaPerf par défaut
+                          </Label>
+                        </div>
+                        <div className="flex min-w-0 flex-1 flex-col gap-1 sm:max-w-md sm:items-end">
+                          <Label className="text-xs text-muted-foreground">Importer des logos (plusieurs fichiers possibles)</Label>
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            className="cursor-pointer text-sm"
+                            onChange={(e) => void addFilesToGallery(e.target.files)}
+                          />
+                        </div>
+                      </div>
+                    ),
+                  },
+                ]}
               />
-              <label className="mt-4 flex cursor-pointer items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={draft.qrStyle.frame === "card"}
-                  onChange={(e) =>
-                    setDraft((p) => ({
-                      ...p,
-                      qrStyle: { ...p.qrStyle, frame: e.target.checked ? "card" : "none" },
-                    }))
-                  }
-                  className="rounded border-input"
-                />
-                <span className="text-sm text-muted-foreground">Cadre carte sur l&apos;aperçu</span>
-              </label>
-            </div>
-
-            <div className="flex flex-col gap-3 rounded-xl border border-border/50 bg-muted/15 p-4 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <Switch
-                  id="qr-default-logo"
-                  checked={useDefaultLogo}
-                  onCheckedChange={(c) => {
-                    setUseDefaultLogo(c);
-                    if (c) {
-                      setDraft((d) => ({ ...d, logoUrl: defaultLogoDynaLipsRed }));
-                    } else {
-                      setDraft((d) => ({
-                        ...d,
-                        logoUrl: d.logoUrl && !isBundledDefaultLogo(d.logoUrl) ? d.logoUrl : logoGallery[0]?.dataUrl ?? "",
-                      }));
-                    }
-                  }}
-                />
-                <Label htmlFor="qr-default-logo" className="cursor-pointer text-sm font-medium leading-snug">
-                  Logo DynaPerf par défaut
-                </Label>
-              </div>
-              <div className="flex min-w-0 flex-1 flex-col gap-1 sm:max-w-md sm:items-end">
-                <Label className="text-xs text-muted-foreground">Importer des logos (plusieurs fichiers possibles)</Label>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="cursor-pointer text-sm"
-                  onChange={(e) => void addFilesToGallery(e.target.files)}
-                />
-              </div>
             </div>
 
             <div className="flex flex-wrap gap-2">
