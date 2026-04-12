@@ -576,8 +576,8 @@ export default function QrCodeManager() {
               <div className="space-y-2">
                 <Label>Couleurs du QR</Label>
                 <p className="text-xs text-muted-foreground">
-                  Pastilles puis sélecteur fin pour chaque partie. Les points peuvent être en dégradé (diagonal sur
-                  l’ensemble du code). La colonne « couleur principale » en base suit la couleur des points.
+                  Choisissez la zone (modules, repères extérieurs ou centre des yeux), puis le nuancier ou la pipette.
+                  La couleur principale du tableau suit celle des modules. Le dégradé ne s’applique qu’aux modules.
                 </p>
                 <QrPartColorControls
                   fgFallback={draft.fgColor}

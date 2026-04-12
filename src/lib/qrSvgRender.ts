@@ -43,15 +43,12 @@ function singleDotCellFragment(raw: string | null): string {
   return raw ? wrapDotModuleFragment(raw) : BUILTIN_DOT_FALLBACK;
 }
 
-/** Œil central du repère : grille 3×3 avec la même forme de module que les données. */
-function tileInnerFinder3x3(cellFrag: string): string {
-  const cells: string[] = [];
-  for (let row = 0; row < 3; row += 1) {
-    for (let col = 0; col < 3; col += 1) {
-      cells.push(`<g transform="translate(${col},${row})">${cellFrag}</g>`);
-    }
-  }
-  return `<g>${cells.join("")}</g>`;
+/**
+ * Œil central du repère : une seule forme module (même SVG que les données),
+ * agrandie ×3 pour occuper toute la zone 3×3 modules.
+ */
+function scaleInnerFinderSingleModule(cellFrag: string): string {
+  return `<g transform="scale(3)">${cellFrag}</g>`;
 }
 
 /** Assets `corners/*.svg` (repère) : viewBox 0 0 14 14 → repère 7×7 = 0..7. */
@@ -110,7 +107,7 @@ export async function renderQrSvgString(params: {
   ]);
 
   const dotFrag = singleDotCellFragment(dotRaw);
-  const innerFrag = tileInnerFinder3x3(singleDotCellFragment(innerDotRaw));
+  const innerFrag = scaleInnerFinderSingleModule(singleDotCellFragment(innerDotRaw));
   const outerFrag = outerRaw ? wrapCornerOuterFragment(outerRaw) : BUILTIN_CORNER_OUTER_FALLBACK;
 
   let coverHref: string | null = null;
