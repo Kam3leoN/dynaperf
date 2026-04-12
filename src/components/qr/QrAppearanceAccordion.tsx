@@ -15,8 +15,7 @@ export type QrAppearancePanelId =
   | "motif"
   | "coins"
   | "logo"
-  | "taille_export"
-  | "stats";
+  | "taille_export";
 
 type SectionDef = {
   value: QrAppearancePanelId;

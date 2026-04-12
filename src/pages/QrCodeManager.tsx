@@ -11,7 +11,6 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faAlignLeft,
   faBorderAll,
-  faChartPie,
   faCircleInfo,
   faCopy,
   faCreditCard,
@@ -787,9 +786,50 @@ export default function QrCodeManager() {
             <FontAwesomeIcon icon={faCircleInfo} className="h-4 w-4" aria-hidden />
             <AlertDescription>
               La cible enregistrée est le lien de suivi : indiquez plutôt l&apos;URL finale (votre site, etc.). Sinon la redirection après scan
-              peut boucler. Le QR peut toujours encoder le lien <span className="font-mono">/r/…</span> grâce au réglage dans Statistiques.
+              peut boucler. Le QR peut toujours encoder le lien <span className="font-mono">/r/…</span> grâce au réglage « Encoder le lien de suivi » ci-dessous.
             </AlertDescription>
           </Alert>
+        ) : null}
+
+        {editingId ? (
+          <div className="rounded-xl border border-border/50 bg-muted/10 p-4 space-y-3">
+            <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Suivi des scans</p>
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">Lien public de suivi (comptage des scans)</Label>
+              <div className="flex flex-wrap gap-2">
+                <Input readOnly value={qrTrackingUrl(editingId)} className="min-w-0 flex-1 font-mono text-xs" />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 gap-2"
+                  onClick={() => void copyTrackingLink(editingId)}
+                >
+                  <FontAwesomeIcon icon={faCopy} className="h-3.5 w-3.5" />
+                  Copier
+                </Button>
+              </div>
+              <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border/40 bg-background/80 px-3 py-3">
+                <Switch
+                  id="qr-encode-tracking"
+                  checked={draft.qrStyle.encodeTrackingLink !== false}
+                  onCheckedChange={(on) =>
+                    setDraft((d) => ({
+                      ...d,
+                      qrStyle: { ...d.qrStyle, encodeTrackingLink: on },
+                    }))
+                  }
+                />
+                <Label htmlFor="qr-encode-tracking" className="max-w-xl cursor-pointer text-sm font-normal leading-snug">
+                  Encoder ce lien <span className="font-mono">/r/…</span> dans le QR (recommandé pour les statistiques)
+                </Label>
+              </div>
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                Les totaux de scans sont sur la page « Consulter les statistiques ». La cible enregistrée sert à la redirection après visite du lien
+                public ; les compteurs n&apos;augmentent que si le QR ouvre ce lien <span className="font-mono">/r/…</span>.
+              </p>
+            </div>
+          </div>
         ) : null}
 
         <div className="grid min-w-0 gap-6 xl:grid-cols-[1fr_min(360px,34%)] xl:items-start">
@@ -1088,64 +1128,6 @@ export default function QrCodeManager() {
                             </div>
                           </div>
                         ) : null}
-                      </div>
-                    ),
-                  },
-                  {
-                    value: "stats",
-                    icon: faChartPie,
-                    title: "Statistiques",
-                    description: "Outils et données pour évaluer la performance (scans du lien public).",
-                    content: (
-                      <div className="space-y-4">
-                        {!editingId ? (
-                          <p className="text-sm text-muted-foreground">
-                            Enregistrez le QR code puis rouvrez-le depuis la liste pour afficher le compteur de scans et le lien de suivi dédié.
-                          </p>
-                        ) : (
-                          <>
-                            <div className="rounded-lg border border-border/40 bg-muted/10 px-3 py-3">
-                              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Scans enregistrés</p>
-                              <p className="text-2xl font-semibold tabular-nums">{draft.scanCount ?? 0}</p>
-                            </div>
-                            <div className="space-y-2">
-                              <Label className="text-xs text-muted-foreground">Lien public de suivi (comptage des scans)</Label>
-                              <div className="flex flex-wrap gap-2">
-                                <Input readOnly value={qrTrackingUrl(editingId)} className="min-w-0 flex-1 font-mono text-xs" />
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="sm"
-                                  className="shrink-0 gap-2"
-                                  onClick={() => void copyTrackingLink(editingId)}
-                                >
-                                  <FontAwesomeIcon icon={faCopy} className="h-3.5 w-3.5" />
-                                  Copier
-                                </Button>
-                              </div>
-                              <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border/40 bg-muted/10 px-3 py-3">
-                                <Switch
-                                  id="qr-encode-tracking"
-                                  checked={draft.qrStyle.encodeTrackingLink !== false}
-                                  onCheckedChange={(on) =>
-                                    setDraft((d) => ({
-                                      ...d,
-                                      qrStyle: { ...d.qrStyle, encodeTrackingLink: on },
-                                    }))
-                                  }
-                                />
-                                <Label htmlFor="qr-encode-tracking" className="max-w-xl cursor-pointer text-sm font-normal leading-snug">
-                                  Encoder ce lien <span className="font-mono">/r/…</span> dans le QR (recommandé pour les statistiques)
-                                </Label>
-                              </div>
-                              <p className="text-[11px] leading-snug text-muted-foreground">
-                                La colonne « cible » enregistrée sert à la redirection après visite du lien public. Les compteurs
-                                n&apos;augmentent que si le QR ouvre ce lien <span className="font-mono">/r/…</span>, pas une URL directe
-                                vers la cible.
-                              </p>
-                            </div>
-                          </>
-                        )}
                       </div>
                     ),
                   },
