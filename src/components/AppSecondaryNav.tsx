@@ -11,8 +11,6 @@ import {
 import { SHELL_RAIL_WIDTH_PX, SHELL_SECONDARY_NAV_WIDTH_PX } from "@/config/layoutBreakpoints";
 import { MessagingSecondaryNav } from "@/components/messaging/MessagingSecondaryNav";
 import { publicAssetUrl } from "@/lib/basePath";
-import { BackupButton, SqlBackupButton } from "@/pages/admin/AdminBackupButtons";
-
 const SECONDARY_LOGO_LIGHT = publicAssetUrl("DynaPerf_light_simple.svg");
 const SECONDARY_LOGO_DARK = publicAssetUrl("DynaPerf_dark_simple.svg");
 
@@ -22,10 +20,9 @@ const M3_EASE: [number, number, number, number] = [0.2, 0, 0, 1];
 const SECONDARY_ACTIVE_LAYOUT_ID = "shell-secondary-nav-active-pill";
 
 interface AppSecondaryNavPanelProps {
-  /** Affiche le bloc Sauvegardes en bas de la colonne admin (super_admin uniquement). */
-  isSuperAdmin?: boolean;
   hasPermission: (key: string) => boolean;
   isModuleEnabled?: (key: string) => boolean;
+  isSuperAdmin?: boolean;
   className?: string;
 }
 
@@ -33,9 +30,9 @@ interface AppSecondaryNavPanelProps {
  * Contenu de la colonne secondaire ~280px type Discord (réutilisable dans le sheet mobile).
  */
 export function AppSecondaryNavPanel({
-  isSuperAdmin = false,
   hasPermission,
   isModuleEnabled,
+  isSuperAdmin = false,
   className,
 }: AppSecondaryNavPanelProps) {
   const { pathname } = useLocation();
@@ -79,7 +76,7 @@ export function AppSecondaryNavPanel({
         <LayoutGroup id="app-secondary-nav">
           <nav className="flex flex-col flex-1 min-h-0 p-2">
             <div className="flex flex-col gap-1 overflow-y-auto flex-1 min-h-0">
-              {filterSecondaryNavItems(active.children, hasPermission, isModuleEnabled).map((item) => (
+              {filterSecondaryNavItems(active.children, hasPermission, isModuleEnabled, { isSuperAdmin }).map((item) => (
                 <NavLink
                   key={item.to}
                   to={item.to}
@@ -122,17 +119,6 @@ export function AppSecondaryNavPanel({
                 </NavLink>
               ))}
             </div>
-            {active.id === "admin" && isSuperAdmin ? (
-              <div className="mt-3 shrink-0 border-t border-border/60 pt-3">
-                <p className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground px-1 mb-2">
-                  Sauvegardes
-                </p>
-                <div className="flex flex-col gap-2">
-                  <BackupButton />
-                  <SqlBackupButton />
-                </div>
-              </div>
-            ) : null}
           </nav>
         </LayoutGroup>
       )}

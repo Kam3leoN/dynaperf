@@ -2,8 +2,8 @@ import { Outlet } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 
 /**
- * Layout administration : navigation et sauvegardes dans la colonne secondaire (à droite du rail),
- * comme les autres sections — voir `appNavigation` (section admin) et `AppSecondaryNav`.
+ * Layout administration : sous-navigation dans la colonne secondaire — voir `appNavigation` (section admin).
+ * Les sauvegardes (super_admin) : route `/admin/backups`.
  */
 export default function AdminShell() {
   return (

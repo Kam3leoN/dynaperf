@@ -13,7 +13,8 @@ name: Supabase backups (CRON)
 
 on:
   schedule:
-    - cron: "15 4 * * *"
+    # Minuit UTC chaque jour (GitHub Actions est en UTC). Ajuster si vous visez un fuseau précis.
+    - cron: "0 0 * * *"
   workflow_dispatch:
 
 permissions:

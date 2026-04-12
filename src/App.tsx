@@ -34,6 +34,7 @@ const AdminUserPrimes = lazy(() => import("./pages/admin/AdminUserPrimes"));
 const AdminExpression = lazy(() => import("./pages/admin/AdminExpression"));
 const AdminInvitations = lazy(() => import("./pages/admin/AdminInvitations"));
 const AdminBranding = lazy(() => import("./pages/admin/AdminBranding"));
+const AdminBackups = lazy(() => import("./pages/admin/AdminBackups"));
 const AdminAuditGrid = lazy(() => import("./pages/AdminAuditGrid"));
 const AdminRoles = lazy(() => import("./pages/AdminRoles"));
 const BusinessPlan = lazy(() => import("./pages/BusinessPlan"));
@@ -150,6 +151,7 @@ const App = () => {
                     <Route path="/audits/edit/:auditId" element={<PermissionRoute permission="nav.audits"><AuditForm /></PermissionRoute>} />
                     <Route path="/admin" element={<AdminRoute><AdminShell /></AdminRoute>}>
                       <Route index element={<Navigate to="users" replace />} />
+                      <Route path="backups" element={<AdminBackups />} />
                       <Route path="users" element={<AdminUsers />} />
                       <Route path="modules" element={<AdminModules />} />
                       <Route path="audits-config" element={<AdminAuditsConfig />} />

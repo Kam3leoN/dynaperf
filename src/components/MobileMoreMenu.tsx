@@ -65,7 +65,7 @@ function MenuItem({
  */
 export function MobileMoreMenu({ onClose }: Props) {
   const { signOut, user } = useAuth();
-  const { isAdmin } = useAdmin(user);
+  const { isAdmin, isSuperAdmin } = useAdmin(user);
   const { hasPermission, isModuleEnabled } = usePermissionGate();
   const sections = getRailSections(isAdmin, hasPermission, isModuleEnabled);
 
@@ -79,7 +79,7 @@ export function MobileMoreMenu({ onClose }: Props) {
               <MenuItem icon={faEnvelope} label="Messages privés" to="/messages?section=messagerie" onClick={onClose} />
             </>
           ) : (
-            filterSecondaryNavItems(section.children, hasPermission, isModuleEnabled).map((item) => (
+            filterSecondaryNavItems(section.children, hasPermission, isModuleEnabled, { isSuperAdmin }).map((item) => (
               <MenuItem key={item.to} icon={item.icon} label={item.label} to={item.to} onClick={onClose} />
             ))
           )}

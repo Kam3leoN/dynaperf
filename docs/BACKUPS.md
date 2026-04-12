@@ -10,12 +10,18 @@
 
 - **Auth** : idem `backup-all` (super admin ou `BACKUP_CRON_SECRET`).
 - **Obligatoire** : secret Edge `SUPABASE_DB_URL` **ou** `DATABASE_URL` = chaîne **Postgres directe** (port **5432**, *Session mode* dans le dashboard Supabase). Le pooler transactionnel (port **6543**) fait échouer la connexion : la fonction renvoie une erreur explicite. Après ajout du secret, **redéployer** `sql-backup`.
-- **Sortie** : `avatars/backups/sql/dump_<timestamp>.sql`.
+- **Sortie** : `avatars/backups/sql/dump_<timestamp>.sql` (défaut), **ou** corps du fichier SQL en réponse si le corps JSON contient `{ "output": "inline" }` (téléchargement depuis **Admin → Sauvegardes**).
+
+### « Failed to send a request to the Edge Function » (navigateur)
+
+Ce message vient du **client JS** : la requête **n’atteint pas** l’URL `https://<ref>.supabase.co/functions/v1/...` (pas de réponse HTTP). Ce n’est pas une erreur Postgres ni un 401/500 renvoyé par Deno.
+
+À vérifier : `VITE_SUPABASE_URL` correct au **build** du front, fonctions **`backup-all`** et **`sql-backup`** déployées sur **ce** projet, onglet Réseau (F12), pare-feu / bloqueur, URL en `https`.
 
 ### Important : GitHub ≠ Supabase (où mettre `SUPABASE_DB_URL`)
 
 - **`SUPABASE_DB_URL` dans GitHub** (Secrets Actions) **ne sert pas** au code de l’Edge Function. Le workflow CRON n’envoie que des en-têtes HTTP ; il ne transmet pas la chaîne Postgres à Deno.
-- Pour que **`sql-backup` fonctionne** (bouton « Dump SQL » dans l’app **ou** appel CRON), le secret doit exister dans **Supabase → Project Settings → Edge Functions → Secrets** sous le nom `SUPABASE_DB_URL` ou `DATABASE_URL` — **même valeur** que vous utiliseriez pour une connexion directe (port 5432).
+- Pour que **`sql-backup` fonctionne** (page **Admin → Sauvegardes** pour les super-admins **ou** appel CRON), le secret doit exister dans **Supabase → Project Settings → Edge Functions → Secrets** sous le nom `SUPABASE_DB_URL` ou `DATABASE_URL` — **même valeur** que vous utiliseriez pour une connexion directe (port 5432).
 - En résumé : déclarer `SUPABASE_DB_URL` **uniquement** sur GitHub ne suffit pas ; il faut aussi (ou seulement, selon le besoin) la **même variable côté Supabase Edge**.
 
 ## Déploiement
@@ -35,9 +41,19 @@ curl -sS -X POST "https://PROJECT_REF.supabase.co/functions/v1/backup-all" \
   -H "apikey: ANON_KEY"
 ```
 
+## Cron **natif Supabase** (alternative à GitHub Actions)
+
+Oui : avec **`pg_cron`** + **`pg_net`**, Postgres envoie un `POST` HTTP vers `/functions/v1/backup-all` et `/functions/v1/sql-backup` — pas besoin de workflow GitHub si tu préfères tout garder côté Supabase.
+
+Guide pas à pas (Vault, SQL, suppression des jobs) : **[`docs/BACKUPS_SUPABASE_CRON.md`](BACKUPS_SUPABASE_CRON.md)** — voir aussi la [doc officielle « Scheduling Edge Functions »](https://supabase.com/docs/guides/functions/schedule-functions).
+
+### Console navigateur : « pas d’erreur »
+
+Si la barre de filtre du DevTools contient du texte (ex. `import.meta.env…`), la console peut **paraître vide** alors que des erreurs existent (compteur rouge en haut). Vide le filtre pour voir les vrais messages / onglet **Réseau** pour l’appel vers `…/functions/v1/backup-all`.
+
 ## GitHub Actions (`.github/workflows/supabase-backups-cron.yml`)
 
-Planification quotidienne : le workflow appelle `backup-all` puis `sql-backup`.
+Planification quotidienne (**minuit UTC** ; GitHub utilise le fuseau UTC) : le workflow appelle `backup-all` puis `sql-backup`.
 
 **Secrets du dépôt** (Settings → Secrets and variables → Actions) :
 

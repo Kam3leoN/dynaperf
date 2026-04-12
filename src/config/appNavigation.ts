@@ -30,6 +30,7 @@ import {
   faIcons,
   faEnvelope,
   faCubes,
+  faDatabase,
 } from "@fortawesome/free-solid-svg-icons";
 
 /** Entrée du rail (icône seule). */
@@ -60,6 +61,8 @@ export interface SecondaryNavItem {
   requiredPermission?: string;
   /** Masqué si le module applicatif n’est pas activé pour l’utilisateur (ex. primes). */
   requiredModule?: string;
+  /** Masqué sauf pour le rôle `super_admin`. */
+  requiredSuperAdmin?: boolean;
 }
 
 const home: RailSection = {
@@ -221,6 +224,7 @@ const admin: RailSection = {
   requireAdmin: true,
   requiredPermission: "nav.admin",
   children: [
+    { label: "Sauvegardes", to: "/admin/backups", icon: faDatabase, requiredSuperAdmin: true },
     { label: "Utilisateurs", to: "/admin/users", icon: faUsers },
     { label: "Modules", to: "/admin/modules", icon: faCubes },
     { label: "Audits", to: "/admin/audits-config", icon: faClipboardList },
@@ -288,10 +292,13 @@ export function filterSecondaryNavItems(
   items: SecondaryNavItem[],
   hasPermission?: (key: string) => boolean,
   isModuleEnabled?: (key: string) => boolean,
+  options?: { isSuperAdmin?: boolean },
 ): SecondaryNavItem[] {
   const can = hasPermission ?? (() => true);
   const mod = isModuleEnabled ?? (() => true);
+  const superOk = options?.isSuperAdmin === true;
   return items.filter((item) => {
+    if (item.requiredSuperAdmin && !superOk) return false;
     if (item.requiredPermission && !can(item.requiredPermission)) return false;
     if (item.requiredModule && !mod(item.requiredModule)) return false;
     return true;

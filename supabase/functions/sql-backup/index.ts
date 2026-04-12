@@ -97,6 +97,20 @@ Deno.serve(async (req) => {
     return jsonResponse({ error: "Méthode non supportée" }, 405);
   }
 
+  /** `inline` = renvoyer le fichier `.sql` (téléchargement navigateur) ; défaut = upload Storage. */
+  let output: "storage" | "inline" = "storage";
+  if (req.method === "POST") {
+    const ct = req.headers.get("content-type") ?? "";
+    if (ct.includes("application/json")) {
+      try {
+        const body = (await req.clone().json()) as { output?: string };
+        if (body?.output === "inline") output = "inline";
+      } catch {
+        /* corps vide ou non-JSON : défaut storage */
+      }
+    }
+  }
+
   const authz = await authorizeRequest(req);
   if (!authz.ok) {
     return jsonResponse({ error: authz.message }, authz.status);
@@ -195,6 +209,17 @@ Deno.serve(async (req) => {
 
     const dumpText = lines.join("\n");
     const fileName = `dump_${new Date().toISOString().replace(/[:.]/g, "-")}.sql`;
+
+    if (output === "inline") {
+      return new Response(dumpText, {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/sql; charset=utf-8",
+          "Content-Disposition": `attachment; filename="${fileName}"`,
+        },
+      });
+    }
 
     const adminClient = createClient(supabaseUrl, serviceKey);
     const { error: uploadError } = await adminClient.storage.from("avatars").upload(
