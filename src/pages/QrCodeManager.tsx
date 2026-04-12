@@ -43,7 +43,7 @@ import { buildQrShapeInnerFragments } from "@/lib/qrShapeMarkup";
 import { renderQrSvgString } from "@/lib/qrSvgRender";
 import { useQrShapeLibraryMap } from "@/hooks/useQrShapeLibrary";
 import { sanitizeExportBasename, svgMarkupToPngBlob, triggerFileDownload } from "@/lib/qrExportDownload";
-import { coerceExportSize, isBundledDefaultLogo, qrTrackingUrl } from "@/lib/qrRecordHelpers";
+import { coerceExportSize, EXPORT_SIZES, isBundledDefaultLogo, qrTrackingUrl } from "@/lib/qrRecordHelpers";
 import { composeQrPayload, type QrComposeFields, type QrContentKind } from "@/lib/qrContentCompose";
 import type { QrRecord } from "@/types/qrCodeRecord";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";

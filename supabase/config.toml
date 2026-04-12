@@ -1,3 +1,6 @@
 # Fragment à fusionner avec votre `config.toml` Supabase local si vous en avez déjà un.
 [functions.normalize-president-name]
 verify_jwt = true
+
+[functions.normalize-club-name]
+verify_jwt = true

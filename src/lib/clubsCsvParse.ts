@@ -3,7 +3,7 @@
  * aligné sur `scripts/import-clubs-csv.mjs`.
  */
 
-import { normalizeImportClubName } from "@/lib/clubDisplayName";
+import { normalizeClubNameForImport } from "@/lib/clubDisplayName";
 import { normalizePresidentImportName } from "@/lib/personNameNormalize";
 
 export interface ParsedClubRow {
@@ -31,9 +31,9 @@ export interface FieldChange {
   after: string;
 }
 
-/** Clé de rapprochement : même règle que l’import (préfixe retiré, espaces normalisés). */
+/** Clé de rapprochement : même règle que l’import (préfixe + casse titre). */
 export function normalizeClubKey(nom: string): string {
-  return normalizeImportClubName(nom).toLowerCase();
+  return normalizeClubNameForImport(nom).toLowerCase();
 }
 
 export function parseCsvLine(line: string): string[] {
@@ -122,7 +122,7 @@ function emptyToNull(s: string | undefined): string | null {
 
 export function cellsToParsedRow(cells: string[]): ParsedClubRow | null {
   if (cells.length < 10) return null;
-  const nom = normalizeImportClubName(cells[0]);
+  const nom = normalizeClubNameForImport(cells[0]);
   if (!nom) return null;
   return {
     nom,
@@ -257,7 +257,7 @@ function valuesEqual(key: keyof ParsedClubRow, a: ParsedClubRow, b: ClubLike): b
   const av = a[key];
   const bv = b[key as keyof ClubLike];
   if (key === "nom") {
-    return normalizeImportClubName(String(av ?? "")) === normalizeImportClubName(String(bv ?? ""));
+    return normalizeClubNameForImport(String(av ?? "")) === normalizeClubNameForImport(String(bv ?? ""));
   }
   if (key === "president_nom") {
     return normalizePresidentImportName(String(av ?? "")) === normalizePresidentImportName(String(bv ?? ""));

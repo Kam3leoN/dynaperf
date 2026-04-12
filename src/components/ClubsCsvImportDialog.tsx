@@ -270,7 +270,9 @@ export function ClubsCsvImportDialog({ open, onOpenChange, clubs, onApplied }: C
             Format attendu : séparateur <code className="text-xs">;</code>, encodage UTF-8 (BOM) ou Windows-1252, comme
             l’export source. Colonnes : nom, format, président, agences, téléphone, e-mail, adresse, département, statut,
             membres, leads, CA, dates (JJ/MM/AAAA). Les préfixes « DYNABUY CLUB » en tête de nom sont retirés à
-            l’import ; la colonne président « NOM/Prénom » est convertie en « Prénom NOM ».
+            l’import ; la colonne président « NOM/Prénom » est convertie en « Prénom NOM » ; le nom du club est
+            aussi passé en casse titre ; les segments « club affaires », « dynabuy », etc. (toutes casses) sont retirés
+            du nom.
           </DialogDescription>
         </DialogHeader>
 

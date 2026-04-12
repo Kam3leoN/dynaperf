@@ -2,7 +2,7 @@ import defaultLogoDynaLipsRed from "@/assets/logo-dynalips-red.svg";
 import { absoluteAppHomeUrl, collapseDuplicatePathSlashes } from "@/lib/basePath";
 import type { QrRecord } from "@/types/qrCodeRecord";
 
-const EXPORT_SIZES = [256, 512, 1024, 2048] as const;
+export const EXPORT_SIZES = [256, 512, 1024, 2048] as const;
 export type QrExportSize = (typeof EXPORT_SIZES)[number];
 
 /** Taille d’export autorisée la plus proche (alignée sur la table `qr_codes`). */

@@ -5,13 +5,14 @@
 const DYNABUY_CLUB_PREFIX = /^\s*dynabuy\s+club\s+/i;
 
 /**
- * Nom du club tel qu’affiché dans les tableaux (sans « DYNABUY CLUB » en préfixe).
+ * Nom du club à l’écran : sans préfixe marketing + casse titre (ex. DOMONT PROS BÂTIMENT → Domont Pros Bâtiment).
  */
 export function displayClubName(raw: string | null | undefined): string {
-  const t = (raw ?? "").trim();
+  const t = (raw ?? "").replace(/\s+/g, " ").trim();
   if (!t) return "";
-  const stripped = t.replace(DYNABUY_CLUB_PREFIX, "").trim();
-  return stripped || t;
+  const withoutPrefix = normalizeImportClubName(raw);
+  const base = withoutPrefix || t;
+  return normalizeClubNameTitleCase(stripClubNameMarketingNoise(base));
 }
 
 /**
@@ -32,4 +33,61 @@ export function normalizeImportClubName(raw: string | null | undefined): string 
     t = t.replace(/^\s*dynabuy\s+club\s+/i, "").replace(/\s+/g, " ").trim();
   }
   return t;
+}
+
+/**
+ * Retire des fragments marketing (toutes casses) : « club affaires », « club d’affaires », « dynabuy », combinaisons.
+ * Plusieurs passes pour gérer des répétitions ou l’ordre variable des segments.
+ */
+export function stripClubNameMarketingNoise(raw: string | null | undefined): string {
+  let s = (raw ?? "").replace(/\s+/g, " ").trim();
+  if (!s) return "";
+
+  const patterns: RegExp[] = [
+    /\bclub\s+(?:d[''\u2018\u2019]?\s*)?affaires\s+dynabuy\b/gi,
+    /\bclub\s+(?:d[''\u2018\u2019]?\s*)?affaires\b/gi,
+    /\bdynabuy\b/gi,
+  ];
+
+  for (let pass = 0; pass < 6; pass++) {
+    let next = s;
+    for (const re of patterns) {
+      next = next.replace(re, " ");
+    }
+    next = next.replace(/\s+/g, " ").trim();
+    if (next === s) break;
+    s = next;
+  }
+  return s;
+}
+
+/**
+ * Première lettre de chaque mot en majuscule, le reste en minuscules (FR / accents Unicode).
+ * Sous-mots séparés par un tiret traités chacun (ex. Saint-Nazaire).
+ */
+export function normalizeClubNameTitleCase(raw: string | null | undefined): string {
+  const t = (raw ?? "").replace(/\s+/g, " ").trim();
+  if (!t) return "";
+
+  const capToken = (s: string): string => {
+    const lower = s.toLowerCase();
+    if (!lower) return s;
+    return lower.charAt(0).toUpperCase() + lower.slice(1);
+  };
+
+  return t
+    .split(/\s+/)
+    .map((word) =>
+      word.includes("-")
+        ? word.split("-").map((p) => (p ? capToken(p) : p)).join("-")
+        : capToken(word),
+    )
+    .join(" ");
+}
+
+/**
+ * Import CSV : préfixe DYNABUY retiré, fragments marketing supprimés, puis casse « titre ».
+ */
+export function normalizeClubNameForImport(raw: string | null | undefined): string {
+  return normalizeClubNameTitleCase(stripClubNameMarketingNoise(normalizeImportClubName(raw)));
 }
