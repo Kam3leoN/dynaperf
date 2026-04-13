@@ -42,7 +42,15 @@ import { isTransparentBgColor } from "@/lib/qrBgColor";
 import { buildQrShapeInnerFragments } from "@/lib/qrShapeMarkup";
 import { renderQrSvgString } from "@/lib/qrSvgRender";
 import { useQrShapeLibraryMap } from "@/hooks/useQrShapeLibrary";
-import { sanitizeExportBasename, svgMarkupToPngBlob, triggerFileDownload } from "@/lib/qrExportDownload";
+import {
+  resolveExportLogoDataUrl,
+  sanitizeExportBasename,
+  svgMarkupToEpsBlob,
+  svgMarkupToJpegBlob,
+  svgMarkupToPdfBlob,
+  svgMarkupToPngBlob,
+  triggerFileDownload,
+} from "@/lib/qrExportDownload";
 import { coerceExportSize, EXPORT_SIZES, isBundledDefaultLogo, qrTrackingUrl } from "@/lib/qrRecordHelpers";
 import { composeQrPayload, type QrComposeFields, type QrContentKind } from "@/lib/qrContentCompose";
 import type { QrRecord } from "@/types/qrCodeRecord";
@@ -336,7 +344,7 @@ export default function QrCodeManager() {
   /** Affiche un logo au centre du QR (désactivé par défaut). */
   const [showLogo, setShowLogo] = useState(false);
   /** Format du prochain export fichier (préférence locale, non persistée). */
-  const [exportFormat, setExportFormat] = useState<"png" | "svg">("svg");
+  const [exportFormat, setExportFormat] = useState<"jpg" | "png" | "svg" | "eps" | "pdf">("png");
   /** DPI pour l’export PNG (référence 72) — préférence locale, non persistée. */
   const [exportDpi, setExportDpi] = useState<ExportDpi>(300);
   const [logoGallery, setLogoGallery] = useState<LogoGalleryItem[]>(() => loadGallery());
@@ -634,6 +642,8 @@ export default function QrCodeManager() {
     const size = coerceExportSize(draft.size);
     try {
       const fr = buildQrShapeInnerFragments(draft.qrStyle, shapeById);
+      const embeddedLogoUrl = await resolveExportLogoDataUrl(effectiveLogoUrl);
+      const exportLogoUrl = exportFormat === "svg" ? embeddedLogoUrl ?? effectiveLogoUrl : embeddedLogoUrl;
       const svg = renderQrSvgString({
         value: qrEncodedPayload,
         size,
@@ -641,7 +651,7 @@ export default function QrCodeManager() {
         bgColor: draft.bgColor,
         level: draft.level,
         style: draft.qrStyle,
-        logoUrl: effectiveLogoUrl,
+        logoUrl: exportLogoUrl,
         shapeInnerFragments: fr,
       });
       const base = sanitizeExportBasename(draft.name || "qrcode");
@@ -650,9 +660,27 @@ export default function QrCodeManager() {
         toast.success("SVG téléchargé.");
         return;
       }
-      const png = await svgMarkupToPngBlob(svg, size, exportDpi);
-      triggerFileDownload(png, `${base}-${size}px-${exportDpi}dpi.png`);
-      toast.success("PNG téléchargé.");
+      if (exportFormat === "png") {
+        const png = await svgMarkupToPngBlob(svg, size, exportDpi);
+        triggerFileDownload(png, `${base}-${size}px-${exportDpi}dpi.png`);
+        toast.success("PNG téléchargé.");
+        return;
+      }
+      if (exportFormat === "jpg") {
+        const jpg = await svgMarkupToJpegBlob(svg, size, exportDpi);
+        triggerFileDownload(jpg, `${base}-${size}px-${exportDpi}dpi.jpg`);
+        toast.success("JPG téléchargé.");
+        return;
+      }
+      if (exportFormat === "pdf") {
+        const pdf = await svgMarkupToPdfBlob(svg, size, exportDpi);
+        triggerFileDownload(pdf, `${base}-${size}px-${exportDpi}dpi.pdf`);
+        toast.success("PDF téléchargé.");
+        return;
+      }
+      const eps = await svgMarkupToEpsBlob(svg, size, exportDpi);
+      triggerFileDownload(eps, `${base}-${size}px-${exportDpi}dpi.eps`);
+      toast.success("EPS téléchargé.");
     } catch {
       toast.error("Export impossible (vérifiez le contenu et le logo).");
     }
@@ -1100,6 +1128,14 @@ export default function QrCodeManager() {
                               <Button
                                 type="button"
                                 size="sm"
+                                variant={exportFormat === "jpg" ? "default" : "outline"}
+                                onClick={() => setExportFormat("jpg")}
+                              >
+                                JPG
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
                                 variant={exportFormat === "png" ? "default" : "outline"}
                                 onClick={() => setExportFormat("png")}
                               >
@@ -1112,6 +1148,22 @@ export default function QrCodeManager() {
                                 onClick={() => setExportFormat("svg")}
                               >
                                 SVG
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant={exportFormat === "eps" ? "default" : "outline"}
+                                onClick={() => setExportFormat("eps")}
+                              >
+                                EPS
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant={exportFormat === "pdf" ? "default" : "outline"}
+                                onClick={() => setExportFormat("pdf")}
+                              >
+                                PDF
                               </Button>
                             </div>
                             <Button type="button" size="sm" variant="secondary" className="gap-2" onClick={() => void downloadExportedQr()}>
