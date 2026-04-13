@@ -449,7 +449,11 @@ export default function AdminAuditGridInline() {
     toast.success("Ordre des items mis à jour");
   };
 
-  const handleItemDragStart = (itemId: string) => setDraggedItemId(itemId);
+  const handleItemDragStart = (itemId: string) => {
+    setDraggedCategoryId(null);
+    setCategoryDropIndex(null);
+    setDraggedItemId(itemId);
+  };
 
   const handleItemDrop = async (categoryId: string, index: number) => {
     if (!draggedItemId) return;
@@ -644,6 +648,7 @@ export default function AdminAuditGridInline() {
               <div key={cat.id}>
                 <div
                   onDragOver={(event) => {
+                    if (!draggedCategoryId) return;
                     event.preventDefault();
                     setCategoryDropIndex(catIndex);
                   }}
@@ -680,10 +685,14 @@ export default function AdminAuditGridInline() {
                       onDragStart={() => handleItemDragStart(item.id)}
                       onDragEnd={() => { setDraggedItemId(null); setDropTarget(null); }}
                       onDragOver={(event) => {
+                        if (!draggedItemId) return;
                         event.preventDefault();
                         setDropTarget({ categoryId: cat.id, index: idx });
                       }}
-                      onDrop={() => handleItemDrop(cat.id, idx)}
+                      onDrop={() => {
+                        if (!draggedItemId) return;
+                        void handleItemDrop(cat.id, idx);
+                      }}
                       className={`flex items-center gap-3 px-4 py-2.5 hover:bg-accent/30 transition-colors cursor-grab ${dropTarget?.categoryId === cat.id && dropTarget.index === idx ? "border-t-2 border-primary" : ""}`}
                     >
                       <span className="text-xs text-muted-foreground tabular-nums w-6 text-right">{idx + 1}</span>
@@ -706,10 +715,14 @@ export default function AdminAuditGridInline() {
                   {catItems.length === 0 && (
                     <div
                       onDragOver={(event) => {
+                        if (!draggedItemId) return;
                         event.preventDefault();
                         setDropTarget({ categoryId: cat.id, index: 0 });
                       }}
-                      onDrop={() => handleItemDrop(cat.id, 0)}
+                      onDrop={() => {
+                        if (!draggedItemId) return;
+                        void handleItemDrop(cat.id, 0);
+                      }}
                       className={`text-xs text-center py-4 ${dropTarget?.categoryId === cat.id && dropTarget.index === 0 ? "text-primary border-2 border-dashed border-primary rounded-lg m-2" : "text-muted-foreground"}`}
                     >
                       Aucun item
@@ -718,10 +731,14 @@ export default function AdminAuditGridInline() {
                   {catItems.length > 0 && (
                     <div
                       onDragOver={(event) => {
+                        if (!draggedItemId) return;
                         event.preventDefault();
                         setDropTarget({ categoryId: cat.id, index: catItems.length });
                       }}
-                      onDrop={() => handleItemDrop(cat.id, catItems.length)}
+                      onDrop={() => {
+                        if (!draggedItemId) return;
+                        void handleItemDrop(cat.id, catItems.length);
+                      }}
                       className={`h-3 transition-colors ${dropTarget?.categoryId === cat.id && dropTarget.index === catItems.length ? "bg-primary/20" : "bg-transparent"}`}
                     />
                   )}
@@ -737,6 +754,7 @@ export default function AdminAuditGridInline() {
           })}
           <div
             onDragOver={(event) => {
+              if (!draggedCategoryId) return;
               event.preventDefault();
               setCategoryDropIndex(categories.length);
             }}
