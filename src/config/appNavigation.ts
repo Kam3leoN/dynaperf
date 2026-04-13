@@ -201,6 +201,7 @@ const visio: RailSection = {
   icon: faVideo,
   to: "/meet",
   requiredPermission: "nav.hub",
+  requiredModule: "visio",
   pathPrefixes: ["/meet"],
   children: [
     { label: "Dyna'Meet", to: "/meet", icon: faVideo },

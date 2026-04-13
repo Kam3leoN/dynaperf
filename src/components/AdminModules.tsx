@@ -14,6 +14,7 @@ import {
   faQrcode,
   faEnvelope,
   faComments,
+  faVideo,
 } from "@fortawesome/free-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,6 +37,7 @@ const MODULE_ICONS: Record<string, IconDefinition> = {
   drive: faFolder,
   reseau: faHandshake,
   qrcode: faQrcode,
+  visio: faVideo,
   messages_prives: faEnvelope,
   discussions: faComments,
 };
@@ -56,7 +58,36 @@ export default function AdminModules() {
       toast.error(error.message);
       return;
     }
-    setModules(data ?? []);
+    const current = data ?? [];
+    const hasVisio = current.some((mod: AppModule) => mod.module_key === "visio");
+
+    if (!hasVisio) {
+      const { error: insertError } = await (supabase as any).from("app_modules").insert({
+        module_key: "visio",
+        label: "Visio",
+        is_enabled: true,
+        sort_order: 95,
+      });
+
+      if (insertError) {
+        toast.error(insertError.message);
+      } else {
+        const { data: reloaded, error: reloadError } = await (supabase as any)
+          .from("app_modules")
+          .select("*")
+          .order("sort_order");
+        if (reloadError) {
+          toast.error(reloadError.message);
+          setModules(current);
+        } else {
+          setModules(reloaded ?? current);
+        }
+        setLoading(false);
+        return;
+      }
+    }
+
+    setModules(current);
     setLoading(false);
   }, []);
 
