@@ -205,7 +205,6 @@ const visio: RailSection = {
   children: [
     { label: "Dyna'Meet", to: "/meet", icon: faVideo },
     { label: "Paramétrer une visio", to: "/meet/settings", icon: faGear },
-    { label: "Gérer les visios pré-réglées", to: "/meet/presets", icon: faList },
   ],
 };
 

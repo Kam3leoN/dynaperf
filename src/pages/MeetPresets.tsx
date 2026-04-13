@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AppLayout } from "@/components/AppLayout";
 
 const STORAGE_KEY = "dynaperf.meet.presets";
 
@@ -45,14 +46,15 @@ export default function MeetPresets() {
   };
 
   return (
-    <main className="container mx-auto px-4 py-6 md:py-8">
-      <section className="w-full rounded-2xl border border-border p-4 md:p-6 bg-card text-card-foreground space-y-4">
-        <header>
-          <h1 className="text-xl font-semibold">Gérer les visios pré-réglées</h1>
-          <p className="text-sm text-muted-foreground">Crée des salons réutilisables pour Dyna&apos;Meet.</p>
-        </header>
+    <AppLayout>
+      <main className="container mx-auto px-4 py-6 md:py-8">
+        <section className="w-full rounded-2xl border border-border p-4 md:p-6 bg-card text-card-foreground space-y-4">
+          <header>
+            <h1 className="text-xl font-semibold">Gérer les visios pré-réglées</h1>
+            <p className="text-sm text-muted-foreground">Crée des salons réutilisables pour Dyna&apos;Meet.</p>
+          </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <input
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -68,9 +70,9 @@ export default function MeetPresets() {
           <button type="button" onClick={addPreset} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground">
             Ajouter
           </button>
-        </div>
+          </div>
 
-        <ul className="space-y-2">
+          <ul className="space-y-2">
           {presets.map((preset) => (
             <li key={preset.id} className="flex items-center justify-between rounded-lg border border-border px-3 py-2">
               <div>
@@ -91,8 +93,9 @@ export default function MeetPresets() {
               Aucun pré-réglage pour le moment.
             </li>
           )}
-        </ul>
-      </section>
-    </main>
+          </ul>
+        </section>
+      </main>
+    </AppLayout>
   );
 }

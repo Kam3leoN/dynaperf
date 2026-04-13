@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AppLayout } from "@/components/AppLayout";
 import JitsiMeetModule from "@/components/JitsiMeetModule";
 
 const STORAGE_KEY = "dynaperf.meet.settings";
@@ -28,13 +29,15 @@ export default function Meet() {
   }, []);
 
   return (
-    <main className="container mx-auto px-4 py-6 md:py-8">
-      <JitsiMeetModule
-        roomName={defaults.defaultRoom}
-        displayName={defaults.defaultDisplayName}
-        domain={defaults.domain || "meet.jit.si"}
-        brandLogoUrl={defaults.logoUrl || undefined}
-      />
-    </main>
+    <AppLayout>
+      <main className="container mx-auto px-4 py-6 md:py-8">
+        <JitsiMeetModule
+          roomName={defaults.defaultRoom}
+          displayName={defaults.defaultDisplayName}
+          domain={defaults.domain || "meet.jit.si"}
+          brandLogoUrl={defaults.logoUrl || undefined}
+        />
+      </main>
+    </AppLayout>
   );
 }

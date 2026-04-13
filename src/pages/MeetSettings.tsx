@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AppLayout } from "@/components/AppLayout";
 
 const STORAGE_KEY = "dynaperf.meet.settings";
 
@@ -53,13 +54,14 @@ export default function MeetSettings() {
   };
 
   return (
-    <main className="container mx-auto px-4 py-6 md:py-8">
-      <section className="w-full rounded-2xl border border-border p-4 md:p-6 bg-card text-card-foreground space-y-4">
-        <header>
-          <h1 className="text-xl font-semibold">Paramétrer une visio</h1>
-          <p className="text-sm text-muted-foreground">Définis les valeurs par défaut de Dyna&apos;Meet.</p>
-        </header>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <AppLayout>
+      <main className="container mx-auto px-4 py-6 md:py-8">
+        <section className="w-full rounded-2xl border border-border p-4 md:p-6 bg-card text-card-foreground space-y-4">
+          <header>
+            <h1 className="text-xl font-semibold">Paramétrer une visio</h1>
+            <p className="text-sm text-muted-foreground">Définis les valeurs par défaut de Dyna&apos;Meet.</p>
+          </header>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <label className="space-y-1 text-sm">
             <span className="text-muted-foreground">Salon par défaut</span>
             <input
@@ -103,20 +105,21 @@ export default function MeetSettings() {
               className="w-full rounded-lg border border-border bg-background px-3 py-2"
             />
           </label>
-        </div>
-        {state.logoUrl ? (
-          <div className="rounded-lg border border-border p-3 bg-muted/20">
-            <p className="text-sm text-muted-foreground mb-2">Aperçu du logo</p>
-            <img src={state.logoUrl} alt="Aperçu logo" className="h-12 w-auto object-contain" />
           </div>
-        ) : null}
-        <div className="flex items-center gap-3">
-          <button type="button" onClick={save} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground">
-            Enregistrer
-          </button>
-          {saved && <span className="text-sm text-emerald-600">Paramètres enregistrés.</span>}
-        </div>
-      </section>
-    </main>
+          {state.logoUrl ? (
+            <div className="rounded-lg border border-border p-3 bg-muted/20">
+              <p className="text-sm text-muted-foreground mb-2">Aperçu du logo</p>
+              <img src={state.logoUrl} alt="Aperçu logo" className="h-12 w-auto object-contain" />
+            </div>
+          ) : null}
+          <div className="flex items-center gap-3">
+            <button type="button" onClick={save} className="px-4 py-2 rounded-lg bg-primary text-primary-foreground">
+              Enregistrer
+            </button>
+            {saved && <span className="text-sm text-emerald-600">Paramètres enregistrés.</span>}
+          </div>
+        </section>
+      </main>
+    </AppLayout>
   );
 }
