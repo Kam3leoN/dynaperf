@@ -32,6 +32,7 @@ import {
   faCubes,
   faDatabase,
   faCircleDot,
+  faVideo,
 } from "@fortawesome/free-solid-svg-icons";
 
 /** Entrée du rail (icône seule). */
@@ -194,6 +195,20 @@ const qrcodes: RailSection = {
   ],
 };
 
+const visio: RailSection = {
+  id: "visio",
+  label: "Visio",
+  icon: faVideo,
+  to: "/meet",
+  requiredPermission: "nav.hub",
+  pathPrefixes: ["/meet"],
+  children: [
+    { label: "Dyna'Meet", to: "/meet", icon: faVideo },
+    { label: "Paramétrer une visio", to: "/meet/settings", icon: faGear },
+    { label: "Gérer les visios pré-réglées", to: "/meet/presets", icon: faList },
+  ],
+};
+
 const sondages: RailSection = {
   id: "sondages",
   label: "Sondages",
@@ -247,6 +262,7 @@ const ALL_RAIL_SECTIONS: RailSection[] = [
   drive,
   galerie,
   qrcodes,
+  visio,
   sondages,
   historique,
   admin,
@@ -335,7 +351,7 @@ export function getActiveRailSection(pathname: string, sections: RailSection[]):
 export function getRailHeaderLabel(pathname: string, sections: RailSection[]): string | null {
   const active = getActiveRailSection(pathname, sections);
   if (!active) return null;
-  if (active.id === "home" || active.id === "admin" || active.id === "qrcodes") {
+  if (active.id === "home" || active.id === "admin" || active.id === "qrcodes" || active.id === "visio") {
     const normalized = pathname.split("?")[0];
     for (const c of active.children) {
       const base = c.to.split("?")[0];

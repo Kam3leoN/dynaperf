@@ -71,6 +71,9 @@ const AdminPresenceStatuses = lazy(() => import("./pages/admin/AdminPresenceStat
 const QrCodeStats = lazy(() => import("./pages/QrCodeStats"));
 const Galerie = lazy(() => import("./pages/Galerie"));
 const QrScanRedirect = lazy(() => import("./pages/QrScanRedirect"));
+const Meet = lazy(() => import("./pages/Meet"));
+const MeetSettings = lazy(() => import("./pages/MeetSettings"));
+const MeetPresets = lazy(() => import("./pages/MeetPresets"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -226,6 +229,9 @@ const App = () => {
                     <Route path="/qrcodes/stats" element={<PermissionRoute permission="nav.hub"><QrCodeStats /></PermissionRoute>} />
                     <Route path="/qrcodes" element={<PermissionRoute permission="nav.hub"><QrCodeManageList /></PermissionRoute>} />
                     <Route path="/galerie" element={<PermissionRoute permission="nav.audits"><Galerie /></PermissionRoute>} />
+                    <Route path="/meet" element={<PermissionRoute permission="nav.hub"><Meet /></PermissionRoute>} />
+                    <Route path="/meet/settings" element={<PermissionRoute permission="nav.hub"><MeetSettings /></PermissionRoute>} />
+                    <Route path="/meet/presets" element={<PermissionRoute permission="nav.hub"><MeetPresets /></PermissionRoute>} />
                     <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
                     <Route
                       path="/r/:qrId"
