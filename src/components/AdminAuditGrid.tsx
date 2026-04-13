@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, type DragEvent } from "react";
 import { AuditFormBuilder } from "@/components/AuditFormBuilder";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -449,10 +449,20 @@ export default function AdminAuditGridInline() {
     toast.success("Ordre des items mis à jour");
   };
 
-  const handleItemDragStart = (itemId: string) => {
+  const handleItemDragStart = (event: DragEvent<HTMLElement>, itemId: string) => {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", itemId);
     setDraggedCategoryId(null);
     setCategoryDropIndex(null);
     setDraggedItemId(itemId);
+  };
+
+  const handleCategoryDragStart = (event: DragEvent<HTMLElement>, categoryId: string) => {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", categoryId);
+    setDraggedItemId(null);
+    setDropTarget(null);
+    setDraggedCategoryId(categoryId);
   };
 
   const handleItemDrop = async (categoryId: string, index: number) => {
@@ -493,9 +503,10 @@ export default function AdminAuditGridInline() {
     toast.success("Ordre des catégories mis à jour");
   };
 
-  const handleCategoryDrop = async (index: number) => {
-    if (!draggedCategoryId) return;
-    const nextCategories = reorderCategories(draggedCategoryId, index);
+  const handleCategoryDrop = async (event: DragEvent<HTMLElement>, index: number) => {
+    const sourceCategoryId = draggedCategoryId || event.dataTransfer.getData("text/plain");
+    if (!sourceCategoryId) return;
+    const nextCategories = reorderCategories(sourceCategoryId, index);
     setDraggedCategoryId(null);
     setCategoryDropIndex(null);
     if (!nextCategories) return;
@@ -652,18 +663,24 @@ export default function AdminAuditGridInline() {
                     event.preventDefault();
                     setCategoryDropIndex(catIndex);
                   }}
-                  onDrop={() => handleCategoryDrop(catIndex)}
+                  onDrop={(event) => {
+                    void handleCategoryDrop(event, catIndex);
+                  }}
                   className={`h-2 rounded transition-colors ${categoryDropIndex === catIndex ? "bg-primary/30" : "bg-transparent"}`}
                 />
-                <div
-                  draggable
-                  onDragStart={() => setDraggedCategoryId(cat.id)}
-                  onDragEnd={() => { setDraggedCategoryId(null); setCategoryDropIndex(null); }}
-                  className="rounded-lg border border-border bg-card overflow-hidden"
-                >
+                <div className="rounded-lg border border-border bg-card overflow-hidden">
                 <div className="flex items-center justify-between px-4 py-3 bg-muted/50 border-b border-border">
                   <div className="flex items-center gap-2">
-                    <FontAwesomeIcon icon={faGripVertical} className="h-3 w-3 text-muted-foreground/60 cursor-grab" />
+                    <button
+                      type="button"
+                      draggable
+                      onDragStart={(event) => handleCategoryDragStart(event, cat.id)}
+                      onDragEnd={() => { setDraggedCategoryId(null); setCategoryDropIndex(null); }}
+                      className="inline-flex items-center justify-center h-6 w-6 rounded hover:bg-muted/60 cursor-grab active:cursor-grabbing"
+                      title="Déplacer la catégorie"
+                    >
+                      <FontAwesomeIcon icon={faGripVertical} className="h-3 w-3 text-muted-foreground/60" />
+                    </button>
                     <FontAwesomeIcon icon={faLayerGroup} className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="font-medium text-sm">{cat.name}</span>
                     <Badge variant="secondary" className="text-xs tabular-nums">{catMaxPts} pts</Badge>
@@ -682,7 +699,7 @@ export default function AdminAuditGridInline() {
                     <div
                       key={item.id}
                       draggable
-                      onDragStart={() => handleItemDragStart(item.id)}
+                      onDragStart={(event) => handleItemDragStart(event, item.id)}
                       onDragEnd={() => { setDraggedItemId(null); setDropTarget(null); }}
                       onDragOver={(event) => {
                         if (!draggedItemId) return;
@@ -758,7 +775,9 @@ export default function AdminAuditGridInline() {
               event.preventDefault();
               setCategoryDropIndex(categories.length);
             }}
-            onDrop={() => handleCategoryDrop(categories.length)}
+            onDrop={(event) => {
+              void handleCategoryDrop(event, categories.length);
+            }}
             className={`h-2 rounded transition-colors ${categoryDropIndex === categories.length ? "bg-primary/30" : "bg-transparent"}`}
           />
 
