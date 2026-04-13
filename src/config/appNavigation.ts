@@ -176,6 +176,7 @@ const galerie: RailSection = {
   to: "/galerie",
   /** Aligné sur la route `/galerie` : même droit que les audits (pas de module `galerie` séparé). */
   requiredPermission: "nav.audits",
+  requiredModule: "galerie",
   pathPrefixes: ["/galerie"],
   children: [{ label: "Galerie photos", to: "/galerie", icon: faImages }],
 };

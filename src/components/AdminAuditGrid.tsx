@@ -64,6 +64,8 @@ export default function AdminAuditGridInline() {
   const [editingItem, setEditingItem] = useState<ItemConfig | null>(null);
   const [draggedItemId, setDraggedItemId] = useState<string | null>(null);
   const [dropTarget, setDropTarget] = useState<{ categoryId: string; index: number } | null>(null);
+  const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null);
+  const [categoryDropIndex, setCategoryDropIndex] = useState<number | null>(null);
   const [itemForm, setItemForm] = useState({
     category_id: "", title: "", description: "", max_points: 1,
     condition: "", scoring_rules: "", input_type: "boolean", checklist_items: "",
@@ -458,6 +460,44 @@ export default function AdminAuditGridInline() {
     await persistReorderedItems(nextItems);
   };
 
+  const reorderCategories = (sourceCategoryId: string, targetIndex: number) => {
+    const sourceIndex = categories.findIndex((category) => category.id === sourceCategoryId);
+    if (sourceIndex < 0) return null;
+    const base = [...categories];
+    const [moved] = base.splice(sourceIndex, 1);
+    const boundedTarget = Math.max(0, Math.min(targetIndex, base.length));
+    base.splice(boundedTarget, 0, moved);
+    return base.map((category, index) => ({ ...category, sort_order: index }));
+  };
+
+  const persistReorderedCategories = async (nextCategories: Category[]) => {
+    setCategories(nextCategories);
+    const results = await Promise.all(
+      nextCategories.map((category) =>
+        supabase
+          .from("audit_categories")
+          .update({ sort_order: category.sort_order })
+          .eq("id", category.id)
+      )
+    );
+    const firstError = results.find((result) => result.error)?.error;
+    if (firstError) {
+      toast.error(firstError.message || "Erreur lors du déplacement de catégorie");
+      loadData();
+      return;
+    }
+    toast.success("Ordre des catégories mis à jour");
+  };
+
+  const handleCategoryDrop = async (index: number) => {
+    if (!draggedCategoryId) return;
+    const nextCategories = reorderCategories(draggedCategoryId, index);
+    setDraggedCategoryId(null);
+    setCategoryDropIndex(null);
+    if (!nextCategories) return;
+    await persistReorderedCategories(nextCategories);
+  };
+
   // Scoring tiers helpers
   const addTier = () => {
     const last = scoringTiers[scoringTiers.length - 1];
@@ -597,13 +637,28 @@ export default function AdminAuditGridInline() {
             <AuditFormBuilder auditTypeKey={selectedType?.key || ""} />
           </div>
 
-          {categories.map((cat) => {
+          {categories.map((cat, catIndex) => {
             const catItems = items.filter((i) => i.category_id === cat.id).sort((a, b) => a.sort_order - b.sort_order);
             const catMaxPts = catItems.reduce((s, i) => s + getAuditItemMaxPoints(i), 0);
             return (
-              <div key={cat.id} className="rounded-lg border border-border bg-card overflow-hidden">
+              <div key={cat.id}>
+                <div
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    setCategoryDropIndex(catIndex);
+                  }}
+                  onDrop={() => handleCategoryDrop(catIndex)}
+                  className={`h-2 rounded transition-colors ${categoryDropIndex === catIndex ? "bg-primary/30" : "bg-transparent"}`}
+                />
+                <div
+                  draggable
+                  onDragStart={() => setDraggedCategoryId(cat.id)}
+                  onDragEnd={() => { setDraggedCategoryId(null); setCategoryDropIndex(null); }}
+                  className="rounded-lg border border-border bg-card overflow-hidden"
+                >
                 <div className="flex items-center justify-between px-4 py-3 bg-muted/50 border-b border-border">
                   <div className="flex items-center gap-2">
+                    <FontAwesomeIcon icon={faGripVertical} className="h-3 w-3 text-muted-foreground/60 cursor-grab" />
                     <FontAwesomeIcon icon={faLayerGroup} className="h-3.5 w-3.5 text-muted-foreground" />
                     <span className="font-medium text-sm">{cat.name}</span>
                     <Badge variant="secondary" className="text-xs tabular-nums">{catMaxPts} pts</Badge>
@@ -676,9 +731,18 @@ export default function AdminAuditGridInline() {
                     <FontAwesomeIcon icon={faPlus} className="h-3 w-3" /> Ajouter un item
                   </Button>
                 </div>
+                </div>
               </div>
             );
           })}
+          <div
+            onDragOver={(event) => {
+              event.preventDefault();
+              setCategoryDropIndex(categories.length);
+            }}
+            onDrop={() => handleCategoryDrop(categories.length)}
+            className={`h-2 rounded transition-colors ${categoryDropIndex === categories.length ? "bg-primary/30" : "bg-transparent"}`}
+          />
 
           {categories.length === 0 && (
             <div className="text-center py-10 text-muted-foreground text-sm">

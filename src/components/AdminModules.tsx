@@ -15,6 +15,7 @@ import {
   faEnvelope,
   faComments,
   faVideo,
+  faImages,
 } from "@fortawesome/free-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { useAuth } from "@/hooks/useAuth";
@@ -38,6 +39,7 @@ const MODULE_ICONS: Record<string, IconDefinition> = {
   reseau: faHandshake,
   qrcode: faQrcode,
   visio: faVideo,
+  galerie: faImages,
   messages_prives: faEnvelope,
   discussions: faComments,
 };
@@ -59,15 +61,21 @@ export default function AdminModules() {
       return;
     }
     const current = data ?? [];
-    const hasVisio = current.some((mod: AppModule) => mod.module_key === "visio");
+    const moduleBlueprints = [
+      { module_key: "visio", label: "Visio", sort_order: 95 },
+      { module_key: "galerie", label: "Galerie", sort_order: 96 },
+    ];
+    const missing = moduleBlueprints.filter(
+      (blueprint) => !current.some((mod: AppModule) => mod.module_key === blueprint.module_key)
+    );
 
-    if (!hasVisio) {
-      const { error: insertError } = await (supabase as any).from("app_modules").insert({
-        module_key: "visio",
-        label: "Visio",
-        is_enabled: true,
-        sort_order: 95,
-      });
+    if (missing.length > 0) {
+      const { error: insertError } = await (supabase as any).from("app_modules").insert(
+        missing.map((blueprint) => ({
+          ...blueprint,
+          is_enabled: true,
+        }))
+      );
 
       if (insertError) {
         toast.error(insertError.message);
