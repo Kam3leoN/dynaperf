@@ -1,4 +1,5 @@
 -- 1) Notifications : les utilisateurs peuvent créer leurs propres notifications (ex. audit terminé)
+DROP POLICY IF EXISTS "Users can insert own notifications" ON public.notifications;
 CREATE POLICY "Users can insert own notifications"
   ON public.notifications FOR INSERT
   TO authenticated

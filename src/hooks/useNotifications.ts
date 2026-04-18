@@ -69,5 +69,24 @@ export function useNotifications() {
     setUnreadCount(0);
   }, [user]);
 
-  return { notifications, unreadCount, loading, markAsRead, markAllAsRead };
+  const deleteNotification = useCallback(
+    async (id: string) => {
+      if (!user) return;
+      setNotifications((prev) => {
+        const next = prev.filter((n) => n.id !== id);
+        queueMicrotask(() => {
+          setUnreadCount(next.filter((n) => !n.read).length);
+        });
+        return next;
+      });
+      const { error } = await supabase.from("notifications").delete().eq("id", id).eq("user_id", user.id);
+      if (error) {
+        console.error("[useNotifications] delete", error);
+        void fetchNotifications();
+      }
+    },
+    [user, fetchNotifications],
+  );
+
+  return { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification };
 }

@@ -1,6 +1,6 @@
 import { AppLayout } from "@/components/AppLayout";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faCheck, faCheckDouble } from "@fortawesome/free-solid-svg-icons";
+import { faCheck, faCheckDouble, faTrashCan } from "@fortawesome/free-solid-svg-icons";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -8,7 +8,8 @@ import { fr } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
 
 export default function Notifications() {
-  const { notifications, unreadCount, loading, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, loading, markAsRead, markAllAsRead, deleteNotification } =
+    useNotifications();
   const navigate = useNavigate();
 
   return (
@@ -36,32 +37,54 @@ export default function Notifications() {
           </div>
         ) : (
           <div className="space-y-2">
-            {notifications.map(n => (
-              <button
+            {notifications.map((n) => (
+              <div
                 key={n.id}
-                onClick={() => {
-                  if (!n.read) markAsRead(n.id);
-                  if (n.link) navigate(n.link);
-                }}
-                className={`w-full text-left rounded-2xl p-4 border transition-colors ${
-                  n.read
-                    ? "bg-card border-border/60"
-                    : "bg-primary/5 border-primary/20"
+                className={`flex items-center gap-1 rounded-2xl border transition-colors sm:gap-2 ${
+                  n.read ? "bg-card border-border/60" : "bg-primary/5 border-primary/20"
                 }`}
               >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-foreground">{n.title}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{n.body}</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!n.read) markAsRead(n.id);
+                    if (n.link) navigate(n.link);
+                  }}
+                  className="min-w-0 flex-1 rounded-2xl p-4 text-left outline-none ring-offset-background focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-foreground">{n.title}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{n.body}</p>
+                    </div>
+                    {!n.read && (
+                      <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full bg-primary" aria-hidden />
+                    )}
                   </div>
-                  {!n.read && (
-                    <span className="w-2.5 h-2.5 rounded-full bg-primary shrink-0 mt-1" />
-                  )}
-                </div>
-                <p className="text-[10px] text-muted-foreground mt-1.5">
-                  {format(new Date(n.created_at), "d MMM yyyy à HH:mm", { locale: fr })}
-                </p>
-              </button>
+                  <p className="mt-1.5 text-[10px] text-muted-foreground">
+                    {format(new Date(n.created_at), "d MMM yyyy à HH:mm", { locale: fr })}
+                  </p>
+                </button>
+                {n.read && (
+                  <div className="flex shrink-0 items-center self-stretch pr-2 sm:pr-3">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-muted-foreground hover:text-destructive"
+                      aria-label="Supprimer la notification"
+                      title="Supprimer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        void deleteNotification(n.id);
+                      }}
+                    >
+                      <FontAwesomeIcon icon={faTrashCan} className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
+              </div>
             ))}
           </div>
         )}
