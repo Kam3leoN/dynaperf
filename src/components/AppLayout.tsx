@@ -50,7 +50,7 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { MembersDirectoryPanel } from "./MembersDirectoryPanel";
 import { AppNavRail } from "./AppNavRail";
 import { DesktopUserDock } from "./DesktopUserDock";
-import { AppSecondaryNav, AppSecondaryNavPanel } from "./AppSecondaryNav";
+import { AppSecondaryNavPanel } from "./AppSecondaryNav";
 import { getActiveRailSection, getRailHeaderLabel, RAIL_SECTIONS_ALL } from "@/config/appNavigation";
 import { usePermissionGate } from "@/contexts/PermissionsContext";
 import { useOptionalMessagingSidebarHost } from "@/contexts/MessagingSidebarContext";
@@ -213,7 +213,11 @@ export function AppLayout({
     .slice(0, 2);
 
   const iconBadge = (icon: typeof faBell, to: string, count: number, title: string) => (
-    <Link to={to} className="relative h-10 w-10 rounded-full flex items-center justify-center hover:bg-secondary/60 transition-colors" title={title}>
+    <Link
+      to={to}
+      className="relative flex h-10 w-10 max-lg:min-h-12 max-lg:min-w-12 items-center justify-center rounded-full hover:bg-secondary/60 transition-colors"
+      title={title}
+    >
       <FontAwesomeIcon icon={icon} className="h-5 w-5 text-foreground/60" />
       {count > 0 && (
         <span className="absolute top-0 right-0 min-w-[20px] h-[20px] rounded-full bg-destructive text-destructive-foreground text-[11px] font-bold flex items-center justify-center px-1">
@@ -370,14 +374,14 @@ export function AppLayout({
     <div className="flex h-dvh min-h-0 flex-col bg-background">
       {/* Top app bar — le shell est en h-dvh + overflow-hidden sur la zone centrale : pas de scroll document */}
       <header className="z-40 shrink-0 bg-card/85 backdrop-blur-2xl border-b border-border/30 px-4 shell:px-0">
-        <div className="w-full flex items-stretch justify-between h-16 shell:h-[4.25rem] shell:pl-[376px] shell:pr-[260px]">
+        <div className="w-full flex items-stretch justify-between h-16 shell:h-[4.25rem] shell:pl-[var(--shell-nav-rail-width,320px)] shell:pr-[260px]">
           <div className="flex flex-1 items-center justify-between min-w-0 gap-2 pl-4 pr-4 shell:pl-6 shell:pr-6">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="shell:hidden h-10 w-10 rounded-full shrink-0"
+                className="shell:hidden h-10 w-10 max-lg:min-h-12 max-lg:min-w-12 rounded-full shrink-0"
                 title="Menu de la section"
                 aria-label="Ouvrir le menu de la section"
                 onClick={() => setSecondaryNavSheetOpen(true)}
@@ -410,7 +414,13 @@ export function AppLayout({
 
             <div className="flex items-center gap-2">
             {filters && setFilters && (
-              <Button variant="ghost" size="icon" className="h-10 w-10 rounded-full" onClick={() => setFiltersOpen(true)} title="Filtres">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-10 w-10 max-lg:min-h-12 max-lg:min-w-12 rounded-full"
+                onClick={() => setFiltersOpen(true)}
+                title="Filtres"
+              >
                 <FontAwesomeIcon icon={faSliders} className="h-[18px] w-[18px]" />
               </Button>
             )}
@@ -420,7 +430,7 @@ export function AppLayout({
             <div className="flex items-center gap-1">
               <Link
                 to="/messages?section=discussion"
-                className="relative flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-secondary/60"
+                className="relative flex h-10 w-10 max-lg:min-h-12 max-lg:min-w-12 items-center justify-center rounded-full transition-colors hover:bg-secondary/60"
                 title="Discussions (salons et groupes)"
               >
                 <FontAwesomeIcon icon={faCommentDots} className="h-5 w-5 text-foreground/60" />
@@ -432,7 +442,7 @@ export function AppLayout({
               </Link>
               <Link
                 to="/messages?section=messagerie"
-                className="relative flex h-10 w-10 items-center justify-center rounded-full transition-colors hover:bg-secondary/60"
+                className="relative flex h-10 w-10 max-lg:min-h-12 max-lg:min-w-12 items-center justify-center rounded-full transition-colors hover:bg-secondary/60"
                 title="Messages privés"
               >
                 <FontAwesomeIcon icon={faEnvelope} className="h-5 w-5 text-foreground/60" />
@@ -448,7 +458,7 @@ export function AppLayout({
               type="button"
               variant="ghost"
               size="icon"
-              className="h-10 w-10 shrink-0 rounded-full shell:hidden"
+              className="h-10 w-10 max-lg:min-h-12 max-lg:min-w-12 shrink-0 rounded-full shell:hidden"
               title="Membres"
               aria-label="Ouvrir la liste des membres"
               onClick={() => setMembersSheetOpen(true)}
@@ -479,9 +489,13 @@ export function AppLayout({
         </Sheet>
       )}
 
-      <div className="flex min-h-0 flex-1 flex-row overflow-x-auto overflow-y-hidden shell:pl-[376px] shell:pr-[260px]">
-        <AppNavRail isAdmin={isAdmin} hasPermission={hasPermission} isModuleEnabled={isModuleEnabled} />
-        <AppSecondaryNav isSuperAdmin={isSuperAdmin} hasPermission={hasPermission} isModuleEnabled={isModuleEnabled} />
+      <div className="flex min-h-0 flex-1 flex-row overflow-x-auto overflow-y-hidden shell:pl-[var(--shell-nav-rail-width,320px)] shell:pr-[260px]">
+        <AppNavRail
+          isAdmin={isAdmin}
+          isSuperAdmin={isSuperAdmin}
+          hasPermission={hasPermission}
+          isModuleEnabled={isModuleEnabled}
+        />
         <div className="flex flex-1 flex-col min-w-0 min-h-0">
           <main
             className={cn(

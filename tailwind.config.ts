@@ -20,8 +20,8 @@ export default {
         shell: "1024px",
       },
       fontFamily: {
-        sans: ["Plus Jakarta Sans", "Lexend", "sans-serif"],
-        display: ["Plus Jakarta Sans", "Lexend", "sans-serif"],
+        sans: ["Roboto", "Plus Jakarta Sans", "Lexend", "system-ui", "sans-serif"],
+        display: ["Roboto", "Plus Jakarta Sans", "Lexend", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",

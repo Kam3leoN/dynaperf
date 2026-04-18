@@ -10,6 +10,7 @@ import { usePermissionGate } from "@/contexts/PermissionsContext";
 import { useAdmin } from "@/hooks/useAdmin";
 import { useAuth } from "@/hooks/useAuth";
 import { publicAssetUrl } from "@/lib/basePath";
+import { MwcBrandedFab } from "@/material/materialWebReact";
 
 /**
  * Barre inférieure mobile — Material You 3 Expressive Navigation Bar.
@@ -35,8 +36,13 @@ export function BottomNav() {
   return (
     <>
       {/* M3 Navigation Bar — surface tonale, shadow-soft, 80px */}
-      <nav className="fixed bottom-0 inset-x-0 z-50 bg-surface-container shadow-soft backdrop-blur-xl safe-area-bottom shell:hidden">
-        <div className="flex h-20 items-center justify-around px-1">
+      <nav
+        className="fixed bottom-0 inset-x-0 z-50 shadow-soft backdrop-blur-xl safe-area-bottom shell:hidden"
+        style={{
+          backgroundColor: "color-mix(in srgb, var(--md-sys-color-surface-container, hsl(var(--surface-container))) 92%, transparent)",
+        }}
+      >
+        <div className="flex h-[5rem] min-h-[5rem] items-center justify-around px-1">
 
           {/* ── Menu ── */}
           <NavBarItem
@@ -56,16 +62,16 @@ export function BottomNav() {
             />
           )}
 
-          {/* ── Accueil FAB (brand) ── */}
-          <button
-            type="button"
-            onClick={() => navigate("/")}
-            className="relative -top-3 flex items-center justify-center w-14 h-14 rounded-3xl shadow-elevated active:scale-95 transition-transform"
-            style={{ backgroundColor: "#212121" }}
+          {/* ── Accueil — md-branded-fab (M3 Expressive) ── */}
+          <MwcBrandedFab
+            size="large"
             aria-label="Accueil"
+            title="Accueil"
+            className="relative -top-3 min-h-[56px] min-w-[56px] shadow-elevated"
+            onClick={() => navigate("/")}
           >
-            <img src={publicAssetUrl("pwaDynaperf.svg")} alt="DynaPerf" className="h-7 w-7" />
-          </button>
+            <img slot="icon" src={publicAssetUrl("pwaDynaperf.svg")} alt="" width={28} height={28} className="h-7 w-7" />
+          </MwcBrandedFab>
 
           {/* ── Drive ── */}
           {driveSection && (

@@ -485,7 +485,7 @@ function MessagesInputBar({ value, onChange, onSend, sendDisabled }: MessagesInp
   }
 
   return (
-    <div className="pointer-events-none fixed bottom-0 left-0 right-0 z-[42] p-2 pb-3 shell:left-[376px] shell:right-[260px]">
+    <div className="pointer-events-none fixed bottom-0 left-0 right-0 z-[42] p-2 pb-3 shell:left-[var(--shell-nav-rail-width,320px)] shell:right-[260px]">
       <div className="pointer-events-auto w-full">{chrome}</div>
     </div>
   );

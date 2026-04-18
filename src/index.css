@@ -1,5 +1,7 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:ital,opsz,wght@0,8..144,100..700;1,8..144,100..700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400..700,0..1,-50..200');
 
 @tailwind base;
 @tailwind components;
@@ -7,6 +9,9 @@
 
 @layer base {
   :root {
+    /* Shell : largeur rail (NavigationShellContext / AppNavRail) — défaut = étendu. */
+    --shell-nav-rail-width: 320px;
+
     /* ── Surface & Foreground ── */
     --background: 210 20% 98%;
     --foreground: 210 40% 10%;
@@ -233,6 +238,18 @@
   .touch-target {
     min-height: var(--m3-touch-target);
     min-width: var(--m3-touch-target);
+  }
+
+  /** Icônes Material Symbols (Google) — utiliser avec la police importée en tête de fichier. */
+  .material-symbols-outlined {
+    font-family: "Material Symbols Outlined", system-ui, sans-serif;
+    font-weight: normal;
+    font-style: normal;
+    font-size: 1.5rem;
+    line-height: 1;
+    display: inline-block;
+    vertical-align: middle;
+    -webkit-font-smoothing: antialiased;
   }
 
   /* M3 state layer */

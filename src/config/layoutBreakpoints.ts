@@ -16,19 +16,27 @@
  * - `src/components/AppLayout.tsx`
  * - `src/components/BottomNav.tsx`
  * - `src/components/AppNavRail.tsx`
- * - `src/components/AppSecondaryNav.tsx`
+ * - `src/components/AppSecondaryNav.tsx` (panneau intégré au rail étendu)
  * - `src/components/DesktopUserDock.tsx`
  */
 
-/** Rail principal (navigation M3 expressive, icône + libellé). */
-export const SHELL_RAIL_WIDTH_PX = 96 as const;
+/** Rail principal replié (M3 Expressive, icônes + libellés courts). */
+export const SHELL_RAIL_COLLAPSED_PX = 96 as const;
 
-/** Colonne secondaire (sous-navigation). */
+/**
+ * Rail étendu : destinations primaires + sous-navigation (équivalent ancien rail + colonne ~280px).
+ * Valeur unique pour le chrome « dynamique ».
+ */
+export const SHELL_RAIL_EXPANDED_PX = 320 as const;
+
+/** @deprecated Utiliser SHELL_RAIL_COLLAPSED_PX — nom historique du rail fixe. */
+export const SHELL_RAIL_WIDTH_PX = SHELL_RAIL_COLLAPSED_PX;
+
+/** @deprecated La sous-navigation est fusionnée dans le rail étendu. */
 export const SHELL_SECONDARY_NAV_WIDTH_PX = 280 as const;
 
-/** Décalage gauche du contenu principal = rail + colonne secondaire (px). */
-export const SHELL_LEFT_NAV_TOTAL_PX =
-  SHELL_RAIL_WIDTH_PX + SHELL_SECONDARY_NAV_WIDTH_PX;
+/** @deprecated Ancien décalage rail + colonne ; le layout utilise `--shell-nav-rail-width`. */
+export const SHELL_LEFT_NAV_TOTAL_PX = SHELL_RAIL_COLLAPSED_PX + SHELL_SECONDARY_NAV_WIDTH_PX;
 
 /** Largeur min-viewport (px) pour le layout « bureau » (rails visibles, pas de bottom nav). */
 export const SHELL_BREAKPOINT_PX = 1024 as const;
