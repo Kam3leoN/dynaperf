@@ -10,6 +10,7 @@ import {
   storeBiometricRefreshToken,
 } from "@/services/BiometricSessionService";
 import { hasStoredCredential } from "@/services/WebAuthnService";
+import { withTimeout } from "@/lib/withTimeout";
 
 type SupabaseAuthWithSessionRemoval = typeof supabase.auth & {
   _removeSession?: () => Promise<void>;
@@ -96,7 +97,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         clearPersistedAuthSession();
       }
 
-      const { data: { session } } = await supabase.auth.getSession();
+      let session: Session | null = null;
+      try {
+        const { data } = await withTimeout(supabase.auth.getSession(), 18_000, "auth.getSession");
+        session = data.session ?? null;
+      } catch (e) {
+        console.warn("[Auth] getSession indisponible ou trop lent — poursuite sans session", e);
+        session = null;
+      }
       syncBiometricToken(session);
       applySession(session);
     })();

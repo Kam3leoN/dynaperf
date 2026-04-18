@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { withTimeout } from "@/lib/withTimeout";
 
 /**
  * Modules applicatifs visibles pour l’utilisateur courant.
@@ -32,12 +33,16 @@ export function useAppModules(userId: string | undefined) {
           { data: overrides },
           { data: roleRows },
           { data: profile },
-        ] = await Promise.all([
-          (supabase as any).from("app_modules").select("module_key, is_enabled"),
-          (supabase as any).from("user_module_overrides").select("module_key, enabled").eq("user_id", userId),
-          supabase.from("user_roles").select("role").eq("user_id", userId),
-          (supabase as any).from("profiles").select("org_titles").eq("user_id", userId).maybeSingle(),
-        ]);
+        ] = await withTimeout(
+          Promise.all([
+            (supabase as any).from("app_modules").select("module_key, is_enabled"),
+            (supabase as any).from("user_module_overrides").select("module_key, enabled").eq("user_id", userId),
+            supabase.from("user_roles").select("role").eq("user_id", userId),
+            (supabase as any).from("profiles").select("org_titles").eq("user_id", userId).maybeSingle(),
+          ]),
+          18_000,
+          "useAppModules.queries",
+        );
         if (cancelled) return;
 
         if (modErr || !modules || modules.length === 0) {
@@ -75,7 +80,8 @@ export function useAppModules(userId: string | undefined) {
           }
         }
         setEnabledModules(next);
-      } catch {
+      } catch (e) {
+        console.warn("[useAppModules] chargement modules", e);
         setEnabledModules(new Set<string>());
       }
       if (!cancelled) setLoading(false);

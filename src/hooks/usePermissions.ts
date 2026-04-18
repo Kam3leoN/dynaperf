@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { withTimeout } from "@/lib/withTimeout";
 
 export type MyPermissionRow = { permission_key: string; allowed: boolean };
 
@@ -31,7 +32,17 @@ export function usePermissions(userId: string | undefined, authLoading: boolean)
     setLoading(true);
 
     (async () => {
-      const { data, error } = await (supabase.rpc as any)("get_my_permissions");
+      let data: unknown;
+      let error: unknown;
+      try {
+        const res = await withTimeout((supabase.rpc as any)("get_my_permissions"), 15_000, "get_my_permissions");
+        data = res.data;
+        error = res.error;
+      } catch (e) {
+        console.warn("[usePermissions] RPC timeout ou erreur", e);
+        data = null;
+        error = e;
+      }
       if (cancelled) return;
       if (error) {
         setAllowedKeys(new Set());
