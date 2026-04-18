@@ -3,30 +3,19 @@ import {
   Hct,
   argbFromHex,
   hexFromArgb,
-  customColor,
   type DynamicScheme,
-  type CustomColorGroup,
 } from "@material/material-color-utilities";
 import { hslComponentsFromArgb } from "@/theme/hslFromArgb";
 
-/** Graine primaire DynaPerf (Material You). */
-export const DYNAPERF_PRIMARY_HEX = "#ee4540";
-/** Graine secondaire (HCT) — base #cdeaf2, harmonisée au primaire. */
-export const DYNAPERF_SECONDARY_HEX = "#cdeaf2";
+/** Graine unique HCT / Material You (couleur dynamique). */
+export const DYNAPERF_PRIMARY_HEX = "#0099ff";
 
 const sourceArgb = argbFromHex(DYNAPERF_PRIMARY_HEX);
 const sourceHct = Hct.fromInt(sourceArgb);
 
-/** Schémas Material 3 Expressive (dynamic color). */
+/** Schémas Material 3 Expressive dérivés de la graine primaire. */
 export const schemeExpressiveLight = new SchemeExpressive(sourceHct, false, 0);
 export const schemeExpressiveDark = new SchemeExpressive(sourceHct, true, 0);
-
-/** Couleur secondaire personnalisée (blend harmonisé). */
-export const secondaryCustomGroup: CustomColorGroup = customColor(sourceArgb, {
-  name: "secondary",
-  value: argbFromHex(DYNAPERF_SECONDARY_HEX),
-  blend: true,
-});
 
 const MD_SYS_NUMERIC_KEYS: (keyof DynamicScheme)[] = [
   "background",
@@ -106,24 +95,10 @@ export function schemeToMdSysColors(scheme: DynamicScheme): Record<string, strin
   return out;
 }
 
-/** Applique la couleur secondaire harmonisée (remplace les rôles secondary* du schéma). */
-export function applySecondaryCustomToMdSys(
-  vars: Record<string, string>,
-  group: CustomColorGroup,
-  isDark: boolean,
-): void {
-  const g = isDark ? group.dark : group.light;
-  vars["--md-sys-color-secondary"] = hexFromArgb(g.color);
-  vars["--md-sys-color-on-secondary"] = hexFromArgb(g.onColor);
-  vars["--md-sys-color-secondary-container"] = hexFromArgb(g.colorContainer);
-  vars["--md-sys-color-on-secondary-container"] = hexFromArgb(g.onColorContainer);
-}
-
 /**
- * Pont vers les variables shadcn/Tailwind (`hsl(var(--primary))`, etc.).
+ * Pont vers les variables shadcn/Tailwind — entièrement dérivé du schéma expressif.
  */
-export function schemeToShadcnBridge(scheme: DynamicScheme, secondary: CustomColorGroup, isDark: boolean): Record<string, string> {
-  const sec = isDark ? secondary.dark : secondary.light;
+export function schemeToShadcnBridge(scheme: DynamicScheme): Record<string, string> {
   return {
     "--background": hslComponentsFromArgb(scheme.background),
     "--foreground": hslComponentsFromArgb(scheme.onBackground),
@@ -133,8 +108,8 @@ export function schemeToShadcnBridge(scheme: DynamicScheme, secondary: CustomCol
     "--popover-foreground": hslComponentsFromArgb(scheme.onSurface),
     "--primary": hslComponentsFromArgb(scheme.primary),
     "--primary-foreground": hslComponentsFromArgb(scheme.onPrimary),
-    "--secondary": hslComponentsFromArgb(sec.colorContainer),
-    "--secondary-foreground": hslComponentsFromArgb(sec.onColorContainer),
+    "--secondary": hslComponentsFromArgb(scheme.secondaryContainer),
+    "--secondary-foreground": hslComponentsFromArgb(scheme.onSecondaryContainer),
     "--muted": hslComponentsFromArgb(scheme.surfaceVariant),
     "--muted-foreground": hslComponentsFromArgb(scheme.onSurfaceVariant),
     "--accent": hslComponentsFromArgb(scheme.tertiaryContainer),
@@ -163,8 +138,7 @@ export function schemeToShadcnBridge(scheme: DynamicScheme, secondary: CustomCol
 export function buildFullThemeVariables(isDark: boolean): Record<string, string> {
   const scheme = isDark ? schemeExpressiveDark : schemeExpressiveLight;
   const md = schemeToMdSysColors(scheme);
-  applySecondaryCustomToMdSys(md, secondaryCustomGroup, isDark);
-  const bridge = schemeToShadcnBridge(scheme, secondaryCustomGroup, isDark);
+  const bridge = schemeToShadcnBridge(scheme);
   return { ...md, ...bridge };
 }
 

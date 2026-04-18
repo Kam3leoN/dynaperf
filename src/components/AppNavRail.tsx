@@ -12,7 +12,7 @@ import {
   RAIL_SECTIONS_ALL,
   type RailSection,
 } from "@/config/appNavigation";
-import { SHELL_RAIL_EXPANDED_PX } from "@/config/layoutBreakpoints";
+import { SHELL_RAIL_COLLAPSED_PX, SHELL_RAIL_EXPANDED_PX } from "@/config/layoutBreakpoints";
 import { publicAssetUrl } from "@/lib/basePath";
 import { useNavigationShell } from "@/contexts/NavigationShellContext";
 import { AppSecondaryNavPanel } from "@/components/AppSecondaryNav";
@@ -117,7 +117,8 @@ function RailNavItem({ section, isActive, pinned }: RailItemProps) {
 }
 
 /**
- * Rail M3 Expressive « dynamique » : largeur repliée (~96px) ou étendue (~320px) avec sous-navigation intégrée.
+ * Rail M3 Expressive : replié = colonne primaire 96px seule ;
+ * étendu = colonne primaire (96px) + volet sous-navigation à droite (scroll indépendant).
  */
 export function AppNavRail({
   isAdmin,
@@ -147,35 +148,33 @@ export function AppNavRail({
       aria-label="Navigation principale"
     >
       <div className="relative flex min-h-0 flex-1 flex-col">
-        <div
-          className={cn(
-            "flex-1 overflow-y-auto overflow-x-hidden px-1 pb-2 pt-0 [scrollbar-gutter:stable]",
-            railExpanded && "flex flex-col min-h-0",
-          )}
-        >
-          <div className={cn(RAIL_TOP_STRIP_H, "w-full shrink-0")} aria-hidden />
-
-          <div className={cn("flex flex-col", railExpanded && "min-h-0 flex-1")}>
-            <div className={cn("flex flex-col", railExpanded && "shrink-0")}>
-              {scrollSections.map((s) => (
-                <div key={s.id} className="flex justify-center">
-                  <RailNavItem section={s} isActive={active?.id === s.id} />
-                </div>
-              ))}
-            </div>
-
-            {railExpanded && (
-              <div className="mt-1 flex min-h-0 flex-1 flex-col border-t border-border/40 bg-muted/10">
-                <AppSecondaryNavPanel
-                  isSuperAdmin={isSuperAdmin}
-                  hasPermission={hasPermission}
-                  isModuleEnabled={isModuleEnabled}
-                  hideLogo
-                  className="min-h-0 flex-1"
-                />
-              </div>
+        <div className="flex min-h-0 flex-1 flex-row pt-[4.25rem]">
+          <div
+            style={{ width: SHELL_RAIL_COLLAPSED_PX }}
+            className={cn(
+              "flex shrink-0 flex-col overflow-y-auto overflow-x-hidden px-1 pb-2 [scrollbar-gutter:stable]",
+              "bg-muted/20",
+              railExpanded && "border-r border-border/40",
             )}
+          >
+            {scrollSections.map((s) => (
+              <div key={s.id} className="flex justify-center">
+                <RailNavItem section={s} isActive={active?.id === s.id} />
+              </div>
+            ))}
           </div>
+
+          {railExpanded && (
+            <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-muted/10">
+              <AppSecondaryNavPanel
+                isSuperAdmin={isSuperAdmin}
+                hasPermission={hasPermission}
+                isModuleEnabled={isModuleEnabled}
+                hideLogo
+                className="min-h-0 flex-1 overflow-y-auto"
+              />
+            </div>
+          )}
         </div>
 
         <div
