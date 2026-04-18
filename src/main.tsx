@@ -1,7 +1,6 @@
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import { RootErrorBoundary } from "./components/RootErrorBoundary";
-import "./index.css";
 import "@/material/materialWebReact";
 import { applyDeviceClasses, listenDeviceChanges } from "./lib/deviceClasses";
 import { purgeServiceWorkerAndCaches, scheduleChunkLoadRecovery } from "./lib/chunkLoadRecovery";

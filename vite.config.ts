@@ -72,10 +72,17 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       /**
-       * Évite le helper `__vite__mapDeps` + préchargements parallèles (CSS / gros chunks) dont un échec
-       * fait échouer tout le bootstrap — problème vu sur GitHub Pages avec précache / réseau capricieux.
+       * `modulePreload: false` ne supprime pas le préchargement du CSS lié aux `import()` dynamiques :
+       * Vite injecte encore `__vite__mapDeps` avec un `.css` → `<link rel="preload" as="style">` peut
+       * déclencher `error` (GitHub Pages / certains navigateurs) alors que le fichier est servi correctement,
+       * ce qui fait échouer tout le bootstrap (« Unable to preload CSS for … »).
        */
-      modulePreload: false,
+      modulePreload: {
+        polyfill: true,
+        resolveDependencies(_filename, deps) {
+          return deps.filter((dep) => !dep.endsWith(".css"));
+        },
+      },
       rollupOptions: {
         output: {
           manualChunks(id) {

@@ -4,6 +4,8 @@
  */
 import { applySwResetFromQuery, ensureLocalhostBeforeApp } from "./initShell";
 import { isLocalhostEnvironment, purgeServiceWorkerAndCaches } from "@/lib/chunkLoadRecovery";
+/** Même fichier que dans `main.tsx` — chargé ici en statique pour éviter le préchargement CSS du `import("./main")` (échec « Unable to preload CSS » sur GitHub Pages). */
+import "./index.css";
 
 function escapeHtml(s: string): string {
   return s
