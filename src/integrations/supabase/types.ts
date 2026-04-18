@@ -77,123 +77,6 @@ export type Database = {
         }
         Relationships: []
       }
-      app_invitations: {
-        Row: {
-          id: string
-          token_hash: string
-          label: string | null
-          role_key: string | null
-          expires_at: string
-          max_uses: number | null
-          uses_count: number
-          created_by: string | null
-          created_at: string
-          revoked_at: string | null
-        }
-        Insert: {
-          id?: string
-          token_hash: string
-          label?: string | null
-          role_key?: string | null
-          expires_at: string
-          max_uses?: number | null
-          uses_count?: number
-          created_by?: string | null
-          created_at?: string
-          revoked_at?: string | null
-        }
-        Update: {
-          id?: string
-          token_hash?: string
-          label?: string | null
-          role_key?: string | null
-          expires_at?: string
-          max_uses?: number | null
-          uses_count?: number
-          created_by?: string | null
-          created_at?: string
-          revoked_at?: string | null
-        }
-        Relationships: []
-      }
-      app_settings: {
-        Row: {
-          id: number
-          app_name: string
-          description: string | null
-          logo_url: string | null
-          logo_light_url: string | null
-          logo_dark_url: string | null
-          favicon_url: string | null
-          icon_512_url: string | null
-          icon_512_light_url: string | null
-          icon_512_dark_url: string | null
-          updated_at: string
-        }
-        Insert: {
-          id?: number
-          app_name?: string
-          description?: string | null
-          logo_url?: string | null
-          logo_light_url?: string | null
-          logo_dark_url?: string | null
-          favicon_url?: string | null
-          icon_512_url?: string | null
-          icon_512_light_url?: string | null
-          icon_512_dark_url?: string | null
-          updated_at?: string
-        }
-        Update: {
-          id?: number
-          app_name?: string
-          description?: string | null
-          logo_url?: string | null
-          logo_light_url?: string | null
-          logo_dark_url?: string | null
-          favicon_url?: string | null
-          icon_512_url?: string | null
-          icon_512_light_url?: string | null
-          icon_512_dark_url?: string | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      expression_assets: {
-        Row: {
-          id: string
-          asset_type: string
-          label: string
-          storage_path: string
-          mime_type: string | null
-          sort_order: number
-          created_by: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          asset_type: string
-          label: string
-          storage_path: string
-          mime_type?: string | null
-          sort_order?: number
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          asset_type?: string
-          label?: string
-          storage_path?: string
-          mime_type?: string | null
-          sort_order?: number
-          created_by?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
       audit_categories: {
         Row: {
           audit_type_id: string
@@ -572,7 +455,6 @@ export type Database = {
           nb_leads_transformes: number
           nb_membres_actifs: number
           nom: string
-          president_partenaire_id: string | null
           president_nom: string
           secteur_id: string | null
           statut: string
@@ -599,7 +481,6 @@ export type Database = {
           nb_leads_transformes?: number
           nb_membres_actifs?: number
           nom: string
-          president_partenaire_id?: string | null
           president_nom?: string
           secteur_id?: string | null
           statut?: string
@@ -626,7 +507,6 @@ export type Database = {
           nb_leads_transformes?: number
           nb_membres_actifs?: number
           nom?: string
-          president_partenaire_id?: string | null
           president_nom?: string
           secteur_id?: string | null
           statut?: string
@@ -636,13 +516,6 @@ export type Database = {
           vice_president_nom?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "clubs_president_partenaire_id_fkey"
-            columns: ["president_partenaire_id"]
-            isOneToOne: false
-            referencedRelation: "partenaires"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "clubs_secteur_id_fkey"
             columns: ["secteur_id"]
@@ -966,203 +839,6 @@ export type Database = {
           },
         ]
       }
-      message_reactions: {
-        Row: {
-          created_at: string
-          emoji: string
-          id: string
-          message_id: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          emoji: string
-          id?: string
-          message_id: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          emoji?: string
-          id?: string
-          message_id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "message_reactions_message_id_fkey"
-            columns: ["message_id"]
-            isOneToOne: false
-            referencedRelation: "messages"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      qr_shape_library: {
-        Row: {
-          id: string
-          kind: "dot" | "corner" | "cover"
-          name: string
-          svg_markup: string
-          legacy_key: string | null
-          sort_order: number
-          is_active: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          kind: "dot" | "corner" | "cover"
-          name: string
-          svg_markup: string
-          legacy_key?: string | null
-          sort_order?: number
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          kind?: "dot" | "corner" | "cover"
-          name?: string
-          svg_markup?: string
-          legacy_key?: string | null
-          sort_order?: number
-          is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      presence_status_definitions: {
-        Row: {
-          status_key: string
-          label_fr: string
-          sort_order: number
-          svg_markup: string
-          fill_color: string | null
-          show_on_avatar: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          status_key: string
-          label_fr: string
-          sort_order?: number
-          svg_markup?: string
-          fill_color?: string | null
-          show_on_avatar?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          status_key?: string
-          label_fr?: string
-          sort_order?: number
-          svg_markup?: string
-          fill_color?: string | null
-          show_on_avatar?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Relationships: []
-      }
-      qr_codes: {
-        Row: {
-          bg_color: string
-          cover_svg: string | null
-          created_at: string
-          created_by: string | null
-          dot_svg: string | null
-          eye_svg: string | null
-          fg_color: string
-          id: string
-          level: string
-          logo_url: string | null
-          name: string
-          qr_style: Record<string, unknown> | null
-          scan_count: number
-          size: number
-          updated_at: string
-          value: string
-        }
-        Insert: {
-          bg_color?: string
-          cover_svg?: string | null
-          created_at?: string
-          created_by?: string | null
-          dot_svg?: string | null
-          eye_svg?: string | null
-          fg_color?: string
-          id?: string
-          level?: string
-          logo_url?: string | null
-          name: string
-          qr_style?: Record<string, unknown> | null
-          scan_count?: number
-          size?: number
-          updated_at?: string
-          value: string
-        }
-        Update: {
-          bg_color?: string
-          cover_svg?: string | null
-          created_at?: string
-          created_by?: string | null
-          dot_svg?: string | null
-          eye_svg?: string | null
-          fg_color?: string
-          id?: string
-          level?: string
-          logo_url?: string | null
-          name?: string
-          qr_style?: Record<string, unknown> | null
-          scan_count?: number
-          size?: number
-          updated_at?: string
-          value?: string
-        }
-        Relationships: []
-      }
-      user_presence: {
-        Row: {
-          expires_at: string | null
-          status: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          expires_at?: string | null
-          status?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          expires_at?: string | null
-          status?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_dm_hidden_partners: {
-        Row: {
-          hidden_at: string
-          partner_user_id: string
-          user_id: string
-        }
-        Insert: {
-          hidden_at?: string
-          partner_user_id: string
-          user_id: string
-        }
-        Update: {
-          hidden_at?: string
-          partner_user_id?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       notifications: {
         Row: {
           body: string
@@ -1321,7 +997,6 @@ export type Database = {
       }
       secteurs: {
         Row: {
-          color_hex: string | null
           created_at: string
           departements: string[]
           id: string
@@ -1329,7 +1004,6 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          color_hex?: string | null
           created_at?: string
           departements?: string[]
           id?: string
@@ -1337,7 +1011,6 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          color_hex?: string | null
           created_at?: string
           departements?: string[]
           id?: string
@@ -1813,46 +1486,9 @@ export type Database = {
         }
         Returns: boolean
       }
-      delete_messages_moderation_by_send: {
-        Args: {
-          p_group_id: string
-          p_group_send_id: string
-          p_sender_id: string
-        }
-        Returns: string[]
-      }
-      delete_messages_moderation_by_ids: {
-        Args: {
-          p_message_ids: string[]
-        }
-        Returns: string[]
-      }
       record_activity: {
         Args: { p_score?: number; p_type: string }
         Returns: Json
-      }
-      admin_create_app_invitation: {
-        Args: {
-          p_label: string | null
-          p_role_key: string | null
-          p_expires_at: string
-          p_max_uses: number | null
-        }
-        Returns: {
-          invitation_id: string
-          raw_token: string
-        }[]
-      }
-      verify_app_invitation_token: {
-        Args: { p_token: string }
-        Returns: {
-          invitation_id: string
-          role_key: string | null
-        }[]
-      }
-      qr_resolve_and_track: {
-        Args: { p_id: string }
-        Returns: string | null
       }
     }
     Enums: {
