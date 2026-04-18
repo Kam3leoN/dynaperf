@@ -94,7 +94,7 @@ function ChannelRow({
         className={cn(
           "relative flex min-w-0 flex-1 items-center gap-1.5 overflow-visible rounded py-1.5 pl-2 pr-2 text-left transition-colors duration-150",
           "outline-none focus-visible:outline-none focus-visible:ring-0",
-          active ? "bg-primary/12" : "hover:bg-secondary/80",
+          active ? "bg-primary/12" : "hover:bg-primary/[0.08]",
           isDropHover && !isDragging && !active && "hover:bg-primary/[0.09]",
         )}
       >
@@ -263,7 +263,7 @@ function DmConversationRow({
     <div
       className={cn(
         "relative flex w-full min-w-0 items-center gap-0.5 rounded-md py-1.5 pl-2 pr-1 text-left transition-colors",
-        active ? "bg-primary/12" : "hover:bg-secondary/80",
+        active ? "bg-primary/12" : "hover:bg-primary/[0.08]",
         "outline-none focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-1",
       )}
     >

@@ -1,6 +1,13 @@
 /** Clé unique : évite boucles de reload et aligne main / error boundary / handlers globaux. */
 const RELOAD_THROTTLE_KEY = "dp_chunk_reload_ts";
 
+/** True sur machine locale (dev / vite preview) — pas l’écran « mise à jour » ni recovery auto trompeurs. */
+export function isLocalhostEnvironment(): boolean {
+  if (typeof window === "undefined") return false;
+  const h = window.location.hostname;
+  return h === "localhost" || h === "127.0.0.1" || h === "[::1]";
+}
+
 /**
  * Extrait un message lisible depuis une erreur de chargement de chunk / import dynamique.
  */
@@ -14,6 +21,7 @@ export function messageFromChunkFailure(reason: unknown): string {
  * Indique un échec typique après déploiement (hashes de chunks changés, cache navigateur / SW).
  */
 export function isStaleChunkLoadFailure(message: string): boolean {
+  if (isLocalhostEnvironment()) return false;
   const m = (message || "").toLowerCase();
   return (
     m.includes("failed to fetch dynamically imported module") ||
@@ -58,6 +66,7 @@ export async function purgeServiceWorkerAndCaches(): Promise<void> {
  * @returns true si une récupération a été planifiée (ex. pour `preventDefault()` sur la rejection).
  */
 export function scheduleChunkLoadRecovery(reason?: unknown): boolean {
+  if (isLocalhostEnvironment()) return false;
   const msg = messageFromChunkFailure(reason);
   if (!isStaleChunkLoadFailure(msg)) return false;
 

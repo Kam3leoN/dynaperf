@@ -253,7 +253,7 @@ export default function SuiviActiviteForm() {
                 meta={`${totalFilled} / ${totalExpected}`}
                 actions={headerActions}
               />
-              <Progress value={progress} className="pointer-events-none absolute bottom-0 left-0 right-0 h-[3px] rounded-none bg-secondary/80" />
+              <Progress value={progress} className="pointer-events-none absolute bottom-0 left-0 right-0 h-[3px] rounded-none bg-muted" />
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <M3Field label="Partenaire accompagné (Prénom NOM)" required filled={!!partenaire}>
@@ -319,7 +319,7 @@ export default function SuiviActiviteForm() {
                   meta={`${totalFilled} / ${totalExpected}`}
                   actions={headerActions}
                 />
-                <Progress value={progress} className="pointer-events-none absolute bottom-0 left-0 right-0 h-[3px] rounded-none bg-secondary/80" />
+                <Progress value={progress} className="pointer-events-none absolute bottom-0 left-0 right-0 h-[3px] rounded-none bg-muted" />
               </div>
               {cat.items.map((item) => {
                 const ans = answers[item.id] ?? { status: null };

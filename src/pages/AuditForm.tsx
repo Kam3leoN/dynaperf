@@ -24,6 +24,9 @@ import {
   draftHasContent,
   loadAuditDraft,
 } from "@/lib/auditDraftStorage";
+import { BadgeReward } from "@/components/BadgeReward";
+import type { Badge } from "@/hooks/useGamification";
+import { fireAuditCompletionConfetti } from "@/lib/confettiAuditComplete";
 
 const AUDIT_DRAFT_DEBOUNCE_MS = 1600;
 
@@ -82,6 +85,9 @@ export default function AuditForm() {
   const prevDraftKeyRef = useRef<string | null>(null);
   const draftPersistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const draftWelcomeToastKeyRef = useRef<string | null>(null);
+  /** Statut avant finalisation : pour ne compter la gamification qu’au passage en « OK ». */
+  const priorAuditStatutRef = useRef<string | null>(null);
+  const [celebrationBadge, setCelebrationBadge] = useState<Badge | null>(null);
 
   /** Changement de type d’audit (query) ou toast unique si brouillon présent au chargement. */
   useEffect(() => {
@@ -201,6 +207,7 @@ export default function AuditForm() {
       ]);
 
       if (audit) {
+        priorAuditStatutRef.current = audit.statut ?? "NON";
         const detailItems = detail?.items as Record<string, unknown> | undefined;
         const customFieldValues =
           (detailItems?.__custom_fields as Record<string, unknown> | undefined) || {};
@@ -494,8 +501,55 @@ export default function AuditForm() {
 
       clearAuditDraft(draftStorageKey);
 
+      const shouldGamify = priorAuditStatutRef.current !== "OK";
+      let primaryBadge: Badge | null = null;
+
+      if (shouldGamify) {
+        const { data: rpcData, error: rpcErr } = await supabase.rpc("record_activity", {
+          p_type: "audit",
+          p_score: noteSur10,
+        });
+        if (rpcErr) {
+          console.error(rpcErr);
+        } else if (rpcData && typeof rpcData === "object" && !Array.isArray(rpcData)) {
+          const raw = rpcData as { new_badge_ids?: unknown };
+          const ids = raw.new_badge_ids;
+          const list = Array.isArray(ids) ? ids.filter((x): x is string => typeof x === "string") : [];
+          if (list.length > 0) {
+            const { data: badgeRows } = await supabase.from("badges").select("*").in("id", list);
+            if (badgeRows?.length) {
+              const sorted = [...badgeRows].sort((a, b) => (b.threshold ?? 0) - (a.threshold ?? 0));
+              primaryBadge = sorted[0] as Badge;
+              sorted.slice(1).forEach((b) => {
+                toast.success(`Badge débloqué : ${b.label}`, { description: b.description });
+              });
+            }
+          }
+        }
+      }
+
+      const { data: authAfter } = await supabase.auth.getUser();
+      const uid = authAfter.user?.id;
+      if (uid && stepZeroData) {
+        const { error: notifErr } = await supabase.from("notifications").insert({
+          user_id: uid,
+          title: isEditMode ? "Audit modifié et validé" : "Audit terminé",
+          body: `${stepZeroData.partenaireAudite} — Note ${noteSur10}/10`,
+          type: "audit_completed",
+          link: "/audits",
+        });
+        if (notifErr) console.error("notification audit:", notifErr);
+      }
+
       toast.success(isEditMode ? `Audit modifié — Note : ${noteSur10}/10` : `Audit enregistré — Note : ${noteSur10}/10`);
-      navigate("/audits");
+
+      fireAuditCompletionConfetti();
+
+      if (primaryBadge) {
+        setCelebrationBadge(primaryBadge);
+      } else {
+        navigate("/audits");
+      }
     } catch (error) {
       console.error(error);
       toast.error("Erreur lors de la finalisation de l'audit");
@@ -524,6 +578,20 @@ export default function AuditForm() {
             Retour
           </button>
         </div>
+      </AppLayout>
+    );
+  }
+
+  if (celebrationBadge) {
+    return (
+      <AppLayout mainClassName="!pt-0 shell:!pt-0">
+        <BadgeReward
+          badge={celebrationBadge}
+          onDismiss={() => {
+            setCelebrationBadge(null);
+            navigate("/audits");
+          }}
+        />
       </AppLayout>
     );
   }
@@ -575,7 +643,7 @@ export default function AuditForm() {
                 <Progress
                   value={progress}
                   max={100}
-                  className="pointer-events-none absolute bottom-0 left-0 right-0 h-[3px] rounded-none bg-secondary/80"
+                  className="pointer-events-none absolute bottom-0 left-0 right-0 h-[3px] rounded-none bg-muted"
                   aria-label={`Progression de l'audit : ${Math.round(progress)} pour cent`}
                 />
               </div>
@@ -604,7 +672,7 @@ export default function AuditForm() {
                       <Progress
                         value={progress}
                         max={100}
-                        className="pointer-events-none absolute bottom-0 left-0 right-0 h-[3px] rounded-none bg-secondary/80"
+                        className="pointer-events-none absolute bottom-0 left-0 right-0 h-[3px] rounded-none bg-muted"
                         aria-label={`Progression de l'audit : ${Math.round(progress)} pour cent`}
                       />
                     </div>
@@ -661,7 +729,7 @@ export default function AuditForm() {
                         </div>
                         <div className="h-1.5 rounded-full bg-border overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all ${pct >= 80 ? "bg-emerald-500" : pct >= 50 ? "bg-amber-500" : "bg-destructive"}`}
+                            className={`h-full rounded-full transition-all ${pct >= 80 ? "bg-primary" : pct >= 50 ? "bg-amber-500" : "bg-destructive"}`}
                             style={{ width: `${pct}%` }}
                           />
                         </div>

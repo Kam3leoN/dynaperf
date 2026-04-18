@@ -4,12 +4,12 @@ import {
   buildFullThemeVariables,
   themeBackgroundMetaHex,
   themeColorMetaHex,
-} from "@/theme/m3DynamicTheme";
+} from "@/theme/m3BrandTheme";
 
 const THEME_COLOR_SELECTOR = 'meta[name="theme-color"]';
 
 /**
- * Applique les variables HCT / MD3 Expressive sur `:root` et synchronise le meta theme-color PWA.
+ * Applique les variables de thème statiques (primaire + tons) sur `:root` et synchronise le meta theme-color PWA.
  */
 export function M3ThemeProvider({ children }: { children: ReactNode }) {
   const { resolvedTheme } = useTheme();

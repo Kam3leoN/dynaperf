@@ -4,7 +4,7 @@ import { RootErrorBoundary } from "./components/RootErrorBoundary";
 import "./index.css";
 import "@/material/materialWebReact";
 import { applyDeviceClasses, listenDeviceChanges } from "./lib/deviceClasses";
-import { scheduleChunkLoadRecovery } from "./lib/chunkLoadRecovery";
+import { purgeServiceWorkerAndCaches, scheduleChunkLoadRecovery } from "./lib/chunkLoadRecovery";
 
 const RESPONSIVE_VIEWPORT =
   "width=device-width, initial-scale=1.0, minimum-scale=1, maximum-scale=5, viewport-fit=cover, interactive-widget=resizes-content";
@@ -35,54 +35,6 @@ const isPreviewHost =
   window.location.hostname.includes("id-preview--") ||
   window.location.hostname.includes("lovableproject.com");
 
-/** Limite d’attente : `getRegistrations` / `unregister` / `caches` peuvent ne jamais résoudre (Chrome bloqué, onglet en arrière-plan). */
-const DP_SW_RESET_MAX_MS = 5000;
-
-/**
- * Secours déploiement (cPanel, cache agressif, ancien SW) : ouvrir une fois
- * `https://votre-site/?dp-sw-reset=1` — désinscription SW, vidage des caches API, rechargement.
- */
-async function applySwResetFromQuery(): Promise<boolean> {
-  try {
-    const u = new URL(window.location.href);
-    if (u.searchParams.get("dp-sw-reset") !== "1") return false;
-    u.searchParams.delete("dp-sw-reset");
-    const next = `${u.pathname}${u.search}${u.hash}` || u.pathname;
-
-    const work = async () => {
-      if ("serviceWorker" in navigator) {
-        const registrations = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(registrations.map((r) => r.unregister()));
-      }
-      if ("caches" in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map((k) => caches.delete(k)));
-      }
-    };
-
-    await Promise.race([
-      work(),
-      new Promise<void>((resolve) => setTimeout(resolve, DP_SW_RESET_MAX_MS)),
-    ]);
-
-    window.location.replace(next);
-    return true;
-  } catch (e) {
-    console.warn("[main] dp-sw-reset a échoué:", e);
-    try {
-      const u = new URL(window.location.href);
-      if (u.searchParams.get("dp-sw-reset") === "1") {
-        u.searchParams.delete("dp-sw-reset");
-        window.location.replace(`${u.pathname}${u.search}${u.hash}`);
-        return true;
-      }
-    } catch {
-      /* ignore */
-    }
-    return false;
-  }
-}
-
 async function cleanupCaches() {
   const isGitHubPages = window.location.hostname.endsWith("github.io");
   const isLocalhost =
@@ -109,6 +61,19 @@ async function cleanupCaches() {
 async function registerSW() {
   /** En dev (`npm run dev`), ne pas enregistrer le SW : sinon caches / precache obsolètes → chunks 404, écran « mise à jour » bloqué. */
   if (!import.meta.env.PROD) return;
+
+  const isLocalhost =
+    window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  /**
+   * `vite preview` (ex. :8080) a `import.meta.env.PROD === true` : Serwist precache d’anciens builds,
+   * les chunks changent à chaque `npm run build` → imports dynamiques en échec → RootErrorBoundary « Mise à jour… ».
+   * Sur machine locale : pas de SW ; on purge au cas où un vieux SW traîne encore.
+   */
+  if (isLocalhost) {
+    await purgeServiceWorkerAndCaches();
+    return;
+  }
+
   // Only register SW in production, outside iframes and preview hosts
   if (isPreviewHost || isInIframe) return;
   if (!("serviceWorker" in navigator)) return;
@@ -136,8 +101,7 @@ async function registerSW() {
 }
 
 void (async function bootstrap() {
-  if (await applySwResetFromQuery()) return;
-
+  /** Purge SW localhost : voir `src/entry.tsx` + `initShell.ts` (avant import de ce module). */
   ensureResponsiveViewport();
   applyDeviceClasses();
   listenDeviceChanges();
@@ -147,6 +111,7 @@ void (async function bootstrap() {
     console.error("[main] Élément #root introuvable");
     return;
   }
+
   /** Monter l’app tout de suite : ne pas attendre `cleanupCaches` (peut être lent / bloquant sur certains hôtes). */
   createRoot(el).render(
     <RootErrorBoundary>

@@ -23,17 +23,70 @@
     <link rel="apple-touch-icon" href="pwa-192x192.png" />
     <meta name="theme-color" content="#0099ff" />
     <link rel="manifest" href="/manifest.json" />
+
+    <!-- FOUC : classe `dark` + meta avant le premier paint (même règles que next-themes : storage `theme`, défaut light). Hex meta = FOUC_META_THEME_COLOR_* dans m3BrandTheme.ts -->
+    <script>
+      (function () {
+        var isDark = false;
+        try {
+          var t = localStorage.getItem("theme");
+          if (t === "dark") isDark = true;
+          else if (t === "system")
+            isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        } catch (e) {}
+        if (isDark) document.documentElement.classList.add("dark");
+        else document.documentElement.classList.remove("dark");
+        try {
+          var meta = document.querySelector('meta[name="theme-color"]');
+          if (meta)
+            meta.setAttribute(
+              "content",
+              isDark ? "#33adff" : "#0099ff"
+            );
+        } catch (e) {}
+      })();
+    </script>
+    <!-- FOUC : variables alignées sur src/index.css :root / .dark (avant bundle Tailwind). -->
+    <style id="fouc-critical">
+      html {
+        color-scheme: light;
+        --fouc-bg: hsl(210 20% 98%);
+        --fouc-fg: hsl(210 40% 10%);
+        --fouc-muted: hsl(210 10% 46%);
+      }
+      html.dark {
+        color-scheme: dark;
+        --fouc-bg: hsl(220 30% 6%);
+        --fouc-fg: hsl(210 10% 93%);
+        --fouc-muted: hsl(210 10% 56%);
+      }
+      body {
+        margin: 0;
+        background-color: var(--fouc-bg);
+        color: var(--fouc-fg);
+      }
+      #root {
+        min-height: 100vh;
+        min-height: 100dvh;
+        background-color: var(--fouc-bg);
+      }
+      #fouc-boot {
+        min-height: 100vh;
+        min-height: 100dvh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background-color: var(--fouc-bg);
+        color: var(--fouc-muted);
+        font-family: Roboto, system-ui, -apple-system, sans-serif;
+        font-size: 0.95rem;
+      }
+    </style>
   </head>
 
-  <!-- Fond neutre si le JS ne charge pas (aligné sur le thème bleu). -->
-  <body style="margin:0;background-color:#f5fbff">
+  <body>
     <div id="root">
-      <div
-        style="min-height:100vh;display:flex;align-items:center;justify-content:center;background-color:#f5fbff;color:#64748b;font-family:Roboto,system-ui,-apple-system,sans-serif;font-size:0.95rem"
-        aria-live="polite"
-      >
-        Chargement…
-      </div>
+      <div id="fouc-boot" aria-live="polite">Chargement…</div>
     </div>
     <!-- GitHub Pages SPA redirect handler -->
     <script>
@@ -45,6 +98,6 @@
         }
       })();
     </script>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/entry.tsx"></script>
   </body>
 </html>

@@ -35,7 +35,7 @@ export function DesktopUserDock({ profileSlot }: DesktopUserDockProps) {
 
   return (
     <div
-      className="pointer-events-none hidden shell:block fixed bottom-0 left-0 z-[52] w-[var(--shell-nav-rail-width,320px)] p-2 pb-3"
+      className="pointer-events-none hidden shell:block fixed bottom-0 left-0 z-[52] w-[var(--shell-nav-rail-width,256px)] p-2 pb-3"
       role="presentation"
     >
       <div
@@ -53,7 +53,7 @@ export function DesktopUserDock({ profileSlot }: DesktopUserDockProps) {
                 onClick={toggleMic}
                 aria-pressed={micMuted}
                 className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center transition-colors hover:bg-secondary/80",
+                  "flex h-10 w-10 shrink-0 items-center justify-center transition-colors hover:bg-primary/[0.1]",
                   micMuted && "bg-destructive/15 text-destructive hover:bg-destructive/20",
                 )}
               >
@@ -73,7 +73,7 @@ export function DesktopUserDock({ profileSlot }: DesktopUserDockProps) {
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="flex h-10 w-8 shrink-0 items-center justify-center border-l border-border/50 hover:bg-secondary/80"
+                    className="flex h-10 w-8 shrink-0 items-center justify-center border-l border-border/50 hover:bg-primary/[0.1]"
                     aria-label="Options du micro"
                   >
                     <ChevronDown className="h-4 w-4 opacity-70" />
@@ -100,7 +100,7 @@ export function DesktopUserDock({ profileSlot }: DesktopUserDockProps) {
                 onClick={toggleDeafen}
                 aria-pressed={deafened}
                 className={cn(
-                  "flex h-10 w-10 shrink-0 items-center justify-center transition-colors hover:bg-secondary/80",
+                  "flex h-10 w-10 shrink-0 items-center justify-center transition-colors hover:bg-primary/[0.1]",
                   deafened && "bg-destructive/15 text-destructive hover:bg-destructive/20",
                 )}
               >
@@ -120,7 +120,7 @@ export function DesktopUserDock({ profileSlot }: DesktopUserDockProps) {
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="flex h-10 w-8 shrink-0 items-center justify-center border-l border-border/50 hover:bg-secondary/80"
+                    className="flex h-10 w-8 shrink-0 items-center justify-center border-l border-border/50 hover:bg-primary/[0.1]"
                     aria-label="Options de sortie audio"
                   >
                     <ChevronDown className="h-4 w-4 opacity-70" />
@@ -143,7 +143,7 @@ export function DesktopUserDock({ profileSlot }: DesktopUserDockProps) {
           <TooltipTrigger asChild>
             <Link
               to="/preferences"
-              className="h-10 w-10 shrink-0 rounded-sm flex items-center justify-center hover:bg-secondary/60 transition-colors border-2 border-transparent"
+              className="h-10 w-10 shrink-0 rounded-sm flex items-center justify-center hover:bg-primary/[0.08] transition-colors border-2 border-transparent"
               aria-label="Paramètres utilisateur"
             >
               <FontAwesomeIcon icon={faGear} className="h-[18px] w-[18px] text-foreground/60" />

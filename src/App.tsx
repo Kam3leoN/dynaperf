@@ -76,6 +76,7 @@ const QrScanRedirect = lazy(() => import("./pages/QrScanRedirect"));
 const Meet = lazy(() => import("./pages/Meet"));
 const MeetSettings = lazy(() => import("./pages/MeetSettings"));
 const MeetPresets = lazy(() => import("./pages/MeetPresets"));
+const NavSectionHub = lazy(() => import("./pages/NavSectionHub"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -185,6 +186,8 @@ const App = () => {
                 <PermissionsProvider>
                   <Routes>
                     <Route path="/" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
+                    <Route path="/nav/historique" element={<Navigate to="/admin/historique" replace />} />
+                    <Route path="/nav/:sectionId" element={<ProtectedRoute><NavSectionHub /></ProtectedRoute>} />
                     <Route path="/dashboard" element={<PermissionRoute permission="nav.audits"><Index /></PermissionRoute>} />
                     <Route path="/audits" element={<PermissionRoute permission="nav.audits"><Registre /></PermissionRoute>} />
                     <Route path="/audits/new" element={<PermissionRoute permission="nav.audits"><NewAudit /></PermissionRoute>} />
@@ -206,6 +209,14 @@ const App = () => {
                       <Route path="branding" element={<AdminBranding />} />
                       <Route path="qr-shapes" element={<AdminQrShapes />} />
                       <Route path="presence-statuses" element={<AdminPresenceStatuses />} />
+                      <Route
+                        path="historique"
+                        element={
+                          <PermissionRoute permission="nav.historique">
+                            <ActivityLog />
+                          </PermissionRoute>
+                        }
+                      />
                     </Route>
                     <Route path="/admin/audit-grid" element={<AdminRoute><AdminAuditGrid /></AdminRoute>} />
                     <Route path="/business-plan" element={<PermissionRoute permission="nav.reseau"><BusinessPlan /></PermissionRoute>} />
@@ -224,7 +235,7 @@ const App = () => {
                     <Route path="/notifications" element={<PermissionRoute permission="nav.hub"><Notifications /></PermissionRoute>} />
                     <Route path="/messages" element={<PermissionRoute permission="nav.messages"><Messages /></PermissionRoute>} />
                     <Route path="/sondages" element={<PermissionRoute permission="nav.sondages"><Sondages /></PermissionRoute>} />
-                    <Route path="/historique" element={<PermissionRoute permission="nav.historique"><ActivityLog /></PermissionRoute>} />
+                    <Route path="/historique" element={<Navigate to="/admin/historique" replace />} />
                     <Route path="/preferences" element={<PermissionRoute permission="nav.hub"><Preferences /></PermissionRoute>} />
                     <Route path="/hub" element={<PermissionRoute permission="nav.hub"><DashboardHub /></PermissionRoute>} />
                     <Route path="/primes" element={<PermissionRoute permission="nav.hub"><Primes /></PermissionRoute>} />

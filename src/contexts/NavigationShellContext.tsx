@@ -11,11 +11,11 @@ import { useShellNarrow } from "@/contexts/ResponsiveShellContext";
 import { SHELL_RAIL_COLLAPSED_PX, SHELL_RAIL_EXPANDED_PX } from "@/config/layoutBreakpoints";
 
 export interface NavigationShellContextValue {
-  /** Rail étendu (primaire + sous-navigation) — desktop shell uniquement. */
+  /** Rail étendu (icône + libellé, une colonne) — desktop shell uniquement. */
   railExpanded: boolean;
   setRailExpanded: (v: boolean) => void;
   toggleRailExpanded: () => void;
-  /** 0 en vue étroite ; sinon largeur du rail (96 ou étendu). */
+  /** 0 en vue étroite ; sinon largeur du rail (80 replié ou 256 étendu). */
   railWidthPx: number;
 }
 

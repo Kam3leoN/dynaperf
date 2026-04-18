@@ -55,7 +55,8 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(),
       mode === "development" && componentTagger(),
-      serwistPlugin,
+      /** Serwist uniquement sur `vite build` : en `vite` dev, pas de precache / SW parasite sur :8080. */
+      mode === "production" && serwistPlugin,
       analyze &&
         visualizerAppBuildOnly({
           filename: path.resolve(__dirname, "bundle-stats.html"),

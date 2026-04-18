@@ -47,6 +47,7 @@ import { usePresenceStatusDefinitions } from "@/contexts/PresenceStatusDefinitio
 import { messageComposerChromeClassName } from "@/lib/bottomBarChrome";
 import { cn } from "@/lib/utils";
 import { ContextSubHeader } from "@/components/context-sub-header";
+import { MessagingSecondaryNav } from "@/components/messaging/MessagingSecondaryNav";
 
 interface Profile {
   user_id: string;
@@ -358,7 +359,7 @@ function MessagesDialogs({
                 <Label className="text-xs">Membres</Label>
                 <div className="max-h-48 overflow-y-auto border border-border rounded-md mt-1">
                   {profiles.map((p) => (
-                    <label key={p.user_id} className="flex items-center gap-3 px-3 py-2 hover:bg-secondary/50 cursor-pointer">
+                    <label key={p.user_id} className="flex items-center gap-3 px-3 py-2 hover:bg-primary/[0.07] cursor-pointer">
                       <Checkbox
                         checked={selectedMembers.includes(p.user_id)}
                         onCheckedChange={(checked) => {
@@ -410,7 +411,7 @@ function MessagesDialogs({
               .map((gm) => {
                 const p = getProfileById(gm.user_id);
                 return (
-                  <div key={gm.user_id} className="flex items-center gap-3 px-2 py-2 rounded-md hover:bg-secondary/50">
+                  <div key={gm.user_id} className="flex items-center gap-3 px-2 py-2 rounded-md hover:bg-primary/[0.07]">
                     <Avatar className="h-8 w-8">
                       {p?.avatar_url && <AvatarImage src={p.avatar_url} />}
                       <AvatarFallback className="text-xs bg-primary/10 text-primary">{getInitials(p?.display_name || "U")}</AvatarFallback>
@@ -485,7 +486,7 @@ function MessagesInputBar({ value, onChange, onSend, sendDisabled }: MessagesInp
   }
 
   return (
-    <div className="pointer-events-none fixed bottom-0 left-0 right-0 z-[42] p-2 pb-3 shell:left-[var(--shell-nav-rail-width,320px)] shell:right-[260px]">
+    <div className="pointer-events-none fixed bottom-0 left-0 right-0 z-[42] p-2 pb-3 shell:left-[var(--shell-nav-rail-width,256px)] shell:right-[260px]">
       <div className="pointer-events-auto w-full">{chrome}</div>
     </div>
   );
@@ -2118,7 +2119,16 @@ export default function Messages() {
 
   return (
     <AppLayout mainClassName={messagesMainClassName}>
-      <div className="flex min-h-0 min-w-0 w-full max-w-none flex-1 flex-col justify-start overflow-hidden">
+      <div className="flex min-h-0 min-w-0 w-full max-w-none flex-1 flex-col justify-start overflow-hidden shell:flex-row">
+        {!isMobile && (
+          <aside
+            className="hidden min-h-0 w-[min(280px,32vw)] shrink-0 flex-col overflow-hidden border-r border-border/40 bg-muted/10 shell:flex"
+            aria-label="Conversations et salons"
+          >
+            <MessagingSecondaryNav />
+          </aside>
+        )}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         {isMobile && <GroupsToolbar />}
         {target ? (
           <>
@@ -2184,8 +2194,8 @@ export default function Messages() {
             </p>
             <p className="max-w-[280px] text-xs leading-relaxed text-muted-foreground">
               {messagingSection === "messagerie"
-                ? "Choisissez une conversation dans la liste à gauche ou un contact dans l’annuaire à droite (icône « Membres » sur mobile)."
-                : "Sélectionnez un salon ou un groupe à gauche. Pour les messages privés, passez à l’onglet « Messages privés » ou utilisez l’annuaire."}
+                ? "Choisissez une conversation dans la colonne à côté du rail ou un contact dans l’annuaire à droite (icône « Membres » sur mobile)."
+                : "Sélectionnez un salon ou un groupe dans la colonne à côté du rail. Pour les messages privés, passez à l’onglet « Messages privés » ou utilisez l’annuaire."}
             </p>
             <div className="flex flex-wrap gap-2 justify-center">
               {canManageSalons && (
@@ -2199,6 +2209,7 @@ export default function Messages() {
             </div>
           </div>
         )}
+        </div>
       </div>
       {messagesDialogs}
     </AppLayout>

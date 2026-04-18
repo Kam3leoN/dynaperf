@@ -113,8 +113,8 @@ export default function SuiviActiviteDashboard() {
 
   const kpis = [
     { label: "Suivis réalisés", value: totalSuivis, icon: faClipboardCheck, color: "text-primary" },
-    { label: "Agences suivies", value: uniqueAgences, icon: faBuilding, color: "text-blue-500" },
-    { label: "Taux global", value: `${globalRate}%`, icon: faChartLine, color: "text-emerald-500" },
+    { label: "Agences suivies", value: uniqueAgences, icon: faBuilding, color: "text-primary" },
+    { label: "Taux global", value: `${globalRate}%`, icon: faChartLine, color: "text-primary" },
     { label: "Contrats cumulés", value: totalContrats, icon: faFileContract, color: "text-amber-500" },
   ];
 
@@ -160,7 +160,7 @@ export default function SuiviActiviteDashboard() {
                     <span className="text-sm font-medium text-foreground">{cat.name}</span>
                     <div className="flex items-center gap-2">
                       <Badge variant="outline" className="text-[10px] gap-1">
-                        <FontAwesomeIcon icon={faCheckCircle} className="h-2.5 w-2.5 text-emerald-500" />
+                        <FontAwesomeIcon icon={faCheckCircle} className="h-2.5 w-2.5 text-primary" />
                         {cat.fait}
                       </Badge>
                       <Badge variant="outline" className="text-[10px] gap-1">
@@ -240,7 +240,7 @@ export default function SuiviActiviteDashboard() {
                     <Badge
                       className={
                         (s.total_items_valides ?? 0) / Math.max(s.total_items ?? 1, 1) >= 0.7
-                          ? "bg-emerald-600 text-white"
+                          ? "bg-primary text-primary-foreground"
                           : (s.total_items_valides ?? 0) / Math.max(s.total_items ?? 1, 1) >= 0.4
                           ? "bg-amber-500 text-white dark:bg-amber-600"
                           : "bg-destructive text-destructive-foreground"

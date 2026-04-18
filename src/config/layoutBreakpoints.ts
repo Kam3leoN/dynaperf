@@ -16,18 +16,16 @@
  * - `src/components/AppLayout.tsx`
  * - `src/components/BottomNav.tsx`
  * - `src/components/AppNavRail.tsx`
- * - `src/components/AppSecondaryNav.tsx` (panneau intégré au rail étendu)
  * - `src/components/DesktopUserDock.tsx`
  */
 
-/** Rail principal replié (M3 Expressive, icônes + libellés courts). */
-export const SHELL_RAIL_COLLAPSED_PX = 96 as const;
+/** Rail replié : icônes seules (Material 3 Navigation Rail compact, ~80dp). */
+export const SHELL_RAIL_COLLAPSED_PX = 80 as const;
 
 /**
- * Rail étendu : destinations primaires + sous-navigation (équivalent ancien rail + colonne ~280px).
- * Valeur unique pour le chrome « dynamique ».
+ * Rail étendu : une colonne avec **icône + libellé** sur chaque rangée (M3 Expressive), sans panneau secondaire.
  */
-export const SHELL_RAIL_EXPANDED_PX = 320 as const;
+export const SHELL_RAIL_EXPANDED_PX = 256 as const;
 
 /** @deprecated Utiliser SHELL_RAIL_COLLAPSED_PX — nom historique du rail fixe. */
 export const SHELL_RAIL_WIDTH_PX = SHELL_RAIL_COLLAPSED_PX;

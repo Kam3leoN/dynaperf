@@ -10,7 +10,7 @@
 @layer base {
   :root {
     /* Shell : largeur rail (NavigationShellContext / AppNavRail) — défaut = étendu. */
-    --shell-nav-rail-width: 320px;
+    --shell-nav-rail-width: 256px;
 
     /* ── Surface & Foreground ── */
     --background: 210 20% 98%;
@@ -22,26 +22,26 @@
     --popover: 0 0% 100%;
     --popover-foreground: 210 40% 10%;
 
-    /* ── Brand Colors ── */
-    --primary: 353 100% 44%;
+    /* ── Brand (repli avant hydratation — une seule teinte, tons dérivés) ── */
+    --primary: 203 100% 50%;
     --primary-foreground: 0 0% 100%;
 
-    --accent: 42 100% 57%;
-    --accent-foreground: 210 40% 10%;
+    --accent: 204 42% 87%;
+    --accent-foreground: 204 85% 22%;
 
     --destructive: 0 84% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    /* ── Unified Gray Ramp (Minéral-tinted cool grays) ── */
-    --secondary: 210 14% 93%;
-    --secondary-foreground: 210 40% 10%;
+    /* ── secondary / accent = rampes tonales du primaire (pas d’autres teintes) ── */
+    --secondary: 204 38% 90%;
+    --secondary-foreground: 204 88% 22%;
 
     --muted: 210 12% 91%;
     --muted-foreground: 210 10% 46%;
 
     --border: 210 14% 89%;
     --input: 210 14% 89%;
-    --ring: 353 100% 44%;
+    --ring: 203 100% 50%;
 
     /* ── Radius (M3 Expressive — larger, rounder) ── */
     --radius: 1rem;
@@ -65,14 +65,14 @@
     --color-rd-evenementiel: 28 80% 52%;
 
     /* ── Sidebar ── */
-    --sidebar-background: 210 40% 10%;
-    --sidebar-foreground: 0 0% 95%;
-    --sidebar-primary: 353 100% 44%;
+    --sidebar-background: 215 5% 96%;
+    --sidebar-foreground: 215 26% 12%;
+    --sidebar-primary: 203 100% 50%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 35% 18%;
+    --sidebar-accent: 215 5% 92%;
     --sidebar-accent-foreground: 0 0% 95%;
     --sidebar-border: 210 30% 20%;
-    --sidebar-ring: 353 100% 44%;
+    --sidebar-ring: 203 100% 50%;
 
     /* ── Surface variants (M3 Expressive) ── */
     --surface-dim: 210 14% 93%;
@@ -96,25 +96,25 @@
     --popover: 220 25% 11%;
     --popover-foreground: 210 10% 93%;
 
-    --primary: 353 100% 50%;
-    --primary-foreground: 0 0% 100%;
+    --primary: 203 100% 58%;
+    --primary-foreground: 210 30% 8%;
 
-    --accent: 42 100% 57%;
-    --accent-foreground: 210 40% 10%;
+    --accent: 204 38% 30%;
+    --accent-foreground: 204 88% 90%;
 
     --destructive: 0 84% 55%;
     --destructive-foreground: 0 0% 100%;
 
-    /* ── Unified Dark Gray Ramp ── */
-    --secondary: 220 22% 15%;
-    --secondary-foreground: 210 10% 93%;
+    /* ── secondary = ton du primaire (sombre) ── */
+    --secondary: 204 35% 28%;
+    --secondary-foreground: 204 85% 88%;
 
     --muted: 220 20% 18%;
     --muted-foreground: 210 10% 56%;
 
     --border: 220 20% 20%;
     --input: 220 20% 20%;
-    --ring: 353 100% 50%;
+    --ring: 203 100% 58%;
 
     --shadow-soft: 0 1px 2px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.14);
     --shadow-hover: 0 2px 8px rgba(0,0,0,0.24), 0 8px 24px rgba(0,0,0,0.18);
@@ -131,14 +131,14 @@
     --color-mise-en-place: 263 70% 66%;
     --color-rd-evenementiel: 28 80% 52%;
 
-    --sidebar-background: 220 30% 6%;
-    --sidebar-foreground: 210 10% 93%;
-    --sidebar-primary: 353 100% 50%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 220 22% 15%;
-    --sidebar-accent-foreground: 210 10% 93%;
+    --sidebar-background: 220 18% 11%;
+    --sidebar-foreground: 215 12% 92%;
+    --sidebar-primary: 203 100% 58%;
+    --sidebar-primary-foreground: 210 30% 8%;
+    --sidebar-accent: 216 14% 17%;
+    --sidebar-accent-foreground: 215 12% 92%;
     --sidebar-border: 220 20% 20%;
-    --sidebar-ring: 353 100% 50%;
+    --sidebar-ring: 203 100% 58%;
 
     --surface-dim: 220 22% 15%;
     --surface-container: 220 28% 9%;
@@ -314,6 +314,15 @@
 /* ═══════════════════════════════════════════════
    M3 Expressive — Component Overrides
    ═══════════════════════════════════════════════ */
+
+/**
+ * Rail — md-fab « Accueil » : ne pas appliquer box-shadow sur le host (angles droits).
+ * L’ombre M3 suit les coins du bouton interne (.fab) via md-elevation dans le shadow root.
+ */
+md-fab.rail-home-fab {
+  background: transparent;
+  box-shadow: none;
+}
 
 /* Stroke highlight title */
 .stroke-title {

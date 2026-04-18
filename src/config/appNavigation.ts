@@ -33,7 +33,13 @@ import {
   faDatabase,
   faCircleDot,
   faVideo,
+  faLayerGroup,
 } from "@fortawesome/free-solid-svg-icons";
+
+/** Hub « vue d’ensemble » (Material 3 Expressive : clic rail → page de cartes, pas le 1er sous-lien). */
+export function navHubPath(sectionId: string): string {
+  return `/nav/${sectionId}`;
+}
 
 /** Entrée du rail (icône seule). */
 export interface RailSection {
@@ -114,11 +120,12 @@ const audits: RailSection = {
   id: "audits",
   label: "Audits",
   icon: faClipboardList,
-  to: "/dashboard",
+  to: navHubPath("audits"),
   requiredPermission: "nav.audits",
   requiredModule: "audits",
-  pathPrefixes: ["/dashboard", "/audits"],
+  pathPrefixes: ["/nav/audits", "/dashboard", "/audits"],
   children: [
+    { label: "Vue d'ensemble", to: navHubPath("audits"), icon: faLayerGroup },
     { label: "Tableau de bord", to: "/dashboard", icon: faChartLine },
     { label: "Tous les audits", to: "/audits", icon: faClipboardList },
     { label: "Nouvel audit", to: "/audits/new", icon: faPlus },
@@ -130,11 +137,12 @@ const suivis: RailSection = {
   id: "activite",
   label: "Suivis",
   icon: faListCheck,
-  to: "/activite/dashboard",
+  to: navHubPath("activite"),
   requiredPermission: "nav.activite",
   requiredModule: "suivi",
-  pathPrefixes: ["/activite"],
+  pathPrefixes: ["/nav/activite", "/activite"],
   children: [
+    { label: "Vue d'ensemble", to: navHubPath("activite"), icon: faLayerGroup },
     { label: "Tableau de bord", to: "/activite/dashboard", icon: faChartLine },
     { label: "Tous les suivis", to: "/activite", icon: faEye },
     { label: "Nouveau suivi", to: "/activite/new/version", icon: faPlus },
@@ -146,11 +154,12 @@ const reseau: RailSection = {
   id: "reseau",
   label: "Réseau",
   icon: faHandshake,
-  to: "/reseau/partenaires",
+  to: navHubPath("reseau"),
   requiredPermission: "nav.reseau",
   requiredModule: "reseau",
-  pathPrefixes: ["/reseau", "/business-plan"],
+  pathPrefixes: ["/nav/reseau", "/reseau", "/business-plan"],
   children: [
+    { label: "Vue d'ensemble", to: navHubPath("reseau"), icon: faLayerGroup },
     { label: "Partenaires", to: "/reseau/partenaires", icon: faUsers },
     { label: "Clubs d'affaires", to: "/reseau/clubs", icon: faBriefcase },
     { label: "Secteurs / Zones", to: "/reseau/secteurs", icon: faMapLocationDot },
@@ -162,34 +171,41 @@ const drive: RailSection = {
   id: "drive",
   label: "Drive",
   icon: faFolder,
-  to: "/drive",
+  to: navHubPath("drive"),
   requiredPermission: "nav.drive",
   requiredModule: "drive",
-  pathPrefixes: ["/drive"],
-  children: [{ label: "Mon Drive", to: "/drive", icon: faFolder }],
+  pathPrefixes: ["/nav/drive", "/drive"],
+  children: [
+    { label: "Vue d'ensemble", to: navHubPath("drive"), icon: faLayerGroup },
+    { label: "Mon Drive", to: "/drive", icon: faFolder },
+  ],
 };
 
 const galerie: RailSection = {
   id: "galerie",
   label: "Galerie",
   icon: faImages,
-  to: "/galerie",
+  to: navHubPath("galerie"),
   /** Aligné sur la route `/galerie` : même droit que les audits (pas de module `galerie` séparé). */
   requiredPermission: "nav.audits",
   requiredModule: "galerie",
-  pathPrefixes: ["/galerie"],
-  children: [{ label: "Galerie photos", to: "/galerie", icon: faImages }],
+  pathPrefixes: ["/nav/galerie", "/galerie"],
+  children: [
+    { label: "Vue d'ensemble", to: navHubPath("galerie"), icon: faLayerGroup },
+    { label: "Galerie photos", to: "/galerie", icon: faImages },
+  ],
 };
 
 const qrcodes: RailSection = {
   id: "qrcodes",
   label: "QrCode",
   icon: faQrcode,
-  to: "/qrcodes",
+  to: navHubPath("qrcodes"),
   requiredPermission: "nav.hub",
   requiredModule: "qrcode",
-  pathPrefixes: ["/qrcodes"],
+  pathPrefixes: ["/nav/qrcodes", "/qrcodes"],
   children: [
+    { label: "Vue d'ensemble", to: navHubPath("qrcodes"), icon: faLayerGroup },
     { label: "Créer un QrCode", to: "/qrcodes/new", icon: faPlus },
     { label: "Gérer les QrCode", to: "/qrcodes", icon: faList },
     { label: "Consulter les statistiques", to: "/qrcodes/stats", icon: faChartColumn },
@@ -200,11 +216,12 @@ const visio: RailSection = {
   id: "visio",
   label: "Visio",
   icon: faVideo,
-  to: "/meet",
+  to: navHubPath("visio"),
   requiredPermission: "nav.hub",
   requiredModule: "visio",
-  pathPrefixes: ["/meet"],
+  pathPrefixes: ["/nav/visio", "/meet"],
   children: [
+    { label: "Vue d'ensemble", to: navHubPath("visio"), icon: faLayerGroup },
     { label: "Dyna'Meet", to: "/meet", icon: faVideo },
     { label: "Paramétrer une visio", to: "/meet/settings", icon: faGear },
   ],
@@ -214,31 +231,25 @@ const sondages: RailSection = {
   id: "sondages",
   label: "Sondages",
   icon: faSquarePollVertical,
-  to: "/sondages",
+  to: navHubPath("sondages"),
   requiredPermission: "nav.sondages",
-  pathPrefixes: ["/sondages"],
-  children: [{ label: "Sondages", to: "/sondages", icon: faSquarePollVertical }],
-};
-
-const historique: RailSection = {
-  id: "historique",
-  label: "Historique",
-  icon: faClockRotateLeft,
-  to: "/historique",
-  requiredPermission: "nav.historique",
-  pathPrefixes: ["/historique"],
-  children: [{ label: "Historique", to: "/historique", icon: faClockRotateLeft }],
+  pathPrefixes: ["/nav/sondages", "/sondages"],
+  children: [
+    { label: "Vue d'ensemble", to: navHubPath("sondages"), icon: faLayerGroup },
+    { label: "Sondages", to: "/sondages", icon: faSquarePollVertical },
+  ],
 };
 
 const admin: RailSection = {
   id: "admin",
   label: "Admin",
   icon: faUserShield,
-  to: "/admin/users",
-  pathPrefixes: ["/admin"],
+  to: navHubPath("admin"),
+  pathPrefixes: ["/nav/admin", "/admin"],
   requireAdmin: true,
   requiredPermission: "nav.admin",
   children: [
+    { label: "Vue d'ensemble", to: navHubPath("admin"), icon: faLayerGroup },
     { label: "Sauvegardes", to: "/admin/backups", icon: faDatabase, requiredSuperAdmin: true },
     { label: "Utilisateurs", to: "/admin/users", icon: faUsers },
     { label: "Modules", to: "/admin/modules", icon: faCubes },
@@ -251,6 +262,7 @@ const admin: RailSection = {
     { label: "Invitations", to: "/admin/invitations", icon: faEnvelope },
     { label: "Formes QR", to: "/admin/qr-shapes", icon: faShapes },
     { label: "Statuts présence", to: "/admin/presence-statuses", icon: faCircleDot },
+    { label: "Historique d'activité", to: "/admin/historique", icon: faClockRotateLeft, requiredPermission: "nav.historique" },
   ],
 };
 
@@ -265,7 +277,6 @@ const ALL_RAIL_SECTIONS: RailSection[] = [
   qrcodes,
   visio,
   sondages,
-  historique,
   admin,
 ];
 
@@ -346,20 +357,80 @@ export function getActiveRailSection(pathname: string, sections: RailSection[]):
 }
 
 /**
- * Titre affiché dans le header (bandeau) : pour la zone « Accueil », le libellé de la sous-page
- * (ex. Notifications, Profil) au lieu de « Accueil » lorsque l’URL correspond à une entrée du menu secondaire.
+ * Titre affiché dans le header : libellé du sous-menu dont l’URL correspond (le plus long préfixe gagne).
  */
 export function getRailHeaderLabel(pathname: string, sections: RailSection[]): string | null {
   const active = getActiveRailSection(pathname, sections);
   if (!active) return null;
-  if (active.id === "home" || active.id === "admin" || active.id === "qrcodes" || active.id === "visio") {
-    const normalized = pathname.split("?")[0];
-    for (const c of active.children) {
-      const base = c.to.split("?")[0];
-      if (normalized === base || normalized.startsWith(`${base}/`)) {
-        return c.label;
-      }
+  const normalized = pathname.split("?")[0];
+  const withBases = active.children.map((c) => ({ ...c, base: c.to.split("?")[0] }));
+  const exact = withBases.find((x) => normalized === x.base);
+  if (exact) return exact.label;
+  const sorted = [...withBases].sort((a, b) => b.base.length - a.base.length);
+  for (const c of sorted) {
+    if (c.base.length <= 1) continue;
+    if (normalized.startsWith(`${c.base}/`)) {
+      return c.label;
     }
   }
   return active.label;
+}
+
+/** Lien affiché dans le bloc Précédent / À suivre (style documentation Material). */
+export interface DocNavLink {
+  label: string;
+  to: string;
+}
+
+/**
+ * Index de l’entrée du sous-menu (liste filtrée) correspondant au chemin courant.
+ * Même logique que {@link getRailHeaderLabel} mais sur les items déjà filtrés.
+ */
+export function getCurrentFilteredSecondaryNavIndex(pathname: string, items: SecondaryNavItem[]): number {
+  if (items.length === 0) return -1;
+  const normalized = pathname.split("?")[0];
+  const withBases = items.map((c, idx) => ({ c, idx, base: c.to.split("?")[0] }));
+  const exact = withBases.find((x) => normalized === x.base);
+  if (exact) return exact.idx;
+  const sorted = [...withBases].sort((a, b) => b.base.length - a.base.length);
+  for (const x of sorted) {
+    if (x.base.length <= 1) continue;
+    if (normalized.startsWith(`${x.base}/`)) {
+      return x.idx;
+    }
+  }
+  return -1;
+}
+
+/**
+ * Voisins Précédent / Suivant dans l’ordre du sous-menu de la section active.
+ * `null` si la page n’est pas dans la liste (ou Accueil `/` uniquement).
+ */
+export function getDocNavNeighbors(
+  pathname: string,
+  sections: RailSection[],
+  opts: {
+    hasPermission: (key: string) => boolean;
+    isModuleEnabled: (key: string) => boolean;
+    isSuperAdmin: boolean;
+  },
+): { prev: DocNavLink | null; next: DocNavLink | null } | null {
+  if (pathname === "/") return null;
+
+  const active = getActiveRailSection(pathname, sections);
+  if (!active || active.children.length === 0) return null;
+
+  const items = filterSecondaryNavItems(active.children, opts.hasPermission, opts.isModuleEnabled, {
+    isSuperAdmin: opts.isSuperAdmin,
+  });
+  if (items.length === 0) return null;
+
+  const idx = getCurrentFilteredSecondaryNavIndex(pathname, items);
+  if (idx < 0) return null;
+
+  const prev = idx > 0 ? { label: items[idx - 1]!.label, to: items[idx - 1]!.to } : null;
+  const next = idx < items.length - 1 ? { label: items[idx + 1]!.label, to: items[idx + 1]!.to } : null;
+
+  if (!prev && !next) return null;
+  return { prev, next };
 }

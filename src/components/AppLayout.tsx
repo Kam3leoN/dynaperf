@@ -50,8 +50,9 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { MembersDirectoryPanel } from "./MembersDirectoryPanel";
 import { AppNavRail } from "./AppNavRail";
 import { DesktopUserDock } from "./DesktopUserDock";
-import { AppSecondaryNavPanel } from "./AppSecondaryNav";
+import { MobilePrimaryNavSheet } from "./MobilePrimaryNavSheet";
 import { getActiveRailSection, getRailHeaderLabel, RAIL_SECTIONS_ALL } from "@/config/appNavigation";
+import { DocsPrevNextNav } from "./DocsPrevNextNav";
 import { usePermissionGate } from "@/contexts/PermissionsContext";
 import { useOptionalMessagingSidebarHost } from "@/contexts/MessagingSidebarContext";
 import { cn } from "@/lib/utils";
@@ -215,7 +216,7 @@ export function AppLayout({
   const iconBadge = (icon: typeof faBell, to: string, count: number, title: string) => (
     <Link
       to={to}
-      className="relative flex h-10 w-10 max-lg:min-h-12 max-lg:min-w-12 items-center justify-center rounded-full hover:bg-secondary/60 transition-colors"
+      className="relative flex h-10 w-10 max-lg:min-h-12 max-lg:min-w-12 items-center justify-center rounded-full hover:bg-primary/[0.08] transition-colors"
       title={title}
     >
       <FontAwesomeIcon icon={icon} className="h-5 w-5 text-foreground/60" />
@@ -242,11 +243,11 @@ export function AppLayout({
       <DropdownMenuTrigger asChild>
         <button
           type="button"
-          className="flex items-center gap-2 rounded-full border border-transparent pl-0.5 pr-2 py-0 hover:bg-secondary/70 hover:border-border/60 transition-all shrink-0 max-w-[200px] md:max-w-[220px]"
+          className="flex items-center gap-2 rounded-full border border-transparent pl-0.5 pr-2 py-0 hover:bg-primary/[0.1] hover:border-border/60 transition-all shrink-0 max-w-[200px] md:max-w-[220px]"
           title="Profil et statut"
         >
           <div className="relative h-10 w-10 shrink-0">
-            <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-border flex items-center justify-center bg-secondary/30">
+            <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-border flex items-center justify-center bg-primary/[0.08]">
               {avatarUrl ? (
                 <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
               ) : (
@@ -374,7 +375,7 @@ export function AppLayout({
     <div className="flex h-dvh min-h-0 flex-col bg-background">
       {/* Top app bar — le shell est en h-dvh + overflow-hidden sur la zone centrale : pas de scroll document */}
       <header className="z-40 shrink-0 bg-card/85 backdrop-blur-2xl border-b border-border/30 px-4 shell:px-0">
-        <div className="w-full flex items-stretch justify-between h-16 shell:h-[4.25rem] shell:pl-[var(--shell-nav-rail-width,320px)] shell:pr-[260px]">
+        <div className="w-full flex items-stretch justify-between h-16 shell:h-[4.25rem] shell:pl-[var(--shell-nav-rail-width,256px)] shell:pr-[260px]">
           <div className="flex flex-1 items-center justify-between min-w-0 gap-2 pl-4 pr-4 shell:pl-6 shell:pr-6">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <Button
@@ -430,7 +431,7 @@ export function AppLayout({
             <div className="flex items-center gap-1">
               <Link
                 to="/messages?section=discussion"
-                className="relative flex h-10 w-10 max-lg:min-h-12 max-lg:min-w-12 items-center justify-center rounded-full transition-colors hover:bg-secondary/60"
+                className="relative flex h-10 w-10 max-lg:min-h-12 max-lg:min-w-12 items-center justify-center rounded-full transition-colors hover:bg-primary/[0.08]"
                 title="Discussions (salons et groupes)"
               >
                 <FontAwesomeIcon icon={faCommentDots} className="h-5 w-5 text-foreground/60" />
@@ -442,7 +443,7 @@ export function AppLayout({
               </Link>
               <Link
                 to="/messages?section=messagerie"
-                className="relative flex h-10 w-10 max-lg:min-h-12 max-lg:min-w-12 items-center justify-center rounded-full transition-colors hover:bg-secondary/60"
+                className="relative flex h-10 w-10 max-lg:min-h-12 max-lg:min-w-12 items-center justify-center rounded-full transition-colors hover:bg-primary/[0.08]"
                 title="Messages privés"
               >
                 <FontAwesomeIcon icon={faEnvelope} className="h-5 w-5 text-foreground/60" />
@@ -489,13 +490,8 @@ export function AppLayout({
         </Sheet>
       )}
 
-      <div className="flex min-h-0 flex-1 flex-row overflow-x-auto overflow-y-hidden shell:pl-[var(--shell-nav-rail-width,320px)] shell:pr-[260px]">
-        <AppNavRail
-          isAdmin={isAdmin}
-          isSuperAdmin={isSuperAdmin}
-          hasPermission={hasPermission}
-          isModuleEnabled={isModuleEnabled}
-        />
+      <div className="flex min-h-0 flex-1 flex-row overflow-x-auto overflow-y-hidden shell:pl-[var(--shell-nav-rail-width,256px)] shell:pr-[260px]">
+        <AppNavRail isAdmin={isAdmin} hasPermission={hasPermission} isModuleEnabled={isModuleEnabled} />
         <div className="flex flex-1 flex-col min-w-0 min-h-0">
           <main
             className={cn(
@@ -504,6 +500,7 @@ export function AppLayout({
             )}
           >
             {children}
+            <DocsPrevNextNav />
           </main>
           <BottomNav />
         </div>
@@ -517,15 +514,15 @@ export function AppLayout({
       </div>
 
       <Sheet open={secondaryNavSheetOpen} onOpenChange={setSecondaryNavSheetOpen}>
-        <SheetContent side="left" className="w-[min(100vw-1rem,280px)] p-0 flex flex-col">
+        <SheetContent side="left" className="w-[min(100vw-1rem,300px)] p-0 flex flex-col">
           <SheetHeader className="sr-only">
-            <SheetTitle>Navigation de la section</SheetTitle>
+            <SheetTitle>Navigation</SheetTitle>
           </SheetHeader>
-          <AppSecondaryNavPanel
-            isSuperAdmin={isSuperAdmin}
+          <MobilePrimaryNavSheet
+            onNavigate={() => setSecondaryNavSheetOpen(false)}
+            isAdmin={isAdmin}
             hasPermission={hasPermission}
             isModuleEnabled={isModuleEnabled}
-            className="flex-1 min-h-0 overflow-y-auto"
           />
         </SheetContent>
       </Sheet>

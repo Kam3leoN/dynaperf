@@ -75,11 +75,11 @@ export function MembersDirectoryPanel({
                           }}
                           className={cn(
                             "w-full flex items-center gap-2.5 rounded-lg px-2 py-1.5 text-left transition-colors",
-                            "hover:bg-secondary/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+                            "hover:bg-primary/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                           )}
                         >
                           <div className="relative h-9 w-9 shrink-0">
-                            <div className="h-9 w-9 rounded-full overflow-hidden border border-border/80 bg-secondary/40 flex items-center justify-center">
+                            <div className="h-9 w-9 rounded-full overflow-hidden border border-border/80 bg-primary/[0.08] flex items-center justify-center">
                               {m.avatarUrl ? (
                                 <img src={m.avatarUrl} alt="" className="h-full w-full object-cover" />
                               ) : (

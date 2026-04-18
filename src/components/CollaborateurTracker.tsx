@@ -32,7 +32,7 @@ export function CollaborateurTracker({ data }: CollaborateurTrackerProps) {
               <div className="flex items-center gap-2 sm:gap-4">
                 <span className="text-xs sm:text-sm font-medium w-16 sm:w-24 text-foreground truncate">{c.nom}</span>
                 <div className="flex-1 relative min-w-0">
-                  <div className={`h-2 rounded-full w-full ${behind ? "bg-primary/10" : "bg-secondary"}`}>
+                  <div className={`h-2 rounded-full w-full ${behind ? "bg-primary/10" : "bg-muted"}`}>
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${pct}%` }}

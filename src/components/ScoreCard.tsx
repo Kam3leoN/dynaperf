@@ -31,7 +31,7 @@ export function ScoreCard({ type, avg, min, max, count, index }: ScoreCardProps)
 
       {/* Range visualizer */}
       <div className="mt-5 relative">
-        <div className="h-1 w-full bg-secondary rounded-full relative">
+        <div className="h-1 w-full bg-muted rounded-full relative">
           {min > 0 && (
             <div
               className="absolute h-2.5 w-2.5 rounded-full -top-[3px]"

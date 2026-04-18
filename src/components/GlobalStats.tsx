@@ -47,7 +47,7 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
 
   // Moyenne: performance level
   const moyenneLevel = moyenneGlobale >= 8 ? "excellent" : moyenneGlobale >= 6.5 ? "bon" : moyenneGlobale >= 5 ? "moyen" : "faible";
-  const moyenneColor = moyenneLevel === "excellent" ? "text-emerald-500" : moyenneLevel === "bon" ? "text-primary" : moyenneLevel === "moyen" ? "text-amber-500" : "text-destructive";
+  const moyenneColor = moyenneLevel === "excellent" ? "text-primary" : moyenneLevel === "bon" ? "text-primary" : moyenneLevel === "moyen" ? "text-amber-500" : "text-destructive";
   const moyenneLabel = moyenneLevel === "excellent" ? "Excellent" : moyenneLevel === "bon" ? "Bonne performance" : moyenneLevel === "moyen" ? "Peut mieux faire" : "Insuffisant";
   const moyenneIcon = moyenneGlobale >= 5 ? faArrowTrendUp : faArrowTrendDown;
   const moyennePct = Math.min(100, (moyenneGlobale / 10) * 100);
@@ -62,7 +62,7 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
         className="bg-card rounded-2xl p-3 sm:p-5 shadow-soft border border-border/60"
       >
         <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider leading-tight flex items-center gap-1.5">
-          <FontAwesomeIcon icon={faCheckCircle} className="h-3 w-3 text-emerald-500" />
+          <FontAwesomeIcon icon={faCheckCircle} className="h-3 w-3 text-primary" />
           Audits Réalisés
         </p>
         <div className="flex items-baseline gap-1 sm:gap-1.5 mt-1.5 sm:mt-2">
@@ -170,7 +170,7 @@ export function GlobalStats({ totalAudits, auditsNotes, moyenneGlobale, enAttent
               </span>
             </div>
           ) : (
-            <p className="text-[10px] sm:text-xs text-emerald-500 mt-1.5 flex items-center gap-1">
+            <p className="text-[10px] sm:text-xs text-primary mt-1.5 flex items-center gap-1">
               <FontAwesomeIcon icon={faCheckCircle} className="h-3 w-3" /> Objectif atteint !
             </p>
           )}

@@ -2,11 +2,12 @@ import { Link } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faClipboardList, faListCheck, faUsers } from "@fortawesome/free-solid-svg-icons";
 import { AppLayout } from "@/components/AppLayout";
+import { navHubPath } from "@/config/appNavigation";
 
 const cards = [
-  { label: "Audits", icon: faClipboardList, to: "/dashboard", desc: "Performance & scores" },
-  { label: "Activité", icon: faListCheck, to: "/activite/dashboard", desc: "Suivi d'activité" },
-  { label: "Réseau", icon: faUsers, to: "/reseau", desc: "Partenaires & clubs" },
+  { label: "Audits", icon: faClipboardList, to: navHubPath("audits"), desc: "Vue d’ensemble & accès rapides" },
+  { label: "Activité", icon: faListCheck, to: navHubPath("activite"), desc: "Suivi d’activité" },
+  { label: "Réseau", icon: faUsers, to: navHubPath("reseau"), desc: "Partenaires & clubs" },
 ];
 
 export default function DashboardHub() {
