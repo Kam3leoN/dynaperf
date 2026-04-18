@@ -5,6 +5,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "next-themes";
+import { M3ThemeProvider } from "@/theme/M3ThemeProvider";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { SplashScreen } from "@/components/SplashScreen";
@@ -14,6 +15,7 @@ import { MessagingSidebarProvider } from "@/contexts/MessagingSidebarContext";
 import { PermissionsProvider, usePermissionGate } from "@/contexts/PermissionsContext";
 import { useAppBranding } from "@/hooks/useAppBranding";
 import { ResponsiveShellProvider } from "@/contexts/ResponsiveShellContext";
+import { NavigationShellProvider } from "@/contexts/NavigationShellContext";
 import { PresenceStatusDefinitionsProvider } from "@/contexts/PresenceStatusDefinitionsContext";
 import { prefetchPageChunksDeferred } from "@/lib/prefetchPageChunks";
 
@@ -162,6 +164,7 @@ const App = () => {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+      <M3ThemeProvider>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <PresenceStatusDefinitionsProvider>
@@ -177,6 +180,7 @@ const App = () => {
             <BrowserRouter basename={routerBase} future={{ v7_startTransition: true }}>
               <ScrollToTopOnRouteChange />
               <ResponsiveShellProvider>
+              <NavigationShellProvider>
               <MessagingSidebarProvider>
                 <PermissionsProvider>
                   <Routes>
@@ -246,6 +250,7 @@ const App = () => {
                   </Routes>
                 </PermissionsProvider>
               </MessagingSidebarProvider>
+              </NavigationShellProvider>
               </ResponsiveShellProvider>
             </BrowserRouter>
             </>
@@ -254,6 +259,7 @@ const App = () => {
           </PresenceStatusDefinitionsProvider>
         </AuthProvider>
       </QueryClientProvider>
+      </M3ThemeProvider>
     </ThemeProvider>
   );
 };

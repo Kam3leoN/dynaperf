@@ -8,7 +8,6 @@ import {
   getActiveRailSection,
   RAIL_SECTIONS_ALL,
 } from "@/config/appNavigation";
-import { SHELL_RAIL_WIDTH_PX, SHELL_SECONDARY_NAV_WIDTH_PX } from "@/config/layoutBreakpoints";
 import { MessagingSecondaryNav } from "@/components/messaging/MessagingSecondaryNav";
 import { publicAssetUrl } from "@/lib/basePath";
 const SECONDARY_LOGO_LIGHT = publicAssetUrl("DynaPerf_light_simple.svg");
@@ -24,6 +23,8 @@ interface AppSecondaryNavPanelProps {
   isModuleEnabled?: (key: string) => boolean;
   isSuperAdmin?: boolean;
   className?: string;
+  /** Dans le rail étendu, la barre logo est déjà gérée par `AppNavRail`. */
+  hideLogo?: boolean;
 }
 
 /**
@@ -34,6 +35,7 @@ export function AppSecondaryNavPanel({
   isModuleEnabled,
   isSuperAdmin = false,
   className,
+  hideLogo = false,
 }: AppSecondaryNavPanelProps) {
   const { pathname } = useLocation();
   const { resolvedTheme } = useTheme();
@@ -53,18 +55,20 @@ export function AppSecondaryNavPanel({
       className={cn("flex flex-col bg-muted/10 min-h-0 h-full", className)}
       aria-label={`Sous-navigation ${active.label}`}
     >
-      <div className="flex h-[4.25rem] shrink-0 items-center justify-start px-4">
-        <Link to="/" aria-label="DynaPerf — Accueil" className="inline-flex items-center">
-          <img
-            src={secondaryLogoSrc}
-            alt="DynaPerf"
-            className="h-10 w-auto max-w-[min(100%,220px)] object-contain object-left"
-            width={220}
-            height={42}
-            decoding="async"
-          />
-        </Link>
-      </div>
+      {!hideLogo && (
+        <div className="flex h-[4.25rem] shrink-0 items-center justify-start px-4">
+          <Link to="/" aria-label="DynaPerf — Accueil" className="inline-flex items-center">
+            <img
+              src={secondaryLogoSrc}
+              alt="DynaPerf"
+              className="h-10 w-auto max-w-[min(100%,220px)] object-contain object-left"
+              width={220}
+              height={42}
+              decoding="async"
+            />
+          </Link>
+        </div>
+      )}
 
       {isWelcomeRoute ? (
         <div className="flex-1 min-h-0" />
@@ -127,27 +131,3 @@ export function AppSecondaryNavPanel({
   );
 }
 
-interface AppSecondaryNavProps {
-  isSuperAdmin?: boolean;
-  hasPermission: (key: string) => boolean;
-  isModuleEnabled?: (key: string) => boolean;
-}
-
-/**
- * Colonne secondaire desktop (~280px) : sous-menus de la section active.
- */
-export function AppSecondaryNav({ isSuperAdmin, hasPermission, isModuleEnabled }: AppSecondaryNavProps) {
-  return (
-    <aside
-      style={{ left: SHELL_RAIL_WIDTH_PX, width: SHELL_SECONDARY_NAV_WIDTH_PX }}
-      className="hidden shell:flex fixed top-0 bottom-0 z-[45] flex-col border-r border-border/40 bg-muted/10 min-h-0 transition-[background-color] duration-300 ease-[cubic-bezier(0.2,0,0,1)]"
-    >
-      <AppSecondaryNavPanel
-        isSuperAdmin={isSuperAdmin}
-        hasPermission={hasPermission}
-        isModuleEnabled={isModuleEnabled}
-        className="flex-1 min-h-0"
-      />
-    </aside>
-  );
-}
