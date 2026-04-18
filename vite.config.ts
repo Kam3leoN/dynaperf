@@ -71,6 +71,11 @@ export default defineConfig(({ mode }) => {
       },
     },
     build: {
+      /**
+       * Évite le helper `__vite__mapDeps` + préchargements parallèles (CSS / gros chunks) dont un échec
+       * fait échouer tout le bootstrap — problème vu sur GitHub Pages avec précache / réseau capricieux.
+       */
+      modulePreload: false,
       rollupOptions: {
         output: {
           manualChunks(id) {
