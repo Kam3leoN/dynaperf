@@ -1,0 +1,31 @@
+/**
+ * Mixin « bouton action icône » : une couleur de référence = icône + fonds dérivés (éclairci / hover foncé).
+ *
+ * Définir sur l’élément :
+ *   --action-tone              : couleur de référence (hex, hsl(), etc.)
+ *   --action-bg-mix            : % de la teinte dans le fond clair (défaut 14%)
+ *   --action-hover-mix         : % au survol clair (défaut 27%)
+ *   --action-bg-mix-dark       : % fond dark (défaut 28%)
+ *   --action-hover-mix-dark    : % hover dark (défaut 40%)
+ */
+@layer components {
+  .action-icon-tone {
+    border: 0;
+    box-shadow: none;
+    color: var(--action-tone);
+    background: color-mix(in srgb, var(--action-tone) var(--action-bg-mix, 14%), white);
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .action-icon-tone:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--action-tone) var(--action-hover-mix, 27%), white);
+  }
+
+  .dark .action-icon-tone {
+    background: color-mix(in srgb, var(--action-tone) var(--action-bg-mix-dark, 28%), rgb(24 24 27));
+  }
+
+  .dark .action-icon-tone:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--action-tone) var(--action-hover-mix-dark, 40%), rgb(24 24 27));
+  }
+}

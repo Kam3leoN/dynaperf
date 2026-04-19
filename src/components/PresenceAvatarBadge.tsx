@@ -8,7 +8,9 @@ interface PresenceAvatarBadgeProps {
   className?: string;
 }
 
-const BADGE_PX = 14;
+export const PRESENCE_AVATAR_BADGE_PX = 14;
+
+const BADGE_PX = PRESENCE_AVATAR_BADGE_PX;
 
 /** Anneau « découpe » : même teinte que le fond app pour un gap net. */
 const AVATAR_GAP_SHADOW = "drop-shadow(0 0 0 2px hsl(var(--background)))";

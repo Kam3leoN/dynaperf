@@ -49,6 +49,7 @@ import {
   normalizeDepartementForStorage,
 } from "@/lib/departementDisplay";
 import { normalizePresidentImportName } from "@/lib/personNameNormalize";
+import { ActionIconButton } from "@/components/ActionIconButton";
 
 interface Club {
   id: string;
@@ -927,17 +928,17 @@ export default function AdminClubs() {
 
   const ActionButtons = ({ c }: { c: Club }) => (
     <div className="flex gap-1">
-      <button onClick={() => setViewClub(c)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Voir">
-        <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
-      </button>
+      <ActionIconButton label="Voir le club" variant="view" onClick={() => setViewClub(c)}>
+        <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5" />
+      </ActionIconButton>
       {isAdmin && (
         <>
-          <button onClick={() => openEditDialog(c)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
-            <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
-          </button>
-          <button onClick={() => setDeleteClub(c)} className="p-1.5 rounded-sm hover:bg-destructive/10 transition-colors" title="Supprimer">
-            <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-destructive" />
-          </button>
+          <ActionIconButton label="Modifier le club" variant="edit" onClick={() => openEditDialog(c)}>
+            <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" />
+          </ActionIconButton>
+          <ActionIconButton label="Supprimer le club" variant="destructive" onClick={() => setDeleteClub(c)}>
+            <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" />
+          </ActionIconButton>
         </>
       )}
     </div>

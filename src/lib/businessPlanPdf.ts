@@ -51,7 +51,7 @@ interface BPParams {
   prixOneShotAvantages: number;
   commOneShotAvantagesPct: number;
   tauxParrainage: number;
-  primeParrainage: number;
+  commissionFilleulEuros: number;
   tauxConversionFilleul: number;
   packPerformance: boolean;
   vehiculeFloque: boolean;
@@ -220,7 +220,7 @@ function buildTable(projections: YearData[], params: BPParams): string {
       
       ${section("Parrainage / Filleuls", "#a855f7")}
       ${row("Filleuls convertis", projections.map(p => p.filleuls))}
-      ${row("Primes parrainage", projections.map(p => p.commFilleuls), true, true)}
+      ${row("Commissions parrainage", projections.map(p => p.commFilleuls), true, true)}
       
       ${section("Synthèse", "#0E222C")}
       ${row("Total commissions", projections.map(p => p.totalCommissions), true, true, true)}

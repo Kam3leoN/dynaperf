@@ -23,12 +23,6 @@ interface CollaborateurConfigRow {
   [key: string]: unknown;
 }
 
-interface CustomPrimeRow {
-  user_id: string;
-  id?: string;
-  [key: string]: unknown;
-}
-
 function jsonOk(data: unknown) {
   return new Response(JSON.stringify(data), {
     headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -167,54 +161,6 @@ Deno.serve(async (req) => {
       return jsonOk({ success: true });
     }
 
-    // SAVE CONFIG (objectives + primes per format)
-    if (action === "save-config") {
-      const { userId, objectif, palier_1, palier_2, palier_3,
-        prime_audit_1, prime_audit_2, prime_audit_3_plus,
-        prime_distanciel_1, prime_distanciel_2, prime_distanciel_3_plus,
-        prime_club_1, prime_club_2, prime_club_3_plus,
-        prime_rdv_1, prime_rdv_2, prime_rdv_3_plus,
-        prime_suivi_1, prime_suivi_2, prime_suivi_3_plus,
-        prime_mep_1, prime_mep_2, prime_mep_3_plus,
-        prime_evenementiel_1, prime_evenementiel_2, prime_evenementiel_3_plus,
-        semaines_indisponibles } = body;
-      if (!userId) return jsonError("userId requis", 400);
-      const { error } = await adminClient.from("collaborateur_config").upsert(
-        {
-          user_id: userId,
-          objectif: objectif ?? 0,
-          palier_1: palier_1 ?? null,
-          palier_2: palier_2 ?? null,
-          palier_3: palier_3 ?? null,
-          prime_audit_1: prime_audit_1 ?? 0,
-          prime_audit_2: prime_audit_2 ?? 0,
-          prime_audit_3_plus: prime_audit_3_plus ?? 0,
-          prime_distanciel_1: prime_distanciel_1 ?? 0,
-          prime_distanciel_2: prime_distanciel_2 ?? 0,
-          prime_distanciel_3_plus: prime_distanciel_3_plus ?? 0,
-          prime_club_1: prime_club_1 ?? 0,
-          prime_club_2: prime_club_2 ?? 0,
-          prime_club_3_plus: prime_club_3_plus ?? 0,
-          prime_rdv_1: prime_rdv_1 ?? 0,
-          prime_rdv_2: prime_rdv_2 ?? 0,
-          prime_rdv_3_plus: prime_rdv_3_plus ?? 0,
-          prime_suivi_1: prime_suivi_1 ?? 0,
-          prime_suivi_2: prime_suivi_2 ?? 0,
-          prime_suivi_3_plus: prime_suivi_3_plus ?? 0,
-          prime_mep_1: prime_mep_1 ?? 0,
-          prime_mep_2: prime_mep_2 ?? 0,
-          prime_mep_3_plus: prime_mep_3_plus ?? 0,
-          prime_evenementiel_1: prime_evenementiel_1 ?? 0,
-          prime_evenementiel_2: prime_evenementiel_2 ?? 0,
-          prime_evenementiel_3_plus: prime_evenementiel_3_plus ?? 0,
-          semaines_indisponibles: semaines_indisponibles ?? 10,
-        },
-        { onConflict: "user_id" }
-      );
-      if (error) return jsonError(error.message, 400);
-      return jsonOk({ success: true });
-    }
-
     // UPDATE USER (name, email, title)
     if (action === "update-user") {
       const { userId, email, displayName, title } = body;
@@ -267,7 +213,6 @@ Deno.serve(async (req) => {
       const { data: allRoles } = await adminClient.from("user_roles").select("*");
       const { data: allProfiles } = await adminClient.from("profiles").select("*");
       const { data: allConfigs } = await adminClient.from("collaborateur_config").select("*");
-      const { data: allCustomPrimes } = await adminClient.from("user_custom_primes").select("*").order("created_at");
 
       const result = authUsers.map((u: User) => {
         const uid = normUuidStr(u.id);
@@ -288,48 +233,10 @@ Deno.serve(async (req) => {
             (allConfigs as CollaborateurConfigRow[] | null | undefined)?.find(
               (c: CollaborateurConfigRow) => normUuidStr(c.user_id) === uid,
             ) || null,
-          customPrimes:
-            (allCustomPrimes as CustomPrimeRow[] | null | undefined)?.filter(
-              (cp: CustomPrimeRow) => normUuidStr(cp.user_id) === uid,
-            ) || [],
           createdAt: u.created_at,
         };
       });
       return jsonOk({ users: result });
-    }
-
-    // ADD CUSTOM PRIME
-    if (action === "add-custom-prime") {
-      const { userId, label, prime_1, prime_2, prime_3_plus } = body;
-      if (!userId || !label) return jsonError("userId et label requis", 400);
-      const { data, error } = await adminClient.from("user_custom_primes").insert({
-        user_id: userId, label, prime_1: prime_1 ?? 75, prime_2: prime_2 ?? 10, prime_3_plus: prime_3_plus ?? 5,
-      }).select().single();
-      if (error) return jsonError(error.message, 400);
-      return jsonOk({ success: true, customPrime: data });
-    }
-
-    // UPDATE CUSTOM PRIME
-    if (action === "update-custom-prime") {
-      const { primeId, label, prime_1, prime_2, prime_3_plus } = body;
-      if (!primeId) return jsonError("primeId requis", 400);
-      const updates: Record<string, string | number> = {};
-      if (label !== undefined) updates.label = label;
-      if (prime_1 !== undefined) updates.prime_1 = prime_1;
-      if (prime_2 !== undefined) updates.prime_2 = prime_2;
-      if (prime_3_plus !== undefined) updates.prime_3_plus = prime_3_plus;
-      const { error } = await adminClient.from("user_custom_primes").update(updates).eq("id", primeId);
-      if (error) return jsonError(error.message, 400);
-      return jsonOk({ success: true });
-    }
-
-    // DELETE CUSTOM PRIME
-    if (action === "delete-custom-prime") {
-      const { primeId } = body;
-      if (!primeId) return jsonError("primeId requis", 400);
-      const { error } = await adminClient.from("user_custom_primes").delete().eq("id", primeId);
-      if (error) return jsonError(error.message, 400);
-      return jsonOk({ success: true });
     }
 
     // CREATE USER (default action)

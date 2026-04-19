@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheck, faCheckDouble, faTrashCan } from "@fortawesome/free-solid-svg-icons";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
+import { ActionIconButton } from "@/components/ActionIconButton";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useNavigate } from "react-router-dom";
@@ -66,14 +67,11 @@ export default function Notifications() {
                   </p>
                 </button>
                 {n.read && (
-                  <div className="flex shrink-0 items-center self-stretch pr-2 sm:pr-3">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="h-9 w-9 text-muted-foreground hover:text-destructive"
-                      aria-label="Supprimer la notification"
-                      title="Supprimer"
+                  <div className="flex shrink-0 items-center self-stretch pr-2 sm:pr-3" onClick={(e) => e.stopPropagation()}>
+                    <ActionIconButton
+                      label="Supprimer la notification"
+                      variant="destructive"
+                      className="h-9 w-9"
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
@@ -81,7 +79,7 @@ export default function Notifications() {
                       }}
                     >
                       <FontAwesomeIcon icon={faTrashCan} className="h-4 w-4" />
-                    </Button>
+                    </ActionIconButton>
                   </div>
                 )}
               </div>

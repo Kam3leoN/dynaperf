@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
+import { ActionIconButton } from "@/components/ActionIconButton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -22,7 +23,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 interface SuiviRow {
@@ -41,6 +41,7 @@ export default function SuiviActiviteList() {
   const [suivis, setSuivis] = useState<SuiviRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [planOpen, setPlanOpen] = useState(false);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [searchParams, setSearchParams] = useSearchParams();
 
   // Auto-open plan dialog from URL
@@ -83,10 +84,9 @@ export default function SuiviActiviteList() {
         <div className="flex items-center gap-2 flex-wrap">
           <SuiviActiviteExportExcel suivis={suivis} />
           <SuiviActiviteExportPDF suivis={suivis} />
-          <Button variant="outline" className="gap-2" onClick={() => setPlanOpen(true)}>
-            <FontAwesomeIcon icon={faCalendarPlus} className="h-3.5 w-3.5 text-amber-500" />
-            Planifier
-          </Button>
+          <ActionIconButton variant="schedule" label="Planifier un suivi d'activité" onClick={() => setPlanOpen(true)}>
+            <FontAwesomeIcon icon={faCalendarPlus} className="h-3.5 w-3.5" />
+          </ActionIconButton>
           <Button asChild className="gap-2">
              <Link to="/activite/new/version">
               <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
@@ -123,35 +123,44 @@ export default function SuiviActiviteList() {
                 </div>
                 <div className="flex items-center gap-2">
                   <SuiviActivitePdfDetail suiviId={s.id} />
-                  <Button asChild variant="outline" size="sm" className="gap-1.5">
+                  <ActionIconButton asChild variant="view" label="Voir le suivi">
                     <Link to={`/activite/${s.id}`}>
-                      <FontAwesomeIcon icon={faEye} className="h-3 w-3" />
-                      Voir
+                      <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5" />
                     </Link>
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive">
-                        <FontAwesomeIcon icon={faTrash} className="h-3 w-3" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Supprimer ce suivi ?</AlertDialogTitle>
-                        <AlertDialogDescription>Cette action est irréversible.</AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Annuler</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(s.id)}>Supprimer</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  </ActionIconButton>
+                  <ActionIconButton
+                    variant="destructive"
+                    label="Supprimer ce suivi"
+                    onClick={() => setDeleteConfirmId(s.id)}
+                  >
+                    <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
+                  </ActionIconButton>
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+      <AlertDialog open={deleteConfirmId !== null} onOpenChange={(open) => !open && setDeleteConfirmId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce suivi ?</AlertDialogTitle>
+            <AlertDialogDescription>Cette action est irréversible.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteConfirmId) void handleDelete(deleteConfirmId);
+                setDeleteConfirmId(null);
+              }}
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <PlanActiviteDialog open={planOpen} onOpenChange={setPlanOpen} onCreated={() => load()} />
     </AppLayout>
   );

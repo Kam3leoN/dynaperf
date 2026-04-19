@@ -3,12 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Audit, TYPES_EVENEMENT, AUDITEURS, MOIS_ORDRE } from "@/data/audits";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { ActionIconButton } from "@/components/ActionIconButton";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faPenToSquare, faTrashCan, faSort, faEye } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faPenToSquare, faTrashCan, faSort, faEye, faClipboardCheck } from "@fortawesome/free-solid-svg-icons";
 import { motion, AnimatePresence } from "framer-motion";
 import { AuditDetailView } from "./AuditDetailView";
 
@@ -98,21 +99,55 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete, onEditPlan }: Au
           <p className="text-sm font-semibold text-foreground">{a.partenaire}</p>
           <p className="text-xs text-muted-foreground">{a.lieu || "—"}</p>
         </div>
-        <div className="flex gap-1 shrink-0">
+        <div className="flex flex-wrap items-center justify-end gap-1 shrink-0">
           {a.statut === "OK" && (
-            <button onClick={() => setDetailAudit({ id: a.id, type: a.typeEvenement, partenaire: a.partenaire, date: a.date, lieu: a.lieu, auditeur: a.auditeur, note: a.note })} className="p-1.5 rounded-sm hover:bg-secondary transition-colors">
-              <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
-            </button>
+            <ActionIconButton
+              label="Voir le détail de l'audit"
+              variant="view"
+              onClick={() =>
+                setDetailAudit({
+                  id: a.id,
+                  type: a.typeEvenement,
+                  partenaire: a.partenaire,
+                  date: a.date,
+                  lieu: a.lieu,
+                  auditeur: a.auditeur,
+                  note: a.note,
+                })
+              }
+            >
+              <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5" />
+            </ActionIconButton>
           )}
-          <button onClick={() => {
-            if (a.statut !== "OK" && onEditPlan) { onEditPlan(a.id); }
-            else { navigate(`/audits/edit/${a.id}?type=${encodeURIComponent(a.typeEvenement)}`); }
-          }} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
-            <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
-          </button>
-          <button onClick={() => setDeleteId(a.id)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors">
-            <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
-          </button>
+          {a.statut !== "OK" && onEditPlan ? (
+            <>
+              <ActionIconButton label="Modifier la planification" variant="edit" onClick={() => onEditPlan(a.id)}>
+                <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" />
+              </ActionIconButton>
+              <ActionIconButton
+                label="Auditer — ouvrir le formulaire d'audit"
+                variant="audit"
+                onClick={() =>
+                  navigate(`/audits/edit/${a.id}?type=${encodeURIComponent(a.typeEvenement)}`)
+                }
+              >
+                <FontAwesomeIcon icon={faClipboardCheck} className="h-3.5 w-3.5" />
+              </ActionIconButton>
+            </>
+          ) : (
+            <ActionIconButton
+              label="Modifier l'audit terminé"
+              variant="edit"
+              onClick={() =>
+                navigate(`/audits/edit/${a.id}?type=${encodeURIComponent(a.typeEvenement)}`)
+              }
+            >
+              <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" />
+            </ActionIconButton>
+          )}
+          <ActionIconButton label="Supprimer cet audit" variant="destructive" onClick={() => setDeleteId(a.id)}>
+            <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" />
+          </ActionIconButton>
         </div>
       </div>
       <div className="flex flex-wrap items-center gap-2 text-xs">
@@ -142,10 +177,14 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete, onEditPlan }: Au
             onChange={(e) => setSearch(e.target.value)}
             className="w-full sm:w-[200px] h-9 text-sm rounded-md"
           />
-          <Button onClick={() => navigate("/audits/new")} size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5 shrink-0">
+          <ActionIconButton
+            label="Nouvel audit guidé"
+            variant="audit"
+            className="shrink-0"
+            onClick={() => navigate("/audits/new")}
+          >
             <FontAwesomeIcon icon={faPlus} className="h-4 w-4" />
-            <span className="hidden sm:inline">Ajouter</span>
-          </Button>
+          </ActionIconButton>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
               <DialogHeader>
@@ -235,7 +274,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete, onEditPlan }: Au
               <SortHeader label="Type" k="typeEvenement" />
               <SortHeader label="Note" k="note" />
               <TableHead className="text-xs uppercase tracking-wider">Statut</TableHead>
-              <TableHead className="text-xs uppercase tracking-wider w-20">Actions</TableHead>
+              <TableHead className="text-xs uppercase tracking-wider min-w-[9.5rem]">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -264,21 +303,55 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete, onEditPlan }: Au
                     </span>
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-1">
+                    <div className="flex flex-wrap items-center gap-1">
                       {a.statut === "OK" && (
-                        <button onClick={() => setDetailAudit({ id: a.id, type: a.typeEvenement, partenaire: a.partenaire, date: a.date, lieu: a.lieu, auditeur: a.auditeur, note: a.note })} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Voir le détail">
-                          <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
-                        </button>
+                        <ActionIconButton
+                          label="Voir le détail de l'audit"
+                          variant="view"
+                          onClick={() =>
+                            setDetailAudit({
+                              id: a.id,
+                              type: a.typeEvenement,
+                              partenaire: a.partenaire,
+                              date: a.date,
+                              lieu: a.lieu,
+                              auditeur: a.auditeur,
+                              note: a.note,
+                            })
+                          }
+                        >
+                          <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5" />
+                        </ActionIconButton>
                       )}
-                      <button onClick={() => {
-                        if (a.statut !== "OK" && onEditPlan) { onEditPlan(a.id); }
-                        else { navigate(`/audits/edit/${a.id}?type=${encodeURIComponent(a.typeEvenement)}`); }
-                      }} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
-                        <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
-                      </button>
-                      <button onClick={() => setDeleteId(a.id)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors">
-                        <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
-                      </button>
+                      {a.statut !== "OK" && onEditPlan ? (
+                        <>
+                          <ActionIconButton label="Modifier la planification" variant="edit" onClick={() => onEditPlan(a.id)}>
+                            <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" />
+                          </ActionIconButton>
+                          <ActionIconButton
+                            label="Auditer — ouvrir le formulaire d'audit"
+                            variant="audit"
+                            onClick={() =>
+                              navigate(`/audits/edit/${a.id}?type=${encodeURIComponent(a.typeEvenement)}`)
+                            }
+                          >
+                            <FontAwesomeIcon icon={faClipboardCheck} className="h-3.5 w-3.5" />
+                          </ActionIconButton>
+                        </>
+                      ) : (
+                        <ActionIconButton
+                          label="Modifier l'audit terminé"
+                          variant="edit"
+                          onClick={() =>
+                            navigate(`/audits/edit/${a.id}?type=${encodeURIComponent(a.typeEvenement)}`)
+                          }
+                        >
+                          <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" />
+                        </ActionIconButton>
+                      )}
+                      <ActionIconButton label="Supprimer cet audit" variant="destructive" onClick={() => setDeleteId(a.id)}>
+                        <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" />
+                      </ActionIconButton>
                     </div>
                   </TableCell>
                 </motion.tr>
@@ -324,7 +397,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete, onEditPlan }: Au
           <AlertDialogFooter>
             <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              className="bg-[#ee4540] text-white hover:bg-[#ee4540]/90"
               onClick={() => { if (deleteId) { onDelete(deleteId); setDeleteId(null); } }}
             >
               Supprimer

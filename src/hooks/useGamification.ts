@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useOptionalPermissionGate } from "@/contexts/PermissionsContext";
 import { useAuth } from "./useAuth";
 
 export interface Badge {
@@ -18,6 +19,7 @@ export interface UserStreak {
   last_activity_date: string | null;
   total_audits: number;
   total_suivis: number;
+  total_messages_sent: number;
   level: number;
   xp: number;
 }
@@ -28,6 +30,10 @@ export interface EarnedBadge extends Badge {
 
 export function useGamification() {
   const { user } = useAuth();
+  const perm = useOptionalPermissionGate();
+  const gamificationOn = perm?.isModuleEnabled("gamification") ?? true;
+  const permLoading = perm?.loading ?? false;
+
   const [streaks, setStreaks] = useState<UserStreak | null>(null);
   const [earnedBadges, setEarnedBadges] = useState<EarnedBadge[]>([]);
   const [allBadges, setAllBadges] = useState<Badge[]>([]);
@@ -35,7 +41,7 @@ export function useGamification() {
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
-    if (!user) return;
+    if (!user || !gamificationOn) return;
     setLoading(true);
 
     const [streakRes, badgesRes, earnedRes] = await Promise.all([
@@ -62,16 +68,36 @@ export function useGamification() {
       );
     }
     setLoading(false);
-  }, [user]);
+  }, [user, gamificationOn]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    if (!user) {
+      setStreaks(null);
+      setEarnedBadges([]);
+      setAllBadges([]);
+      setNewBadge(null);
+      setLoading(false);
+      return;
+    }
+    if (permLoading) {
+      setLoading(true);
+      return;
+    }
+    if (!gamificationOn) {
+      setStreaks(null);
+      setEarnedBadges([]);
+      setAllBadges([]);
+      setNewBadge(null);
+      setLoading(false);
+      return;
+    }
+    void fetchData();
+  }, [user, permLoading, gamificationOn, fetchData]);
 
   /** Record activity via secure server-side RPC */
   const recordActivity = useCallback(
-    async (type: "audit" | "suivi", score?: number) => {
-      if (!user) return;
+    async (type: "audit" | "suivi" | "message", score?: number) => {
+      if (!user || !gamificationOn) return;
 
       const { data, error } = await supabase.rpc("record_activity", {
         p_type: type,
@@ -101,7 +127,7 @@ export function useGamification() {
 
       fetchData();
     },
-    [user, fetchData]
+    [user, gamificationOn, fetchData]
   );
 
   const dismissBadge = useCallback(() => setNewBadge(null), []);

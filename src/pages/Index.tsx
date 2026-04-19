@@ -1,4 +1,4 @@
-import { useState, useEffect, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { useAuditData } from "@/hooks/useAuditData";
 import { GlobalStats } from "@/components/GlobalStats";
 import { ScoreCard } from "@/components/ScoreCard";
@@ -10,8 +10,6 @@ import { ScoresByTypeChart } from "@/components/ScoresByTypeChart";
 import { PodiumCards } from "@/components/PodiumCards";
 import { AppLayout } from "@/components/AppLayout";
 import { ContextSubHeader } from "@/components/context-sub-header";
-import { supabase } from "@/integrations/supabase/client";
-import type { Database } from "@/integrations/supabase/types";
 
 /** Même recette que la barre sous l’AppBar en messagerie : bordure basse + fond flouté. */
 const stickySubHeaderShellClass =
@@ -44,26 +42,9 @@ function AuditsStickySection({ id, title, stackIndex, children }: StickySectionP
 const Index = () => {
   const {
     audits, filters, setFilters, availableYears,
-    scoresByType, collaborateurStats, monthlyData,
+    scoresByType, monthlyData,
     partenaireStats, scoreDistribution, globalStats, loading,
   } = useAuditData();
-
-  const [semainesIndisponibles, setSemainesIndisponibles] = useState(10);
-
-  useEffect(() => {
-    const loadConfig = async () => {
-      const { data } = await supabase.rpc("get_my_config");
-      const rows = data as Database["public"]["Functions"]["get_my_config"]["Returns"] | null;
-      if (rows && rows.length > 0) {
-        setSemainesIndisponibles(rows[0].semaines_indisponibles ?? 10);
-      }
-    };
-    loadConfig();
-  }, []);
-
-  const objectifTotal = filters.auditeur !== "Tous"
-    ? collaborateurStats.find((c) => c.nom === filters.auditeur)?.objectif ?? 0
-    : collaborateurStats.reduce((sum, c) => sum + c.objectif, 0);
 
   return (
     <AppLayout
@@ -80,18 +61,10 @@ const Index = () => {
         <div className="space-y-5">
           <AuditsStickySection
             id="audit-dashboard-progression"
-            title="Progression de l'objectif des audits"
+            title="Vue d'ensemble des audits"
             stackIndex={0}
           >
-            <GlobalStats
-              {...globalStats}
-              objectifTotal={objectifTotal}
-              objectifNotes={objectifTotal}
-              annee={filters.annee}
-              semainesIndisponibles={semainesIndisponibles}
-              auditsTermines={globalStats.auditsTermines}
-              auditsPlanifies={globalStats.auditsPlanifies}
-            />
+            <GlobalStats {...globalStats} annee={filters.annee} />
           </AuditsStickySection>
 
           <AuditsStickySection

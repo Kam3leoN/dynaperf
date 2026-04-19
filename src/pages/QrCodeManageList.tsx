@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
-import { Button } from "@/components/ui/button";
+import { ActionIconButton } from "@/components/ActionIconButton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -136,28 +136,23 @@ export default function QrCodeManageList() {
                         <p className="text-[11px] text-muted-foreground tabular-nums">{r.scanCount ?? 0} scan(s)</p>
                       </div>
                       <div className="flex shrink-0 gap-1">
-                        <Button
-                          type="button"
-                          size="icon"
+                        <ActionIconButton
                           variant="ghost"
-                          className="h-8 w-8"
-                          title="Télécharger"
+                          label="Télécharger (SVG)"
                           onClick={() => void downloadSavedQr(r)}
                         >
                           <FontAwesomeIcon icon={faDownload} className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button type="button" size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(r)}>
+                        </ActionIconButton>
+                        <ActionIconButton variant="edit" label="Modifier" onClick={() => openEdit(r)}>
                           <FontAwesomeIcon icon={faPen} className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-destructive"
+                        </ActionIconButton>
+                        <ActionIconButton
+                          variant="destructive"
+                          label="Supprimer ce QR code"
                           onClick={() => void persistDelete(r.id)}
                         >
                           <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
-                        </Button>
+                        </ActionIconButton>
                       </div>
                     </div>
                     <div className="flex justify-center">

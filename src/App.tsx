@@ -1,6 +1,7 @@
 import { useState, lazy, Suspense, useEffect, useCallback } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Route, Routes, Navigate, useLocation } from "react-router-dom";
+import { scrollLayoutMainToTop } from "@/lib/scrollLayout";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -38,7 +39,6 @@ const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminModules = lazy(() => import("./components/AdminModules"));
 const AdminAuditsConfig = lazy(() => import("./components/AdminAuditGrid"));
 const AdminSecteursAdmin = lazy(() => import("./components/AdminSecteurs"));
-const AdminUserPrimes = lazy(() => import("./pages/admin/AdminUserPrimes"));
 const AdminExpression = lazy(() => import("./pages/admin/AdminExpression"));
 const AdminInvitations = lazy(() => import("./pages/admin/AdminInvitations"));
 const AdminBranding = lazy(() => import("./pages/admin/AdminBranding"));
@@ -65,11 +65,11 @@ const Sondages = lazy(() => import("./pages/Sondages"));
 const ActivityLog = lazy(() => import("./pages/ActivityLog"));
 const Preferences = lazy(() => import("./pages/Preferences"));
 const DashboardHub = lazy(() => import("./pages/DashboardHub"));
-const Primes = lazy(() => import("./pages/Primes"));
 const QrCodeManageList = lazy(() => import("./pages/QrCodeManageList"));
 const QrCodeShapes = lazy(() => import("./pages/QrCodeShapes"));
 const AdminQrShapes = lazy(() => import("./pages/admin/AdminQrShapes"));
 const AdminPresenceStatuses = lazy(() => import("./pages/admin/AdminPresenceStatuses"));
+const AdminBadges = lazy(() => import("./pages/admin/AdminBadges"));
 const QrCodeStats = lazy(() => import("./pages/QrCodeStats"));
 const Galerie = lazy(() => import("./pages/Galerie"));
 const QrScanRedirect = lazy(() => import("./pages/QrScanRedirect"));
@@ -114,6 +114,7 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   const { hasPermission, loading: permLoading } = usePermissionGate();
   if (loading || adminLoading || permLoading) return <FullPageLoader />;
   if (!user) return <Navigate to="/auth" replace />;
+  /** `hasPermission("nav.admin")` inclut un repli si le RPC a échoué mais `user_roles` indique admin. */
   if (!isAdmin || !hasPermission("nav.admin")) return <Navigate to="/" replace />;
   return <Suspense fallback={<FullPageLoader />}>{children}</Suspense>;
 }
@@ -124,6 +125,14 @@ function PermissionRoute({ permission, children }: { permission: string; childre
   if (loading || permLoading) return <FullPageLoader />;
   if (!user) return <Navigate to="/auth" replace />;
   if (!hasPermission(permission)) return <Navigate to="/" replace />;
+  return <Suspense fallback={<FullPageLoader />}>{children}</Suspense>;
+}
+
+/** Route admin réservée à un module applicatif activé (ex. Badges & Gamification). */
+function AdminModuleRoute({ moduleKey, children }: { moduleKey: string; children: React.ReactNode }) {
+  const { isModuleEnabled, loading } = usePermissionGate();
+  if (loading) return <FullPageLoader />;
+  if (!isModuleEnabled(moduleKey)) return <Navigate to="/admin/modules" replace />;
   return <Suspense fallback={<FullPageLoader />}>{children}</Suspense>;
 }
 
@@ -145,7 +154,7 @@ function AppBrandingBoot() {
 function ScrollToTopOnRouteChange() {
   const { pathname } = useLocation();
   useEffect(() => {
-    window.scrollTo(0, 0);
+    scrollLayoutMainToTop("instant");
   }, [pathname]);
   return null;
 }
@@ -199,9 +208,16 @@ const App = () => {
                       <Route path="backups" element={<AdminBackups />} />
                       <Route path="users" element={<AdminUsers />} />
                       <Route path="modules" element={<AdminModules />} />
+                      <Route
+                        path="badges"
+                        element={
+                          <AdminModuleRoute moduleKey="gamification">
+                            <AdminBadges />
+                          </AdminModuleRoute>
+                        }
+                      />
                       <Route path="audits-config" element={<AdminAuditsConfig />} />
                       <Route path="secteurs" element={<AdminSecteursAdmin />} />
-                      <Route path="primes-users" element={<AdminUserPrimes />} />
                       <Route path="application" element={<Navigate to="/admin/modules" replace />} />
                       <Route path="roles" element={<AdminRoles />} />
                       <Route path="expression" element={<AdminExpression />} />
@@ -238,7 +254,6 @@ const App = () => {
                     <Route path="/historique" element={<Navigate to="/admin/historique" replace />} />
                     <Route path="/preferences" element={<PermissionRoute permission="nav.hub"><Preferences /></PermissionRoute>} />
                     <Route path="/hub" element={<PermissionRoute permission="nav.hub"><DashboardHub /></PermissionRoute>} />
-                    <Route path="/primes" element={<PermissionRoute permission="nav.hub"><Primes /></PermissionRoute>} />
                     <Route path="/qrcodes/new" element={<PermissionRoute permission="nav.hub"><QrCodeManager /></PermissionRoute>} />
                     <Route path="/qrcodes/shapes" element={<PermissionRoute permission="nav.hub"><QrCodeShapes /></PermissionRoute>} />
                     <Route path="/qrcodes/stats" element={<PermissionRoute permission="nav.hub"><QrCodeStats /></PermissionRoute>} />

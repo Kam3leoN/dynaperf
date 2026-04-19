@@ -12,8 +12,8 @@ import {
   faBell,
   faUsers,
   faGear,
-  faMoneyBill,
   faThumbtack,
+  faUserShield,
 } from "@fortawesome/free-solid-svg-icons";
 import { useAdmin } from "@/hooks/useAdmin";
 import { FiltersBar } from "./FiltersBar";
@@ -51,11 +51,36 @@ import { MembersDirectoryPanel } from "./MembersDirectoryPanel";
 import { AppNavRail } from "./AppNavRail";
 import { DesktopUserDock } from "./DesktopUserDock";
 import { MobilePrimaryNavSheet } from "./MobilePrimaryNavSheet";
-import { getActiveRailSection, getRailHeaderLabel, RAIL_SECTIONS_ALL } from "@/config/appNavigation";
+import {
+  ADMIN_RAIL_NAV_DESTINATION,
+  getActiveRailSection,
+  getRailHeaderLabel,
+  RAIL_SECTIONS_ALL,
+} from "@/config/appNavigation";
 import { DocsPrevNextNav } from "./DocsPrevNextNav";
 import { usePermissionGate } from "@/contexts/PermissionsContext";
 import { useOptionalMessagingSidebarHost } from "@/contexts/MessagingSidebarContext";
+import { useNavigationShell } from "@/contexts/NavigationShellContext";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { ChevronDown } from "lucide-react";
+import {
+  m3DockSplitChevronMd,
+  m3DockSplitGroup,
+  m3DockSplitSegmentFirst,
+  m3DockSplitSegmentFirstGrow,
+  m3DockSplitSegmentSecond,
+  m3DockSplitSegmentSecondGrow,
+} from "@/lib/m3DockSplitButton";
 import { cn } from "@/lib/utils";
+
+/** Ligne 1 du tooltip dock : « Prénom NOM » (dernier segment en majuscules si plusieurs mots). */
+function formatPrénomNom(displayName: string | null): string {
+  const n = (displayName ?? "Utilisateur").trim();
+  const parts = n.split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) return n;
+  const last = parts.pop()!;
+  return `${parts.join(" ")} ${last.toLocaleUpperCase("fr-FR")}`;
+}
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -90,6 +115,7 @@ export function AppLayout({
   const { row: presenceRow, setPresence } = useMyPresence(user?.id);
   const { labelForRow, defsByKey } = usePresenceStatusDefinitions();
   const [membersSheetOpen, setMembersSheetOpen] = useState(false);
+  const { railExpanded } = useNavigationShell();
 
   const railSection = getActiveRailSection(location.pathname, RAIL_SECTIONS_ALL);
   const railHeaderLabel = getRailHeaderLabel(location.pathname, RAIL_SECTIONS_ALL);
@@ -238,36 +264,15 @@ export function AppLayout({
     void setPresence(status, expiresAtForDuration(new Date(), key));
   };
 
-  const profileButton = (opts?: { compact?: boolean }) => (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className="flex items-center gap-2 rounded-full border border-transparent pl-0.5 pr-2 py-0 hover:bg-primary/[0.1] hover:border-border/60 transition-all shrink-0 max-w-[200px] md:max-w-[220px]"
-          title="Profil et statut"
-        >
-          <div className="relative h-10 w-10 shrink-0">
-            <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-border flex items-center justify-center bg-primary/[0.08]">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-              ) : (
-                <span className="text-xs font-semibold text-primary">{initials}</span>
-              )}
-            </div>
-            <PresenceAvatarBadge presence={presenceRow} />
-          </div>
-          {!opts?.compact && (
-            <div className="hidden sm:flex flex-col items-start min-w-0 text-left leading-tight pr-0.5">
-              <span className="text-sm font-semibold text-foreground truncate max-w-[140px]">
-                {displayName || "Utilisateur"}
-              </span>
-              <span className="text-[11px] text-muted-foreground truncate max-w-[140px]">
-                {labelForRow(presenceRow)}
-              </span>
-            </div>
-          )}
-        </button>
-      </DropdownMenuTrigger>
+  const profileButton = (opts?: { compact?: boolean; forDock?: boolean }) => {
+    const dockCompact = Boolean(opts?.forDock && opts?.compact);
+    const dockExpanded = Boolean(opts?.forDock && !opts?.compact);
+    const tooltipLine1 = formatPrénomNom(displayName);
+    const tooltipLine2 = labelForRow(presenceRow);
+
+    const canAccessAdministration = isAdmin && hasPermission("nav.admin");
+
+    const profileMenuContent = (
       <DropdownMenuContent align="end" className="w-56 rounded-2xl">
         <div className="px-3 py-2.5 border-b border-border">
           <p className="text-sm font-semibold text-foreground truncate">{displayName || "Utilisateur"}</p>
@@ -351,25 +356,169 @@ export function AppLayout({
           Mot de passe oublié
         </DropdownMenuItem>
         <DropdownMenuItem asChild>
-          <Link to="/primes" className="flex items-center gap-2.5 cursor-pointer">
-            <FontAwesomeIcon icon={faMoneyBill} className="h-4 w-4 text-muted-foreground" />
-            Mes primes
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
           <Link to="/preferences" className="flex items-center gap-2.5 cursor-pointer">
             <FontAwesomeIcon icon={faGear} className="h-4 w-4 text-muted-foreground" />
             Préférences
           </Link>
         </DropdownMenuItem>
+        {canAccessAdministration && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to={ADMIN_RAIL_NAV_DESTINATION} className="flex items-center gap-2.5 cursor-pointer">
+                <FontAwesomeIcon icon={faUserShield} className="h-4 w-4 text-muted-foreground" />
+                Administration
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => void signOut()} className="flex items-center gap-2.5 cursor-pointer text-destructive focus:text-destructive">
           <FontAwesomeIcon icon={faRightFromBracket} className="h-4 w-4" />
           Déconnexion
         </DropdownMenuItem>
       </DropdownMenuContent>
-    </DropdownMenu>
-  );
+    );
+
+    /** Barre du haut uniquement (le dock utilise le split dédié ci‑dessus). */
+    const triggerInner = (
+      <button
+        type="button"
+        className="flex shrink-0 max-w-[200px] items-center gap-2 rounded-full border border-transparent py-0 pl-0.5 pr-2 transition-all hover:border-border/60 hover:bg-primary/[0.1] md:max-w-[220px]"
+        title="Profil et statut"
+      >
+        <div className="relative h-10 w-10 shrink-0">
+          <div className="relative flex h-full w-full items-center justify-center overflow-hidden rounded-full border-2 border-border bg-primary/[0.08]">
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="" className="relative z-0 h-full w-full object-cover" />
+            ) : (
+              <span className="relative z-0 text-xs font-semibold text-primary">{initials}</span>
+            )}
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 z-[1] rounded-full shadow-[inset_0_1px_0_rgba(255,255,255,0.07),inset_0_3px_18px_rgba(0,0,0,0.28)]"
+            />
+          </div>
+          <PresenceAvatarBadge presence={presenceRow} />
+        </div>
+        <div className="hidden min-w-0 flex-col items-start text-left leading-tight pr-0.5 sm:flex">
+          <span className="w-full max-w-[140px] truncate font-semibold text-foreground text-sm md:max-w-[140px]">
+            {displayName || "Utilisateur"}
+          </span>
+          <span className="w-full max-w-[140px] truncate text-[11px] text-muted-foreground md:max-w-[140px]">
+            {labelForRow(presenceRow)}
+          </span>
+        </div>
+      </button>
+    );
+
+    if (opts?.forDock) {
+      return (
+        <div
+          className={cn(
+            "flex min-w-0 items-center gap-2",
+            dockCompact && "w-full",
+          )}
+        >
+          <div
+            className={cn(
+              dockCompact ? m3DockSplitGroup.compactRow : m3DockSplitGroup.expanded,
+              "shrink-0",
+            )}
+          >
+            <Tooltip delayDuration={400}>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className={cn(
+                    dockCompact ? m3DockSplitSegmentFirstGrow : m3DockSplitSegmentFirst,
+                    "relative p-0",
+                    dockExpanded && "overflow-hidden",
+                  )}
+                  aria-label="Profil"
+                >
+                  {dockCompact ? (
+                    <div className="relative h-full w-full min-h-0 min-w-0 shrink-0">
+                      <div
+                        className={cn(
+                          "relative flex h-full w-full items-center justify-center overflow-hidden bg-primary/[0.08] border-0",
+                          "rounded-tl-[18px] rounded-bl-[18px] rounded-tr-[4px] rounded-br-[4px]",
+                        )}
+                      >
+                        {avatarUrl ? (
+                          <img src={avatarUrl} alt="" className="relative z-0 h-full w-full object-cover" />
+                        ) : (
+                          <span className="relative z-0 text-sm font-semibold text-primary">{initials}</span>
+                        )}
+                        <div
+                          aria-hidden
+                          className={cn(
+                            "pointer-events-none absolute inset-0 z-[1]",
+                            "rounded-tl-[18px] rounded-bl-[18px] rounded-tr-[4px] rounded-br-[4px]",
+                            "shadow-[inset_0_1px_0_rgba(255,255,255,0.07),inset_0_3px_18px_rgba(0,0,0,0.28)]",
+                          )}
+                        />
+                      </div>
+                      <PresenceAvatarBadge
+                        presence={presenceRow}
+                        className="bottom-auto left-auto right-[-3px] top-[-3px] translate-none"
+                      />
+                    </div>
+                  ) : (
+                    <>
+                      {avatarUrl ? (
+                        <img
+                          src={avatarUrl}
+                          alt=""
+                          className="absolute inset-0 z-0 size-full object-cover"
+                        />
+                      ) : (
+                        <span className="absolute inset-0 z-0 flex items-center justify-center bg-primary/[0.08] text-xs font-semibold text-primary">
+                          {initials}
+                        </span>
+                      )}
+                      <div
+                        aria-hidden
+                        className={cn(
+                          "pointer-events-none absolute inset-0 z-[1]",
+                          "rounded-tl-[18px] rounded-bl-[18px] rounded-tr-[4px] rounded-br-[4px]",
+                          "shadow-[inset_0_1px_0_rgba(255,255,255,0.07),inset_0_3px_18px_rgba(0,0,0,0.28)]",
+                        )}
+                      />
+                      <PresenceAvatarBadge presence={presenceRow} />
+                    </>
+                  )}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="top" sideOffset={8} className="max-w-[min(18rem,calc(100vw-2rem))]">
+                <p className="font-semibold leading-tight text-white">{tooltipLine1}</p>
+                <p className="mt-0.5 text-xs font-normal leading-snug text-white/75">{tooltipLine2}</p>
+              </TooltipContent>
+            </Tooltip>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className={dockCompact ? m3DockSplitSegmentSecondGrow : m3DockSplitSegmentSecond}
+                  aria-label="Menu du compte"
+                >
+                  <ChevronDown className={m3DockSplitChevronMd} />
+                </button>
+              </DropdownMenuTrigger>
+              {profileMenuContent}
+            </DropdownMenu>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>{triggerInner}</DropdownMenuTrigger>
+        {profileMenuContent}
+      </DropdownMenu>
+    );
+  };
 
   return (
     <div className="flex h-dvh min-h-0 flex-col bg-background">
@@ -494,6 +643,7 @@ export function AppLayout({
         <AppNavRail isAdmin={isAdmin} hasPermission={hasPermission} isModuleEnabled={isModuleEnabled} />
         <div className="flex flex-1 flex-col min-w-0 min-h-0">
           <main
+            id="layout-main-scroll"
             className={cn(
               "mx-auto w-full max-w-[1440px] flex-1 min-h-0 space-y-5 py-5 pb-28 pl-[max(1rem,env(safe-area-inset-left,0px))] pr-[max(1rem,env(safe-area-inset-right,0px))] overflow-y-auto shell:max-w-none shell:space-y-6 shell:px-6 shell:py-6 shell:pb-6",
               mainClassName,
@@ -540,7 +690,7 @@ export function AppLayout({
         </SheetContent>
       </Sheet>
 
-      <DesktopUserDock profileSlot={profileButton()} />
+      <DesktopUserDock profileSlot={profileButton({ compact: !railExpanded, forDock: true })} />
 
     </div>
   );

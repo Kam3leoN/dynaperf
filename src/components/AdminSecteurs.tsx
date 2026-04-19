@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { FranceSectorsMap } from "@/components/admin/FranceSectorsMap";
+import { ActionIconButton } from "@/components/ActionIconButton";
 
 interface Secteur {
   id: string;
@@ -272,9 +273,9 @@ export default function AdminSecteurs() {
                     {editId === s.id ? (
                       <div className="flex items-center gap-2 flex-1">
                         <Input value={editNom} onChange={e => setEditNom(e.target.value)} className="h-8 text-sm flex-1" />
-                        <Button size="sm" variant="ghost" onClick={() => handleUpdate(s.id)}>
+                        <ActionIconButton label="Enregistrer le nom du secteur" variant="primary" onClick={() => handleUpdate(s.id)}>
                           <FontAwesomeIcon icon={faFloppyDisk} className="h-3.5 w-3.5" />
-                        </Button>
+                        </ActionIconButton>
                       </div>
                     ) : (
                       <>
@@ -289,12 +290,19 @@ export default function AdminSecteurs() {
                           />
                         </div>
                         <div className="flex gap-1">
-                          <button onClick={() => { setEditId(s.id); setEditNom(s.nom); }} className="p-1.5 rounded-sm hover:bg-secondary">
-                            <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
-                          </button>
-                          <button onClick={() => handleDelete(s.id, s.nom)} className="p-1.5 rounded-sm hover:bg-primary/10">
-                            <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
-                          </button>
+                          <ActionIconButton
+                            label="Renommer le secteur"
+                            variant="edit"
+                            onClick={() => {
+                              setEditId(s.id);
+                              setEditNom(s.nom);
+                            }}
+                          >
+                            <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" />
+                          </ActionIconButton>
+                          <ActionIconButton label="Supprimer le secteur" variant="destructive" onClick={() => handleDelete(s.id, s.nom)}>
+                            <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" />
+                          </ActionIconButton>
                         </div>
                       </>
                     )}
@@ -329,9 +337,9 @@ export default function AdminSecteurs() {
                       {editId === s.id ? (
                         <div className="flex items-center gap-2">
                           <Input value={editNom} onChange={e => setEditNom(e.target.value)} className="h-8 text-sm max-w-xs" />
-                          <Button size="sm" variant="ghost" onClick={() => handleUpdate(s.id)}>
+                          <ActionIconButton label="Enregistrer le nom du secteur" variant="primary" onClick={() => handleUpdate(s.id)}>
                             <FontAwesomeIcon icon={faFloppyDisk} className="h-3.5 w-3.5" />
-                          </Button>
+                          </ActionIconButton>
                         </div>
                       ) : (
                         <span className="text-sm font-medium">{s.nom}</span>
@@ -357,12 +365,19 @@ export default function AdminSecteurs() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex gap-1 justify-end">
-                        <button onClick={() => { setEditId(s.id); setEditNom(s.nom); }} className="p-1.5 rounded-sm hover:bg-secondary">
-                          <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
-                        </button>
-                        <button onClick={() => handleDelete(s.id, s.nom)} className="p-1.5 rounded-sm hover:bg-primary/10">
-                          <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
-                        </button>
+                        <ActionIconButton
+                          label="Renommer le secteur"
+                          variant="edit"
+                          onClick={() => {
+                            setEditId(s.id);
+                            setEditNom(s.nom);
+                          }}
+                        >
+                          <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" />
+                        </ActionIconButton>
+                        <ActionIconButton label="Supprimer le secteur" variant="destructive" onClick={() => handleDelete(s.id, s.nom)}>
+                          <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" />
+                        </ActionIconButton>
                       </div>
                     </TableCell>
                   </TableRow>

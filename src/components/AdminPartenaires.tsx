@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import GenreManager from "@/components/GenreManager";
+import { ActionIconButton } from "@/components/ActionIconButton";
 
 interface Partenaire {
   id: string;
@@ -560,17 +561,17 @@ export default function AdminPartenaires() {
                       <TableCell className="text-sm tabular-nums text-muted-foreground">{(p.secteurs || []).join(" / ") || "—"}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <button onClick={() => setViewP(p)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Voir">
-                            <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
-                          </button>
+                          <ActionIconButton label="Voir la fiche partenaire" variant="view" onClick={() => setViewP(p)}>
+                            <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5" />
+                          </ActionIconButton>
                           {isAdmin && (
                             <>
-                              <button onClick={() => openEditDialog(p)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
-                                <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
-                              </button>
-                              <button onClick={() => handleDelete(p)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors" title="Supprimer">
-                                <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
-                              </button>
+                              <ActionIconButton label="Modifier le partenaire" variant="edit" onClick={() => openEditDialog(p)}>
+                                <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" />
+                              </ActionIconButton>
+                              <ActionIconButton label="Supprimer le partenaire" variant="destructive" onClick={() => handleDelete(p)}>
+                                <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" />
+                              </ActionIconButton>
                             </>
                           )}
                         </div>
@@ -599,11 +600,17 @@ export default function AdminPartenaires() {
                       </div>
                     </div>
                     <div className="flex gap-1 shrink-0">
-                      <button onClick={() => setViewP(p)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors"><FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" /></button>
+                      <ActionIconButton label="Voir la fiche partenaire" variant="view" onClick={() => setViewP(p)}>
+                        <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5" />
+                      </ActionIconButton>
                       {isAdmin && (
                         <>
-                          <button onClick={() => openEditDialog(p)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors"><FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" /></button>
-                          <button onClick={() => handleDelete(p)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors"><FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" /></button>
+                          <ActionIconButton label="Modifier le partenaire" variant="edit" onClick={() => openEditDialog(p)}>
+                            <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" />
+                          </ActionIconButton>
+                          <ActionIconButton label="Supprimer le partenaire" variant="destructive" onClick={() => handleDelete(p)}>
+                            <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" />
+                          </ActionIconButton>
                         </>
                       )}
                     </div>

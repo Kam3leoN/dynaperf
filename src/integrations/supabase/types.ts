@@ -1379,6 +1379,7 @@ export type Database = {
           longest_streak: number
           total_audits: number
           total_suivis: number
+          total_messages_sent: number
           updated_at: string
           user_id: string
           xp: number
@@ -1391,6 +1392,7 @@ export type Database = {
           longest_streak?: number
           total_audits?: number
           total_suivis?: number
+          total_messages_sent?: number
           updated_at?: string
           user_id: string
           xp?: number
@@ -1403,6 +1405,7 @@ export type Database = {
           longest_streak?: number
           total_audits?: number
           total_suivis?: number
+          total_messages_sent?: number
           updated_at?: string
           user_id?: string
           xp?: number

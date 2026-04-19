@@ -2,10 +2,7 @@ import { motion } from "framer-motion";
 
 interface CollaborateurStat {
   nom: string;
-  objectif: number;
-  palier1: number;
   realise: number;
-  progression: number;
 }
 
 interface CollaborateurTrackerProps {
@@ -13,13 +10,15 @@ interface CollaborateurTrackerProps {
 }
 
 export function CollaborateurTracker({ data }: CollaborateurTrackerProps) {
+  const maxRealise = Math.max(1, ...data.map((c) => c.realise));
+
   return (
     <div className="bg-card rounded-2xl shadow-soft border border-border/60 p-4 sm:p-5">
-      <h3 className="text-sm font-semibold text-foreground mb-3 sm:mb-4">Progression collaborateurs</h3>
+      <h3 className="text-sm font-semibold text-foreground mb-3 sm:mb-4">Volume par collaborateur</h3>
       <div className="space-y-3 sm:space-y-4">
         {data.map((c, i) => {
-          const pct = Math.min(c.progression, 100);
-          const behind = c.progression < 80;
+          const pct = Math.min(100, (c.realise / maxRealise) * 100);
+          const behind = pct < 80;
           return (
             <motion.div
               key={c.nom}
@@ -45,11 +44,7 @@ export function CollaborateurTracker({ data }: CollaborateurTrackerProps) {
                   <span className={`text-xs sm:text-sm font-bold tabular-nums ${behind ? "text-primary" : "text-foreground"}`}>
                     {c.realise}
                   </span>
-                  <span className="text-[10px] sm:text-xs text-muted-foreground">/{c.objectif}</span>
                 </div>
-                <span className={`text-[10px] sm:text-xs font-medium tabular-nums w-10 sm:w-14 text-right shrink-0 ${behind ? "text-primary" : "text-muted-foreground"}`}>
-                  {c.progression.toFixed(0)}%
-                </span>
               </div>
             </motion.div>
           );

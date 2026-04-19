@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ActionIconButton } from "@/components/ActionIconButton";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faMars, faVenus, faPlus, faTrashCan } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
@@ -147,13 +148,14 @@ export default function GenreManager({ open, onOpenChange, onUpdate }: GenreMana
                     </TableCell>
                     <TableCell className="text-sm py-1">{item.prenom}</TableCell>
                     <TableCell className="py-1">
-                      <button
+                      <ActionIconButton
+                        label="Supprimer ce genre"
+                        variant="destructive"
+                        className="h-7 w-7"
                         onClick={() => handleDelete(item)}
-                        className="p-1 rounded hover:bg-destructive/10 transition-colors"
-                        title="Supprimer"
                       >
-                        <FontAwesomeIcon icon={faTrashCan} className="h-3 w-3 text-destructive" />
-                      </button>
+                        <FontAwesomeIcon icon={faTrashCan} className="h-3 w-3" />
+                      </ActionIconButton>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -81,7 +81,7 @@ export default function BusinessPlan({ embedded }: { embedded?: boolean }) {
 
   // Referrals / Filleuls
   const [tauxParrainage, setTauxParrainage] = useState(10); // % of clients who refer someone
-  const [primeParrainage, setPrimeParrainage] = useState(100); // € per successful referral
+  const [commissionFilleulEuros, setCommissionFilleulEuros] = useState(100); // € par filleul converti
   const [tauxConversionFilleul, setTauxConversionFilleul] = useState(30); // % conversion rate
 
   // Derived
@@ -134,7 +134,7 @@ export default function BusinessPlan({ embedded }: { embedded?: boolean }) {
       const totalClients = totalAvantages + totalClubMembers;
       const nbReferrals = Math.round(totalClients * tauxParrainage / 100);
       const filleulsConverted = Math.round(nbReferrals * tauxConversionFilleul / 100);
-      const commFilleuls = filleulsConverted * primeParrainage;
+      const commFilleuls = filleulsConverted * commissionFilleulEuros;
 
       const totalCA = caAvantages + caClubs + caOSRD + caOSAv;
       const totalCommissions = commAvantagesVal + commClubs + commOSRD + commOSAv + commFilleuls;
@@ -178,7 +178,7 @@ export default function BusinessPlan({ embedded }: { embedded?: boolean }) {
       });
     }
     return data;
-  }, [nbAvantagesAnN, nbClubs, membresParClub, croissanceAnnuelle, tauxResiliation, nbAnnees, prixAvantages, prixClub, commAvantagesEffective, commClubPct, redevanceMensuelle, droitsEntree, oneShotRDParAn, prixOneShotRD, commOneShotRDPct, oneShotAvantagesParAn, prixOneShotAvantages, commOneShotAvantagesPct, tauxParrainage, primeParrainage, tauxConversionFilleul]);
+  }, [nbAvantagesAnN, nbClubs, membresParClub, croissanceAnnuelle, tauxResiliation, nbAnnees, prixAvantages, prixClub, commAvantagesEffective, commClubPct, redevanceMensuelle, droitsEntree, oneShotRDParAn, prixOneShotRD, commOneShotRDPct, oneShotAvantagesParAn, prixOneShotAvantages, commOneShotAvantagesPct, tauxParrainage, commissionFilleulEuros, tauxConversionFilleul]);
 
   const fmt = (n: number) => {
     const raw = new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(n);
@@ -212,7 +212,7 @@ export default function BusinessPlan({ embedded }: { embedded?: boolean }) {
         prixOneShotAvantages,
         commOneShotAvantagesPct,
         tauxParrainage,
-        primeParrainage,
+        commissionFilleulEuros,
         tauxConversionFilleul,
         packPerformance,
         vehiculeFloque,
@@ -222,7 +222,7 @@ export default function BusinessPlan({ embedded }: { embedded?: boolean }) {
       console.error("PDF export error:", err);
       toast.error("Erreur lors de l'export PDF");
     }
-  }, [projections, nbAnnees, nbAvantagesAnN, nbClubs, membresParClub, croissanceAnnuelle, tauxResiliation, prixAvantages, prixClub, commAvantagesEffective, commClubPct, redevanceMensuelle, droitsEntree, oneShotRDParAn, prixOneShotRD, commOneShotRDPct, oneShotAvantagesParAn, prixOneShotAvantages, commOneShotAvantagesPct, tauxParrainage, primeParrainage, tauxConversionFilleul, packPerformance, vehiculeFloque]);
+  }, [projections, nbAnnees, nbAvantagesAnN, nbClubs, membresParClub, croissanceAnnuelle, tauxResiliation, prixAvantages, prixClub, commAvantagesEffective, commClubPct, redevanceMensuelle, droitsEntree, oneShotRDParAn, prixOneShotRD, commOneShotRDPct, oneShotAvantagesParAn, prixOneShotAvantages, commOneShotAvantagesPct, tauxParrainage, commissionFilleulEuros, tauxConversionFilleul, packPerformance, vehiculeFloque]);
 
   const content = (
     <div className="space-y-6">
@@ -408,14 +408,14 @@ export default function BusinessPlan({ embedded }: { embedded?: boolean }) {
                       <Input type="number" value={tauxConversionFilleul} onChange={e => setTauxConversionFilleul(+e.target.value)} min={0} max={100} />
                     </div>
                     <div className="col-span-2">
-                      <Label className="text-xs">Prime / filleul converti (€)</Label>
-                      <Input type="number" value={primeParrainage} onChange={e => setPrimeParrainage(+e.target.value)} min={0} />
+                      <Label className="text-xs">Commission / filleul converti (€)</Label>
+                      <Input type="number" value={commissionFilleulEuros} onChange={e => setCommissionFilleulEuros(+e.target.value)} min={0} />
                     </div>
                   </div>
                   {firstYear && (
                     <div className="bg-purple-500/5 border border-purple-500/20 rounded-lg p-2.5">
                       <p className="text-[11px] text-muted-foreground">
-                        Estimation An 1 : <strong>{firstYear.filleuls}</strong> filleuls convertis → <strong>{fmt(firstYear.commFilleuls)}</strong> de primes
+                        Estimation An 1 : <strong>{firstYear.filleuls}</strong> filleuls convertis → <strong>{fmt(firstYear.commFilleuls)}</strong> de commissions
                       </p>
                     </div>
                   )}
@@ -468,7 +468,7 @@ export default function BusinessPlan({ embedded }: { embedded?: boolean }) {
                 </CardTitle>
               </CardHeader>
               <CardContent className="text-xs space-y-2 text-muted-foreground">
-                <p>💡 <strong>Parrainage :</strong> Prime de parrainage pour chaque nouveau partenaire recruté</p>
+                <p>💡 <strong>Parrainage :</strong> commission pour chaque nouveau partenaire recruté via filleul</p>
                 <p>💡 <strong>Formations payantes :</strong> Revenus additionnels via la vente de formations certifiantes</p>
                 <p>💡 <strong>Événementiel premium :</strong> Organisation de soirées networking avec billets payants</p>
                 <p>💡 <strong>Mandats de vente :</strong> Commissions sur mise en relation d'affaires entre membres</p>
@@ -503,7 +503,7 @@ export default function BusinessPlan({ embedded }: { embedded?: boolean }) {
                           <Area type="monotone" dataKey="commClubs" stackId="1" name="Comm. Clubs" fill="hsl(var(--chart-2))" fillOpacity={0.6} stroke="hsl(var(--chart-2))" />
                           <Area type="monotone" dataKey="commOneShotRD" stackId="1" name="One-shot RD" fill="hsl(var(--chart-4))" fillOpacity={0.5} stroke="hsl(var(--chart-4))" />
                           <Area type="monotone" dataKey="commOneShotAvantages" stackId="1" name="One-shot Avantages" fill="hsl(var(--chart-5))" fillOpacity={0.5} stroke="hsl(var(--chart-5))" />
-                          <Area type="monotone" dataKey="commFilleuls" stackId="1" name="Primes filleuls" fill="#a855f7" fillOpacity={0.5} stroke="#a855f7" />
+                          <Area type="monotone" dataKey="commFilleuls" stackId="1" name="Comm. filleuls" fill="#a855f7" fillOpacity={0.5} stroke="#a855f7" />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>
@@ -608,7 +608,7 @@ export default function BusinessPlan({ embedded }: { embedded?: boolean }) {
                             </td>
                           </tr>
                           <TableRow label="Filleuls convertis" data={projections.map(p => p.filleuls)} />
-                          <TableRow label="Primes parrainage" data={projections.map(p => p.commFilleuls)} money bold />
+                          <TableRow label="Commissions parrainage" data={projections.map(p => p.commFilleuls)} money bold />
 
                           <tr className="bg-muted/30">
                             <td className="p-3 font-semibold sticky left-0 bg-muted/30" colSpan={nbAnnees + 1}>

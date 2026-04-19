@@ -35,7 +35,7 @@ export function GamificationWidget({ streaks, earnedBadges, allBadges }: Props) 
       </div>
 
       {/* Streak & stats */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-2 gap-2">
         <div className="text-center p-2 rounded-xl bg-muted/50">
           <p className="text-lg font-bold text-foreground">{streaks.current_streak}</p>
           <p className="text-[10px] text-muted-foreground">🔥 Streak</p>
@@ -47,6 +47,10 @@ export function GamificationWidget({ streaks, earnedBadges, allBadges }: Props) 
         <div className="text-center p-2 rounded-xl bg-muted/50">
           <p className="text-lg font-bold text-foreground">{streaks.total_suivis}</p>
           <p className="text-[10px] text-muted-foreground">📊 Suivis</p>
+        </div>
+        <div className="text-center p-2 rounded-xl bg-muted/50">
+          <p className="text-lg font-bold text-foreground">{streaks.total_messages_sent ?? 0}</p>
+          <p className="text-[10px] text-muted-foreground">💬 Messages</p>
         </div>
       </div>
 

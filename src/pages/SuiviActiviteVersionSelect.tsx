@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
+import { Chip } from "@/components/ui/chip";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faLayerGroup } from "@fortawesome/free-solid-svg-icons";
 
@@ -82,9 +83,9 @@ export default function SuiviActiviteVersionSelect() {
                   {v.config_version_label || `V${v.config_version}`}
                 </span>
                 {v.is_active && (
-                  <Badge className="ml-auto text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-0">
+                  <Chip variant="success" className="ml-auto text-[10px]">
                     Active
-                  </Badge>
+                  </Chip>
                 )}
                 {!v.is_active && (
                   <Badge variant="secondary" className="ml-auto text-[10px]">

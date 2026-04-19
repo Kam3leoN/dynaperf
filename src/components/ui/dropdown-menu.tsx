@@ -1,6 +1,6 @@
 import * as React from "react";
 import * as DropdownMenuPrimitive from "@radix-ui/react-dropdown-menu";
-import { Check, ChevronRight, Circle } from "lucide-react";
+import { Check, ChevronRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
@@ -111,6 +111,11 @@ const DropdownMenuCheckboxItem = React.forwardRef<
 ));
 DropdownMenuCheckboxItem.displayName = DropdownMenuPrimitive.CheckboxItem.displayName;
 
+/**
+ * Radio Material Design 3 (expressive) : ligne `rounded-sm` alignée sur les sous-menus (`bg-accent`),
+ * icône 20dp, anneau visible ; point central à la sélection.
+ * @see https://m3.material.io/components/radio-button/overview
+ */
 const DropdownMenuRadioItem = React.forwardRef<
   React.ElementRef<typeof DropdownMenuPrimitive.RadioItem>,
   React.ComponentPropsWithoutRef<typeof DropdownMenuPrimitive.RadioItem>
@@ -118,17 +123,29 @@ const DropdownMenuRadioItem = React.forwardRef<
   <DropdownMenuPrimitive.RadioItem
     ref={ref}
     className={cn(
-      "relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none transition-colors data-[disabled]:pointer-events-none data-[disabled]:opacity-50 focus:bg-accent focus:text-accent-foreground",
+      "relative flex min-h-[48px] cursor-default select-none items-center gap-3 rounded-sm py-1.5 pl-2 pr-3 text-sm outline-none transition-[background-color,box-shadow,color] duration-200",
+      "text-foreground",
+      "hover:bg-accent data-[highlighted]:bg-accent",
+      "focus-visible:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+      "data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground",
+      "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
+      "[&_.m3-radio-ring]:flex [&_.m3-radio-ring]:size-5 [&_.m3-radio-ring]:shrink-0 [&_.m3-radio-ring]:items-center [&_.m3-radio-ring]:justify-center [&_.m3-radio-ring]:rounded-full [&_.m3-radio-ring]:border-2 [&_.m3-radio-ring]:border-solid [&_.m3-radio-ring]:border-muted-foreground/70 [&_.m3-radio-ring]:bg-transparent [&_.m3-radio-ring]:transition-[border-color,background-color] [&_.m3-radio-ring]:duration-200",
+      "data-[state=checked]:[&_.m3-radio-ring]:border-primary data-[state=checked]:[&_.m3-radio-ring]:bg-primary/[0.08]",
       className,
     )}
     {...props}
   >
-    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
-      <DropdownMenuPrimitive.ItemIndicator>
-        <Circle className="h-2 w-2 fill-current" />
-      </DropdownMenuPrimitive.ItemIndicator>
+    <span
+      className="pointer-events-none flex size-10 shrink-0 items-center justify-center rounded-sm"
+      aria-hidden
+    >
+      <span className="m3-radio-ring relative">
+        <DropdownMenuPrimitive.ItemIndicator className="flex size-full items-center justify-center">
+          <span className="size-2.5 rounded-full bg-primary shadow-sm" />
+        </DropdownMenuPrimitive.ItemIndicator>
+      </span>
     </span>
-    {children}
+    <div className="min-w-0 flex-1">{children}</div>
   </DropdownMenuPrimitive.RadioItem>
 ));
 DropdownMenuRadioItem.displayName = DropdownMenuPrimitive.RadioItem.displayName;

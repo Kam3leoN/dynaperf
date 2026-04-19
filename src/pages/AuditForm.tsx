@@ -17,6 +17,7 @@ import { MOIS_ORDRE } from "@/data/audits";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import { SaveStatusIndicator } from "@/components/SaveStatusIndicator";
+import { AuditCreationFabMenu } from "@/components/audit-stepper/AuditCreationFabMenu";
 import {
   buildAuditDraftStorageKey,
   buildPersistableDraftJson,
@@ -27,8 +28,7 @@ import {
 import { BadgeReward } from "@/components/BadgeReward";
 import type { Badge } from "@/hooks/useGamification";
 import { fireAuditCompletionConfetti } from "@/lib/confettiAuditComplete";
-
-const AUDIT_DRAFT_DEBOUNCE_MS = 1600;
+import { scrollEntireLayoutToTopAsync, scrollLayoutMainToTop } from "@/lib/scrollLayout";
 
 /** JSON PostgreSQL : pas de NaN/Infinity, pas de clés undefined (via stringify). */
 function sanitizeItemsJson(items: Record<string, unknown>): Json {
@@ -82,8 +82,9 @@ export default function AuditForm() {
   const [editLoaded, setEditLoaded] = useState(false);
   const [requiredFieldIds, setRequiredFieldIds] = useState<string[]>([]);
   const itemsSectionRef = useRef<HTMLDivElement>(null);
+  /** Ancre en tête du formulaire : `scrollIntoView` cible le bon conteneur (souvent plus fiable que `scrollTo` sur `<main>` seul). */
+  const auditFormTopAnchorRef = useRef<HTMLDivElement>(null);
   const prevDraftKeyRef = useRef<string | null>(null);
-  const draftPersistTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const draftWelcomeToastKeyRef = useRef<string | null>(null);
   /** Statut avant finalisation : pour ne compter la gamification qu’au passage en « OK ». */
   const priorAuditStatutRef = useRef<string | null>(null);
@@ -130,46 +131,7 @@ export default function AuditForm() {
     }
   }, [draftStorageKey, isEditMode]);
 
-  /** Sauvegarde automatique (localStorage) après saisie — debounce. */
-  useEffect(() => {
-    if (isEditMode || phase === "saving") return;
-
-    if (draftPersistTimerRef.current) {
-      clearTimeout(draftPersistTimerRef.current);
-      draftPersistTimerRef.current = null;
-    }
-
-    draftPersistTimerRef.current = window.setTimeout(() => {
-      draftPersistTimerRef.current = null;
-      const json = buildPersistableDraftJson(stepZeroData, answers, signatureAuditeur, signatureAudite);
-      try {
-        if (json) {
-          localStorage.setItem(draftStorageKey, json);
-        } else {
-          clearAuditDraft(draftStorageKey);
-        }
-      } catch {
-        /* quota ou navigation privée */
-      }
-    }, AUDIT_DRAFT_DEBOUNCE_MS);
-
-    return () => {
-      if (draftPersistTimerRef.current) {
-        clearTimeout(draftPersistTimerRef.current);
-        draftPersistTimerRef.current = null;
-      }
-    };
-  }, [
-    answers,
-    draftStorageKey,
-    isEditMode,
-    phase,
-    signatureAudite,
-    signatureAuditeur,
-    stepZeroData,
-  ]);
-
-  // Auto-save
+  // Auto-save (serveur uniquement en mode édition — pas de sauvegarde progressive en création)
   const draftIdRef = useRef<string | null>(auditId ?? null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>(isEditMode ? 'saved' : 'idle');
@@ -203,7 +165,8 @@ export default function AuditForm() {
     const loadExistingAudit = async () => {
       const [{ data: audit }, { data: detail }] = await Promise.all([
         supabase.from("audits").select("*").eq("id", auditId).single(),
-        supabase.from("audit_details").select("*").eq("audit_id", auditId).single(),
+        /** Planifié seul : pas encore de ligne `audit_details` — `.single()` échouerait. */
+        supabase.from("audit_details").select("*").eq("audit_id", auditId).maybeSingle(),
       ]);
 
       if (audit) {
@@ -381,10 +344,10 @@ export default function AuditForm() {
     return { auditPayload, detailPayload, noteSur10 };
   }, [allItems, typeEvenement]);
 
-  const saveDraft = useCallback(async () => {
-    if (isSavingRef.current || !config) return;
+  const saveDraft = useCallback(async (): Promise<boolean> => {
+    if (isSavingRef.current || !config) return false;
     const { stepZeroData: szd, answers: ans, signatureAuditeur: sa, signatureAudite: sp, existingPhotos: ep } = latestRef.current;
-    if (!szd) return;
+    if (!szd) return false;
 
     isSavingRef.current = true;
     setSaveStatus('saving');
@@ -394,7 +357,7 @@ export default function AuditForm() {
       if (authErr || !authData.user) {
         toast.error("Session expirée — reconnectez-vous pour enregistrer l’audit sur le serveur.");
         setSaveStatus("error");
-        return;
+        return false;
       }
       const uid = authData.user.id;
 
@@ -427,30 +390,64 @@ export default function AuditForm() {
         if (detErr) throw detErr;
       }
       setSaveStatus("saved");
+      return true;
     } catch (e) {
-      console.error("Auto-save error", e);
-      toast.error(`Auto-sauvegarde : ${formatSupabaseError(e)}`);
+      console.error("saveDraft", e);
+      toast.error(`Enregistrement : ${formatSupabaseError(e)}`);
       setSaveStatus("error");
+      return false;
     } finally {
       isSavingRef.current = false;
     }
   }, [config, buildAuditPayloads]);
 
-  // Debounced auto-save trigger
-  useEffect(() => {
-    if (!stepZeroData && Object.keys(answers).length === 0) return;
-    if (phase !== 'main') return;
+  /** Brouillon local — uniquement sur action explicite (FAB) ou parcours existant ; plus de persistance debouncée. */
+  const writeLocalAuditDraft = useCallback(() => {
+    const { stepZeroData: szd, answers: ans, signatureAuditeur: sa, signatureAudite: sp } = latestRef.current;
+    const json = buildPersistableDraftJson(szd, ans, sa, sp);
+    try {
+      if (json) {
+        localStorage.setItem(draftStorageKey, json);
+      } else {
+        clearAuditDraft(draftStorageKey);
+      }
+    } catch {
+      /* quota ou navigation privée */
+    }
+  }, [draftStorageKey]);
+
+  const handleFabSaveProgress = useCallback(async () => {
     clearTimeout(saveTimerRef.current);
-    saveTimerRef.current = setTimeout(saveDraft, 3000);
+    if (!latestRef.current.stepZeroData) {
+      toast.info("Renseignez d’abord les informations générales pour enregistrer sur le serveur.");
+      return;
+    }
+    const ok = await saveDraft();
+    writeLocalAuditDraft();
+    if (ok) {
+      toast.success("Progression enregistrée — vous pouvez poursuivre l’audit.");
+    }
+  }, [saveDraft, writeLocalAuditDraft]);
+
+  // Sauvegarde serveur automatique (debounce) — uniquement en modification d’audit existant
+  useEffect(() => {
+    if (!isEditMode) return;
+    if (!stepZeroData && Object.keys(answers).length === 0) return;
+    if (phase !== "main") return;
+    clearTimeout(saveTimerRef.current);
+    saveTimerRef.current = setTimeout(() => void saveDraft(), 3000);
     return () => clearTimeout(saveTimerRef.current);
-  }, [stepZeroData, answers, signatureAuditeur, signatureAudite, existingPhotos, saveDraft, phase]);
+  }, [isEditMode, stepZeroData, answers, signatureAuditeur, signatureAudite, existingPhotos, saveDraft, phase]);
 
   const handleGoToPhotos = useCallback(async () => {
     clearTimeout(saveTimerRef.current);
     await saveDraft();
     setPhase("photos");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    scrollLayoutMainToTop("smooth");
   }, [saveDraft]);
+
+  /** Un clic : tout remonter avec défilement fluide ; la fermeture du menu attend la fin du scroll. */
+  const scrollAuditFormToTop = useCallback(() => scrollEntireLayoutToTopAsync(), []);
 
   const handlePhotosBack = useCallback(() => {
     setPhase("main");
@@ -629,6 +626,7 @@ export default function AuditForm() {
 
   return (
     <AppLayout mainClassName="!pt-0 shell:!pt-0">
+      <>
       <div className="min-w-0">
         <div className="px-0 pt-0">
         {phase === "main" && (
@@ -647,14 +645,16 @@ export default function AuditForm() {
                   aria-label={`Progression de l'audit : ${Math.round(progress)} pour cent`}
                 />
               </div>
-              <StepZeroForm
-                key={draftStorageKey}
-                typeEvenement={typeEvenement}
-                initialData={stepZeroData}
-                onSubmit={handleStepZeroChange}
-                onChange={handleStepZeroChange}
-                hideSubmitButton
-              />
+              <div className="mt-5 sm:mt-6">
+                <StepZeroForm
+                  key={draftStorageKey}
+                  typeEvenement={typeEvenement}
+                  initialData={stepZeroData}
+                  onSubmit={handleStepZeroChange}
+                  onChange={handleStepZeroChange}
+                  hideSubmitButton
+                />
+              </div>
             </div>
 
             <div ref={itemsSectionRef} className="space-y-6">
@@ -785,6 +785,16 @@ export default function AuditForm() {
         )}
       </div>
       </div>
+
+      {!isEditMode && phase === "main" && (
+        <AuditCreationFabMenu
+          saveDisabled={!stepZeroData}
+          onSaveProgress={handleFabSaveProgress}
+          onScrollTop={scrollAuditFormToTop}
+          saving={saveStatus === "saving"}
+        />
+      )}
+      </>
     </AppLayout>
   );
 }

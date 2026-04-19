@@ -1,7 +1,7 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faHouse, faCommentDots, faEnvelope } from "@fortawesome/free-solid-svg-icons";
-import { getRailScrollSections } from "@/config/appNavigation";
+import { getRailScrollSections, ADMIN_RAIL_NAV_DESTINATION } from "@/config/appNavigation";
 import { cn } from "@/lib/utils";
 
 interface MobilePrimaryNavSheetProps {
@@ -23,7 +23,30 @@ export function MobilePrimaryNavSheet({
   hasPermission,
   isModuleEnabled,
 }: MobilePrimaryNavSheetProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
   const sections = getRailScrollSections(isAdmin, hasPermission, isModuleEnabled);
+
+  const handleSectionClick = (e: React.MouseEvent<HTMLAnchorElement>, section: (typeof sections)[number]) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    if (section.id === "admin") {
+      e.preventDefault();
+      navigate(ADMIN_RAIL_NAV_DESTINATION);
+      onNavigate();
+      return;
+    }
+    const hubPathname = section.to.split("?")[0] ?? section.to;
+    const pathOnly = location.pathname;
+    const inSection = section.pathPrefixes.some((p) => {
+      if (p === "/") return false;
+      return pathOnly === p || pathOnly.startsWith(`${p}/`);
+    });
+    if (inSection && pathOnly !== hubPathname) {
+      e.preventDefault();
+      navigate(section.to);
+    }
+    onNavigate();
+  };
 
   return (
     <nav className="flex flex-col gap-1 p-3 pb-8" aria-label="Navigation principale">
@@ -52,7 +75,12 @@ export function MobilePrimaryNavSheet({
             </Link>
           </div>
         ) : (
-          <Link key={section.id} to={section.to} onClick={onNavigate} className={linkClass}>
+          <Link
+            key={section.id}
+            to={section.id === "admin" ? ADMIN_RAIL_NAV_DESTINATION : section.to}
+            onClick={(e) => handleSectionClick(e, section)}
+            className={linkClass}
+          >
             <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <FontAwesomeIcon icon={section.icon} className="h-5 w-5" />
             </span>

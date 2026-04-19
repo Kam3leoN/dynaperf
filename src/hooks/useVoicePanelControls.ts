@@ -14,14 +14,21 @@ function readBool(key: string, defaultVal = false): boolean {
   }
 }
 
+export type VoicePanelControlsOptions = {
+  /** `null` ou `undefined` = micro par défaut du navigateur ; sinon `deviceId` exact. */
+  inputDeviceId?: string | null;
+};
+
 /**
  * Contrôle « Discord-like » : micro (muet / actif) et sourdine sortie (coupe le son des &lt;audio&gt;/&lt;video&gt;).
  * Le micro navigateur est coupé lorsque muet ou sourd.
  */
-export function useVoicePanelControls() {
+export function useVoicePanelControls(opts?: VoicePanelControlsOptions) {
+  const inputDeviceId = opts?.inputDeviceId ?? null;
   const [micMuted, setMicMuted] = useState(() => readBool(MIC_KEY, false));
   const [deafened, setDeafened] = useState(() => readBool(DEAF_KEY, false));
   const streamRef = useRef<MediaStream | null>(null);
+  const lastAppliedInputKeyRef = useRef<string | undefined>(undefined);
 
   const effectiveMicMuted = deafened || micMuted;
 
@@ -40,16 +47,36 @@ export function useVoicePanelControls() {
         return;
       }
 
+      const targetKey = inputDeviceId ?? "default";
+
       try {
-        if (!streamRef.current) {
-          const s = await navigator.mediaDevices.getUserMedia({ audio: true });
-          if (cancelled) {
-            s.getTracks().forEach((t) => t.stop());
-            return;
-          }
-          streamRef.current = s;
+        const track = streamRef.current?.getAudioTracks()[0];
+        const canReuse =
+          Boolean(track && track.readyState === "live" && lastAppliedInputKeyRef.current === targetKey);
+
+        if (canReuse && streamRef.current) {
+          streamRef.current.getAudioTracks().forEach((t) => {
+            t.enabled = true;
+          });
+          return;
         }
-        streamRef.current.getAudioTracks().forEach((t) => {
+
+        streamRef.current?.getTracks().forEach((t) => t.stop());
+        streamRef.current = null;
+
+        const audio: boolean | MediaTrackConstraints =
+          inputDeviceId && inputDeviceId.length > 0
+            ? { deviceId: { exact: inputDeviceId } }
+            : true;
+
+        const s = await navigator.mediaDevices.getUserMedia({ audio });
+        if (cancelled) {
+          s.getTracks().forEach((t) => t.stop());
+          return;
+        }
+        streamRef.current = s;
+        lastAppliedInputKeyRef.current = targetKey;
+        s.getAudioTracks().forEach((t) => {
           t.enabled = true;
         });
       } catch {
@@ -68,12 +95,13 @@ export function useVoicePanelControls() {
     return () => {
       cancelled = true;
     };
-  }, [effectiveMicMuted]);
+  }, [effectiveMicMuted, inputDeviceId]);
 
   useEffect(() => {
     return () => {
       streamRef.current?.getTracks().forEach((t) => t.stop());
       streamRef.current = null;
+      lastAppliedInputKeyRef.current = undefined;
     };
   }, []);
 

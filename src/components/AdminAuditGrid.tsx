@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, type DragEvent } from "react";
 import { AuditFormBuilder } from "@/components/AuditFormBuilder";
+import { ActionIconButton } from "@/components/ActionIconButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RichTextEditor } from "@/components/ui/rich-text-editor";
@@ -12,12 +13,14 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Chip } from "@/components/ui/chip";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { getAuditItemMaxPoints } from "@/lib/auditChecklistPoints";
 import {
   faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faGripVertical, faLayerGroup, faCopy, faBoxArchive, faRotateLeft, faXmark,
+  faArrowLeft,
 } from "@fortawesome/free-solid-svg-icons";
 import { getAuditTypeVisual } from "@/lib/auditTypeVisuals";
 import type { ScoringTier } from "@/data/auditItems";
@@ -601,20 +604,34 @@ export default function AdminAuditGridInline() {
                       <span className="text-sm font-semibold text-foreground truncate">{v.version_label || `V${v.version}`}</span>
                     </button>
                     {v.is_active ? (
-                      <Badge className="text-[10px] bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border-0">Active</Badge>
+                      <Chip variant="success" className="text-[10px]">
+                        Active
+                      </Chip>
                     ) : (
                       <Badge variant="secondary" className="text-[10px]">Archivée</Badge>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground">{v.label}</p>
                   <div className="flex items-center gap-1 w-full pt-1 border-t border-border/50">
-                    <Button variant="ghost" size="sm" className="h-7 gap-1 text-xs flex-1" onClick={() => setSelectedTypeId(v.id)}>
-                      <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3" /> Éditer
-                    </Button>
-                    <Button variant="ghost" size="sm" className={`h-7 gap-1 text-xs ${v.is_active ? "text-amber-600" : "text-emerald-600"}`} onClick={(e) => { e.stopPropagation(); toggleActive(v.id, v.is_active); }} title={v.is_active ? "Archiver" : "Réactiver"}>
+                    <ActionIconButton
+                      variant="edit"
+                      label="Éditer cette version"
+                      className="h-7 w-7 flex-1"
+                      onClick={() => setSelectedTypeId(v.id)}
+                    >
+                      <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3" />
+                    </ActionIconButton>
+                    <ActionIconButton
+                      variant={v.is_active ? "warning" : "success"}
+                      label={v.is_active ? "Archiver" : "Réactiver"}
+                      className="h-7 w-7 flex-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleActive(v.id, v.is_active);
+                      }}
+                    >
                       <FontAwesomeIcon icon={v.is_active ? faBoxArchive : faRotateLeft} className="h-3 w-3" />
-                      {v.is_active ? "Archiver" : "Activer"}
-                    </Button>
+                    </ActionIconButton>
                   </div>
                 </div>
               ))}
@@ -626,20 +643,34 @@ export default function AdminAuditGridInline() {
       {/* Selected type header */}
       {selectedTypeId && selectedType && (
         <div className="flex items-center gap-3 flex-wrap">
-          <Button variant="ghost" size="sm" className="gap-1.5 text-xs" onClick={() => { setSelectedTypeId(""); }}>← Retour</Button>
+          <ActionIconButton
+            variant="ghost"
+            label="Retour à la liste des types"
+            className="h-8 w-8"
+            onClick={() => {
+              setSelectedTypeId("");
+            }}
+          >
+            <FontAwesomeIcon icon={faArrowLeft} className="h-3 w-3" />
+          </ActionIconButton>
           <span className="text-sm font-semibold text-foreground">{selectedType.label}{selectedType.version_label ? ` (${selectedType.version_label})` : ""}</span>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditType(selectedType)}>
+          <ActionIconButton variant="edit" label="Modifier le type" className="h-8 w-8" onClick={() => openEditType(selectedType)}>
             <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => duplicateAsNewVersion(selectedType.id)} title="Dupliquer comme nouvelle version">
+          </ActionIconButton>
+          <ActionIconButton variant="ghost" label="Dupliquer comme nouvelle version" className="h-8 w-8" onClick={() => duplicateAsNewVersion(selectedType.id)}>
             <FontAwesomeIcon icon={faCopy} className="h-3 w-3" />
-          </Button>
-          <Button variant="ghost" size="icon" className={`h-8 w-8 ${selectedType.is_active ? "text-amber-600" : "text-emerald-600"}`} onClick={() => toggleActive(selectedType.id, selectedType.is_active)} title={selectedType.is_active ? "Archiver" : "Réactiver"}>
+          </ActionIconButton>
+          <ActionIconButton
+            variant={selectedType.is_active ? "warning" : "success"}
+            label={selectedType.is_active ? "Archiver" : "Réactiver"}
+            className="h-8 w-8"
+            onClick={() => toggleActive(selectedType.id, selectedType.is_active)}
+          >
             <FontAwesomeIcon icon={selectedType.is_active ? faBoxArchive : faRotateLeft} className="h-3 w-3" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => { deleteType(selectedType.id); }}>
+          </ActionIconButton>
+          <ActionIconButton variant="destructive" label="Supprimer ce type" className="h-8 w-8" onClick={() => { deleteType(selectedType.id); }}>
             <FontAwesomeIcon icon={faTrashCan} className="h-3 w-3" />
-          </Button>
+          </ActionIconButton>
           {!selectedType.is_active && <Badge variant="secondary" className="text-xs">Archivée</Badge>}
           <Badge variant="outline" className="text-xs tabular-nums ml-auto">{totalMaxPts} pts max</Badge>
         </div>
@@ -686,12 +717,12 @@ export default function AdminAuditGridInline() {
                     <Badge variant="secondary" className="text-xs tabular-nums">{catMaxPts} pts</Badge>
                   </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => openEditCat(cat)}>
+                    <ActionIconButton variant="edit" label="Modifier la catégorie" className="h-7 w-7" onClick={() => openEditCat(cat)}>
                       <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3" />
-                    </Button>
-                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteCat(cat.id)}>
+                    </ActionIconButton>
+                    <ActionIconButton variant="destructive" label="Supprimer la catégorie" className="h-7 w-7" onClick={() => deleteCat(cat.id)}>
                       <FontAwesomeIcon icon={faTrashCan} className="h-3 w-3" />
-                    </Button>
+                    </ActionIconButton>
                   </div>
                 </div>
                 <div className="divide-y divide-border">
@@ -721,12 +752,12 @@ export default function AdminAuditGridInline() {
                       <Badge variant="outline" className="text-xs tabular-nums shrink-0">{getAuditItemMaxPoints(item)} pts</Badge>
                       <Badge variant="secondary" className="text-xs shrink-0">{item.input_type}</Badge>
                       {item.auto_field && <Badge variant="outline" className="text-[10px] shrink-0 text-muted-foreground">Auto</Badge>}
-                      <Button variant="ghost" size="icon" className="h-7 w-7 shrink-0" onClick={() => openEditItem(item)}>
+                      <ActionIconButton variant="edit" label="Modifier l’item" className="h-7 w-7 shrink-0" onClick={() => openEditItem(item)}>
                         <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive shrink-0" onClick={() => deleteItem(item.id)}>
+                      </ActionIconButton>
+                      <ActionIconButton variant="destructive" label="Supprimer l’item" className="h-7 w-7 shrink-0" onClick={() => deleteItem(item.id)}>
                         <FontAwesomeIcon icon={faTrashCan} className="h-3 w-3" />
-                      </Button>
+                      </ActionIconButton>
                     </div>
                   ))}
                   {catItems.length === 0 && (
@@ -938,7 +969,7 @@ export default function AdminAuditGridInline() {
                   {(["none", "tiers", "increment", "threshold"] as const).map((mode) => (
                     <Button key={mode} type="button" variant={scoringMode === mode ? "default" : "outline"} size="sm"
                       onClick={() => { setScoringMode(mode); setUseTiers(mode === "tiers"); }}>
-                      {mode === "none" ? "Linéaire (1=1pt)" : mode === "tiers" ? "Paliers" : mode === "increment" ? "Incrémentation" : "Seuil (< / >)"}
+                      {mode === "none" ? "Linéaire (1=1pt)" : mode === "tiers" ? "Tranches" : mode === "increment" ? "Incrémentation" : "Seuil (< / >)"}
                     </Button>
                   ))}
                 </div>
@@ -1014,7 +1045,7 @@ export default function AdminAuditGridInline() {
                       </div>
                     ))}
                     <Button variant="outline" size="sm" onClick={addTier} className="gap-1.5 text-xs">
-                      <FontAwesomeIcon icon={faPlus} className="h-3 w-3" /> Ajouter un palier
+                      <FontAwesomeIcon icon={faPlus} className="h-3 w-3" /> Ajouter une tranche
                     </Button>
                   </div>
                 )}

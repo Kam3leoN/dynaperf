@@ -19,7 +19,6 @@ import {
   faGear,
   faUser,
   faKey,
-  faMoneyBill,
   faBell,
   faQrcode,
   faList,
@@ -34,12 +33,16 @@ import {
   faCircleDot,
   faVideo,
   faLayerGroup,
+  faAward,
 } from "@fortawesome/free-solid-svg-icons";
 
 /** Hub « vue d’ensemble » (Material 3 Expressive : clic rail → page de cartes, pas le 1er sous-lien). */
 export function navHubPath(sectionId: string): string {
   return `/nav/${sectionId}`;
 }
+
+/** Clic rail « Admin » : hub vue d’ensemble (cartes), toujours `/nav/admin`. */
+export const ADMIN_RAIL_NAV_DESTINATION = navHubPath("admin");
 
 /** Entrée du rail (icône seule). */
 export interface RailSection {
@@ -67,7 +70,7 @@ export interface SecondaryNavItem {
   to: string;
   icon: IconDefinition;
   requiredPermission?: string;
-  /** Masqué si le module applicatif n’est pas activé pour l’utilisateur (ex. primes). */
+  /** Masqué si le module applicatif n’est pas activé pour l’utilisateur. */
   requiredModule?: string;
   /** Masqué sauf pour le rôle `super_admin`. */
   requiredSuperAdmin?: boolean;
@@ -85,7 +88,6 @@ const home: RailSection = {
     "/preferences",
     "/profile",
     "/change-password",
-    "/primes",
     "/notifications",
   ],
   children: [
@@ -94,7 +96,6 @@ const home: RailSection = {
     { label: "Préférences", to: "/preferences", icon: faGear },
     { label: "Profil", to: "/profile", icon: faUser },
     { label: "Mot de passe", to: "/change-password", icon: faKey },
-    { label: "Mes primes", to: "/primes", icon: faMoneyBill },
     { label: "Créer un QrCode", to: "/qrcodes/new", icon: faPlus, requiredModule: "qrcode" },
     { label: "Gérer les QrCode", to: "/qrcodes", icon: faList, requiredModule: "qrcode" },
     { label: "Consulter les statistiques", to: "/qrcodes/stats", icon: faChartColumn, requiredModule: "qrcode" },
@@ -244,18 +245,20 @@ const admin: RailSection = {
   id: "admin",
   label: "Admin",
   icon: faUserShield,
-  to: navHubPath("admin"),
+  to: ADMIN_RAIL_NAV_DESTINATION,
   pathPrefixes: ["/nav/admin", "/admin"],
+  /** Entrée déplacée vers le menu du bouton profil (split avatar dock / header). */
+  hideFromRail: true,
   requireAdmin: true,
   requiredPermission: "nav.admin",
   children: [
-    { label: "Vue d'ensemble", to: navHubPath("admin"), icon: faLayerGroup },
+    { label: "Vue d'ensemble", to: ADMIN_RAIL_NAV_DESTINATION, icon: faLayerGroup },
     { label: "Sauvegardes", to: "/admin/backups", icon: faDatabase, requiredSuperAdmin: true },
     { label: "Utilisateurs", to: "/admin/users", icon: faUsers },
     { label: "Modules", to: "/admin/modules", icon: faCubes },
+    { label: "Badges & Gamification", to: "/admin/badges", icon: faAward, requiredModule: "gamification" },
     { label: "Audits", to: "/admin/audits-config", icon: faClipboardList },
     { label: "Secteurs", to: "/admin/secteurs", icon: faMapLocationDot },
-    { label: "Primes par utilisateur", to: "/admin/primes-users", icon: faMoneyBill, requiredModule: "primes" },
     { label: "Identité", to: "/admin/branding", icon: faPalette },
     { label: "Rôles & droits", to: "/admin/roles", icon: faKey },
     { label: "Expression", to: "/admin/expression", icon: faIcons },

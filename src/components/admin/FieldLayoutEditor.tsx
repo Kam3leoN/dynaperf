@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
+import { ActionIconButton } from "@/components/ActionIconButton";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faGripVertical, faGripLines, faPenToSquare, faTrashCan, faPlus } from "@fortawesome/free-solid-svg-icons";
 import { cn } from "@/lib/utils";
@@ -501,22 +502,30 @@ export function FieldLayoutEditor({ fields, onLayoutChange, onEdit, onDelete, on
                     </div>
                     <div className="flex gap-0.5 shrink-0">
                       {onEdit && (
-                        <button
-                          type="button"
-                          className="p-1 rounded hover:bg-muted transition-colors"
-                          onClick={(e) => { e.stopPropagation(); onEdit(f.id); }}
+                        <ActionIconButton
+                          variant="edit"
+                          label="Modifier le champ"
+                          className="h-6 w-6"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onEdit(f.id);
+                          }}
                         >
-                          <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3 text-muted-foreground" />
-                        </button>
+                          <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3" />
+                        </ActionIconButton>
                       )}
                       {onDelete && (
-                        <button
-                          type="button"
-                          className="p-1 rounded hover:bg-destructive/10 transition-colors"
-                          onClick={(e) => { e.stopPropagation(); onDelete(f.id); }}
+                        <ActionIconButton
+                          variant="destructive"
+                          label="Retirer le champ"
+                          className="h-6 w-6"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete(f.id);
+                          }}
                         >
-                          <FontAwesomeIcon icon={faTrashCan} className="h-3 w-3 text-destructive/70" />
-                        </button>
+                          <FontAwesomeIcon icon={faTrashCan} className="h-3 w-3" />
+                        </ActionIconButton>
                       )}
                     </div>
 

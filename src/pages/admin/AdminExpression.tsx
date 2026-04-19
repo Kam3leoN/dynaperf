@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { ActionIconButton } from "@/components/ActionIconButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -184,9 +185,13 @@ export default function AdminExpression() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Button type="button" variant="ghost" size="icon" className="text-destructive" onClick={() => void removeRow(row)}>
+                      <ActionIconButton
+                        variant="destructive"
+                        label="Supprimer cet élément"
+                        onClick={() => void removeRow(row)}
+                      >
                         <FontAwesomeIcon icon={faTrashCan} className="h-4 w-4" />
-                      </Button>
+                      </ActionIconButton>
                     </TableCell>
                   </TableRow>
                 );

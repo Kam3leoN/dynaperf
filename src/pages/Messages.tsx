@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useGamification } from "@/hooks/useGamification";
 import { useAdmin } from "@/hooks/useAdmin";
 import { usePermissionGate } from "@/contexts/PermissionsContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -494,6 +495,7 @@ function MessagesInputBar({ value, onChange, onSend, sendDisabled }: MessagesInp
 
 export default function Messages() {
   const { user } = useAuth();
+  const { recordActivity } = useGamification();
   const { labelForRow } = usePresenceStatusDefinitions();
   const { isAdmin } = useAdmin(user);
   const { hasPermission } = usePermissionGate();
@@ -1183,6 +1185,7 @@ export default function Messages() {
           }
         }
       }
+      void recordActivity("message");
       setNewMsg("");
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Envoi impossible";

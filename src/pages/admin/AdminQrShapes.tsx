@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPenToSquare, faPlus, faTrash } from "@fortawesome/free-solid-svg-icons";
+import { ActionIconButton } from "@/components/ActionIconButton";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -193,18 +194,12 @@ export default function AdminQrShapes() {
                     <TableCell className="text-right">
                       {isSuperAdmin ? (
                         <div className="flex justify-end gap-1">
-                          <Button type="button" size="icon" variant="ghost" className="h-8 w-8" onClick={() => openEdit(r)}>
+                          <ActionIconButton variant="edit" label="Modifier" onClick={() => openEdit(r)}>
                             <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" />
-                          </Button>
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 text-destructive"
-                            onClick={() => void remove(r)}
-                          >
+                          </ActionIconButton>
+                          <ActionIconButton variant="destructive" label="Supprimer cette forme" onClick={() => void remove(r)}>
                             <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" />
-                          </Button>
+                          </ActionIconButton>
                         </div>
                       ) : (
                         <span className="text-xs text-muted-foreground">—</span>

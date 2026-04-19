@@ -16,6 +16,7 @@ import { faTrash } from "@fortawesome/free-solid-svg-icons";
 import { fetchManagedUsersList, type ManagedUser } from "@/pages/admin/AdminUsers";
 import { cn } from "@/lib/utils";
 import { ORG_TITLE_LABELS } from "@/lib/memberDirectory";
+import { ActionIconButton } from "@/components/ActionIconButton";
 
 export interface ModuleAccessPanelModule {
   id: string;
@@ -252,18 +253,16 @@ export function ModuleAccessPanel({
                     )}
                   </p>
                 </div>
-                <Button
+                <ActionIconButton
                   type="button"
-                  variant="ghost"
-                  size="icon"
+                  label="Retirer la surcharge (revenir au défaut du rôle)"
+                  variant="destructive"
                   className="shrink-0"
                   disabled={saving || (!module.is_enabled && !isSuperAdmin)}
-                  title="Retirer la surcharge"
-                  aria-label="Retirer la surcharge"
                   onClick={() => void handleRemove(row)}
                 >
-                  <FontAwesomeIcon icon={faTrash} className="h-4 w-4 text-muted-foreground" />
-                </Button>
+                  <FontAwesomeIcon icon={faTrash} className="h-4 w-4" />
+                </ActionIconButton>
               </li>
             ))}
           </ul>

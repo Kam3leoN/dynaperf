@@ -1,5 +1,5 @@
 import { useRef, useState } from "react";
-import { Button } from "@/components/ui/button";
+import { ActionIconButton } from "@/components/ActionIconButton";
 import { Input } from "@/components/ui/input";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
@@ -173,12 +173,17 @@ export function ChecklistItemsEditor({
                   if (e.key === "Escape") cancelEdit();
                 }}
               />
-              <Button variant="ghost" size="icon" className="h-6 w-6 text-emerald-600 shrink-0" onClick={confirmEdit}>
+              <ActionIconButton
+                variant="success"
+                label="Enregistrer la modification"
+                className="h-6 w-6 shrink-0"
+                onClick={confirmEdit}
+              >
                 <FontAwesomeIcon icon={faCheck} className="h-3 w-3" />
-              </Button>
-              <Button variant="ghost" size="icon" className="h-6 w-6 text-muted-foreground shrink-0" onClick={cancelEdit}>
+              </ActionIconButton>
+              <ActionIconButton variant="ghost" label="Annuler" className="h-6 w-6 shrink-0" onClick={cancelEdit}>
                 <FontAwesomeIcon icon={faXmark} className="h-3 w-3" />
-              </Button>
+              </ActionIconButton>
             </>
           ) : (
             <>
@@ -191,20 +196,22 @@ export function ChecklistItemsEditor({
               />
               <span className="text-[10px] text-muted-foreground shrink-0">pt{item.points > 1 ? "s" : ""}</span>
               <span className="text-sm flex-1 min-w-0 truncate">{item.label}</span>
-              <Button
-                variant="ghost" size="icon"
+              <ActionIconButton
+                variant="edit"
+                label="Modifier"
                 className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={() => startEdit(idx)}
               >
                 <FontAwesomeIcon icon={faPenToSquare} className="h-3 w-3" />
-              </Button>
-              <Button
-                variant="ghost" size="icon"
-                className="h-6 w-6 text-destructive shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              </ActionIconButton>
+              <ActionIconButton
+                variant="destructive"
+                label="Supprimer cette ligne"
+                className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={() => removeItem(idx)}
               >
                 <FontAwesomeIcon icon={faTrashCan} className="h-3 w-3" />
-              </Button>
+              </ActionIconButton>
             </>
           )}
         </div>
@@ -230,15 +237,15 @@ export function ChecklistItemsEditor({
             if (e.key === "Enter") { e.preventDefault(); addItem(); }
           }}
         />
-        <Button
-          variant="outline" size="sm"
-          className="h-8 gap-1.5 text-xs shrink-0"
+        <ActionIconButton
+          variant="default"
+          label="Ajouter une ligne"
+          className="h-8 w-8 shrink-0"
           onClick={addItem}
           disabled={!newLabel.trim()}
         >
           <FontAwesomeIcon icon={faPlus} className="h-3 w-3" />
-          Ajouter
-        </Button>
+        </ActionIconButton>
       </div>
 
       {items.length > 0 && (

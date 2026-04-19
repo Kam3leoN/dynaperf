@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faChevronDown, faChevronUp, faCamera, faEye, faEyeSlash, faSpinner } from "@fortawesome/free-solid-svg-icons";
+import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faCamera, faEye, faSpinner } from "@fortawesome/free-solid-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X } from "lucide-react";
 import { readEdgeFunctionErrorMessage } from "@/lib/readEdgeFunctionError";
 import { cn } from "@/lib/utils";
+import { ActionIconButton } from "@/components/ActionIconButton";
 import { uploadUserAvatarToBucket, withAvatarCacheBust } from "@/lib/avatarStorage";
 import { ORG_TITLE_LABELS } from "@/lib/memberDirectory";
 import { useStaffRolesCatalog } from "@/hooks/useStaffRolesCatalog";
@@ -57,44 +58,6 @@ function ArcText({ text, radius = 78, fontSize = 13 }: { text: string; radius?: 
   );
 }
 
-export interface UserConfig {
-  objectif: number;
-  palier_1: number | null;
-  palier_2: number | null;
-  palier_3: number | null;
-  prime_audit_1: number;
-  prime_audit_2: number;
-  prime_audit_3_plus: number;
-  prime_distanciel_1: number;
-  prime_distanciel_2: number;
-  prime_distanciel_3_plus: number;
-  prime_club_1: number;
-  prime_club_2: number;
-  prime_club_3_plus: number;
-  prime_rdv_1: number;
-  prime_rdv_2: number;
-  prime_rdv_3_plus: number;
-  prime_suivi_1: number;
-  prime_suivi_2: number;
-  prime_suivi_3_plus: number;
-  prime_mep_1: number;
-  prime_mep_2: number;
-  prime_mep_3_plus: number;
-  prime_evenementiel_1: number;
-  prime_evenementiel_2: number;
-  prime_evenementiel_3_plus: number;
-  semaines_indisponibles: number;
-}
-
-export interface CustomPrime {
-  id: string;
-  user_id: string;
-  label: string;
-  prime_1: number;
-  prime_2: number;
-  prime_3_plus: number;
-}
-
 export interface ManagedUser {
   id: string;
   email: string;
@@ -103,8 +66,8 @@ export interface ManagedUser {
   title: string | null;
   orgTitles: string[];
   roles: string[];
-  config: UserConfig | null;
-  customPrimes: CustomPrime[];
+  /** Ligne `collaborateur_config` si présente (non éditée depuis cet écran). */
+  config: Record<string, unknown> | null;
   createdAt: string;
 }
 
@@ -245,17 +208,15 @@ async function fetchManagedUsersViaRpc(): Promise<ManagedUser[] | null> {
   const { data: authRows, error: rpcErr } = await (supabase.rpc as any)("admin_auth_users_preview");
   if (rpcErr || !authRows?.length) return null;
 
-  const [rolesRes, profilesRes, configsRes, primesRes] = await Promise.all([
+  const [rolesRes, profilesRes, configsRes] = await Promise.all([
     supabase.from("user_roles").select("*"),
     supabase.from("profiles").select("user_id, display_name, avatar_url, title") as any,
     supabase.from("collaborateur_config").select("*"),
-    supabase.from("user_custom_primes").select("*").order("created_at"),
   ]);
 
   const allRoles = rolesRes.data;
   const allProfiles = profilesRes.data;
   const allConfigs = configsRes.data;
-  const allCustomPrimes = primesRes.data;
 
   return (authRows as any[]).map((u: any) => {
     const uid = normUid(u.id);
@@ -269,7 +230,6 @@ async function fetchManagedUsersViaRpc(): Promise<ManagedUser[] | null> {
       orgTitles: Array.isArray(profile?.org_titles) ? profile.org_titles : [],
       roles: allRoles?.filter((r) => normUid(r.user_id) === uid).map((r) => r.role) ?? [],
       config: allConfigs?.find((c) => normUid(c.user_id) === uid) ?? null,
-      customPrimes: allCustomPrimes?.filter((cp) => normUid(cp.user_id) === uid) ?? [],
       createdAt: u.created_at,
     };
   });
@@ -294,17 +254,12 @@ export default function AdminUsers() {
   const [users, setUsers] = useState<ManagedUser[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [expandedUser, setExpandedUser] = useState<string | null>(null);
-  const [showPrimes, setShowPrimes] = useState(false);
   const [viewUser, setViewUser] = useState<ManagedUser | null>(null);
   const [editUser, setEditUser] = useState<ManagedUser | null>(null);
   const [editFirstName, setEditFirstName] = useState("");
   const [editLastName, setEditLastName] = useState("");
   const [editEmail, setEditEmail] = useState("");
   const [editRole, setEditRole] = useState("member");
-  const [editPalier1, setEditPalier1] = useState("");
-  const [editPalier2, setEditPalier2] = useState("");
-  const [editPalier3, setEditPalier3] = useState("");
   const [editTitle, setEditTitle] = useState("");
   const [editOrgTitles, setEditOrgTitles] = useState<string[]>([]);
   const [editPermOverride, setEditPermOverride] = useState<Record<string, "inherit" | "allow" | "deny">>({});
@@ -320,9 +275,6 @@ export default function AdminUsers() {
   const [newFirstName, setNewFirstName] = useState("");
   const [newLastName, setNewLastName] = useState("");
   const [newRole, setNewRole] = useState("member");
-  const [newPalier1, setNewPalier1] = useState("");
-  const [newPalier2, setNewPalier2] = useState("");
-  const [newPalier3, setNewPalier3] = useState("");
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -410,7 +362,6 @@ export default function AdminUsers() {
   const resetCreateForm = () => {
     setEmail(""); setPassword(""); setNewFirstName(""); setNewLastName("");
     setNewRole("member");
-    setNewPalier1(""); setNewPalier2(""); setNewPalier3("");
     setAvatarFile(null); setAvatarPreview(null);
   };
 
@@ -426,23 +377,9 @@ export default function AdminUsers() {
     if (!email || !password) return;
     setCreating(true);
 
-    const config = {
-      objectif: 0,
-      palier_1: newPalier1 ? parseInt(newPalier1) : null,
-      palier_2: newPalier2 ? parseInt(newPalier2) : null,
-      palier_3: newPalier3 ? parseInt(newPalier3) : null,
-      prime_audit_1: 75, prime_audit_2: 10, prime_audit_3_plus: 5,
-      prime_distanciel_1: 10, prime_distanciel_2: 5, prime_distanciel_3_plus: 0,
-      prime_club_1: 75, prime_club_2: 10, prime_club_3_plus: 5,
-      prime_rdv_1: 75, prime_rdv_2: 10, prime_rdv_3_plus: 5,
-      prime_suivi_1: 75, prime_suivi_2: 10, prime_suivi_3_plus: 5,
-      prime_mep_1: 75, prime_mep_2: 10, prime_mep_3_plus: 5,
-      prime_evenementiel_1: 75, prime_evenementiel_2: 10, prime_evenementiel_3_plus: 5,
-    };
-
     const displayName = `${newFirstName.trim()} ${newLastName.trim().toUpperCase()}`.trim();
     const res = await supabase.functions.invoke("create-user", {
-      body: { email, password, displayName, role: newRole, config },
+      body: { email, password, displayName, role: newRole },
     });
 
     if (await toastEdgeInvokeFailure(res, "Erreur lors de la création")) {
@@ -524,9 +461,6 @@ export default function AdminUsers() {
     setEditLastName(lastName);
     setEditEmail(u.email);
     setEditRole(getUserRole(u));
-    setEditPalier1(u.config?.palier_1?.toString() ?? "");
-    setEditPalier2(u.config?.palier_2?.toString() ?? "");
-    setEditPalier3(u.config?.palier_3?.toString() ?? "");
     setEditTitle(u.title || "");
     setEditOrgTitles(Array.isArray(u.orgTitles) ? [...u.orgTitles] : []);
 
@@ -595,44 +529,6 @@ export default function AdminUsers() {
         setEditSaving(false);
         return;
       }
-    }
-
-    // Update config
-    const cfgRes = await supabase.functions.invoke("create-user", {
-      body: {
-        action: "save-config",
-        userId: editUser.id,
-        objectif: editUser.config?.objectif ?? 0,
-        palier_1: editPalier1 ? parseInt(editPalier1) : null,
-        palier_2: editPalier2 ? parseInt(editPalier2) : null,
-        palier_3: editPalier3 ? parseInt(editPalier3) : null,
-        prime_audit_1: editUser.config?.prime_audit_1 ?? 75,
-        prime_audit_2: editUser.config?.prime_audit_2 ?? 10,
-        prime_audit_3_plus: editUser.config?.prime_audit_3_plus ?? 5,
-        prime_distanciel_1: editUser.config?.prime_distanciel_1 ?? 10,
-        prime_distanciel_2: editUser.config?.prime_distanciel_2 ?? 5,
-        prime_distanciel_3_plus: editUser.config?.prime_distanciel_3_plus ?? 0,
-        prime_club_1: editUser.config?.prime_club_1 ?? 75,
-        prime_club_2: editUser.config?.prime_club_2 ?? 10,
-        prime_club_3_plus: editUser.config?.prime_club_3_plus ?? 5,
-        prime_rdv_1: editUser.config?.prime_rdv_1 ?? 75,
-        prime_rdv_2: editUser.config?.prime_rdv_2 ?? 10,
-        prime_rdv_3_plus: editUser.config?.prime_rdv_3_plus ?? 5,
-        prime_suivi_1: editUser.config?.prime_suivi_1 ?? 75,
-        prime_suivi_2: editUser.config?.prime_suivi_2 ?? 10,
-        prime_suivi_3_plus: editUser.config?.prime_suivi_3_plus ?? 5,
-        prime_mep_1: editUser.config?.prime_mep_1 ?? 75,
-        prime_mep_2: editUser.config?.prime_mep_2 ?? 10,
-        prime_mep_3_plus: editUser.config?.prime_mep_3_plus ?? 5,
-        prime_evenementiel_1: editUser.config?.prime_evenementiel_1 ?? 75,
-        prime_evenementiel_2: editUser.config?.prime_evenementiel_2 ?? 10,
-        prime_evenementiel_3_plus: editUser.config?.prime_evenementiel_3_plus ?? 5,
-        semaines_indisponibles: editUser.config?.semaines_indisponibles ?? 10,
-      },
-    });
-    if (await toastEdgeInvokeFailure(cfgRes, "Erreur lors de l'enregistrement de la configuration")) {
-      setEditSaving(false);
-      return;
     }
 
     const { error: orgTitlesErr } = await (supabase as any)
@@ -708,7 +604,6 @@ export default function AdminUsers() {
   const MobileCard = ({ u }: { u: ManagedUser }) => {
     const role = getUserRole(u);
     const isSuperAdminUser = role === "super_admin";
-    const isExpanded = expandedUser === u.id;
     return (
       <motion.div
         key={u.id}
@@ -729,19 +624,16 @@ export default function AdminUsers() {
             </div>
           </div>
           <div className="flex gap-1 shrink-0">
-            <button onClick={() => setExpandedUser(isExpanded ? null : u.id)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title={isExpanded ? "Masquer la configuration" : "Configurer les primes"}>
-              <FontAwesomeIcon icon={isExpanded ? faChevronUp : faChevronDown} className="h-3.5 w-3.5 text-muted-foreground" />
-            </button>
-            <button onClick={() => setViewUser(u)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Voir">
-              <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
-            </button>
-            <button onClick={() => openEditDialog(u)} className="p-1.5 rounded-sm hover:bg-secondary transition-colors" title="Modifier">
-              <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
-            </button>
+            <ActionIconButton label="Voir le profil utilisateur" variant="view" onClick={() => setViewUser(u)}>
+              <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5" />
+            </ActionIconButton>
+            <ActionIconButton label="Modifier l'utilisateur" variant="edit" onClick={() => openEditDialog(u)}>
+              <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" />
+            </ActionIconButton>
             {u.id !== currentUser?.id && !(isSuperAdminUser && !isSuperAdmin) && (
-              <button onClick={() => handleDelete(u.id, u.email)} className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors" title="Supprimer">
-                <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
-              </button>
+              <ActionIconButton label="Supprimer l'utilisateur" variant="destructive" onClick={() => handleDelete(u.id, u.email)}>
+                <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" />
+              </ActionIconButton>
             )}
           </div>
         </div>
@@ -757,9 +649,6 @@ export default function AdminUsers() {
             <RoleBadge role={role} />
           )}
         </div>
-        {isExpanded && (
-          <UserConfigPanel userId={u.id} config={u.config} customPrimes={u.customPrimes ?? []} onSaved={loadUsers} />
-        )}
       </motion.div>
     );
   };
@@ -790,7 +679,7 @@ export default function AdminUsers() {
                 <DialogHeader>
                   <DialogTitle>Nouvel utilisateur</DialogTitle>
                   <DialogDescription>
-                    Créez un utilisateur puis attribuez-lui son rôle, ses objectifs et ses primes.
+                    Créez un utilisateur puis attribuez-lui son rôle.
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleCreate} className="grid gap-3 py-3">
@@ -839,27 +728,6 @@ export default function AdminUsers() {
                     </Select>
                   </div>
 
-                  {/* Objectifs paliers */}
-                  <div>
-                    <label className="text-xs text-muted-foreground mb-1 block">Objectifs par palier</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      <div>
-                        <span className="text-[10px] text-muted-foreground">Obj. palier 1</span>
-                        <Input type="number" min={0} value={newPalier1} onChange={(e) => setNewPalier1(e.target.value)} className="h-9 text-sm" placeholder="—" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-muted-foreground">Obj. palier 2</span>
-                        <Input type="number" min={0} value={newPalier2} onChange={(e) => setNewPalier2(e.target.value)} className="h-9 text-sm" placeholder="—" />
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-muted-foreground">Obj. palier 3</span>
-                        <Input type="number" min={0} value={newPalier3} onChange={(e) => setNewPalier3(e.target.value)} className="h-9 text-sm" placeholder="—" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Primes are set with default values on creation */}
-
                   <div className="flex justify-end gap-2 pt-2">
                     <Button type="button" variant="outline" size="sm" onClick={() => { setCreateOpen(false); resetCreateForm(); }} className="rounded-md">Annuler</Button>
                     <Button type="submit" size="sm" disabled={creating} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md">
@@ -875,10 +743,6 @@ export default function AdminUsers() {
           </div>
         </div>
 
-        <p className="text-xs text-muted-foreground mb-3">
-          Utilise la flèche dans <span className="font-medium text-foreground">Actions</span> pour ouvrir la configuration détaillée des primes.
-        </p>
-
         {usersLoading ? (
           <p className="text-sm text-muted-foreground py-8 text-center">Chargement…</p>
         ) : (
@@ -893,15 +757,6 @@ export default function AdminUsers() {
                     <TableHead className="text-xs uppercase tracking-wider">Email</TableHead>
                     <TableHead className="text-xs uppercase tracking-wider whitespace-nowrap">Membre depuis</TableHead>
                     <TableHead className="text-xs uppercase tracking-wider">Rôle</TableHead>
-                    <TableHead className="text-xs uppercase tracking-wider">Paliers</TableHead>
-                    <TableHead className="text-xs uppercase tracking-wider">
-                      <span className="inline-flex items-center gap-1.5">
-                        Primes (1/2/3)
-                        <button onClick={() => setShowPrimes(v => !v)} className="p-0.5 rounded hover:bg-secondary transition-colors" title={showPrimes ? "Masquer les primes" : "Afficher les primes"}>
-                          <FontAwesomeIcon icon={showPrimes ? faEye : faEyeSlash} className="h-3 w-3 text-muted-foreground" />
-                        </button>
-                      </span>
-                    </TableHead>
                     <TableHead className="text-xs uppercase tracking-wider w-24">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -910,7 +765,6 @@ export default function AdminUsers() {
                     {filtered.map((u) => {
                       const role = getUserRole(u);
                       const isSuperAdminUser = role === "super_admin";
-                      const isExpanded = expandedUser === u.id;
                       return (
                         <motion.tr
                           key={u.id}
@@ -939,45 +793,18 @@ export default function AdminUsers() {
                               <RoleBadge role={role} />
                             )}
                           </TableCell>
-                          <TableCell className="text-sm tabular-nums text-muted-foreground">
-                            {u.config ? `${u.config.palier_1 ?? "—"} / ${u.config.palier_2 ?? "—"} / ${u.config.palier_3 ?? "—"}` : "—"}
-                          </TableCell>
-                          <TableCell className="text-sm tabular-nums text-muted-foreground">
-                            {showPrimes
-                              ? (u.config ? `RD:${u.config.prime_audit_1}€ Dist:${u.config.prime_distanciel_1}€` : "—")
-                              : "••• / •••"}
-                          </TableCell>
                           <TableCell>
                             <div className="flex gap-1">
-                              <button
-                                onClick={() => setExpandedUser(isExpanded ? null : u.id)}
-                                className="p-1.5 rounded-sm hover:bg-secondary transition-colors"
-                                title={isExpanded ? "Masquer la configuration" : "Configurer les primes"}
-                              >
-                                <FontAwesomeIcon icon={isExpanded ? faChevronUp : faChevronDown} className="h-3.5 w-3.5 text-muted-foreground" />
-                              </button>
-                              <button
-                                onClick={() => setViewUser(u)}
-                                className="p-1.5 rounded-sm hover:bg-secondary transition-colors"
-                                title="Voir"
-                              >
-                                <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5 text-muted-foreground" />
-                              </button>
-                              <button
-                                onClick={() => openEditDialog(u)}
-                                className="p-1.5 rounded-sm hover:bg-secondary transition-colors"
-                                title="Modifier"
-                              >
-                                <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5 text-muted-foreground" />
-                              </button>
+                              <ActionIconButton label="Voir le profil utilisateur" variant="view" onClick={() => setViewUser(u)}>
+                                <FontAwesomeIcon icon={faEye} className="h-3.5 w-3.5" />
+                              </ActionIconButton>
+                              <ActionIconButton label="Modifier l'utilisateur" variant="edit" onClick={() => openEditDialog(u)}>
+                                <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" />
+                              </ActionIconButton>
                               {u.id !== currentUser?.id && !(isSuperAdminUser && !isSuperAdmin) && (
-                                <button
-                                  onClick={() => handleDelete(u.id, u.email)}
-                                  className="p-1.5 rounded-sm hover:bg-primary/10 transition-colors"
-                                  title="Supprimer"
-                                >
-                                  <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5 text-primary" />
-                                </button>
+                                <ActionIconButton label="Supprimer l'utilisateur" variant="destructive" onClick={() => handleDelete(u.id, u.email)}>
+                                  <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" />
+                                </ActionIconButton>
                               )}
                             </div>
                           </TableCell>
@@ -987,22 +814,6 @@ export default function AdminUsers() {
                   </AnimatePresence>
                 </TableBody>
               </Table>
-
-              {expandedUser && (() => {
-                const u = users.find((x) => x.id === expandedUser);
-                if (!u) return null;
-                return (
-                  <div className="mt-2 rounded-lg border border-border overflow-hidden">
-                    <div className="bg-secondary/30 px-4 py-2 flex items-center gap-2">
-                      <span className="text-xs font-semibold text-foreground">Configuration de {u.displayName}</span>
-                      <button onClick={() => setExpandedUser(null)} className="ml-auto text-xs text-muted-foreground hover:text-foreground">
-                        Fermer
-                      </button>
-                    </div>
-                    <UserConfigPanel userId={u.id} config={u.config} customPrimes={u.customPrimes ?? []} onSaved={loadUsers} />
-                  </div>
-                );
-              })()}
             </div>
 
             {/* Mobile card list */}
@@ -1051,7 +862,7 @@ export default function AdminUsers() {
           )}
           <DialogHeader className="text-center">
             <DialogTitle className="sr-only">Détails</DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground text-center w-full">Informations et configuration de {viewUser?.displayName}</DialogDescription>
+            <DialogDescription className="text-sm text-muted-foreground text-center w-full">Profil de {viewUser?.displayName}</DialogDescription>
           </DialogHeader>
           {viewUser && (
             <div className="space-y-4 py-2">
@@ -1065,35 +876,9 @@ export default function AdminUsers() {
                   </p>
                 ) : null}
               </div>
-              <div className="grid grid-cols-2 gap-3 text-sm">
-                <div>
-                  <span className="text-xs text-muted-foreground block">Objectif</span>
-                  <span className="font-medium text-foreground">{viewUser.config?.objectif ?? "—"}</span>
-                </div>
-                <div>
-                  <span className="text-xs text-muted-foreground block">Créé le</span>
-                  <span className="font-medium text-foreground">{new Date(viewUser.createdAt).toLocaleDateString("fr-FR")}</span>
-                </div>
-              </div>
-              <div>
-                <span className="text-xs text-muted-foreground block mb-1">Paliers</span>
-                <div className="grid grid-cols-3 gap-2 text-sm">
-                  <span className="bg-secondary px-2 py-1 rounded text-foreground text-center">P1: {viewUser.config?.palier_1 ?? "—"}</span>
-                  <span className="bg-secondary px-2 py-1 rounded text-foreground text-center">P2: {viewUser.config?.palier_2 ?? "—"}</span>
-                  <span className="bg-secondary px-2 py-1 rounded text-foreground text-center">P3: {viewUser.config?.palier_3 ?? "—"}</span>
-                </div>
-              </div>
-              <div>
-                <span className="text-xs text-muted-foreground block mb-1">Primes (1er / 2e / 3e+)</span>
-                <div className="space-y-1 text-xs">
-                  <div className="flex justify-between"><span className="text-muted-foreground">RD Présentiel</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_audit_1 ?? 0}€ / {viewUser.config?.prime_audit_2 ?? 0}€ / {viewUser.config?.prime_audit_3_plus ?? 0}€</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">RD Distanciel</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_distanciel_1 ?? 0}€ / {viewUser.config?.prime_distanciel_2 ?? 0}€ / {viewUser.config?.prime_distanciel_3_plus ?? 0}€</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Club Affaires</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_club_1 ?? 0}€ / {viewUser.config?.prime_club_2 ?? 0}€ / {viewUser.config?.prime_club_3_plus ?? 0}€</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">RDV Commercial</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_rdv_1 ?? 0}€ / {viewUser.config?.prime_rdv_2 ?? 0}€ / {viewUser.config?.prime_rdv_3_plus ?? 0}€</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Suivi Activité</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_suivi_1 ?? 0}€ / {viewUser.config?.prime_suivi_2 ?? 0}€ / {viewUser.config?.prime_suivi_3_plus ?? 0}€</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">Mise en place</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_mep_1 ?? 0}€ / {viewUser.config?.prime_mep_2 ?? 0}€ / {viewUser.config?.prime_mep_3_plus ?? 0}€</span></div>
-                  <div className="flex justify-between"><span className="text-muted-foreground">RD Événementielle</span><span className="text-foreground tabular-nums">{viewUser.config?.prime_evenementiel_1 ?? 0}€ / {viewUser.config?.prime_evenementiel_2 ?? 0}€ / {viewUser.config?.prime_evenementiel_3_plus ?? 0}€</span></div>
-                </div>
+              <div className="text-sm">
+                <span className="text-xs text-muted-foreground block">Membre depuis</span>
+                <span className="font-medium text-foreground">{new Date(viewUser.createdAt).toLocaleDateString("fr-FR")}</span>
               </div>
             </div>
           )}
@@ -1139,7 +924,7 @@ export default function AdminUsers() {
           )}
           <DialogHeader className="text-center">
             <DialogTitle className="sr-only">Modifier</DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground text-center w-full">Informations et configuration de {editUser?.displayName}</DialogDescription>
+            <DialogDescription className="text-sm text-muted-foreground text-center w-full">Modifier {editUser?.displayName}</DialogDescription>
           </DialogHeader>
           {editUser && (
             <div className="space-y-4 py-2">
@@ -1271,28 +1056,6 @@ export default function AdminUsers() {
                 </div>
               </div>
 
-              {/* Objectifs paliers */}
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Objectifs par palier</label>
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <span className="text-[10px] text-muted-foreground">Palier 1</span>
-                    <Input type="number" min={0} value={editPalier1} onChange={(e) => setEditPalier1(e.target.value)} className="h-9 text-sm" placeholder="—" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-muted-foreground">Palier 2</span>
-                    <Input type="number" min={0} value={editPalier2} onChange={(e) => setEditPalier2(e.target.value)} className="h-9 text-sm" placeholder="—" />
-                  </div>
-                  <div>
-                    <span className="text-[10px] text-muted-foreground">Palier 3</span>
-                    <Input type="number" min={0} value={editPalier3} onChange={(e) => setEditPalier3(e.target.value)} className="h-9 text-sm" placeholder="—" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Primes are managed via the expandable config panel */}
-              <p className="text-xs text-muted-foreground italic">Les primes par format sont gérées via le panneau de configuration détaillé.</p>
-
               <div className="flex justify-end gap-2 pt-2">
                 <Button variant="outline" size="sm" onClick={() => setEditUser(null)} className="rounded-md">Annuler</Button>
                 <Button size="sm" disabled={editSaving} onClick={handleEditSave} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5">
@@ -1320,265 +1083,6 @@ function AvatarWithUpload({ user, onUpload }: { user: ManagedUser; onUpload: (us
         <FontAwesomeIcon icon={faCamera} className="h-3 w-3 text-white" />
       </div>
       <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" className="hidden" onChange={(e) => { if (e.target.files?.[0]) onUpload(user.id, e.target.files[0]); }} />
-    </div>
-  );
-}
-
-/* ─── Inline sub-component for user config (objectives + primes) ─── */
-
-export function UserConfigPanel({
-  userId,
-  config,
-  customPrimes: initialCustomPrimes,
-  onSaved,
-}: {
-  userId: string;
-  config: UserConfig | null;
-  customPrimes: CustomPrime[];
-  onSaved: () => void;
-}) {
-  const [objectif, setObjectif] = useState(config?.objectif ?? 0);
-  const [palier1, setPalier1] = useState<string>(config?.palier_1?.toString() ?? "");
-  const [palier2, setPalier2] = useState<string>(config?.palier_2?.toString() ?? "");
-  const [palier3, setPalier3] = useState<string>(config?.palier_3?.toString() ?? "");
-  const [semainesIndispo, setSemainesIndispo] = useState(config?.semaines_indisponibles ?? 10);
-  const [saving, setSaving] = useState(false);
-  const [customPrimes, setCustomPrimes] = useState<CustomPrime[]>(initialCustomPrimes);
-  const [addingCustom, setAddingCustom] = useState(false);
-  const [newLabel, setNewLabel] = useState("");
-  const [newP1, setNewP1] = useState(75);
-  const [newP2, setNewP2] = useState(10);
-  const [newP3, setNewP3] = useState(5);
-
-  // Per-format primes state
-  const [primes, setPrimes] = useState({
-    prime_audit_1: config?.prime_audit_1 ?? 75, prime_audit_2: config?.prime_audit_2 ?? 10, prime_audit_3_plus: config?.prime_audit_3_plus ?? 5,
-    prime_distanciel_1: config?.prime_distanciel_1 ?? 10, prime_distanciel_2: config?.prime_distanciel_2 ?? 5, prime_distanciel_3_plus: config?.prime_distanciel_3_plus ?? 0,
-    prime_club_1: config?.prime_club_1 ?? 75, prime_club_2: config?.prime_club_2 ?? 10, prime_club_3_plus: config?.prime_club_3_plus ?? 5,
-    prime_rdv_1: config?.prime_rdv_1 ?? 75, prime_rdv_2: config?.prime_rdv_2 ?? 10, prime_rdv_3_plus: config?.prime_rdv_3_plus ?? 5,
-    prime_suivi_1: config?.prime_suivi_1 ?? 75, prime_suivi_2: config?.prime_suivi_2 ?? 10, prime_suivi_3_plus: config?.prime_suivi_3_plus ?? 5,
-    prime_mep_1: config?.prime_mep_1 ?? 75, prime_mep_2: config?.prime_mep_2 ?? 10, prime_mep_3_plus: config?.prime_mep_3_plus ?? 5,
-    prime_evenementiel_1: config?.prime_evenementiel_1 ?? 75, prime_evenementiel_2: config?.prime_evenementiel_2 ?? 10, prime_evenementiel_3_plus: config?.prime_evenementiel_3_plus ?? 5,
-  });
-
-  const updatePrime = (key: string, val: number) => setPrimes(p => ({ ...p, [key]: val }));
-
-  const FORMATS = [
-    { label: "RD Présentiel", k1: "prime_audit_1", k2: "prime_audit_2", k3: "prime_audit_3_plus" },
-    { label: "RD Distanciel", k1: "prime_distanciel_1", k2: "prime_distanciel_2", k3: "prime_distanciel_3_plus" },
-    { label: "Club Affaires", k1: "prime_club_1", k2: "prime_club_2", k3: "prime_club_3_plus" },
-    { label: "RDV Commercial", k1: "prime_rdv_1", k2: "prime_rdv_2", k3: "prime_rdv_3_plus" },
-    { label: "Suivi Activité", k1: "prime_suivi_1", k2: "prime_suivi_2", k3: "prime_suivi_3_plus" },
-    { label: "Mise en place", k1: "prime_mep_1", k2: "prime_mep_2", k3: "prime_mep_3_plus" },
-    { label: "RD Événementielle", k1: "prime_evenementiel_1", k2: "prime_evenementiel_2", k3: "prime_evenementiel_3_plus" },
-  ] as const;
-
-  const handleDeleteFormat = async (k1: string, k2: string, k3: string) => {
-    const zeroed = { ...primes, [k1]: 0, [k2]: 0, [k3]: 0 };
-    setPrimes(zeroed);
-    // Save immediately so deletion persists
-    const res = await supabase.functions.invoke("create-user", {
-      body: {
-        action: "save-config",
-        userId,
-        objectif,
-        palier_1: palier1 ? parseInt(palier1) : null,
-        palier_2: palier2 ? parseInt(palier2) : null,
-        palier_3: palier3 ? parseInt(palier3) : null,
-        ...zeroed,
-        semaines_indisponibles: semainesIndispo,
-      },
-    });
-    if (await toastEdgeInvokeFailure(res, "Erreur lors de l'enregistrement")) {
-      /* */
-    } else {
-      toast.success("Prime supprimée");
-      onSaved();
-    }
-  };
-
-  const handleDeleteCustomPrime = async (primeId: string) => {
-    const res = await supabase.functions.invoke("create-user", {
-      body: { action: "delete-custom-prime", primeId },
-    });
-    if (await toastEdgeInvokeFailure(res, "Erreur lors de la suppression")) {
-      /* */
-    } else {
-      setCustomPrimes(prev => prev.filter(cp => cp.id !== primeId));
-      toast.success("Prime supprimée");
-      onSaved();
-    }
-  };
-
-  const handleAddCustomPrime = async () => {
-    if (!newLabel.trim()) return;
-    const res = await supabase.functions.invoke("create-user", {
-      body: { action: "add-custom-prime", userId, label: newLabel.trim(), prime_1: newP1, prime_2: newP2, prime_3_plus: newP3 },
-    });
-    if (await toastEdgeInvokeFailure(res, "Erreur lors de l'ajout")) {
-      /* */
-    } else {
-      toast.success("Prime ajoutée");
-      setNewLabel(""); setNewP1(75); setNewP2(10); setNewP3(5); setAddingCustom(false);
-      onSaved();
-      if (res.data?.customPrime) setCustomPrimes(prev => [...prev, res.data.customPrime]);
-    }
-  };
-
-  const handleSave = async () => {
-    setSaving(true);
-    const res = await supabase.functions.invoke("create-user", {
-      body: {
-        action: "save-config",
-        userId,
-        objectif,
-        palier_1: palier1 ? parseInt(palier1) : null,
-        palier_2: palier2 ? parseInt(palier2) : null,
-        palier_3: palier3 ? parseInt(palier3) : null,
-        ...primes,
-        semaines_indisponibles: semainesIndispo,
-      },
-    });
-    if (await toastEdgeInvokeFailure(res, "Erreur lors de l'enregistrement")) {
-      /* */
-    } else {
-      toast.success("Configuration enregistrée");
-      onSaved();
-    }
-    setSaving(false);
-  };
-
-  const primeByKey = primes as Record<string, number>;
-  const visibleFormats = FORMATS.filter((f) => {
-    const v1 = primeByKey[f.k1];
-    const v2 = primeByKey[f.k2];
-    const v3 = primeByKey[f.k3];
-    return !(v1 === 0 && v2 === 0 && v3 === 0);
-  });
-
-  return (
-    <div className="border-t border-border p-4 space-y-4 bg-card/50">
-      <div>
-        <label className="text-xs font-semibold text-foreground block mb-2">Objectif global</label>
-        <Input
-          type="number" min={0} value={objectif}
-          onChange={(e) => setObjectif(parseInt(e.target.value) || 0)}
-          className="h-9 text-sm w-32"
-          placeholder="0"
-        />
-      </div>
-      <div>
-        <label className="text-xs font-semibold text-foreground block mb-2">Paliers (optionnels)</label>
-        <div className="grid grid-cols-3 gap-2">
-          <div>
-            <span className="text-[10px] text-muted-foreground">Palier 1</span>
-            <Input type="number" min={0} value={palier1} onChange={(e) => setPalier1(e.target.value)} className="h-9 text-sm" placeholder="—" />
-          </div>
-          <div>
-            <span className="text-[10px] text-muted-foreground">Palier 2</span>
-            <Input type="number" min={0} value={palier2} onChange={(e) => setPalier2(e.target.value)} className="h-9 text-sm" placeholder="—" />
-          </div>
-          <div>
-            <span className="text-[10px] text-muted-foreground">Palier 3</span>
-            <Input type="number" min={0} value={palier3} onChange={(e) => setPalier3(e.target.value)} className="h-9 text-sm" placeholder="—" />
-          </div>
-        </div>
-      </div>
-      <div>
-        <label className="text-xs font-semibold text-foreground block mb-2">Primes par format (€) — 1er / 2e / 3e+</label>
-        <div className="space-y-2">
-          {visibleFormats.map(({ label, k1, k2, k3 }) => (
-            <div key={k1} className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground w-28 shrink-0">{label}</span>
-              <Input type="number" min={0} step={1} value={primeByKey[k1]} onChange={(e) => updatePrime(k1, parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" />
-              <Input type="number" min={0} step={1} value={primeByKey[k2]} onChange={(e) => updatePrime(k2, parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" />
-              <Input type="number" min={0} step={1} value={primeByKey[k3]} onChange={(e) => updatePrime(k3, parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" />
-              <button
-                type="button"
-                onClick={() => handleDeleteFormat(k1, k2, k3)}
-                className="text-destructive/60 hover:text-destructive transition-colors p-1"
-                title="Supprimer cette prime"
-              >
-                <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ))}
-          {/* Custom primes */}
-          {customPrimes.map((cp) => (
-            <div key={cp.id} className="flex items-center gap-2">
-              <span className="text-xs text-primary font-medium w-28 shrink-0 truncate" title={cp.label}>{cp.label}</span>
-              <Input type="number" min={0} step={1} value={cp.prime_1}
-                onChange={(e) => setCustomPrimes(prev => prev.map(p => p.id === cp.id ? { ...p, prime_1: parseFloat(e.target.value) || 0 } : p))}
-                className="h-8 text-sm w-16" />
-              <Input type="number" min={0} step={1} value={cp.prime_2}
-                onChange={(e) => setCustomPrimes(prev => prev.map(p => p.id === cp.id ? { ...p, prime_2: parseFloat(e.target.value) || 0 } : p))}
-                className="h-8 text-sm w-16" />
-              <Input type="number" min={0} step={1} value={cp.prime_3_plus}
-                onChange={(e) => setCustomPrimes(prev => prev.map(p => p.id === cp.id ? { ...p, prime_3_plus: parseFloat(e.target.value) || 0 } : p))}
-                className="h-8 text-sm w-16" />
-              <button
-                type="button"
-                onClick={() => handleDeleteCustomPrime(cp.id)}
-                className="text-destructive/60 hover:text-destructive transition-colors p-1"
-                title="Supprimer cette prime"
-              >
-                <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" />
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {/* Add custom prime */}
-        {addingCustom ? (
-          <div className="mt-3 p-3 border border-dashed border-border rounded-lg space-y-2">
-            <Input
-              placeholder="Nom de la prime"
-              value={newLabel}
-              onChange={(e) => setNewLabel(e.target.value)}
-              className="h-8 text-sm"
-            />
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-muted-foreground w-28 shrink-0">Montants</span>
-              <Input type="number" min={0} value={newP1} onChange={(e) => setNewP1(parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" placeholder="1er" />
-              <Input type="number" min={0} value={newP2} onChange={(e) => setNewP2(parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" placeholder="2e" />
-              <Input type="number" min={0} value={newP3} onChange={(e) => setNewP3(parseFloat(e.target.value) || 0)} className="h-8 text-sm w-16" placeholder="3e+" />
-            </div>
-            <div className="flex gap-2">
-              <Button size="sm" className="h-7 text-xs gap-1" onClick={handleAddCustomPrime}>
-                <FontAwesomeIcon icon={faPlus} className="h-3 w-3" /> Ajouter
-              </Button>
-              <Button size="sm" variant="ghost" className="h-7 text-xs" onClick={() => setAddingCustom(false)}>
-                Annuler
-              </Button>
-            </div>
-          </div>
-        ) : (
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-3 h-8 text-xs gap-1.5 border-dashed"
-            onClick={() => setAddingCustom(true)}
-          >
-            <FontAwesomeIcon icon={faPlus} className="h-3 w-3" />
-            Ajouter une prime
-          </Button>
-        )}
-      </div>
-      <div>
-        <label className="text-xs font-semibold text-foreground block mb-2">Temps réaliste (semaines indisponibles)</label>
-        <div className="flex items-center gap-2">
-          <Input
-            type="number" min={0} max={52} value={semainesIndispo}
-            onChange={(e) => setSemainesIndispo(parseInt(e.target.value) || 0)}
-            className="h-9 text-sm w-20"
-          />
-          <span className="text-xs text-muted-foreground">semaines (CP, séminaire, frein commercial)</span>
-        </div>
-      </div>
-      <Button onClick={handleSave} disabled={saving} className="gap-2 h-9 text-sm">
-        <FontAwesomeIcon icon={faFloppyDisk} className="h-3.5 w-3.5" />
-        {saving ? "Enregistrement…" : "Enregistrer"}
-      </Button>
     </div>
   );
 }

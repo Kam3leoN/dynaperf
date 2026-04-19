@@ -32,13 +32,30 @@ function canAccessSection(
 export default function NavSectionHub() {
   const { sectionId } = useParams<{ sectionId: string }>();
   const { user } = useAuth();
-  const { isAdmin, isSuperAdmin } = useAdmin(user);
-  const { hasPermission, isModuleEnabled } = usePermissionGate();
+  const { isAdmin, isSuperAdmin, loading: adminLoading } = useAdmin(user);
+  const { hasPermission, isModuleEnabled, loading: permLoading } = usePermissionGate();
 
   const section = sectionId ? RAIL_SECTIONS_ALL.find((s) => s.id === sectionId) : undefined;
 
   if (!sectionId || !section) {
     return <Navigate to="/" replace />;
+  }
+
+  /**
+   * Important : `useAdmin` est instancié par ce composant — au 1er rendu `isAdmin` est encore false
+   * jusqu’à la fin du fetch `user_roles`. Sans attendre `adminLoading` / `permLoading`, on redirige
+   * à tort vers `/` (ex. clic rail Admin depuis `/admin/badges` → hub `/nav/admin`).
+   */
+  if (adminLoading || permLoading) {
+    return (
+      <div
+        className="min-h-[50vh] bg-background flex items-center justify-center motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150"
+        aria-busy="true"
+        aria-live="polite"
+      >
+        <p className="text-muted-foreground text-sm">Chargement…</p>
+      </div>
+    );
   }
 
   if (!canAccessSection(section, isAdmin, hasPermission, isModuleEnabled)) {

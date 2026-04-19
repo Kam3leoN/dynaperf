@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
-import { collaborateursObjectifs, MOIS_ORDRE } from "@/data/audits";
+import { MOIS_ORDRE } from "@/data/audits";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -124,13 +124,6 @@ export function useAuditData() {
     });
   }, [filtered, notedAudits]);
 
-  const collaborateurStats = useMemo(() => {
-    return collaborateursObjectifs.map((c) => {
-      const count = filtered.filter((a) => a.auditeur === c.nom).length;
-      return { ...c, realise: count, progression: c.objectif > 0 ? +(count / c.objectif * 100).toFixed(1) : 0 };
-    });
-  }, [filtered]);
-
   const monthlyData = useMemo(() => {
     const map: Record<string, number> = {};
     MOIS_ORDRE.forEach((m) => (map[m] = 0));
@@ -247,7 +240,6 @@ export function useAuditData() {
     filters,
     setFilters,
     scoresByType,
-    collaborateurStats,
     monthlyData,
     partenaireStats,
     scoreDistribution,

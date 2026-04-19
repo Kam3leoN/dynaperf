@@ -1,4 +1,4 @@
-import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { LayoutGroup } from "framer-motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faChevronLeft, faChevronRight, faHouse } from "@fortawesome/free-solid-svg-icons";
@@ -9,6 +9,7 @@ import {
   getRailScrollSections,
   RAIL_PINNED_TOP_SECTION_ID,
   RAIL_SECTIONS_ALL,
+  ADMIN_RAIL_NAV_DESTINATION,
   type RailSection,
 } from "@/config/appNavigation";
 import { SHELL_RAIL_EXPANDED_PX } from "@/config/layoutBreakpoints";
@@ -40,9 +41,34 @@ const RAIL_COMPACT_ICON_ROW = "relative mx-auto flex h-8 w-14 shrink-0 items-cen
  * Étendu : fond pleine ligne, même `inset` pour hover et actif.
  */
 function RailNavItem({ section, isActive, expanded, pinned }: RailItemProps) {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const railTo = section.id === "admin" ? ADMIN_RAIL_NAV_DESTINATION : section.to;
+  const hubPathname = railTo.split("?")[0] ?? railTo;
+
+  const handleRailClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    // Admin : toujours `/nav/admin` (hub), y compris depuis `/admin/...`.
+    if (section.id === "admin") {
+      e.preventDefault();
+      navigate(ADMIN_RAIL_NAV_DESTINATION);
+      return;
+    }
+    const pathOnly = location.pathname;
+    const inSection = section.pathPrefixes.some((p) => {
+      if (p === "/") return false;
+      return pathOnly === p || pathOnly.startsWith(`${p}/`);
+    });
+    if (inSection && pathOnly !== hubPathname) {
+      e.preventDefault();
+      navigate(railTo);
+    }
+  };
+
   return (
-    <NavLink
-      to={section.to}
+    <Link
+      to={railTo}
+      onClick={handleRailClick}
       title={section.label}
       aria-current={isActive ? "page" : undefined}
       className={cn(
@@ -117,7 +143,7 @@ function RailNavItem({ section, isActive, expanded, pinned }: RailItemProps) {
           {section.label}
         </span>
       </div>
-    </NavLink>
+    </Link>
   );
 }
 

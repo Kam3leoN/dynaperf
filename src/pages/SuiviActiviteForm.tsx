@@ -31,6 +31,7 @@ import {
   faCircleInfo,
 } from "@fortawesome/free-solid-svg-icons";
 import { SaveStatusIndicator } from "@/components/SaveStatusIndicator";
+import { useGamification } from "@/hooks/useGamification";
 
 type ItemStatus = "fait" | "pas_fait" | "nc" | null;
 
@@ -40,6 +41,7 @@ interface ItemAnswer {
 }
 
 export default function SuiviActiviteForm() {
+  const { recordActivity } = useGamification();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const versionParam = searchParams.get("version");
@@ -211,6 +213,7 @@ export default function SuiviActiviteForm() {
         if (error) throw error;
       }
 
+      void recordActivity("suivi");
       const valides = Object.values(answers).filter(a => a.status === "fait").length;
       toast.success(`Suivi enregistré — ${valides}/${totalItems} items validés`);
       navigate("/activite");
