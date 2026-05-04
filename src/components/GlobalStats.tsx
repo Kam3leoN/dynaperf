@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { m3DurationSeconds, M3_MOTION_EASE } from "@/lib/m3Motion";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faCheckCircle, faArrowTrendUp, faArrowTrendDown, faCalendarDay, faCalculator, faUmbrellaBeach, faCalendarCheck } from "@fortawesome/free-solid-svg-icons";
 import { Progress } from "@/components/ui/progress";
@@ -58,7 +59,11 @@ export function GlobalStats({
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0, duration: 0.3 }}
+        transition={{
+          delay: 0,
+          duration: m3DurationSeconds("standard"),
+          ease: [...M3_MOTION_EASE.standardDecelerate] as [number, number, number, number],
+        }}
         className="bg-card rounded-2xl p-3 sm:p-5 shadow-soft border border-border/60"
       >
         <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider leading-tight flex items-center gap-1.5">
@@ -76,7 +81,11 @@ export function GlobalStats({
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.04, duration: 0.3 }}
+        transition={{
+          delay: m3DurationSeconds("standardAccelerate") * 0.2,
+          duration: m3DurationSeconds("standard"),
+          ease: [...M3_MOTION_EASE.standardDecelerate] as [number, number, number, number],
+        }}
         className="bg-card rounded-2xl p-3 sm:p-5 shadow-soft border border-border/60"
       >
         <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider leading-tight flex items-center gap-1.5">
@@ -96,7 +105,11 @@ export function GlobalStats({
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.08, duration: 0.3 }}
+        transition={{
+          delay: m3DurationSeconds("standardAccelerate") * 0.4,
+          duration: m3DurationSeconds("standard"),
+          ease: [...M3_MOTION_EASE.standardDecelerate] as [number, number, number, number],
+        }}
         className="bg-card rounded-2xl p-3 sm:p-5 shadow-soft border border-border/60"
       >
         <p className="text-[10px] sm:text-xs font-semibold text-muted-foreground uppercase tracking-wider leading-tight">
@@ -122,7 +135,11 @@ export function GlobalStats({
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.12, duration: 0.3 }}
+        transition={{
+          delay: m3DurationSeconds("standardAccelerate") * 0.6,
+          duration: m3DurationSeconds("standard"),
+          ease: [...M3_MOTION_EASE.standardDecelerate] as [number, number, number, number],
+        }}
         className="bg-card rounded-2xl p-3 sm:p-5 shadow-soft border border-border/60 cursor-pointer select-none"
         onClick={() => setModeRealiste((prev) => !prev)}
         title="Cliquez pour basculer entre estimation brute et réaliste (−10 semaines)"

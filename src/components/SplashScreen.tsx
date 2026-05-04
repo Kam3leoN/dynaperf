@@ -1,5 +1,6 @@
 import { useEffect, useRef } from "react";
 import { motion } from "framer-motion";
+import { m3DurationSeconds, M3_MOTION_EASE } from "@/lib/m3Motion";
 
 const SPLASH_SHOW_MS = 1600;
 /** Durée approx. de l’anim de sortie + marge — ne pas dépendre uniquement de `onExitComplete` Framer (peut ne pas fire). */
@@ -50,7 +51,10 @@ export function SplashScreen({ onFinished }: { onFinished: () => void }) {
     <motion.div
       initial={{ opacity: 1 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+      transition={{
+        duration: m3DurationSeconds("emphasizedDecelerate"),
+        ease: [...M3_MOTION_EASE.emphasizedDecelerate] as [number, number, number, number],
+      }}
       className="fixed inset-0 z-[9999] flex flex-col items-center justify-center px-6"
       style={{ backgroundColor: "#ee4540" }}
     >
@@ -58,7 +62,11 @@ export function SplashScreen({ onFinished }: { onFinished: () => void }) {
         className="w-[80%] sm:w-[60%] lg:w-[40%] max-w-md mb-6"
         initial={{ opacity: 0, scale: 0.8 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1], delay: 0.05 }}
+        transition={{
+          duration: m3DurationSeconds("emphasizedDecelerate"),
+          ease: [...M3_MOTION_EASE.emphasizedDecelerate] as [number, number, number, number],
+          delay: m3DurationSeconds("standardAccelerate") / 4,
+        }}
       >
         <LogoInline />
       </motion.div>
@@ -66,7 +74,11 @@ export function SplashScreen({ onFinished }: { onFinished: () => void }) {
         className="text-white/80 text-base sm:text-lg mt-2 font-medium"
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1], delay: 0.2 }}
+        transition={{
+          duration: m3DurationSeconds("standardDecelerate"),
+          ease: [...M3_MOTION_EASE.standardDecelerate] as [number, number, number, number],
+          delay: m3DurationSeconds("emphasizedAccelerate"),
+        }}
       >
         Performance &amp; Excellence
       </motion.p>

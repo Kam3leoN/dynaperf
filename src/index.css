@@ -4,6 +4,7 @@
 @import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400..700,0..1,-50..200');
 
 @import "./styles/action-icon-tone.css";
+@import "./styles/m3-motion.css";
 
 @tailwind base;
 @tailwind components;
@@ -11,8 +12,8 @@
 
 @layer base {
   :root {
-    /* Shell : largeur rail (NavigationShellContext / AppNavRail) — défaut = étendu. */
-    --shell-nav-rail-width: 256px;
+    /* Shell : largeur rail (NavigationShellContext / AppNavRail) — défaut = étendu (M3 Expressive 360px). */
+    --shell-nav-rail-width: 360px;
 
     /* ── Surface & Foreground ── */
     --background: 210 20% 98%;

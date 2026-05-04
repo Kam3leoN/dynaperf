@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faMicrophone,
@@ -19,9 +19,7 @@ import {
   m3DockSplitGroup,
   m3DockSplitIconMd,
   m3DockSplitSegmentFirst,
-  m3DockSplitSegmentFirstGrow,
   m3DockSplitSegmentSecond,
-  m3DockSplitSegmentSecondGrow,
 } from "@/lib/m3DockSplitButton";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +27,7 @@ interface DesktopUserDockProps {
   profileSlot: ReactNode;
 }
 
-/** Rail étendu : groupe 74×36 (36 + gap 2px interne + 36) ; 4px entre chaque groupe via `gap-1` sur la ligne. */
+/** Rail étendu : split M3 taille S (82×40 = 40+2+40) ; 4px entre groupes via `gap-1`. */
 function getExpandedSplitClasses() {
   return {
     splitOuter: m3DockSplitGroup.expanded,
@@ -40,13 +38,13 @@ function getExpandedSplitClasses() {
   };
 }
 
-/** Rail compact : colonne (profil → micro → audio), lignes pleine largeur, 36px de haut, M3. */
+/** Rail compact : colonne centrée, split S fixe 82×40 (40+2+40), pas d’étirement `flex-1`. */
 function getCompactSplitClasses() {
   const splitOuterNext = m3DockSplitGroup.compactRow;
   return {
     splitOuterNext,
-    mainBtn: m3DockSplitSegmentFirstGrow,
-    chevronBtn: m3DockSplitSegmentSecondGrow,
+    mainBtn: m3DockSplitSegmentFirst,
+    chevronBtn: m3DockSplitSegmentSecond,
     iconSm: m3DockSplitIconMd,
     chevronIcon: m3DockSplitChevronMd,
   };
@@ -75,9 +73,16 @@ export function DesktopUserDock({ profileSlot }: DesktopUserDockProps) {
   const { railExpanded } = useNavigationShell();
   const compact = !railExpanded;
   const sc = getDockSplitLayout(compact);
+  const [micMenuOpen, setMicMenuOpen] = useState(false);
+  const [outMenuOpen, setOutMenuOpen] = useState(false);
 
   const micBlock = (
-    <div className={sc.micRow} role="group" aria-label="Microphone">
+    <div
+      className={sc.micRow}
+      role="group"
+      aria-label="Microphone"
+      data-menu-open={micMenuOpen ? "" : undefined}
+    >
       <Tooltip delayDuration={300}>
         <TooltipTrigger asChild>
           <button
@@ -98,6 +103,7 @@ export function DesktopUserDock({ profileSlot }: DesktopUserDockProps) {
       </Tooltip>
       <DropdownMenu
         onOpenChange={(open) => {
+          setMicMenuOpen(open);
           if (open) void audio.ensureAudioDeviceLabelsIfNeeded();
         }}
       >
@@ -123,7 +129,12 @@ export function DesktopUserDock({ profileSlot }: DesktopUserDockProps) {
   );
 
   const outBlock = (
-    <div className={sc.outRow} role="group" aria-label="Sortie audio">
+    <div
+      className={sc.outRow}
+      role="group"
+      aria-label="Sortie audio"
+      data-menu-open={outMenuOpen ? "" : undefined}
+    >
       <Tooltip delayDuration={300}>
         <TooltipTrigger asChild>
           <button
@@ -144,6 +155,7 @@ export function DesktopUserDock({ profileSlot }: DesktopUserDockProps) {
       </Tooltip>
       <DropdownMenu
         onOpenChange={(open) => {
+          setOutMenuOpen(open);
           if (open) void audio.refreshDevices();
         }}
       >
@@ -170,12 +182,12 @@ export function DesktopUserDock({ profileSlot }: DesktopUserDockProps) {
 
   return (
     <div
-      className="pointer-events-none hidden shell:block fixed bottom-0 left-0 z-[46] w-[var(--shell-nav-rail-width,256px)] p-2 pb-3"
+      className="pointer-events-none hidden shell:block fixed bottom-0 left-0 z-[46] w-[var(--shell-nav-rail-width,360px)] p-2 pb-3"
       role="presentation"
     >
       {compact ? (
         <div
-          className="pointer-events-auto flex w-full min-w-0 flex-col gap-1 overflow-visible"
+          className="pointer-events-auto flex w-full min-w-0 flex-col items-center gap-1 overflow-visible"
           role="region"
           aria-label="Profil et audio"
         >
@@ -185,7 +197,7 @@ export function DesktopUserDock({ profileSlot }: DesktopUserDockProps) {
         </div>
       ) : (
         <div
-          className="pointer-events-auto flex w-full min-w-0 flex-row flex-wrap items-center justify-start gap-1 px-0.5"
+          className="pointer-events-auto flex w-full min-w-0 flex-row flex-nowrap items-center justify-start gap-1 px-0.5"
           role="region"
           aria-label="Profil et audio"
         >

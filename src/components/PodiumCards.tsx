@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { m3DurationSeconds, M3_MOTION_EASE } from "@/lib/m3Motion";
 import { getTypeColorHSL } from "@/lib/eventTypeColors";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faTrophy } from "@fortawesome/free-solid-svg-icons";
@@ -62,7 +63,10 @@ export function PodiumCards({ data }: PodiumCardsProps) {
             key={type}
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
+            transition={{
+              duration: m3DurationSeconds("standard"),
+              ease: [...M3_MOTION_EASE.standardDecelerate] as [number, number, number, number],
+            }}
             className="bg-card rounded-2xl shadow-soft border border-border/60 p-4"
           >
             <h4 className="text-xs font-semibold text-foreground mb-4 text-center truncate">

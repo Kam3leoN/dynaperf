@@ -55,7 +55,7 @@ function ChannelRow({
   return (
     <div
       className={cn(
-        "relative flex w-full items-stretch gap-0.5 rounded-md transition-[background-color,box-shadow,opacity] duration-150 ease-out",
+        "relative flex w-full items-stretch gap-0.5 rounded-md transition-[background-color,box-shadow,opacity] duration-m3-standard-accelerate ease-m3-standard",
         isDragging && "z-[1] opacity-[0.42] shadow-sm ring-1 ring-border/60",
         isDropHover && !isDragging && "bg-primary/[0.07] shadow-[inset_0_0_0_1px_hsl(var(--primary)/0.22)]",
       )}
@@ -92,7 +92,7 @@ function ChannelRow({
         type="button"
         onClick={onSelect}
         className={cn(
-          "relative flex min-w-0 flex-1 items-center gap-1.5 overflow-visible rounded py-1.5 pl-2 pr-2 text-left transition-colors duration-150",
+          "relative flex min-w-0 flex-1 items-center gap-1.5 overflow-visible rounded py-1.5 pl-2 pr-2 text-left transition-colors duration-m3-standard-accelerate ease-m3-standard",
           "outline-none focus-visible:outline-none focus-visible:ring-0",
           active ? "bg-primary/12" : "hover:bg-primary/[0.08]",
           isDropHover && !isDragging && !active && "hover:bg-primary/[0.09]",

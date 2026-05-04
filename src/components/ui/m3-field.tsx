@@ -56,7 +56,7 @@ export const M3Field = React.forwardRef<HTMLDivElement, M3FieldProps>(
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           className={cn(
-            "rounded-xl border bg-transparent transition-all duration-200 min-h-[2.75rem]",
+            "rounded-xl border bg-transparent transition-all duration-m3-standard ease-m3-standard min-h-[2.75rem]",
             "flex items-center",
             focused
               ? "border-primary border-[3px] shadow-[0_0_0_1px_hsl(var(--primary)/0.08)]"

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 
 import { motion } from "framer-motion";
+import { m3DurationSeconds, M3_MOTION_EASE } from "@/lib/m3Motion";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAdmin } from "@/hooks/useAdmin";
@@ -541,7 +542,7 @@ export default function Drive() {
   if (loading) {
     return (
       <AppLayout>
-        <div className="space-y-5 max-w-6xl mx-auto animate-in fade-in duration-200">
+        <div className="space-y-5 max-w-6xl mx-auto animate-in fade-in duration-m3-standard ease-m3-standard">
           <div className="flex items-center justify-between gap-3">
             <div className="h-8 w-36 sm:w-44 rounded-lg bg-muted animate-pulse" />
             <div className="h-10 w-24 rounded-lg bg-muted animate-pulse" />
@@ -693,7 +694,16 @@ export default function Drive() {
               const thumbPending = canPreview(doc) && !thumbUrl;
               const isNew = isNewDocument(doc.created_at);
               return (
-                <motion.div key={doc.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.2 }}>
+                <motion.div
+                  key={doc.id}
+                  layout
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: m3DurationSeconds("standardAccelerate"),
+                    ease: [...M3_MOTION_EASE.standardDecelerate] as [number, number, number, number],
+                  }}
+                >
                   <Card
                     className="group cursor-pointer transition-all hover:shadow-hover hover:-translate-y-0.5 overflow-hidden relative"
                     onClick={() => openPreview(doc)}

@@ -352,7 +352,6 @@ export type Database = {
           auditeur: string
           created_at: string
           created_by: string | null
-          custom_prime_id: string | null
           date: string
           id: string
           lieu: string | null
@@ -367,7 +366,6 @@ export type Database = {
           auditeur: string
           created_at?: string
           created_by?: string | null
-          custom_prime_id?: string | null
           date: string
           id?: string
           lieu?: string | null
@@ -382,7 +380,6 @@ export type Database = {
           auditeur?: string
           created_at?: string
           created_by?: string | null
-          custom_prime_id?: string | null
           date?: string
           id?: string
           lieu?: string | null
@@ -392,47 +389,6 @@ export type Database = {
           statut?: string
           type_evenement?: string
           updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "audits_custom_prime_id_fkey"
-            columns: ["custom_prime_id"]
-            isOneToOne: false
-            referencedRelation: "user_custom_primes"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      badges: {
-        Row: {
-          category: string
-          created_at: string
-          description: string
-          icon: string
-          id: string
-          key: string
-          label: string
-          threshold: number
-        }
-        Insert: {
-          category?: string
-          created_at?: string
-          description?: string
-          icon?: string
-          id?: string
-          key: string
-          label: string
-          threshold?: number
-        }
-        Update: {
-          category?: string
-          created_at?: string
-          description?: string
-          icon?: string
-          id?: string
-          key?: string
-          label?: string
-          threshold?: number
         }
         Relationships: []
       }
@@ -533,27 +489,6 @@ export type Database = {
           palier_1: number | null
           palier_2: number | null
           palier_3: number | null
-          prime_audit_1: number
-          prime_audit_2: number
-          prime_audit_3_plus: number
-          prime_club_1: number
-          prime_club_2: number
-          prime_club_3_plus: number
-          prime_distanciel_1: number
-          prime_distanciel_2: number
-          prime_distanciel_3_plus: number
-          prime_evenementiel_1: number
-          prime_evenementiel_2: number
-          prime_evenementiel_3_plus: number
-          prime_mep_1: number
-          prime_mep_2: number
-          prime_mep_3_plus: number
-          prime_rdv_1: number
-          prime_rdv_2: number
-          prime_rdv_3_plus: number
-          prime_suivi_1: number
-          prime_suivi_2: number
-          prime_suivi_3_plus: number
           semaines_indisponibles: number
           updated_at: string
           user_id: string
@@ -565,27 +500,6 @@ export type Database = {
           palier_1?: number | null
           palier_2?: number | null
           palier_3?: number | null
-          prime_audit_1?: number
-          prime_audit_2?: number
-          prime_audit_3_plus?: number
-          prime_club_1?: number
-          prime_club_2?: number
-          prime_club_3_plus?: number
-          prime_distanciel_1?: number
-          prime_distanciel_2?: number
-          prime_distanciel_3_plus?: number
-          prime_evenementiel_1?: number
-          prime_evenementiel_2?: number
-          prime_evenementiel_3_plus?: number
-          prime_mep_1?: number
-          prime_mep_2?: number
-          prime_mep_3_plus?: number
-          prime_rdv_1?: number
-          prime_rdv_2?: number
-          prime_rdv_3_plus?: number
-          prime_suivi_1?: number
-          prime_suivi_2?: number
-          prime_suivi_3_plus?: number
           semaines_indisponibles?: number
           updated_at?: string
           user_id: string
@@ -597,27 +511,6 @@ export type Database = {
           palier_1?: number | null
           palier_2?: number | null
           palier_3?: number | null
-          prime_audit_1?: number
-          prime_audit_2?: number
-          prime_audit_3_plus?: number
-          prime_club_1?: number
-          prime_club_2?: number
-          prime_club_3_plus?: number
-          prime_distanciel_1?: number
-          prime_distanciel_2?: number
-          prime_distanciel_3_plus?: number
-          prime_evenementiel_1?: number
-          prime_evenementiel_2?: number
-          prime_evenementiel_3_plus?: number
-          prime_mep_1?: number
-          prime_mep_2?: number
-          prime_mep_3_plus?: number
-          prime_rdv_1?: number
-          prime_rdv_2?: number
-          prime_rdv_3_plus?: number
-          prime_suivi_1?: number
-          prime_suivi_2?: number
-          prime_suivi_3_plus?: number
           semaines_indisponibles?: number
           updated_at?: string
           user_id?: string
@@ -1231,68 +1124,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_badges: {
-        Row: {
-          badge_id: string
-          earned_at: string
-          id: string
-          user_id: string
-        }
-        Insert: {
-          badge_id: string
-          earned_at?: string
-          id?: string
-          user_id: string
-        }
-        Update: {
-          badge_id?: string
-          earned_at?: string
-          id?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "user_badges_badge_id_fkey"
-            columns: ["badge_id"]
-            isOneToOne: false
-            referencedRelation: "badges"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
-      user_custom_primes: {
-        Row: {
-          created_at: string
-          id: string
-          label: string
-          prime_1: number
-          prime_2: number
-          prime_3_plus: number
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          label: string
-          prime_1?: number
-          prime_2?: number
-          prime_3_plus?: number
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          label?: string
-          prime_1?: number
-          prime_2?: number
-          prime_3_plus?: number
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       user_module_overrides: {
         Row: {
           created_at: string
@@ -1370,48 +1201,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_streaks: {
-        Row: {
-          current_streak: number
-          id: string
-          last_activity_date: string | null
-          level: number
-          longest_streak: number
-          total_audits: number
-          total_suivis: number
-          total_messages_sent: number
-          updated_at: string
-          user_id: string
-          xp: number
-        }
-        Insert: {
-          current_streak?: number
-          id?: string
-          last_activity_date?: string | null
-          level?: number
-          longest_streak?: number
-          total_audits?: number
-          total_suivis?: number
-          total_messages_sent?: number
-          updated_at?: string
-          user_id: string
-          xp?: number
-        }
-        Update: {
-          current_streak?: number
-          id?: string
-          last_activity_date?: string | null
-          level?: number
-          longest_streak?: number
-          total_audits?: number
-          total_suivis?: number
-          total_messages_sent?: number
-          updated_at?: string
-          user_id?: string
-          xp?: number
-        }
-        Relationships: []
-      }
       webauthn_credentials: {
         Row: {
           created_at: string
@@ -1456,27 +1245,6 @@ export type Database = {
           palier_1: number
           palier_2: number
           palier_3: number
-          prime_audit_1: number
-          prime_audit_2: number
-          prime_audit_3_plus: number
-          prime_club_1: number
-          prime_club_2: number
-          prime_club_3_plus: number
-          prime_distanciel_1: number
-          prime_distanciel_2: number
-          prime_distanciel_3_plus: number
-          prime_evenementiel_1: number
-          prime_evenementiel_2: number
-          prime_evenementiel_3_plus: number
-          prime_mep_1: number
-          prime_mep_2: number
-          prime_mep_3_plus: number
-          prime_rdv_1: number
-          prime_rdv_2: number
-          prime_rdv_3_plus: number
-          prime_suivi_1: number
-          prime_suivi_2: number
-          prime_suivi_3_plus: number
           semaines_indisponibles: number
           updated_at: string
           user_id: string
@@ -1488,10 +1256,6 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
-      }
-      record_activity: {
-        Args: { p_score?: number; p_type: string }
-        Returns: Json
       }
     }
     Enums: {

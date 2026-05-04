@@ -45,7 +45,7 @@ CREATE POLICY "Admins manage permission overrides"
 
 -- --- Seed permissions ---
 INSERT INTO public.app_permissions (key, description) VALUES
-  ('nav.hub', 'Hub, préférences, profil, primes, notifications (zone accueil)'),
+  ('nav.hub', 'Hub, préférences, profil, notifications (zone accueil)'),
   ('nav.audits', 'Audits : tableau de bord, registre, formulaires'),
   ('nav.activite', 'Suivis d’activité'),
   ('nav.reseau', 'Réseau, business plan'),

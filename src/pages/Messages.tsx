@@ -3,7 +3,6 @@ import { useSearchParams } from "react-router-dom";
 import { AppLayout } from "@/components/AppLayout";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useGamification } from "@/hooks/useGamification";
 import { useAdmin } from "@/hooks/useAdmin";
 import { usePermissionGate } from "@/contexts/PermissionsContext";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -487,7 +486,7 @@ function MessagesInputBar({ value, onChange, onSend, sendDisabled }: MessagesInp
   }
 
   return (
-    <div className="pointer-events-none fixed bottom-0 left-0 right-0 z-[42] p-2 pb-3 shell:left-[var(--shell-nav-rail-width,256px)] shell:right-[260px]">
+    <div className="pointer-events-none fixed bottom-0 left-0 right-0 z-[42] p-2 pb-3 shell:left-[var(--shell-nav-rail-width,360px)] shell:right-[260px]">
       <div className="pointer-events-auto w-full">{chrome}</div>
     </div>
   );
@@ -495,7 +494,6 @@ function MessagesInputBar({ value, onChange, onSend, sendDisabled }: MessagesInp
 
 export default function Messages() {
   const { user } = useAuth();
-  const { recordActivity } = useGamification();
   const { labelForRow } = usePresenceStatusDefinitions();
   const { isAdmin } = useAdmin(user);
   const { hasPermission } = usePermissionGate();
@@ -1185,7 +1183,6 @@ export default function Messages() {
           }
         }
       }
-      void recordActivity("message");
       setNewMsg("");
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : "Envoi impossible";

@@ -3,9 +3,6 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect, useMemo, useState } from "react";
 import { AppLayout } from "@/components/AppLayout";
-import { GamificationWidget } from "@/components/GamificationWidget";
-import { useGamification } from "@/hooks/useGamification";
-import { BadgeReward } from "@/components/BadgeReward";
 import { absoluteAppHomeUrl } from "@/lib/basePath";
 import { QrStylingPreview } from "@/components/qr/QrStylingPreview";
 import { useQrShapeLibraryMap } from "@/hooks/useQrShapeLibrary";
@@ -28,7 +25,6 @@ const WELCOME_QR_FG = "#111827";
 export default function Welcome() {
   const { user } = useAuth();
   const [firstName, setFirstName] = useState<string | null>(null);
-  const { streaks, earnedBadges, allBadges, newBadge, dismissBadge } = useGamification();
   const [welcomeQrOpen, setWelcomeQrOpen] = useState(false);
   const [installHelpOpen, setInstallHelpOpen] = useState(false);
   const [favoritesHelpOpen, setFavoritesHelpOpen] = useState(false);
@@ -103,7 +99,7 @@ export default function Welcome() {
   };
 
   const navCardClassName = cn(
-    "h-full border-border/60 bg-card shadow-soft transition-all duration-200",
+    "h-full border-border/60 bg-card shadow-soft transition-all duration-m3-standard ease-m3-standard",
     "hover:border-primary/35 hover:shadow-hover hover:-translate-y-0.5",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2",
   );
@@ -115,8 +111,6 @@ export default function Welcome() {
 
   return (
     <AppLayout>
-      <BadgeReward badge={newBadge} onDismiss={dismissBadge} />
-
       <div className="mx-auto max-w-4xl space-y-6 pb-8">
         <header>
           <h1 className="text-6xl font-bold tracking-tight text-foreground sm:text-7xl">
@@ -222,12 +216,6 @@ export default function Welcome() {
             </Card>
           </button>
         </div>
-
-        {streaks && (
-          <div className="rounded-3xl border border-border/30 bg-card p-5 shadow-soft">
-            <GamificationWidget streaks={streaks} earnedBadges={earnedBadges} allBadges={allBadges} />
-          </div>
-        )}
 
         <div className="flex justify-center pt-2">
           <span className="inline-flex items-center gap-1.5 rounded-full border border-border/30 bg-muted/30 px-3 py-1 text-[10px] font-medium text-muted-foreground">

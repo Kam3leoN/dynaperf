@@ -8,6 +8,7 @@ import { faPlus, faTrashCan, faPenToSquare, faFloppyDisk, faGripVertical } from 
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { M3_FRAMER_FADE_PRESENCE } from "@/lib/m3Motion";
 import { FranceSectorsMap } from "@/components/admin/FranceSectorsMap";
 import { ActionIconButton } from "@/components/ActionIconButton";
 
@@ -268,7 +269,14 @@ export default function AdminSecteurs() {
           <div className="md:hidden space-y-2">
             <AnimatePresence>
               {secteurs.map(s => (
-                <motion.div key={s.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-card border border-border rounded-lg p-3 space-y-2">
+                <motion.div
+                  key={s.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={M3_FRAMER_FADE_PRESENCE}
+                  className="bg-card border border-border rounded-lg p-3 space-y-2"
+                >
                   <div className="flex items-center justify-between">
                     {editId === s.id ? (
                       <div className="flex items-center gap-2 flex-1">

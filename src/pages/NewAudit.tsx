@@ -76,7 +76,7 @@ export default function NewAudit() {
   };
 
   const navCardClassName = cn(
-    "h-full border-border/60 bg-card shadow-soft transition-all duration-200",
+    "h-full border-border/60 bg-card shadow-soft transition-all duration-m3-standard ease-m3-standard",
     "hover:border-primary/35 hover:shadow-hover hover:-translate-y-0.5",
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2",
   );

@@ -33,7 +33,6 @@ import {
   faCircleDot,
   faVideo,
   faLayerGroup,
-  faAward,
 } from "@fortawesome/free-solid-svg-icons";
 
 /** Hub « vue d’ensemble » (Material 3 Expressive : clic rail → page de cartes, pas le 1er sous-lien). */
@@ -256,7 +255,6 @@ const admin: RailSection = {
     { label: "Sauvegardes", to: "/admin/backups", icon: faDatabase, requiredSuperAdmin: true },
     { label: "Utilisateurs", to: "/admin/users", icon: faUsers },
     { label: "Modules", to: "/admin/modules", icon: faCubes },
-    { label: "Badges & Gamification", to: "/admin/badges", icon: faAward, requiredModule: "gamification" },
     { label: "Audits", to: "/admin/audits-config", icon: faClipboardList },
     { label: "Secteurs", to: "/admin/secteurs", icon: faMapLocationDot },
     { label: "Identité", to: "/admin/branding", icon: faPalette },

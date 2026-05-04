@@ -44,12 +44,12 @@ export default function NavSectionHub() {
   /**
    * Important : `useAdmin` est instancié par ce composant — au 1er rendu `isAdmin` est encore false
    * jusqu’à la fin du fetch `user_roles`. Sans attendre `adminLoading` / `permLoading`, on redirige
-   * à tort vers `/` (ex. clic rail Admin depuis `/admin/badges` → hub `/nav/admin`).
+   * à tort vers `/` (ex. clic rail Admin depuis `/admin/users` → hub `/nav/admin`).
    */
   if (adminLoading || permLoading) {
     return (
       <div
-        className="min-h-[50vh] bg-background flex items-center justify-center motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150"
+        className="min-h-[50vh] bg-background flex items-center justify-center motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-m3-standard-accelerate motion-safe:ease-m3-standard-accelerate"
         aria-busy="true"
         aria-live="polite"
       >
@@ -84,7 +84,7 @@ export default function NavSectionHub() {
             <Link key={item.to} to={item.to} className="group block min-w-0">
               <Card
                 className={cn(
-                  "h-full border-border/60 bg-card shadow-soft transition-all duration-200",
+                  "h-full border-border/60 bg-card shadow-soft transition-all duration-m3-standard ease-m3-standard",
                   "hover:border-primary/35 hover:shadow-hover hover:-translate-y-0.5",
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40 focus-visible:ring-offset-2",
                 )}

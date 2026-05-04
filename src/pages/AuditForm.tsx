@@ -25,8 +25,6 @@ import {
   draftHasContent,
   loadAuditDraft,
 } from "@/lib/auditDraftStorage";
-import { BadgeReward } from "@/components/BadgeReward";
-import type { Badge } from "@/hooks/useGamification";
 import { fireAuditCompletionConfetti } from "@/lib/confettiAuditComplete";
 import { scrollEntireLayoutToTopAsync, scrollLayoutMainToTop } from "@/lib/scrollLayout";
 
@@ -86,10 +84,6 @@ export default function AuditForm() {
   const auditFormTopAnchorRef = useRef<HTMLDivElement>(null);
   const prevDraftKeyRef = useRef<string | null>(null);
   const draftWelcomeToastKeyRef = useRef<string | null>(null);
-  /** Statut avant finalisation : pour ne compter la gamification qu’au passage en « OK ». */
-  const priorAuditStatutRef = useRef<string | null>(null);
-  const [celebrationBadge, setCelebrationBadge] = useState<Badge | null>(null);
-
   /** Changement de type d’audit (query) ou toast unique si brouillon présent au chargement. */
   useEffect(() => {
     if (isEditMode) {
@@ -170,7 +164,6 @@ export default function AuditForm() {
       ]);
 
       if (audit) {
-        priorAuditStatutRef.current = audit.statut ?? "NON";
         const detailItems = detail?.items as Record<string, unknown> | undefined;
         const customFieldValues =
           (detailItems?.__custom_fields as Record<string, unknown> | undefined) || {};
@@ -498,33 +491,6 @@ export default function AuditForm() {
 
       clearAuditDraft(draftStorageKey);
 
-      const shouldGamify = priorAuditStatutRef.current !== "OK";
-      let primaryBadge: Badge | null = null;
-
-      if (shouldGamify) {
-        const { data: rpcData, error: rpcErr } = await supabase.rpc("record_activity", {
-          p_type: "audit",
-          p_score: noteSur10,
-        });
-        if (rpcErr) {
-          console.error(rpcErr);
-        } else if (rpcData && typeof rpcData === "object" && !Array.isArray(rpcData)) {
-          const raw = rpcData as { new_badge_ids?: unknown };
-          const ids = raw.new_badge_ids;
-          const list = Array.isArray(ids) ? ids.filter((x): x is string => typeof x === "string") : [];
-          if (list.length > 0) {
-            const { data: badgeRows } = await supabase.from("badges").select("*").in("id", list);
-            if (badgeRows?.length) {
-              const sorted = [...badgeRows].sort((a, b) => (b.threshold ?? 0) - (a.threshold ?? 0));
-              primaryBadge = sorted[0] as Badge;
-              sorted.slice(1).forEach((b) => {
-                toast.success(`Badge débloqué : ${b.label}`, { description: b.description });
-              });
-            }
-          }
-        }
-      }
-
       const { data: authAfter } = await supabase.auth.getUser();
       const uid = authAfter.user?.id;
       if (uid && stepZeroData) {
@@ -541,12 +507,7 @@ export default function AuditForm() {
       toast.success(isEditMode ? `Audit modifié — Note : ${noteSur10}/10` : `Audit enregistré — Note : ${noteSur10}/10`);
 
       fireAuditCompletionConfetti();
-
-      if (primaryBadge) {
-        setCelebrationBadge(primaryBadge);
-      } else {
-        navigate("/audits");
-      }
+      navigate("/audits");
     } catch (error) {
       console.error(error);
       toast.error("Erreur lors de la finalisation de l'audit");
@@ -575,20 +536,6 @@ export default function AuditForm() {
             Retour
           </button>
         </div>
-      </AppLayout>
-    );
-  }
-
-  if (celebrationBadge) {
-    return (
-      <AppLayout mainClassName="!pt-0 shell:!pt-0">
-        <BadgeReward
-          badge={celebrationBadge}
-          onDismiss={() => {
-            setCelebrationBadge(null);
-            navigate("/audits");
-          }}
-        />
       </AppLayout>
     );
   }

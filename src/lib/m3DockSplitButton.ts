@@ -1,51 +1,48 @@
+/**
+ * Split bouton dock — **Material 3 Expressive**, taille **S (40dp)**.
+ * Implémentation complète : `src/lib/m3SplitButton.ts` (XS → XL, tokens, motion).
+ */
+
+export {
+  M3_SPLIT_TRAILING_OPEN_CLASS,
+  M3_SPLIT_BUTTON_SPECS,
+  M3_SPLIT_MOTION_STANDARD,
+  M3_SPLIT_DOCK_SIZE,
+  m3SplitButtonDock,
+  m3SplitButtonGroup,
+  m3SplitButtonLeadingFixed,
+  m3SplitButtonTrailingFixed,
+  m3SplitButtonLeadingGrow,
+  m3SplitButtonTrailingGrow,
+  m3SplitButtonLeadingIconClass,
+  m3SplitButtonTrailingIconClass,
+  m3SplitButtonTrailingChevronClass,
+  m3SplitButtonLeadingInnerRadiiClass,
+  m3SplitButtonTotalWidthPx,
+  type M3SplitButtonSize,
+  type M3SplitButtonSpec,
+} from "./m3SplitButton";
+
+import { m3SplitButtonDock } from "./m3SplitButton";
 import { cn } from "@/lib/utils";
 
-/**
- * Split bouton dock — 36×36 par segment, **2px** entre les deux segments du même split, joint interne 4px, extérieurs 18px (demi-pill).
- * L’espacement **entre** les groupes (profil / micro / audio) est géré dans `DesktopUserDock` (4px).
- * Fond **primary** très léger : un peu plus dense en clair, plus doux en sombre — pas de bordure, l’écart entre segments fait la démarcation.
- *
- * Les rayons sont en **littéraux** (pas `rounded-full`) pour que les 4px internes restent visibles.
- */
+/** @deprecated Utiliser `m3SplitButtonDock` */
 export const m3DockSplitGroup = {
-  expanded: "inline-flex h-9 w-[74px] shrink-0 items-stretch gap-[2px] overflow-visible",
-  compactRow: "flex h-9 w-full min-w-0 items-stretch gap-[2px] overflow-visible",
+  expanded: m3SplitButtonDock.groupExpanded,
+  compactRow: m3SplitButtonDock.groupCompactRow,
 } as const;
 
-const segmentSurface = cn(
-  "flex h-9 shrink-0 items-center justify-center border-0 text-foreground/90 shadow-sm",
-  "bg-primary/[0.08] dark:bg-primary/[0.14]",
-  "transition-colors outline-none",
-  "hover:bg-primary/[0.12] dark:hover:bg-primary/[0.2]",
-  "active:bg-primary/[0.15] dark:active:bg-primary/[0.24]",
-  "focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
-  "box-border",
+export const m3DockSplitSegmentFirst = m3SplitButtonDock.leadingFixed;
+export const m3DockSplitSegmentSecond = m3SplitButtonDock.trailingFixed;
+export const m3DockSplitSegmentFirstGrow = m3SplitButtonDock.leadingGrow;
+export const m3DockSplitSegmentSecondGrow = m3SplitButtonDock.trailingGrow;
+
+/** Micro muet / sourd — états hover/active explicites pour écraser le segment primary (évite flash au clic). */
+export const m3DockSplitDanger = cn(
+  "bg-destructive/15 text-destructive",
+  "hover:bg-destructive/25 dark:hover:bg-destructive/30",
+  "active:bg-destructive/25 dark:active:bg-destructive/35",
 );
 
-/** Extérieur gauche 18px, intérieur droit 4px */
-export const m3DockSplitSegmentFirst = cn(
-  segmentSurface,
-  "w-9 rounded-tl-[18px] rounded-bl-[18px] rounded-tr-[4px] rounded-br-[4px]",
-);
-
-/** Intérieur gauche 4px, extérieur droit 18px */
-export const m3DockSplitSegmentSecond = cn(
-  segmentSurface,
-  "w-9 rounded-tl-[4px] rounded-bl-[4px] rounded-tr-[18px] rounded-br-[18px]",
-);
-
-export const m3DockSplitSegmentFirstGrow = cn(
-  segmentSurface,
-  "min-w-0 flex-1 w-auto rounded-tl-[18px] rounded-bl-[18px] rounded-tr-[4px] rounded-br-[4px]",
-);
-
-export const m3DockSplitSegmentSecondGrow = cn(
-  segmentSurface,
-  "min-w-0 flex-1 w-auto rounded-tl-[4px] rounded-bl-[4px] rounded-tr-[18px] rounded-br-[18px]",
-);
-
-/** Micro muet / sourd */
-export const m3DockSplitDanger = "bg-destructive/15 text-destructive hover:bg-destructive/25";
-
-export const m3DockSplitIconMd = "h-[14px] w-[14px]";
-export const m3DockSplitChevronMd = "h-3.5 w-3.5 opacity-75";
+export const m3DockSplitIconMd = m3SplitButtonDock.leadingIcon;
+export const m3DockSplitChevronMd = m3SplitButtonDock.trailingChevron;

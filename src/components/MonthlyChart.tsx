@@ -1,4 +1,5 @@
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
+import { M3_MOTION_DURATION_MS, M3_MOTION_EASE_CSS } from "@/lib/m3Motion";
 
 interface MonthlyChartProps {
   data: { mois: string; total: number }[];
@@ -37,8 +38,8 @@ export function MonthlyChart({ data }: MonthlyChartProps) {
               stroke="hsl(var(--foreground))"
               strokeWidth={2}
               fill="url(#areaGrad)"
-              animationDuration={800}
-              animationEasing="ease-out"
+              animationDuration={M3_MOTION_DURATION_MS.emphasized + M3_MOTION_DURATION_MS.standard}
+              animationEasing={M3_MOTION_EASE_CSS.standardDecelerate}
             />
           </AreaChart>
         </ResponsiveContainer>

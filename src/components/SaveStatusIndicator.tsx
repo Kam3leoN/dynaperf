@@ -11,7 +11,7 @@ export function SaveStatusIndicator({ status }: Props) {
 
   return (
     <span className={cn(
-      "inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full transition-all duration-300",
+      "inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full transition-all duration-m3-standard ease-m3-standard",
       status === 'saving' && "text-muted-foreground bg-muted",
       status === 'saved' && "text-emerald-600 bg-emerald-500/10",
       status === 'error' && "text-destructive bg-destructive/10",

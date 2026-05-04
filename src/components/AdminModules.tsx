@@ -13,7 +13,6 @@ import {
   faComments,
   faVideo,
   faImages,
-  faAward,
 } from "@fortawesome/free-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { useAuth } from "@/hooks/useAuth";
@@ -31,6 +30,9 @@ interface AppModule {
 /** Module historique (seed SQL) : masqué dans l’UI ; suppression en base au chargement si super admin. */
 const DEPRECATED_MODULE_KEYS = new Set<string>([[112, 114, 105, 109, 101, 115].map((c) => String.fromCharCode(c)).join("")]);
 
+/** Modules retirés de l’app : suppression des lignes `app_modules` / overrides associés au chargement (super admin). */
+const REMOVED_MODULE_KEYS = new Set<string>(["gamification"]);
+
 /** Référentiel des modules : clé API, libellé affiché, ordre. Les lignes manquantes en base sont créées au chargement. */
 const MODULE_BLUEPRINTS: { module_key: string; label: string; sort_order: number }[] = [
   { module_key: "audits", label: "Audits", sort_order: 1 },
@@ -40,7 +42,6 @@ const MODULE_BLUEPRINTS: { module_key: string; label: string; sort_order: number
   { module_key: "qrcode", label: "QR Code", sort_order: 6 },
   { module_key: "messages_prives", label: "Messages privés", sort_order: 7 },
   { module_key: "discussions", label: "Discussions", sort_order: 8 },
-  { module_key: "gamification", label: "Badges & Gamification", sort_order: 9 },
   { module_key: "visio", label: "Visio", sort_order: 95 },
   { module_key: "galerie", label: "Galerie", sort_order: 96 },
 ];
@@ -55,7 +56,6 @@ const MODULE_ICONS: Record<string, IconDefinition> = {
   galerie: faImages,
   messages_prives: faEnvelope,
   discussions: faComments,
-  gamification: faAward,
 };
 
 export default function AdminModules() {
@@ -75,15 +75,29 @@ export default function AdminModules() {
     }
     let current = (data ?? []) as AppModule[];
 
-    const obsolete = current.filter((m) => DEPRECATED_MODULE_KEYS.has(m.module_key));
+    const obsolete = current.filter(
+      (m) => DEPRECATED_MODULE_KEYS.has(m.module_key) || REMOVED_MODULE_KEYS.has(m.module_key),
+    );
     if (obsolete.length > 0 && isSuperAdmin) {
+      const removedKeys = obsolete.filter((m) => REMOVED_MODULE_KEYS.has(m.module_key)).map((m) => m.module_key);
+      if (removedKeys.length > 0) {
+        const { error: ovErr } = await (supabase as any)
+          .from("user_module_overrides")
+          .delete()
+          .in("module_key", [...new Set(removedKeys)]);
+        if (ovErr) {
+          console.warn("[AdminModules] suppression overrides module retiré:", ovErr.message);
+        }
+      }
       const ids = obsolete.map((m) => m.id);
       const { error: delErr } = await (supabase as any).from("app_modules").delete().in("id", ids);
       if (delErr) {
         console.warn("[AdminModules] suppression ligne module obsolète:", delErr.message);
       }
     }
-    current = current.filter((m) => !DEPRECATED_MODULE_KEYS.has(m.module_key));
+    current = current.filter(
+      (m) => !DEPRECATED_MODULE_KEYS.has(m.module_key) && !REMOVED_MODULE_KEYS.has(m.module_key),
+    );
 
     const missing = MODULE_BLUEPRINTS.filter(
       (blueprint) => !current.some((mod: AppModule) => mod.module_key === blueprint.module_key),
@@ -109,7 +123,11 @@ export default function AdminModules() {
           setModules(current);
         } else {
           const rel = (reloaded ?? []) as AppModule[];
-          setModules(rel.filter((m) => !DEPRECATED_MODULE_KEYS.has(m.module_key)));
+          setModules(
+            rel.filter(
+              (m) => !DEPRECATED_MODULE_KEYS.has(m.module_key) && !REMOVED_MODULE_KEYS.has(m.module_key),
+            ),
+          );
         }
         setLoading(false);
         return;

@@ -133,7 +133,7 @@ export default function Galerie() {
                 <img
                   src={photo.url}
                   alt={`${photo.partenaire} — ${photo.typeEvenement}`}
-                  className="w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  className="w-full object-cover transition-transform duration-m3-standard ease-m3-standard group-hover:scale-105"
                   loading="lazy"
                 />
                 <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2.5 pt-8 opacity-0 group-hover:opacity-100 transition-opacity">

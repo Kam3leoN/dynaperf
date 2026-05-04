@@ -194,13 +194,13 @@ function AdminKpiCard({
 }) {
   return (
     <div
-      className={`group relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all duration-200 hover:border-border hover:shadow-md min-w-0 w-full h-full ${className ?? ""}`}
+      className={`group relative overflow-hidden rounded-2xl border border-border/60 bg-card shadow-sm transition-all duration-m3-standard ease-m3-standard hover:border-border hover:shadow-md min-w-0 w-full h-full ${className ?? ""}`}
       title={title}
     >
       <div className="relative flex flex-col items-center justify-center gap-1 px-3 py-2.5 text-center sm:gap-1.5 sm:px-3 sm:py-3">
         {icon ? (
           <div
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/80 bg-muted/50 text-muted-foreground shadow-sm transition-transform duration-200 group-hover:scale-[1.03] dark:border-border/60 dark:bg-muted/35"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border/80 bg-muted/50 text-muted-foreground shadow-sm transition-transform duration-m3-standard ease-m3-standard group-hover:scale-[1.03] dark:border-border/60 dark:bg-muted/35"
             aria-hidden
           >
             <FontAwesomeIcon icon={icon} className="h-[0.95rem] w-[0.95rem] sm:h-[1rem] sm:w-[1rem]" />

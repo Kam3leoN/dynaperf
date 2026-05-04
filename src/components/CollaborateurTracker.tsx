@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { m3FramerSpring, m3DurationSeconds, M3_MOTION_EASE } from "@/lib/m3Motion";
 
 interface CollaborateurStat {
   nom: string;
@@ -24,7 +25,11 @@ export function CollaborateurTracker({ data }: CollaborateurTrackerProps) {
               key={c.nom}
               initial={{ opacity: 0, x: -12 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.08 }}
+              transition={{
+                delay: i * m3DurationSeconds("standardAccelerate") * 0.4,
+                duration: m3DurationSeconds("standard"),
+                ease: [...M3_MOTION_EASE.standardDecelerate] as [number, number, number, number],
+              }}
               whileHover={{ scale: 1.005 }}
               className="group"
             >
@@ -35,7 +40,10 @@ export function CollaborateurTracker({ data }: CollaborateurTrackerProps) {
                     <motion.div
                       initial={{ width: 0 }}
                       animate={{ width: `${pct}%` }}
-                      transition={{ duration: 0.6, delay: i * 0.1 }}
+                      transition={{
+                        ...m3FramerSpring("effects", "default"),
+                        delay: i * m3DurationSeconds("standardAccelerate") / 2,
+                      }}
                       className={`h-full rounded-full ${behind ? "bg-primary" : "bg-foreground"}`}
                     />
                   </div>

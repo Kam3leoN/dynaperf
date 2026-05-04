@@ -69,7 +69,6 @@ const QrCodeManageList = lazy(() => import("./pages/QrCodeManageList"));
 const QrCodeShapes = lazy(() => import("./pages/QrCodeShapes"));
 const AdminQrShapes = lazy(() => import("./pages/admin/AdminQrShapes"));
 const AdminPresenceStatuses = lazy(() => import("./pages/admin/AdminPresenceStatuses"));
-const AdminBadges = lazy(() => import("./pages/admin/AdminBadges"));
 const QrCodeStats = lazy(() => import("./pages/QrCodeStats"));
 const Galerie = lazy(() => import("./pages/Galerie"));
 const QrScanRedirect = lazy(() => import("./pages/QrScanRedirect"));
@@ -92,7 +91,7 @@ const queryClient = new QueryClient({
 function FullPageLoader() {
   return (
     <div
-      className="min-h-screen bg-background flex items-center justify-center motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150"
+      className="min-h-screen bg-background flex items-center justify-center motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-m3-standard-accelerate motion-safe:ease-m3-standard-accelerate"
       aria-busy="true"
       aria-live="polite"
     >
@@ -125,14 +124,6 @@ function PermissionRoute({ permission, children }: { permission: string; childre
   if (loading || permLoading) return <FullPageLoader />;
   if (!user) return <Navigate to="/auth" replace />;
   if (!hasPermission(permission)) return <Navigate to="/" replace />;
-  return <Suspense fallback={<FullPageLoader />}>{children}</Suspense>;
-}
-
-/** Route admin réservée à un module applicatif activé (ex. Badges & Gamification). */
-function AdminModuleRoute({ moduleKey, children }: { moduleKey: string; children: React.ReactNode }) {
-  const { isModuleEnabled, loading } = usePermissionGate();
-  if (loading) return <FullPageLoader />;
-  if (!isModuleEnabled(moduleKey)) return <Navigate to="/admin/modules" replace />;
   return <Suspense fallback={<FullPageLoader />}>{children}</Suspense>;
 }
 
@@ -208,14 +199,6 @@ const App = () => {
                       <Route path="backups" element={<AdminBackups />} />
                       <Route path="users" element={<AdminUsers />} />
                       <Route path="modules" element={<AdminModules />} />
-                      <Route
-                        path="badges"
-                        element={
-                          <AdminModuleRoute moduleKey="gamification">
-                            <AdminBadges />
-                          </AdminModuleRoute>
-                        }
-                      />
                       <Route path="audits-config" element={<AdminAuditsConfig />} />
                       <Route path="secteurs" element={<AdminSecteursAdmin />} />
                       <Route path="application" element={<Navigate to="/admin/modules" replace />} />

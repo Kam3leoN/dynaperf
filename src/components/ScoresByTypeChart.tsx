@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { M3_MOTION_DURATION_MS, M3_MOTION_EASE_CSS, m3DurationSeconds, M3_MOTION_EASE } from "@/lib/m3Motion";
 import type { TooltipProps } from "recharts";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Cell } from "recharts";
 import { getTypeColorTriad } from "@/lib/eventTypeColors";
@@ -32,7 +33,11 @@ export function ScoresByTypeChart({ data, index }: ScoresByTypeChartProps) {
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.06, duration: 0.3 }}
+      transition={{
+        delay: index * m3DurationSeconds("standardAccelerate") / 3,
+        duration: m3DurationSeconds("standard"),
+        ease: [...M3_MOTION_EASE.standardDecelerate] as [number, number, number, number],
+      }}
       className="bg-card rounded-2xl shadow-soft border border-border/60 p-5"
     >
       <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
@@ -46,7 +51,13 @@ export function ScoresByTypeChart({ data, index }: ScoresByTypeChartProps) {
             <XAxis dataKey="label" tick={{ fontSize: 11, fill: "hsl(var(--chart-tick))" }} axisLine={false} tickLine={false} />
             <YAxis domain={[0, 10]} tick={{ fontSize: 11, fill: "hsl(var(--chart-tick))" }} axisLine={false} tickLine={false} />
             <Tooltip content={<CustomTooltip />} cursor={{ fill: "hsl(var(--chart-grid))" }} />
-            <Bar dataKey="value" radius={[4, 4, 0, 0]} barSize={28} animationDuration={600}>
+            <Bar
+              dataKey="value"
+              radius={[4, 4, 0, 0]}
+              barSize={28}
+              animationDuration={M3_MOTION_DURATION_MS.emphasized + M3_MOTION_DURATION_MS.standardAccelerate}
+              animationEasing={M3_MOTION_EASE_CSS.standardDecelerate}
+            >
               {chartData.map((entry, i) => (
                 <Cell key={i} fill={entry.color} />
               ))}

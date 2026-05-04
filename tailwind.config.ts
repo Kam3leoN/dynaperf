@@ -89,6 +89,23 @@ export default {
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
       },
+      /** M3 Expressive — @see https://m3.material.io/styles/motion/easing-and-duration/tokens-specs */
+      transitionDuration: {
+        "m3-emphasized": "var(--m3-duration-emphasized)",
+        "m3-emphasized-decelerate": "var(--m3-duration-emphasized-decelerate)",
+        "m3-emphasized-accelerate": "var(--m3-duration-emphasized-accelerate)",
+        "m3-standard": "var(--m3-duration-standard)",
+        "m3-standard-decelerate": "var(--m3-duration-standard-decelerate)",
+        "m3-standard-accelerate": "var(--m3-duration-standard-accelerate)",
+      },
+      transitionTimingFunction: {
+        "m3-emphasized": "var(--m3-ease-emphasized)",
+        "m3-emphasized-decelerate": "var(--m3-ease-emphasized-decelerate)",
+        "m3-emphasized-accelerate": "var(--m3-ease-emphasized-accelerate)",
+        "m3-standard": "var(--m3-ease-standard)",
+        "m3-standard-decelerate": "var(--m3-ease-standard-decelerate)",
+        "m3-standard-accelerate": "var(--m3-ease-standard-accelerate)",
+      },
       keyframes: {
         "accordion-down": {
           from: { height: "0" },
@@ -98,10 +115,18 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
+        "m3-skeleton-shimmer": {
+          "0%": { backgroundPosition: "200% 0" },
+          "100%": { backgroundPosition: "-200% 0" },
+        },
       },
       animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
+        "accordion-down":
+          "accordion-down var(--m3-duration-standard) var(--m3-ease-standard)",
+        "accordion-up":
+          "accordion-up var(--m3-duration-standard) var(--m3-ease-standard)",
+        "m3-skeleton-shimmer":
+          "m3-skeleton-shimmer var(--m3-skeleton-shimmer-duration) var(--m3-skeleton-shimmer-ease) infinite",
       },
     },
   },

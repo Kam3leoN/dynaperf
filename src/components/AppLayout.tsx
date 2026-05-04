@@ -67,10 +67,9 @@ import {
   m3DockSplitChevronMd,
   m3DockSplitGroup,
   m3DockSplitSegmentFirst,
-  m3DockSplitSegmentFirstGrow,
   m3DockSplitSegmentSecond,
-  m3DockSplitSegmentSecondGrow,
 } from "@/lib/m3DockSplitButton";
+import { m3SplitButtonDock } from "@/lib/m3SplitButton";
 import { cn } from "@/lib/utils";
 
 /** Ligne 1 du tooltip dock : « Prénom NOM » (dernier segment en majuscules si plusieurs mots). */
@@ -115,6 +114,8 @@ export function AppLayout({
   const { row: presenceRow, setPresence } = useMyPresence(user?.id);
   const { labelForRow, defsByKey } = usePresenceStatusDefinitions();
   const [membersSheetOpen, setMembersSheetOpen] = useState(false);
+  /** Menu chevron du split profil (dock) : synchronise `data-menu-open` avec Radix (Tooltip/Trigger empilés). */
+  const [dockProfileMenuOpen, setDockProfileMenuOpen] = useState(false);
   const { railExpanded } = useNavigationShell();
 
   const railSection = getActiveRailSection(location.pathname, RAIL_SECTIONS_ALL);
@@ -417,7 +418,7 @@ export function AppLayout({
         <div
           className={cn(
             "flex min-w-0 items-center gap-2",
-            dockCompact && "w-full",
+            dockCompact && "w-full justify-center",
           )}
         >
           <div
@@ -425,13 +426,14 @@ export function AppLayout({
               dockCompact ? m3DockSplitGroup.compactRow : m3DockSplitGroup.expanded,
               "shrink-0",
             )}
+            data-menu-open={dockProfileMenuOpen ? "" : undefined}
           >
             <Tooltip delayDuration={400}>
               <TooltipTrigger asChild>
                 <button
                   type="button"
                   className={cn(
-                    dockCompact ? m3DockSplitSegmentFirstGrow : m3DockSplitSegmentFirst,
+                    m3DockSplitSegmentFirst,
                     "relative p-0",
                     dockExpanded && "overflow-hidden",
                   )}
@@ -442,7 +444,7 @@ export function AppLayout({
                       <div
                         className={cn(
                           "relative flex h-full w-full items-center justify-center overflow-hidden bg-primary/[0.08] border-0",
-                          "rounded-tl-[18px] rounded-bl-[18px] rounded-tr-[4px] rounded-br-[4px]",
+                          m3SplitButtonDock.leadingInnerRadii,
                         )}
                       >
                         {avatarUrl ? (
@@ -454,7 +456,7 @@ export function AppLayout({
                           aria-hidden
                           className={cn(
                             "pointer-events-none absolute inset-0 z-[1]",
-                            "rounded-tl-[18px] rounded-bl-[18px] rounded-tr-[4px] rounded-br-[4px]",
+                            m3SplitButtonDock.leadingInnerRadii,
                             "shadow-[inset_0_1px_0_rgba(255,255,255,0.07),inset_0_3px_18px_rgba(0,0,0,0.28)]",
                           )}
                         />
@@ -481,7 +483,7 @@ export function AppLayout({
                         aria-hidden
                         className={cn(
                           "pointer-events-none absolute inset-0 z-[1]",
-                          "rounded-tl-[18px] rounded-bl-[18px] rounded-tr-[4px] rounded-br-[4px]",
+                          m3SplitButtonDock.leadingInnerRadii,
                           "shadow-[inset_0_1px_0_rgba(255,255,255,0.07),inset_0_3px_18px_rgba(0,0,0,0.28)]",
                         )}
                       />
@@ -495,11 +497,11 @@ export function AppLayout({
                 <p className="mt-0.5 text-xs font-normal leading-snug text-white/75">{tooltipLine2}</p>
               </TooltipContent>
             </Tooltip>
-            <DropdownMenu>
+            <DropdownMenu onOpenChange={setDockProfileMenuOpen}>
               <DropdownMenuTrigger asChild>
                 <button
                   type="button"
-                  className={dockCompact ? m3DockSplitSegmentSecondGrow : m3DockSplitSegmentSecond}
+                  className={m3DockSplitSegmentSecond}
                   aria-label="Menu du compte"
                 >
                   <ChevronDown className={m3DockSplitChevronMd} />
@@ -524,7 +526,7 @@ export function AppLayout({
     <div className="flex h-dvh min-h-0 flex-col bg-background">
       {/* Top app bar — le shell est en h-dvh + overflow-hidden sur la zone centrale : pas de scroll document */}
       <header className="z-40 shrink-0 bg-card/85 backdrop-blur-2xl border-b border-border/30 px-4 shell:px-0">
-        <div className="w-full flex items-stretch justify-between h-16 shell:h-[4.25rem] shell:pl-[var(--shell-nav-rail-width,256px)] shell:pr-[260px]">
+        <div className="w-full flex items-stretch justify-between h-16 shell:h-[4.25rem] shell:pl-[var(--shell-nav-rail-width,360px)] shell:pr-[260px]">
           <div className="flex flex-1 items-center justify-between min-w-0 gap-2 pl-4 pr-4 shell:pl-6 shell:pr-6">
             <div className="flex items-center gap-2 sm:gap-3 min-w-0">
               <Button
@@ -639,7 +641,7 @@ export function AppLayout({
         </Sheet>
       )}
 
-      <div className="flex min-h-0 flex-1 flex-row overflow-x-auto overflow-y-hidden shell:pl-[var(--shell-nav-rail-width,256px)] shell:pr-[260px]">
+      <div className="flex min-h-0 flex-1 flex-row overflow-x-auto overflow-y-hidden shell:pl-[var(--shell-nav-rail-width,360px)] shell:pr-[260px]">
         <AppNavRail isAdmin={isAdmin} hasPermission={hasPermission} isModuleEnabled={isModuleEnabled} />
         <div className="flex flex-1 flex-col min-w-0 min-h-0">
           <main

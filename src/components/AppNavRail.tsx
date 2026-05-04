@@ -16,9 +16,9 @@ import { SHELL_RAIL_EXPANDED_PX } from "@/config/layoutBreakpoints";
 import { useNavigationShell } from "@/contexts/NavigationShellContext";
 import { MwcFab, MwcIconButton } from "@/material/materialWebReact";
 
-/** Durée / courbe alignées sur l’élargissement du rail (`nav` style). */
+/** Durée / courbe M3 Expressive — pattern « top level » (navigation shell). */
 const RAIL_TEXT_TRANSITION =
-  "duration-[280ms] ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:duration-0 transition-[font-size,line-height,color,font-weight]";
+  "duration-m3-standard ease-m3-standard motion-reduce:duration-[1ms] transition-[font-size,line-height,color,font-weight]";
 
 interface AppNavRailProps {
   isAdmin: boolean;
@@ -75,7 +75,7 @@ function RailNavItem({ section, isActive, expanded, pinned }: RailItemProps) {
         "group relative flex outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
         expanded
           ? "mx-1 w-[calc(100%-0.5rem)] max-w-full min-w-0"
-          : "mx-auto w-full max-w-[5.5rem] justify-center",
+          : "mx-auto w-full max-w-[6rem] justify-center",
         pinned && "w-full",
       )}
     >
@@ -91,7 +91,7 @@ function RailNavItem({ section, isActive, expanded, pinned }: RailItemProps) {
           <div
             aria-hidden
             className={cn(
-              "pointer-events-none absolute inset-1 z-0 rounded-full transition-colors duration-200",
+              "pointer-events-none absolute inset-1 z-0 rounded-full transition-colors duration-m3-standard ease-m3-standard",
               isActive ? "bg-primary/15" : "bg-transparent group-hover:bg-muted/55",
             )}
           />
@@ -102,7 +102,7 @@ function RailNavItem({ section, isActive, expanded, pinned }: RailItemProps) {
             <div
               aria-hidden
               className={cn(
-                "pointer-events-none absolute inset-0 z-0 rounded-full transition-colors duration-200",
+                "pointer-events-none absolute inset-0 z-0 rounded-full transition-colors duration-m3-standard ease-m3-standard",
                 isActive ? "bg-primary/15" : "bg-transparent group-hover:bg-muted/65",
               )}
             />
@@ -110,7 +110,7 @@ function RailNavItem({ section, isActive, expanded, pinned }: RailItemProps) {
               <FontAwesomeIcon
                 icon={section.icon}
                 className={cn(
-                  "h-5 w-5 shrink-0 transition-colors duration-200",
+                  "h-5 w-5 shrink-0 transition-colors duration-m3-standard ease-m3-standard",
                   isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
                 )}
                 aria-hidden
@@ -122,7 +122,7 @@ function RailNavItem({ section, isActive, expanded, pinned }: RailItemProps) {
             <FontAwesomeIcon
               icon={section.icon}
               className={cn(
-                "h-5 w-5 shrink-0 transition-colors duration-200",
+                "h-5 w-5 shrink-0 transition-colors duration-m3-standard ease-m3-standard",
                 isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground",
               )}
               aria-hidden
@@ -159,7 +159,7 @@ function RailHomeFab({ expanded, isHomeActive }: { expanded: boolean; isHomeActi
     <div
       className={cn(
         "flex w-full justify-center overflow-visible bg-transparent outline-none",
-        expanded ? "min-w-0 px-0.5" : "mx-auto max-w-[5.5rem]",
+        expanded ? "min-w-0 px-0.5" : "mx-auto max-w-[6rem]",
       )}
     >
       <MwcFab

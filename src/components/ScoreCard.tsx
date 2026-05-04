@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
 import { getTypeColorHSL } from "@/lib/eventTypeColors";
+import { m3DurationSeconds, M3_MOTION_EASE } from "@/lib/m3Motion";
 
 interface ScoreCardProps {
   type: string;
@@ -17,7 +18,11 @@ export function ScoreCard({ type, avg, min, max, count, index }: ScoreCardProps)
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.06, duration: 0.3 }}
+      transition={{
+        delay: index * m3DurationSeconds("standardAccelerate") / 3,
+        duration: m3DurationSeconds("standard"),
+        ease: [...M3_MOTION_EASE.standardDecelerate] as [number, number, number, number],
+      }}
       className="bg-card p-5 rounded-2xl shadow-soft border border-border/60"
     >
       <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">

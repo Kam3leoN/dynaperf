@@ -1,0 +1,64 @@
+/**
+ * Material Design 3 — Motion Expressive (tokens)
+ * @see https://m3.material.io/styles/motion/overview
+ * Durées & easing : easing-and-duration/tokens-specs
+ * Physique ressorts : motion-physics-system (Spatial / Effects, Fast / Default / Slow)
+ */
+
+@layer base {
+  :root {
+    /* ── Durées (ms) — tableau « sensible defaults » M3 ── */
+    --m3-duration-emphasized: 500ms;
+    --m3-duration-emphasized-decelerate: 400ms;
+    --m3-duration-emphasized-accelerate: 200ms;
+    --m3-duration-standard: 300ms;
+    --m3-duration-standard-decelerate: 250ms;
+    --m3-duration-standard-accelerate: 200ms;
+
+    /* ── Courbes cubic-bezier — spec tokens M3 (Easing column) ── */
+    --m3-ease-emphasized: cubic-bezier(0.2, 0, 0, 1);
+    --m3-ease-emphasized-decelerate: cubic-bezier(0.05, 0.7, 0.1, 1);
+    --m3-ease-emphasized-accelerate: cubic-bezier(0.3, 0, 0.8, 0.15);
+    --m3-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+    --m3-ease-standard-decelerate: cubic-bezier(0, 0, 0, 1);
+    --m3-ease-standard-accelerate: cubic-bezier(0.3, 0, 1, 1);
+
+    /* Alias pratique (micro-interactions composants) */
+    --m3-ease-legacy-standard: var(--m3-ease-standard);
+
+    /* ── Physique Expressive — paires (damping ratio, stiffness) brutes M3 ──
+     * Utilisées par physics.ts → conversion Framer Motion (ressorts). */
+    --m3-physics-spatial-fast-damping-ratio: 0.6;
+    --m3-physics-spatial-fast-stiffness: 800;
+    --m3-physics-spatial-default-damping-ratio: 0.8;
+    --m3-physics-spatial-default-stiffness: 380;
+    --m3-physics-spatial-slow-damping-ratio: 0.8;
+    --m3-physics-spatial-slow-stiffness: 200;
+
+    --m3-physics-effects-fast-damping-ratio: 1;
+    --m3-physics-effects-fast-stiffness: 3800;
+    --m3-physics-effects-default-damping-ratio: 1;
+    --m3-physics-effects-default-stiffness: 1600;
+    --m3-physics-effects-slow-damping-ratio: 1;
+    --m3-physics-effects-slow-stiffness: 800;
+
+    /* Skeleton — cycle visuel (Effects / lente répétition) */
+    --m3-skeleton-shimmer-duration: 1400ms;
+    --m3-skeleton-shimmer-ease: var(--m3-ease-standard);
+
+    /* Durée « instantanée » si prefers-reduced-motion (fallback JS lit aussi) */
+    --m3-duration-reduced: 1ms;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    :root {
+      --m3-duration-emphasized: var(--m3-duration-reduced);
+      --m3-duration-emphasized-decelerate: var(--m3-duration-reduced);
+      --m3-duration-emphasized-accelerate: var(--m3-duration-reduced);
+      --m3-duration-standard: var(--m3-duration-reduced);
+      --m3-duration-standard-decelerate: var(--m3-duration-reduced);
+      --m3-duration-standard-accelerate: var(--m3-duration-reduced);
+      --m3-skeleton-shimmer-duration: 0ms;
+    }
+  }
+}

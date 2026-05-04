@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useAdmin } from "@/hooks/useAdmin";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { M3_FRAMER_FADE_PRESENCE } from "@/lib/m3Motion";
 import { X } from "lucide-react";
 import { readEdgeFunctionErrorMessage } from "@/lib/readEdgeFunctionError";
 import { cn } from "@/lib/utils";
@@ -610,6 +611,7 @@ export default function AdminUsers() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        transition={M3_FRAMER_FADE_PRESENCE}
         className="bg-card border border-border/60 rounded-2xl p-3 shadow-soft space-y-2"
       >
         <div className="flex items-start justify-between">
@@ -771,6 +773,7 @@ export default function AdminUsers() {
                           initial={{ opacity: 0 }}
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
+                          transition={M3_FRAMER_FADE_PRESENCE}
                           className="border-b border-border hover:bg-secondary/50 transition-colors"
                         >
                           <TableCell>

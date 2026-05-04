@@ -11,6 +11,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faPlus, faPenToSquare, faTrashCan, faSort, faEye, faClipboardCheck } from "@fortawesome/free-solid-svg-icons";
 import { motion, AnimatePresence } from "framer-motion";
+import { M3_FRAMER_FADE_PRESENCE } from "@/lib/m3Motion";
 import { AuditDetailView } from "./AuditDetailView";
 
 interface AuditTableProps {
@@ -92,6 +93,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete, onEditPlan }: Au
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      transition={M3_FRAMER_FADE_PRESENCE}
       className="bg-card border border-border rounded-lg p-3 space-y-2"
     >
       <div className="flex items-start justify-between">
@@ -285,6 +287,7 @@ export function AuditTable({ audits, onAdd, onUpdate, onDelete, onEditPlan }: Au
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
+                  transition={M3_FRAMER_FADE_PRESENCE}
                   className="border-b border-border hover:bg-secondary/50 transition-colors"
                 >
                   <TableCell className="text-sm tabular-nums">{new Date(a.date).toLocaleDateString("fr-FR")}</TableCell>

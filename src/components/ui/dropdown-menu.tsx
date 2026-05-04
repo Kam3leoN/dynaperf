@@ -4,6 +4,42 @@ import { Check, ChevronRight } from "lucide-react";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * Entrée / sortie — M3 :
+ * - ouverture : `medium4` → `duration-m3-emphasized-decelerate` (400ms), `ease-m3-emphasized`
+ * - `transform-origin` : coin du panneau **collé au déclencheur** (Floating UI / Radix `data-side` + `data-align`).
+ *   Le zoom part de ce coin vers l’opposé (ex. menu au-dessus + align=start → bas-gauche → expansion vers haut-droite).
+ */
+const dropdownMenuSurfaceMotion = cn(
+  "data-[state=open]:animate-in data-[state=closed]:animate-out",
+  "data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+  "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
+  "data-[state=open]:duration-m3-emphasized-decelerate data-[state=closed]:duration-m3-emphasized-accelerate",
+  "data-[state=open]:ease-m3-emphasized data-[state=closed]:ease-m3-emphasized-accelerate",
+  "motion-reduce:data-[state=open]:duration-[1ms] motion-reduce:data-[state=closed]:duration-[1ms]",
+  /* side=bottom : bord haut du menu face au trigger — ancrage haut-gauche / haut-centre / haut-droite */
+  "[&[data-side=bottom][data-align=start]]:origin-top-left",
+  "[&[data-side=bottom][data-align=end]]:origin-top-right",
+  "[&[data-side=bottom][data-align=center]]:origin-top",
+  /* side=top : bord bas du menu face au trigger — ancrage bas-gauche / bas-centre / bas-droite */
+  "[&[data-side=top][data-align=start]]:origin-bottom-left",
+  "[&[data-side=top][data-align=end]]:origin-bottom-right",
+  "[&[data-side=top][data-align=center]]:origin-bottom",
+  /* side=left : bord droit du menu face au trigger */
+  "[&[data-side=left][data-align=start]]:origin-top-right",
+  "[&[data-side=left][data-align=end]]:origin-bottom-right",
+  "[&[data-side=left][data-align=center]]:origin-right",
+  /* side=right : bord gauche du menu face au trigger */
+  "[&[data-side=right][data-align=start]]:origin-top-left",
+  "[&[data-side=right][data-align=end]]:origin-bottom-left",
+  "[&[data-side=right][data-align=center]]:origin-left",
+  /* Glissement léger depuis le trigger (complète le zoom ; l’ancrage corner reste la source de vérité) */
+  "data-[side=bottom]:slide-in-from-top-2",
+  "data-[side=top]:slide-in-from-bottom-4",
+  "data-[side=left]:slide-in-from-right-2",
+  "data-[side=right]:slide-in-from-left-2",
+);
+
 const DropdownMenu = DropdownMenuPrimitive.Root;
 
 const DropdownMenuTrigger = DropdownMenuPrimitive.Trigger;
@@ -44,7 +80,8 @@ const DropdownMenuSubContent = React.forwardRef<
   <DropdownMenuPrimitive.SubContent
     ref={ref}
     className={cn(
-      "z-[120] min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+      "z-[120] min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg",
+      dropdownMenuSurfaceMotion,
       className,
     )}
     {...props}
@@ -61,7 +98,8 @@ const DropdownMenuContent = React.forwardRef<
       ref={ref}
       sideOffset={sideOffset}
       className={cn(
-        "z-[120] min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+        "z-[120] min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-md",
+        dropdownMenuSurfaceMotion,
         className,
       )}
       {...props}
@@ -123,13 +161,13 @@ const DropdownMenuRadioItem = React.forwardRef<
   <DropdownMenuPrimitive.RadioItem
     ref={ref}
     className={cn(
-      "relative flex min-h-[48px] cursor-default select-none items-center gap-3 rounded-sm py-1.5 pl-2 pr-3 text-sm outline-none transition-[background-color,box-shadow,color] duration-200",
+      "relative flex min-h-[48px] cursor-default select-none items-center gap-3 rounded-sm py-1.5 pl-2 pr-3 text-sm outline-none transition-[background-color,box-shadow,color] duration-m3-standard ease-m3-standard",
       "text-foreground",
       "hover:bg-accent data-[highlighted]:bg-accent",
       "focus-visible:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
       "data-[state=checked]:bg-accent data-[state=checked]:text-accent-foreground",
       "data-[disabled]:pointer-events-none data-[disabled]:opacity-50",
-      "[&_.m3-radio-ring]:flex [&_.m3-radio-ring]:size-5 [&_.m3-radio-ring]:shrink-0 [&_.m3-radio-ring]:items-center [&_.m3-radio-ring]:justify-center [&_.m3-radio-ring]:rounded-full [&_.m3-radio-ring]:border-2 [&_.m3-radio-ring]:border-solid [&_.m3-radio-ring]:border-muted-foreground/70 [&_.m3-radio-ring]:bg-transparent [&_.m3-radio-ring]:transition-[border-color,background-color] [&_.m3-radio-ring]:duration-200",
+      "[&_.m3-radio-ring]:flex [&_.m3-radio-ring]:size-5 [&_.m3-radio-ring]:shrink-0 [&_.m3-radio-ring]:items-center [&_.m3-radio-ring]:justify-center [&_.m3-radio-ring]:rounded-full [&_.m3-radio-ring]:border-2 [&_.m3-radio-ring]:border-solid [&_.m3-radio-ring]:border-muted-foreground/70 [&_.m3-radio-ring]:bg-transparent [&_.m3-radio-ring]:transition-[border-color,background-color] [&_.m3-radio-ring]:duration-m3-standard [&_.m3-radio-ring]:ease-m3-standard",
       "data-[state=checked]:[&_.m3-radio-ring]:border-primary data-[state=checked]:[&_.m3-radio-ring]:bg-primary/[0.08]",
       className,
     )}

@@ -128,21 +128,21 @@ function NavBarItem({ active, label, icon, onClick }: NavBarItemProps) {
         {/* Pill background */}
         <div
           className={cn(
-            "absolute inset-0 rounded-full transition-all duration-200 ease-out",
+            "absolute inset-0 rounded-full transition-all duration-m3-standard ease-m3-standard-decelerate",
             active
               ? "bg-primary/12 scale-x-100 opacity-100"
               : "bg-transparent scale-x-75 opacity-0",
           )}
         />
         {/* Icon — always visible */}
-        <span className={cn("relative z-10 transition-colors duration-200", active ? "text-primary" : "text-muted-foreground")}>
+        <span className={cn("relative z-10 transition-colors duration-m3-standard ease-m3-standard", active ? "text-primary" : "text-muted-foreground")}>
           {icon}
         </span>
       </div>
       {/* Label — 12px semibold */}
       <span
         className={cn(
-          "text-xs font-semibold transition-colors duration-200",
+          "text-xs font-semibold transition-colors duration-m3-standard ease-m3-standard",
           active ? "text-foreground" : "text-muted-foreground",
         )}
       >

@@ -1,5 +1,5 @@
 /**
- * Breakpoints du **shell application** (rail 96px, navigation secondaire, aside membres,
+ * Breakpoints du **shell application** (rail M3 Expressive : 96px replié / 360px étendu ; aside membres,
  * dock profil, bottom nav).
  *
  * **Téléphone réel vs DevTools** : les media queries et `shell:` utilisent des **px CSS**
@@ -19,13 +19,13 @@
  * - `src/components/DesktopUserDock.tsx`
  */
 
-/** Rail replié : icônes seules (Material 3 Navigation Rail compact, ~80dp). */
-export const SHELL_RAIL_COLLAPSED_PX = 80 as const;
+/** Rail replié : icônes + libellés courts (Material 3 Expressive collapsed container, 96dp). */
+export const SHELL_RAIL_COLLAPSED_PX = 96 as const;
 
 /**
- * Rail étendu : une colonne avec **icône + libellé** sur chaque rangée (M3 Expressive), sans panneau secondaire.
+ * Rail étendu : une colonne avec **icône + libellé** (M3 Expressive expanded max width, 360dp).
  */
-export const SHELL_RAIL_EXPANDED_PX = 256 as const;
+export const SHELL_RAIL_EXPANDED_PX = 360 as const;
 
 /** @deprecated Utiliser SHELL_RAIL_COLLAPSED_PX — nom historique du rail fixe. */
 export const SHELL_RAIL_WIDTH_PX = SHELL_RAIL_COLLAPSED_PX;

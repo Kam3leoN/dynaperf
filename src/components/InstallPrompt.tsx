@@ -77,7 +77,7 @@ export function InstallPrompt() {
   if (!show) return null;
 
   return (
-    <div className="fixed bottom-28 left-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-300 sm:left-auto sm:right-4 sm:max-w-sm safe-area-bottom">
+    <div className="fixed bottom-28 left-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-m3-standard ease-m3-standard-decelerate sm:left-auto sm:right-4 sm:max-w-sm safe-area-bottom">
       <Card className="border-primary/30 shadow-xl">
         <CardContent className="p-4">
           <div className="flex items-start gap-3">

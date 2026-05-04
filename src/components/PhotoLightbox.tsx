@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faXmark, faChevronLeft, faChevronRight } from "@fortawesome/free-solid-svg-icons";
 import { motion, AnimatePresence } from "framer-motion";
+import { m3DurationSeconds, M3_MOTION_EASE } from "@/lib/m3Motion";
 
 export interface LightboxImage {
   url: string;
@@ -49,6 +50,10 @@ export function PhotoLightbox({ images, initialIndex, onClose }: Props) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
+        transition={{
+          duration: m3DurationSeconds("standardAccelerate"),
+          ease: [...M3_MOTION_EASE.standardAccelerate] as [number, number, number, number],
+        }}
         className="fixed inset-0 z-50 bg-black/95 flex flex-col items-center justify-center"
         onClick={onClose}
       >
@@ -63,7 +68,10 @@ export function PhotoLightbox({ images, initialIndex, onClose }: Props) {
           key={index}
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.2 }}
+          transition={{
+            duration: m3DurationSeconds("standardAccelerate"),
+            ease: [...M3_MOTION_EASE.standardDecelerate] as [number, number, number, number],
+          }}
           src={image.url}
           alt={image.label || `Photo ${index + 1}`}
           className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg"

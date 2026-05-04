@@ -61,9 +61,8 @@ FOR EACH ROW EXECUTE FUNCTION public.update_updated_at_column();
 INSERT INTO public.app_modules (module_key, label, sort_order) VALUES
   ('audits', 'Audits', 1),
   ('suivi', 'Suivi d''activité', 2),
-  ('primes', 'Primes', 3),
-  ('drive', 'Drive', 4),
-  ('reseau', 'Réseau', 5),
-  ('qrcode', 'QR Code', 6),
-  ('messages_prives', 'Messages privés', 7),
-  ('discussions', 'Discussions', 8);
+  ('drive', 'Drive', 3),
+  ('reseau', 'Réseau', 4),
+  ('qrcode', 'QR Code', 5),
+  ('messages_prives', 'Messages privés', 6),
+  ('discussions', 'Discussions', 7);

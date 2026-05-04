@@ -13,6 +13,7 @@ import { faLinkedin } from "@fortawesome/free-brands-svg-icons";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
+import { M3_FRAMER_FADE_PRESENCE } from "@/lib/m3Motion";
 import { X } from "lucide-react";
 import GenreManager from "@/components/GenreManager";
 import { ActionIconButton } from "@/components/ActionIconButton";
@@ -545,7 +546,14 @@ export default function AdminPartenaires() {
               <TableBody>
                 <AnimatePresence>
                   {filtered.map((p) => (
-                    <motion.tr key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="border-b border-border hover:bg-secondary/50 transition-colors">
+                    <motion.tr
+                      key={p.id}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      transition={M3_FRAMER_FADE_PRESENCE}
+                      className="border-b border-border hover:bg-secondary/50 transition-colors"
+                    >
                       <TableCell><PartenaireAvatar url={p.photo_url} name={`${p.prenom} ${p.nom}`} /></TableCell>
                       <TableCell className="text-sm font-medium">
                         <span className="flex items-center gap-1.5">
@@ -587,7 +595,14 @@ export default function AdminPartenaires() {
           <div className="sm:hidden space-y-2">
             <AnimatePresence>
               {filtered.map((p) => (
-                <motion.div key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="bg-card border border-border rounded-lg p-3 space-y-2">
+                <motion.div
+                  key={p.id}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={M3_FRAMER_FADE_PRESENCE}
+                  className="bg-card border border-border rounded-lg p-3 space-y-2"
+                >
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2 min-w-0">
                       <PartenaireAvatar url={p.photo_url} name={`${p.prenom} ${p.nom}`} />

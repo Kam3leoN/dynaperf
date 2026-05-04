@@ -25,7 +25,7 @@ export function StarRating({ value, onChange, max = 5, className }: Props) {
             key={i}
             type="button"
             className={cn(
-              "p-0.5 transition-colors duration-150 active:scale-95",
+              "p-0.5 transition-colors duration-m3-standard-accelerate ease-m3-standard-accelerate active:scale-95",
               isActive
                 ? "text-yellow-400"
                 : isHovered

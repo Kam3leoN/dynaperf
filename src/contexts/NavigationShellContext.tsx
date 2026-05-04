@@ -15,7 +15,7 @@ export interface NavigationShellContextValue {
   railExpanded: boolean;
   setRailExpanded: (v: boolean) => void;
   toggleRailExpanded: () => void;
-  /** 0 en vue étroite ; sinon largeur du rail (80 replié ou 256 étendu). */
+  /** 0 en vue étroite ; sinon largeur du rail (96 replié ou 360 étendu). */
   railWidthPx: number;
 }
 

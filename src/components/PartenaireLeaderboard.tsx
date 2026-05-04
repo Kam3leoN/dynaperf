@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import { m3DurationSeconds, M3_MOTION_EASE } from "@/lib/m3Motion";
 import { useState } from "react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -48,7 +49,11 @@ export function PartenaireLeaderboard({ data }: PartenaireLeaderboardProps) {
               key={`${p.nom}-${p.type}`}
               initial={{ opacity: 0, x: -12 }}
               animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.05 }}
+              transition={{
+                delay: i * m3DurationSeconds("standardAccelerate") / 4,
+                duration: m3DurationSeconds("standard"),
+                ease: [...M3_MOTION_EASE.standardDecelerate] as [number, number, number, number],
+              }}
               className={`flex items-center gap-3 py-2.5 px-3 rounded-lg transition-colors ${
                 isPodium ? medal.bg : "hover:bg-secondary/50"
               }`}
