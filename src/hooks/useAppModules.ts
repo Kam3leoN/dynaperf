@@ -9,7 +9,7 @@ import { withTimeout } from "@/lib/withTimeout";
  * 1. Si le module est désactivé globalement → personne ne l’a (surcharges ignorées côté navigation).
  * 2. Surcharge `user_module_overrides.enabled = false` → accès refusé.
  * 3. Surcharge `enabled = true` → accès autorisé (exception).
- * 4. Sans surcharge : accès uniquement si `super_admin` (user_roles) ou titre org. `owner` (profiles.org_titles).
+ * 4. Sans surcharge : accès selon l'état global du module (`app_modules.is_enabled`) pour tous.
  */
 export function useAppModules(userId: string | undefined) {
   const [enabledModules, setEnabledModules] = useState<Set<string>>(new Set());
@@ -51,11 +51,10 @@ export function useAppModules(userId: string | undefined) {
           return;
         }
 
-        const roles = roleRows?.map((r: { role: string }) => r.role) ?? [];
-        const isSuperAdmin = roles.includes("super_admin");
-
-        const rawTitles = profile?.org_titles as string[] | null | undefined;
-        const isOrgOwner = Array.isArray(rawTitles) && rawTitles.includes("owner");
+        // Legacy roles/profile conservés dans la requête pour compat, mais la règle
+        // d'accès "switch unique" n'en dépend plus.
+        void roleRows;
+        void profile;
 
         const overrideMap = new Map<string, boolean>();
         for (const o of (overrides ?? []) as { module_key: string; enabled: boolean }[]) {
@@ -64,20 +63,17 @@ export function useAppModules(userId: string | undefined) {
 
         const next = new Set<string>();
         for (const m of modules as { module_key: string; is_enabled: boolean }[]) {
-          if (!m.is_enabled) continue;
-
           const key = m.module_key;
           const override = overrideMap.get(key);
 
           if (override === false) continue;
+          // "Forcer oui" doit primer même si le module global est désactivé.
           if (override === true) {
             next.add(key);
             continue;
           }
 
-          if (isSuperAdmin || isOrgOwner) {
-            next.add(key);
-          }
+          if (m.is_enabled) next.add(key);
         }
         setEnabledModules(next);
       } catch (e) {

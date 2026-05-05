@@ -392,6 +392,36 @@ export type Database = {
         }
         Relationships: []
       }
+      bonus_prime_tariffs: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          tariff_data: Json
+          updated_at: string
+          updated_by: string | null
+          year: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          tariff_data?: Json
+          updated_at?: string
+          updated_by?: string | null
+          year: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          tariff_data?: Json
+          updated_at?: string
+          updated_by?: string | null
+          year?: number
+        }
+        Relationships: []
+      }
       clubs: {
         Row: {
           adresse: string | null

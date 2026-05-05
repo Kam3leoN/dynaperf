@@ -19,14 +19,19 @@ export const auditeursConnus: AuditeurRef[] = [
   { nom: "Cédric MALZAT" },
   { nom: "Geoffroy L'HONNEN" },
   { nom: "Tiphaine LEMAITRE" },
-  { nom: "Catherine PASSE" },
 ];
+
+/** Valeur du champ `auditeur` en base pour Cédric Malzat (prénom). */
+export const DEFAULT_PRIME_TRACKING_AUDITEUR = "Cédric";
+
+/** Auditeurs retirés des listes de sélection (données historiques éventuelles encore filtrées côté suivi). */
+export const AUDITEURS_RETIRED_FROM_LISTS: readonly string[] = ["Catherine"];
 
 /**
  * Valeurs du champ `auditeur` en base (prénoms), pour filtres / listes déroulantes.
  * Aligné sur les données réelles des audits, pas sur le nom complet dans `auditeursConnus`.
  */
-export const AUDITEURS: string[] = ["Cédric", "Geoffroy", "Tiphaine", "Catherine"];
+export const AUDITEURS: string[] = ["Cédric", "Geoffroy", "Tiphaine"];
 
 /** Types d’événement connus (liste des filtres ; la base peut contenir d’autres libellés). */
 export const TYPES_EVENEMENT: string[] = [
@@ -64,7 +69,7 @@ export const initialAudits: Audit[] = [
   { id: genId(), date: "2026-01-08", partenaire: "Francine HEIDELBERGER-SCHWAB", lieu: "Bas-Rhin", auditeur: "Cédric", typeEvenement: "RD Distanciel", note: 6.52, moisVersement: "Janvier", statut: "OK" },
   { id: genId(), date: "2026-01-08", partenaire: "Émilie BLAISE", lieu: "Troyes Club BTP", auditeur: "Cédric", typeEvenement: "Club Affaires", note: 8.4, moisVersement: "Janvier", statut: "OK" },
   { id: genId(), date: "2026-01-09", partenaire: "Julie MARCHAL", lieu: "Team Business Up Troyes", auditeur: "Cédric", typeEvenement: "Club Affaires", note: 4.32, moisVersement: "Janvier", statut: "OK" },
-  { id: genId(), date: "2026-01-12", partenaire: "Frédéric ANDORRA", lieu: "Le Cep Ange'Vin", auditeur: "Catherine", typeEvenement: "Club Affaires", note: 5.06, moisVersement: "Janvier", statut: "OK" },
+  { id: genId(), date: "2026-01-12", partenaire: "Frédéric ANDORRA", lieu: "Le Cep Ange'Vin", auditeur: "Cédric", typeEvenement: "Club Affaires", note: 5.06, moisVersement: "Janvier", statut: "OK" },
   { id: genId(), date: "2026-01-13", partenaire: "Laurence FAVIER", lieu: "Pont-À-Mousson", auditeur: "Cédric", typeEvenement: "RD Présentiel", note: 5.32, moisVersement: "Janvier", statut: "OK" },
   { id: genId(), date: "2026-01-14", partenaire: "Laurence FAVIER", lieu: "Pont-À-Mousson", auditeur: "Cédric", typeEvenement: "RDV Commercial", note: 6.33, moisVersement: "Janvier", statut: "OK" },
   { id: genId(), date: "2026-01-16", partenaire: "Lydie STEPHEN", lieu: "Verdun", auditeur: "Cédric", typeEvenement: "RD Présentiel", note: 4.52, moisVersement: "Février", statut: "OK" },
@@ -86,7 +91,7 @@ export const initialAudits: Audit[] = [
   { id: genId(), date: "2026-02-11", partenaire: "Franck TRUPIN", lieu: "Arques", auditeur: "Cédric", typeEvenement: "RDV Commercial", note: 7.9, moisVersement: "Février", statut: "OK" },
   { id: genId(), date: "2026-02-12", partenaire: "Franck TRUPIN", lieu: "Marquise", auditeur: "Cédric", typeEvenement: "Club Affaires", note: 8.02, moisVersement: "Février", statut: "OK" },
   { id: genId(), date: "2026-02-12", partenaire: "Franck TRUPIN", lieu: "Dunkerque", auditeur: "Cédric", typeEvenement: "RD Présentiel", note: 7.65, moisVersement: "Février", statut: "OK" },
-  { id: genId(), date: "2026-02-16", partenaire: "Frédéric ANDORRA", lieu: "Le Cep Anjoué", auditeur: "Catherine", typeEvenement: "Club Affaires", note: 4.07, moisVersement: "Mars", statut: "OK" },
+  { id: genId(), date: "2026-02-16", partenaire: "Frédéric ANDORRA", lieu: "Le Cep Anjoué", auditeur: "Cédric", typeEvenement: "Club Affaires", note: 4.07, moisVersement: "Mars", statut: "OK" },
   { id: genId(), date: "2026-02-16", partenaire: "Erika DALLEAU", lieu: "Pontoise", auditeur: "Cédric", typeEvenement: "Club Affaires", note: 6.91, moisVersement: "Mars", statut: "OK" },
   { id: genId(), date: "2026-02-16", partenaire: "Nadia EL MELIANI", lieu: "Paris 19e – Buttes-Chaumont", auditeur: "Cédric", typeEvenement: "Club Affaires", note: 2.96, moisVersement: "Mars", statut: "OK" },
   { id: genId(), date: "2026-02-17", partenaire: "Nadia EL MELIANI", lieu: "Elancourt Dyna'Immo", auditeur: "Cédric", typeEvenement: "Club Affaires", note: 5.31, moisVersement: "Mars", statut: "OK" },

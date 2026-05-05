@@ -1,4 +1,5 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import { AUDITEURS, TYPES_EVENEMENT, MOIS_ORDRE } from "@/data/audits";
 import { Filters } from "@/hooks/useAuditData";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
@@ -27,17 +28,52 @@ export function FiltersBar({ filters, setFilters, vertical, availableYears }: Fi
           <span className="text-xs sm:text-sm font-semibold tracking-tight hidden sm:inline">Filtres</span>
         </div>
       )}
-      <Select value={filters.annee} onValueChange={(v) => update("annee", v)}>
+      <Select
+        value={filters.periodMode}
+        onValueChange={(v) => {
+          const mode = (v === "range" ? "range" : "year") as Filters["periodMode"];
+          setFilters({ ...filters, periodMode: mode });
+        }}
+      >
         <SelectTrigger className={`${selectClass} h-8 sm:h-9 text-xs sm:text-sm rounded-md shadow-soft border-border`}>
-          <SelectValue placeholder="Année" />
+          <SelectValue placeholder="Période" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="Tous">Toutes années</SelectItem>
-          {years.map((y) => (
-            <SelectItem key={y} value={String(y)}>{y}</SelectItem>
-          ))}
+          <SelectItem value="year">Année complète (YYYY)</SelectItem>
+          <SelectItem value="range">Date à date</SelectItem>
         </SelectContent>
       </Select>
+      {filters.periodMode === "year" && (
+        <Select value={filters.annee} onValueChange={(v) => update("annee", v)}>
+          <SelectTrigger className={`${selectClass} h-8 sm:h-9 text-xs sm:text-sm rounded-md shadow-soft border-border`}>
+            <SelectValue placeholder="Année" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="Tous">Toutes années</SelectItem>
+            {years.map((y) => (
+              <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
+      {filters.periodMode === "range" && (
+        <>
+          <Input
+            type="date"
+            value={filters.dateFrom}
+            onChange={(e) => update("dateFrom", e.target.value)}
+            className={`${selectClass} h-8 sm:h-9 text-xs sm:text-sm rounded-md shadow-soft border-border`}
+            title="Du"
+          />
+          <Input
+            type="date"
+            value={filters.dateTo}
+            onChange={(e) => update("dateTo", e.target.value)}
+            className={`${selectClass} h-8 sm:h-9 text-xs sm:text-sm rounded-md shadow-soft border-border`}
+            title="Au"
+          />
+        </>
+      )}
       <Select value={filters.auditeur} onValueChange={(v) => update("auditeur", v)}>
         <SelectTrigger className={`${selectClass} h-8 sm:h-9 text-xs sm:text-sm rounded-md shadow-soft border-border`}>
           <SelectValue placeholder="Auditeur" />

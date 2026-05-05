@@ -64,7 +64,13 @@ const Index = () => {
             title="Vue d'ensemble des audits"
             stackIndex={0}
           >
-            <GlobalStats {...globalStats} annee={filters.annee} />
+            <GlobalStats
+              {...globalStats}
+              annee={filters.annee}
+              periodMode={filters.periodMode}
+              dateFrom={filters.dateFrom}
+              dateTo={filters.dateTo}
+            />
           </AuditsStickySection>
 
           <AuditsStickySection

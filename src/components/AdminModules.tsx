@@ -13,6 +13,7 @@ import {
   faComments,
   faVideo,
   faImages,
+  faSquarePollVertical,
 } from "@fortawesome/free-solid-svg-icons";
 import type { IconDefinition } from "@fortawesome/fontawesome-svg-core";
 import { useAuth } from "@/hooks/useAuth";
@@ -42,6 +43,7 @@ const MODULE_BLUEPRINTS: { module_key: string; label: string; sort_order: number
   { module_key: "qrcode", label: "QR Code", sort_order: 6 },
   { module_key: "messages_prives", label: "Messages privés", sort_order: 7 },
   { module_key: "discussions", label: "Discussions", sort_order: 8 },
+  { module_key: "sondages", label: "Sondages", sort_order: 9 },
   { module_key: "visio", label: "Visio", sort_order: 95 },
   { module_key: "galerie", label: "Galerie", sort_order: 96 },
 ];
@@ -56,6 +58,7 @@ const MODULE_ICONS: Record<string, IconDefinition> = {
   galerie: faImages,
   messages_prives: faEnvelope,
   discussions: faComments,
+  sondages: faSquarePollVertical,
 };
 
 export default function AdminModules() {

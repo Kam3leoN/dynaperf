@@ -135,12 +135,15 @@ function driveObjectPathForThumb(doc: DriveDocument): string | null {
 }
 
 async function buildDriveThumbnailUrl(doc: DriveDocument): Promise<string | null> {
+  // Priorité aux URLs publiques directes si disponibles.
+  if (doc.mime_type?.startsWith("image/") && doc.file_url?.startsWith("http")) return doc.file_url;
+  if (doc.image_url?.startsWith("http")) return doc.image_url;
+
   const path = driveObjectPathForThumb(doc);
   if (path) {
     const pack = await createSignedImageUrlWithThumbFallback(DRIVE_BUCKET, path, 3600, DRIVE_GRID_THUMB);
     if (pack?.url) return pack.url;
   }
-  if (doc.image_url?.startsWith("http")) return doc.image_url;
   return null;
 }
 
@@ -693,6 +696,17 @@ export default function Drive() {
               const thumbUrl = thumbUrls[doc.id] || null;
               const thumbPending = canPreview(doc) && !thumbUrl;
               const isNew = isNewDocument(doc.created_at);
+              const directFileImage = doc.mime_type?.startsWith("image/") && doc.file_url?.startsWith("http") ? doc.file_url : null;
+              const directCoverImage = doc.image_url?.startsWith("http") ? doc.image_url : null;
+              const primarySrc = thumbUrl ?? directFileImage ?? directCoverImage;
+              const secondarySrc =
+                thumbUrl && directFileImage && thumbUrl !== directFileImage
+                  ? directFileImage
+                  : thumbUrl && directCoverImage && thumbUrl !== directCoverImage
+                    ? directCoverImage
+                    : directFileImage && directCoverImage && directFileImage !== directCoverImage
+                      ? directCoverImage
+                      : null;
               return (
                 <motion.div
                   key={doc.id}
@@ -723,23 +737,31 @@ export default function Drive() {
 
                       {thumbPending ? (
                         <div className="aspect-[4/3] bg-muted animate-pulse" aria-hidden />
-                      ) : thumbUrl ? (
+                      ) : primarySrc ? (
                         <div className="aspect-[4/3] bg-muted overflow-hidden">
                           <img
-                            src={thumbUrl}
+                            src={primarySrc}
                             alt={doc.title}
                             width={480}
                             height={360}
                             loading="lazy"
                             decoding="async"
+                            data-fallback-src={secondarySrc ?? ""}
                             sizes="(max-width: 480px) 100vw, (max-width: 768px) 50vw, (max-width: 1280px) 33vw, 25vw"
                             className="w-full h-full object-cover"
                             onError={(e) => {
-                              (e.target as HTMLImageElement).style.display = "none";
-                              (e.target as HTMLImageElement).parentElement!.classList.add("flex", "items-center", "justify-center");
+                              const img = e.currentTarget as HTMLImageElement;
+                              const fallback = img.dataset.fallbackSrc;
+                              if (fallback && img.src !== fallback) {
+                                img.src = fallback;
+                                img.dataset.fallbackSrc = "";
+                                return;
+                              }
+                              img.style.display = "none";
+                              img.parentElement!.classList.add("flex", "items-center", "justify-center");
                               const icon = document.createElement("div");
                               icon.innerHTML = `<span class="text-muted-foreground/40 text-4xl">📄</span>`;
-                              (e.target as HTMLImageElement).parentElement!.appendChild(icon);
+                              img.parentElement!.appendChild(icon);
                             }}
                           />
                         </div>

@@ -43,6 +43,9 @@ const AdminExpression = lazy(() => import("./pages/admin/AdminExpression"));
 const AdminInvitations = lazy(() => import("./pages/admin/AdminInvitations"));
 const AdminBranding = lazy(() => import("./pages/admin/AdminBranding"));
 const AdminBackups = lazy(() => import("./pages/admin/AdminBackups"));
+const AdminPrimes = lazy(() => import("./pages/admin/AdminPrimes"));
+const AdminPrimeTariffsOverview = lazy(() => import("./pages/admin/AdminPrimeTariffsOverview"));
+const AdminPrimeTracking = lazy(() => import("./pages/admin/AdminPrimeTracking"));
 const AdminAuditGrid = lazy(() => import("./pages/AdminAuditGrid"));
 const AdminRoles = lazy(() => import("./pages/AdminRoles"));
 const BusinessPlan = lazy(() => import("./pages/BusinessPlan"));
@@ -118,12 +121,26 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
   return <Suspense fallback={<FullPageLoader />}>{children}</Suspense>;
 }
 
-function PermissionRoute({ permission, children }: { permission: string; children: React.ReactNode }) {
+function PermissionRoute({
+  permission,
+  moduleKey,
+  children,
+}: {
+  permission: string;
+  moduleKey?: string;
+  children: React.ReactNode;
+}) {
   const { user, loading } = useAuth();
-  const { hasPermission, loading: permLoading } = usePermissionGate();
+  const { hasPermission, isModuleEnabled, loading: permLoading } = usePermissionGate();
   if (loading || permLoading) return <FullPageLoader />;
   if (!user) return <Navigate to="/auth" replace />;
-  if (!hasPermission(permission)) return <Navigate to="/" replace />;
+  // Mode "switch unique" : si la route est liée à un module,
+  // son accès dépend uniquement de l'état du module pour l'utilisateur.
+  if (moduleKey) {
+    if (!isModuleEnabled(moduleKey)) return <Navigate to="/" replace />;
+  } else if (!hasPermission(permission)) {
+    return <Navigate to="/" replace />;
+  }
   return <Suspense fallback={<FullPageLoader />}>{children}</Suspense>;
 }
 
@@ -188,15 +205,18 @@ const App = () => {
                     <Route path="/" element={<ProtectedRoute><Welcome /></ProtectedRoute>} />
                     <Route path="/nav/historique" element={<Navigate to="/admin/historique" replace />} />
                     <Route path="/nav/:sectionId" element={<ProtectedRoute><NavSectionHub /></ProtectedRoute>} />
-                    <Route path="/dashboard" element={<PermissionRoute permission="nav.audits"><Index /></PermissionRoute>} />
-                    <Route path="/audits" element={<PermissionRoute permission="nav.audits"><Registre /></PermissionRoute>} />
-                    <Route path="/audits/new" element={<PermissionRoute permission="nav.audits"><NewAudit /></PermissionRoute>} />
-                    <Route path="/audits/new/version" element={<PermissionRoute permission="nav.audits"><AuditVersionSelect /></PermissionRoute>} />
-                    <Route path="/audits/new/form" element={<PermissionRoute permission="nav.audits"><AuditForm /></PermissionRoute>} />
-                    <Route path="/audits/edit/:auditId" element={<PermissionRoute permission="nav.audits"><AuditForm /></PermissionRoute>} />
+                    <Route path="/dashboard" element={<PermissionRoute permission="nav.audits" moduleKey="audits"><Index /></PermissionRoute>} />
+                    <Route path="/audits" element={<PermissionRoute permission="nav.audits" moduleKey="audits"><Registre /></PermissionRoute>} />
+                    <Route path="/audits/new" element={<PermissionRoute permission="nav.audits" moduleKey="audits"><NewAudit /></PermissionRoute>} />
+                    <Route path="/audits/new/version" element={<PermissionRoute permission="nav.audits" moduleKey="audits"><AuditVersionSelect /></PermissionRoute>} />
+                    <Route path="/audits/new/form" element={<PermissionRoute permission="nav.audits" moduleKey="audits"><AuditForm /></PermissionRoute>} />
+                    <Route path="/audits/edit/:auditId" element={<PermissionRoute permission="nav.audits" moduleKey="audits"><AuditForm /></PermissionRoute>} />
                     <Route path="/admin" element={<AdminRoute><AdminShell /></AdminRoute>}>
                       <Route index element={<Navigate to="users" replace />} />
                       <Route path="backups" element={<AdminBackups />} />
+                      <Route path="primes/overview" element={<AdminPrimeTariffsOverview />} />
+                      <Route path="primes/suivi" element={<AdminPrimeTracking />} />
+                      <Route path="primes" element={<AdminPrimes />} />
                       <Route path="users" element={<AdminUsers />} />
                       <Route path="modules" element={<AdminModules />} />
                       <Route path="audits-config" element={<AdminAuditsConfig />} />
@@ -218,33 +238,33 @@ const App = () => {
                       />
                     </Route>
                     <Route path="/admin/audit-grid" element={<AdminRoute><AdminAuditGrid /></AdminRoute>} />
-                    <Route path="/business-plan" element={<PermissionRoute permission="nav.reseau"><BusinessPlan /></PermissionRoute>} />
-                    <Route path="/drive" element={<PermissionRoute permission="nav.drive"><Drive /></PermissionRoute>} />
-                    <Route path="/activite/dashboard" element={<PermissionRoute permission="nav.activite"><SuiviActiviteDashboard /></PermissionRoute>} />
-                    <Route path="/activite/:id" element={<PermissionRoute permission="nav.activite"><SuiviActiviteDetail /></PermissionRoute>} />
-                    <Route path="/activite" element={<PermissionRoute permission="nav.activite"><SuiviActiviteList /></PermissionRoute>} />
-                    <Route path="/activite/new/version" element={<PermissionRoute permission="nav.activite"><SuiviActiviteVersionSelect /></PermissionRoute>} />
-                    <Route path="/activite/new" element={<PermissionRoute permission="nav.activite"><SuiviActiviteForm /></PermissionRoute>} />
+                    <Route path="/business-plan" element={<PermissionRoute permission="nav.reseau" moduleKey="reseau"><BusinessPlan /></PermissionRoute>} />
+                    <Route path="/drive" element={<PermissionRoute permission="nav.drive" moduleKey="drive"><Drive /></PermissionRoute>} />
+                    <Route path="/activite/dashboard" element={<PermissionRoute permission="nav.activite" moduleKey="suivi"><SuiviActiviteDashboard /></PermissionRoute>} />
+                    <Route path="/activite/:id" element={<PermissionRoute permission="nav.activite" moduleKey="suivi"><SuiviActiviteDetail /></PermissionRoute>} />
+                    <Route path="/activite" element={<PermissionRoute permission="nav.activite" moduleKey="suivi"><SuiviActiviteList /></PermissionRoute>} />
+                    <Route path="/activite/new/version" element={<PermissionRoute permission="nav.activite" moduleKey="suivi"><SuiviActiviteVersionSelect /></PermissionRoute>} />
+                    <Route path="/activite/new" element={<PermissionRoute permission="nav.activite" moduleKey="suivi"><SuiviActiviteForm /></PermissionRoute>} />
                     <Route path="/profile" element={<PermissionRoute permission="nav.hub"><Profile /></PermissionRoute>} />
                     <Route path="/change-password" element={<PermissionRoute permission="nav.hub"><ChangePassword /></PermissionRoute>} />
-                    <Route path="/reseau" element={<PermissionRoute permission="nav.reseau"><Reseau /></PermissionRoute>} />
-                    <Route path="/reseau/partenaires" element={<PermissionRoute permission="nav.reseau"><Partenaires /></PermissionRoute>} />
-                    <Route path="/reseau/clubs" element={<PermissionRoute permission="nav.reseau"><Clubs /></PermissionRoute>} />
-                    <Route path="/reseau/secteurs" element={<PermissionRoute permission="nav.reseau"><Secteurs /></PermissionRoute>} />
+                    <Route path="/reseau" element={<PermissionRoute permission="nav.reseau" moduleKey="reseau"><Reseau /></PermissionRoute>} />
+                    <Route path="/reseau/partenaires" element={<PermissionRoute permission="nav.reseau" moduleKey="reseau"><Partenaires /></PermissionRoute>} />
+                    <Route path="/reseau/clubs" element={<PermissionRoute permission="nav.reseau" moduleKey="reseau"><Clubs /></PermissionRoute>} />
+                    <Route path="/reseau/secteurs" element={<PermissionRoute permission="nav.reseau" moduleKey="reseau"><Secteurs /></PermissionRoute>} />
                     <Route path="/notifications" element={<PermissionRoute permission="nav.hub"><Notifications /></PermissionRoute>} />
-                    <Route path="/messages" element={<PermissionRoute permission="nav.messages"><Messages /></PermissionRoute>} />
-                    <Route path="/sondages" element={<PermissionRoute permission="nav.sondages"><Sondages /></PermissionRoute>} />
+                    <Route path="/messages" element={<PermissionRoute permission="nav.messages" moduleKey="discussions"><Messages /></PermissionRoute>} />
+                    <Route path="/sondages" element={<PermissionRoute permission="nav.sondages" moduleKey="sondages"><Sondages /></PermissionRoute>} />
                     <Route path="/historique" element={<Navigate to="/admin/historique" replace />} />
                     <Route path="/preferences" element={<PermissionRoute permission="nav.hub"><Preferences /></PermissionRoute>} />
                     <Route path="/hub" element={<PermissionRoute permission="nav.hub"><DashboardHub /></PermissionRoute>} />
-                    <Route path="/qrcodes/new" element={<PermissionRoute permission="nav.hub"><QrCodeManager /></PermissionRoute>} />
-                    <Route path="/qrcodes/shapes" element={<PermissionRoute permission="nav.hub"><QrCodeShapes /></PermissionRoute>} />
-                    <Route path="/qrcodes/stats" element={<PermissionRoute permission="nav.hub"><QrCodeStats /></PermissionRoute>} />
-                    <Route path="/qrcodes" element={<PermissionRoute permission="nav.hub"><QrCodeManageList /></PermissionRoute>} />
-                    <Route path="/galerie" element={<PermissionRoute permission="nav.audits"><Galerie /></PermissionRoute>} />
-                    <Route path="/meet" element={<PermissionRoute permission="nav.hub"><Meet /></PermissionRoute>} />
-                    <Route path="/meet/settings" element={<PermissionRoute permission="nav.hub"><MeetSettings /></PermissionRoute>} />
-                    <Route path="/meet/presets" element={<PermissionRoute permission="nav.hub"><MeetPresets /></PermissionRoute>} />
+                    <Route path="/qrcodes/new" element={<PermissionRoute permission="nav.hub" moduleKey="qrcode"><QrCodeManager /></PermissionRoute>} />
+                    <Route path="/qrcodes/shapes" element={<PermissionRoute permission="nav.hub" moduleKey="qrcode"><QrCodeShapes /></PermissionRoute>} />
+                    <Route path="/qrcodes/stats" element={<PermissionRoute permission="nav.hub" moduleKey="qrcode"><QrCodeStats /></PermissionRoute>} />
+                    <Route path="/qrcodes" element={<PermissionRoute permission="nav.hub" moduleKey="qrcode"><QrCodeManageList /></PermissionRoute>} />
+                    <Route path="/galerie" element={<PermissionRoute permission="nav.audits" moduleKey="galerie"><Galerie /></PermissionRoute>} />
+                    <Route path="/meet" element={<PermissionRoute permission="nav.hub" moduleKey="visio"><Meet /></PermissionRoute>} />
+                    <Route path="/meet/settings" element={<PermissionRoute permission="nav.hub" moduleKey="visio"><MeetSettings /></PermissionRoute>} />
+                    <Route path="/meet/presets" element={<PermissionRoute permission="nav.hub" moduleKey="visio"><MeetPresets /></PermissionRoute>} />
                     <Route path="/auth" element={<AuthRoute><Auth /></AuthRoute>} />
                     <Route
                       path="/r/:qrId"

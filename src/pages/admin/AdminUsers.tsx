@@ -92,6 +92,19 @@ const ROLE_LABELS: Record<string, string> = {
   member: "Utilisateur",
 };
 
+const USER_MODULE_BLUEPRINTS: { module_key: string; label: string; sort_order: number }[] = [
+  { module_key: "audits", label: "Audits", sort_order: 1 },
+  { module_key: "suivi", label: "Suivi d'activité", sort_order: 2 },
+  { module_key: "drive", label: "Drive", sort_order: 4 },
+  { module_key: "reseau", label: "Réseau", sort_order: 5 },
+  { module_key: "qrcode", label: "QR Code", sort_order: 6 },
+  { module_key: "messages_prives", label: "Messages privés", sort_order: 7 },
+  { module_key: "discussions", label: "Discussions", sort_order: 8 },
+  { module_key: "sondages", label: "Sondages", sort_order: 9 },
+  { module_key: "visio", label: "Visio", sort_order: 95 },
+  { module_key: "galerie", label: "Galerie", sort_order: 96 },
+];
+
 function getUserRole(u: ManagedUser) {
   if (u.roles.some((r) => LEGACY_ROLE_TO_MEMBER.has(r))) return "member";
   for (const r of STAFF_ROLE_PRIORITY) {
@@ -266,6 +279,7 @@ export default function AdminUsers() {
   const [editPermOverride, setEditPermOverride] = useState<Record<string, "inherit" | "allow" | "deny">>({});
   const [appPermissionCatalog, setAppPermissionCatalog] = useState<{ key: string; description: string }[]>([]);
   const [editModuleOverrides, setEditModuleOverrides] = useState<Record<string, boolean | null>>({});
+  const [moduleGlobalDefaults, setModuleGlobalDefaults] = useState<Record<string, boolean>>({});
   const [appModulesCatalog, setAppModulesCatalog] = useState<{ module_key: string; label: string }[]>([]);
   const [editSaving, setEditSaving] = useState(false);
 
@@ -491,9 +505,43 @@ export default function AdminUsers() {
     const loadModuleOverrides = async () => {
       let mods = appModulesCatalog;
       if (!mods.length) {
-        const { data: fresh } = await (supabase as any).from("app_modules").select("module_key, label").order("sort_order");
-        mods = fresh ?? [];
+        let { data: fresh } = await (supabase as any)
+          .from("app_modules")
+          .select("module_key, label, is_enabled, sort_order")
+          .order("sort_order");
+
+        if (isSuperAdmin) {
+          const currentKeys = new Set<string>((fresh ?? []).map((m: any) => m.module_key));
+          const missing = USER_MODULE_BLUEPRINTS.filter((b) => !currentKeys.has(b.module_key));
+          if (missing.length > 0) {
+            await (supabase as any).from("app_modules").insert(
+              missing.map((m) => ({ ...m, is_enabled: true })),
+            );
+            const reloaded = await (supabase as any)
+              .from("app_modules")
+              .select("module_key, label, is_enabled, sort_order")
+              .order("sort_order");
+            fresh = reloaded.data ?? fresh;
+          }
+        }
+
+        mods = (fresh ?? []).map((m: any) => ({ module_key: m.module_key, label: m.label }));
+        const defaults: Record<string, boolean> = {};
+        for (const m of fresh ?? []) {
+          defaults[m.module_key] = Boolean(m.is_enabled);
+        }
+        setModuleGlobalDefaults(defaults);
         if (mods.length) setAppModulesCatalog(mods as any);
+      }
+      if (mods.length && Object.keys(moduleGlobalDefaults).length === 0) {
+        const { data: freshState } = await (supabase as any)
+          .from("app_modules")
+          .select("module_key, is_enabled");
+        const defaults: Record<string, boolean> = {};
+        for (const m of freshState ?? []) {
+          defaults[m.module_key] = Boolean(m.is_enabled);
+        }
+        setModuleGlobalDefaults(defaults);
       }
       const { data: ovs } = await (supabase as any)
         .from("user_module_overrides")
@@ -888,188 +936,149 @@ export default function AdminUsers() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit user dialog */}
-      <Dialog open={!!editUser} onOpenChange={(o) => { if (!o) setEditUser(null); }}>
-        <DialogContent className="sm:max-w-lg max-h-[90vh] pt-20 [&>button]:hidden" style={{ overflow: 'visible' }}>
-          {editUser && (
-            <>
-              <div className="absolute -top-16 left-1/2 -translate-x-1/2">
-                <div className="relative group cursor-pointer" onClick={() => document.getElementById('edit-avatar-input')?.click()}>
-                  {editUser.avatarUrl ? (
-                    <img src={editUser.avatarUrl} alt={editUser.displayName} className="w-32 h-32 rounded-full object-cover border-4 border-background" />
-                  ) : (
-                    <div className="w-32 h-32 rounded-full bg-primary/10 text-primary font-bold text-3xl flex items-center justify-center border-4 border-background">
-                      {editUser.displayName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)}
-                    </div>
-                  )}
-                  <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <FontAwesomeIcon icon={faCamera} className="h-5 w-5 text-white" />
+      {editUser ? (
+        <div className="bg-card rounded-2xl shadow-soft border border-border/60 p-4 sm:p-5">
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <h3 className="text-sm font-semibold text-foreground">Édition utilisateur</h3>
+            <Button variant="outline" size="sm" onClick={() => setEditUser(null)} className="rounded-md">
+              Annuler
+            </Button>
+          </div>
+
+          <div className="space-y-4 py-2">
+            <div className="flex justify-center pb-1">
+              <div className="relative group cursor-pointer" onClick={() => document.getElementById("edit-avatar-input")?.click()}>
+                {editUser.avatarUrl ? (
+                  <img src={editUser.avatarUrl} alt={editUser.displayName} className="w-24 h-24 rounded-full object-cover border-4 border-background" />
+                ) : (
+                  <div className="w-24 h-24 rounded-full bg-primary/10 text-primary font-bold text-2xl flex items-center justify-center border-4 border-background">
+                    {editUser.displayName.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2)}
                   </div>
-                  <input id="edit-avatar-input" type="file" accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp" className="hidden" onChange={async (e) => {
+                )}
+                <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                  <FontAwesomeIcon icon={faCamera} className="h-5 w-5 text-white" />
+                </div>
+                <input
+                  id="edit-avatar-input"
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                  className="hidden"
+                  onChange={async (e) => {
                     if (e.target.files?.[0]) {
                       await handleAvatarChange(editUser.id, e.target.files[0]);
                       loadUsers();
                     }
-                  }} />
-                  <div className="absolute -top-5 left-1/2 -translate-x-1/2 pointer-events-none">
-                    <ArcText text={(editTitle || ROLE_LABELS[getUserRole(editUser)] || getUserRole(editUser)).toUpperCase()} />
-                  </div>
-                </div>
-              </div>
-              <button
-                onClick={() => setEditUser(null)}
-                className="absolute -right-3 -top-3 w-8 h-8 rounded-full flex items-center justify-center z-50 hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: "#ee4540" }}
-              >
-                <X className="h-4 w-4 text-white" />
-              </button>
-            </>
-          )}
-          <DialogHeader className="text-center">
-            <DialogTitle className="sr-only">Modifier</DialogTitle>
-            <DialogDescription className="text-sm text-muted-foreground text-center w-full">Modifier {editUser?.displayName}</DialogDescription>
-          </DialogHeader>
-          {editUser && (
-            <div className="space-y-4 py-2">
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Prénom</label>
-                  <Input value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} className="h-9 text-sm" placeholder="Prénom" />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground mb-1 block">Nom</label>
-                  <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} className="h-9 text-sm" placeholder="NOM" />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Email</label>
-                <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="h-9 text-sm" />
-              </div>
-
-              {/* Titre arc */}
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Titre (au-dessus de l'avatar)</label>
-                <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="h-9 text-sm" placeholder={ROLE_LABELS[getUserRole(editUser)] ?? getUserRole(editUser)} />
-              </div>
-
-              {/* Rôle */}
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Rôle</label>
-                <Select value={editRole} onValueChange={setEditRole}>
-                  <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <StaffRoleSelectItems isSuperAdmin={isSuperAdmin} />
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Titres organisationnels</label>
-                <p className="text-[10px] text-muted-foreground mb-2">Réservés aux rôles staff ; badges d&apos;annuaire.</p>
-                <div className="flex flex-wrap gap-1.5">
-                  {(Object.keys(ORG_TITLE_LABELS) as (keyof typeof ORG_TITLE_LABELS)[]).map((key) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() =>
-                        setEditOrgTitles((prev) =>
-                          prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
-                        )
-                      }
-                      className={cn(
-                        "text-xs px-2 py-1 rounded-full border transition-colors",
-                        editOrgTitles.includes(key)
-                          ? "bg-primary/15 border-primary text-foreground"
-                          : "border-border text-muted-foreground hover:bg-secondary/80",
-                      )}
-                    >
-                      {ORG_TITLE_LABELS[key]}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Surcharges de droits</label>
-                <p className="text-[10px] text-muted-foreground mb-2">
-                  Défaut = matrice par rôle staff ; Forcer oui / non remplace pour cet utilisateur.
-                </p>
-                <div className="max-h-48 overflow-y-auto space-y-2 rounded-md border border-border/60 p-2">
-                  {appPermissionCatalog.map((row) => (
-                    <div key={row.key} className="flex flex-col gap-0.5 sm:flex-row sm:items-center sm:justify-between sm:gap-2">
-                      <span className="text-xs font-mono text-foreground shrink-0">{row.key}</span>
-                      <Select
-                        value={editPermOverride[row.key] ?? "inherit"}
-                        onValueChange={(v) =>
-                          setEditPermOverride((prev) => ({
-                            ...prev,
-                            [row.key]: v as "inherit" | "allow" | "deny",
-                          }))
-                        }
-                      >
-                        <SelectTrigger className="h-8 text-xs w-full sm:w-[140px]">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="inherit">Défaut</SelectItem>
-                          <SelectItem value="allow">Forcer oui</SelectItem>
-                          <SelectItem value="deny">Forcer non</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Modules visibles pour cet utilisateur */}
-              <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Modules visibles</label>
-                <p className="text-[10px] text-muted-foreground mb-2">
-                  Défaut = état global du module ; basculer pour forcer l'accès de cet utilisateur.
-                </p>
-                <div className="space-y-2 rounded-md border border-border/60 p-2">
-                  {appModulesCatalog.map((mod) => {
-                    const val = editModuleOverrides[mod.module_key];
-                    const isInherit = val === null || val === undefined;
-                    return (
-                      <div key={mod.module_key} className="flex items-center justify-between gap-2">
-                        <span className="text-xs text-foreground">{mod.label}</span>
-                        <div className="flex items-center gap-2">
-                          {!isInherit && (
-                            <button
-                              type="button"
-                              className="text-[10px] text-muted-foreground hover:text-foreground underline"
-                              onClick={() =>
-                                setEditModuleOverrides((prev) => ({ ...prev, [mod.module_key]: null }))
-                              }
-                            >
-                              Réinitialiser
-                            </button>
-                          )}
-                          <Switch
-                            checked={isInherit ? true : val}
-                            onCheckedChange={(checked) =>
-                              setEditModuleOverrides((prev) => ({ ...prev, [mod.module_key]: checked }))
-                            }
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" size="sm" onClick={() => setEditUser(null)} className="rounded-md">Annuler</Button>
-                <Button size="sm" disabled={editSaving} onClick={handleEditSave} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5">
-                  <FontAwesomeIcon icon={faFloppyDisk} className="h-3.5 w-3.5" />
-                  {editSaving ? "Enregistrement…" : "Enregistrer"}
-                </Button>
+                  }}
+                />
               </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Prénom</label>
+                <Input value={editFirstName} onChange={(e) => setEditFirstName(e.target.value)} className="h-9 text-sm" placeholder="Prénom" />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground mb-1 block">Nom</label>
+                <Input value={editLastName} onChange={(e) => setEditLastName(e.target.value)} className="h-9 text-sm" placeholder="NOM" />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Email</label>
+              <Input type="email" value={editEmail} onChange={(e) => setEditEmail(e.target.value)} className="h-9 text-sm" />
+            </div>
+
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Titre (au-dessus de l'avatar)</label>
+              <Input value={editTitle} onChange={(e) => setEditTitle(e.target.value)} className="h-9 text-sm" placeholder={ROLE_LABELS[getUserRole(editUser)] ?? getUserRole(editUser)} />
+            </div>
+
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Rôle</label>
+              <Select value={editRole} onValueChange={setEditRole}>
+                <SelectTrigger className="h-9 text-sm"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <StaffRoleSelectItems isSuperAdmin={isSuperAdmin} />
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Titres organisationnels</label>
+              <p className="text-[10px] text-muted-foreground mb-2">Réservés aux rôles staff ; badges d&apos;annuaire.</p>
+              <div className="flex flex-wrap gap-1.5">
+                {(Object.keys(ORG_TITLE_LABELS) as (keyof typeof ORG_TITLE_LABELS)[]).map((key) => (
+                  <button
+                    key={key}
+                    type="button"
+                    onClick={() =>
+                      setEditOrgTitles((prev) =>
+                        prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+                      )
+                    }
+                    className={cn(
+                      "text-xs px-2 py-1 rounded-full border transition-colors",
+                      editOrgTitles.includes(key)
+                        ? "bg-primary/15 border-primary text-foreground"
+                        : "border-border text-muted-foreground hover:bg-secondary/80",
+                    )}
+                  >
+                    {ORG_TITLE_LABELS[key]}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Modules visibles</label>
+              <p className="text-[10px] text-muted-foreground mb-2">
+                Défaut = état global du module ; basculer pour forcer l'accès de cet utilisateur.
+              </p>
+              <div className="space-y-2 rounded-md border border-border/60 p-2">
+                {appModulesCatalog.map((mod) => {
+                  const val = editModuleOverrides[mod.module_key];
+                  const isInherit = val === null || val === undefined;
+                    const inherited = moduleGlobalDefaults[mod.module_key] ?? false;
+                    const effectiveChecked = isInherit ? inherited : Boolean(val);
+                  return (
+                    <div key={mod.module_key} className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-foreground">{mod.label}</span>
+                      <div className="flex items-center gap-2">
+                        {!isInherit && (
+                          <button
+                            type="button"
+                            className="text-[10px] text-muted-foreground hover:text-foreground underline"
+                            onClick={() =>
+                              setEditModuleOverrides((prev) => ({ ...prev, [mod.module_key]: null }))
+                            }
+                          >
+                            Réinitialiser
+                          </button>
+                        )}
+                        <Switch
+                          checked={effectiveChecked}
+                          onCheckedChange={(checked) =>
+                            setEditModuleOverrides((prev) => ({ ...prev, [mod.module_key]: checked }))
+                          }
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" size="sm" onClick={() => setEditUser(null)} className="rounded-md">Annuler</Button>
+              <Button size="sm" disabled={editSaving} onClick={handleEditSave} className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-md gap-1.5">
+                <FontAwesomeIcon icon={faFloppyDisk} className="h-3.5 w-3.5" />
+                {editSaving ? "Enregistrement…" : "Enregistrer"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       </div>
     </div>
   );

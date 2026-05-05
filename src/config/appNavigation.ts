@@ -33,6 +33,7 @@ import {
   faCircleDot,
   faVideo,
   faLayerGroup,
+  faBook,
 } from "@fortawesome/free-solid-svg-icons";
 
 /** Hub « vue d’ensemble » (Material 3 Expressive : clic rail → page de cartes, pas le 1er sous-lien). */
@@ -232,6 +233,7 @@ const sondages: RailSection = {
   label: "Sondages",
   icon: faSquarePollVertical,
   to: navHubPath("sondages"),
+  requiredModule: "sondages",
   requiredPermission: "nav.sondages",
   pathPrefixes: ["/nav/sondages", "/sondages"],
   children: [
@@ -253,6 +255,8 @@ const admin: RailSection = {
   children: [
     { label: "Vue d'ensemble", to: ADMIN_RAIL_NAV_DESTINATION, icon: faLayerGroup },
     { label: "Sauvegardes", to: "/admin/backups", icon: faDatabase, requiredSuperAdmin: true },
+    { label: "Barèmes primes", to: "/admin/primes/overview", icon: faBook, requiredSuperAdmin: true },
+    { label: "Suivi primes", to: "/admin/primes/suivi", icon: faChartLine, requiredSuperAdmin: true },
     { label: "Utilisateurs", to: "/admin/users", icon: faUsers },
     { label: "Modules", to: "/admin/modules", icon: faCubes },
     { label: "Audits", to: "/admin/audits-config", icon: faClipboardList },
@@ -298,8 +302,10 @@ export function getRailSections(
   const modOn = isModuleEnabled ?? (() => true);
   return ALL_RAIL_SECTIONS.filter((s) => {
     if (s.requireAdmin && !isAdmin) return false;
-    if (s.requiredPermission && !can(s.requiredPermission)) return false;
     if (s.requiredModule && !modOn(s.requiredModule)) return false;
+    // Mode "switch unique" : pour une section liée à un module,
+    // la visibilité dépend uniquement du module utilisateur.
+    if (!s.requiredModule && s.requiredPermission && !can(s.requiredPermission)) return false;
     return true;
   });
 }
@@ -328,8 +334,8 @@ export function filterSecondaryNavItems(
   const superOk = options?.isSuperAdmin === true;
   return items.filter((item) => {
     if (item.requiredSuperAdmin && !superOk) return false;
-    if (item.requiredPermission && !can(item.requiredPermission)) return false;
     if (item.requiredModule && !mod(item.requiredModule)) return false;
+    if (!item.requiredModule && item.requiredPermission && !can(item.requiredPermission)) return false;
     return true;
   });
 }
